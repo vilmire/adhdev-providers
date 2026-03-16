@@ -3,8 +3,8 @@
  * ADHDev Provider Validator
  * 
  * Usage:
- *   node validate.js                     # 전체 검증
- *   node validate.js ide/my-ide/provider.js  # 단일 파일 검증
+ *   node validate.js                     # validate all providers
+ *   node validate.js ide/my-ide/provider.js  # validate a single file
  */
 const fs = require('fs');
 const path = require('path');
