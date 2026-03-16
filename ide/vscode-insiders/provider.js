@@ -1,0 +1,27 @@
+/**
+ * VS Code Insiders — IDE Provider
+ * @type {import('../../../src/providers/contracts').ProviderModule}
+ */
+module.exports = {
+  type: 'vscode-insiders',
+  name: 'Visual Studio Code - Insiders',
+  category: 'ide',
+
+  displayName: 'VS Code Insiders',
+  icon: '💚',
+  cli: 'code-insiders',
+  cdpPorts: [9341, 9342],
+  processNames: {
+    darwin: 'Visual Studio Code - Insiders',
+    win32: ['Code - Insiders.exe'],
+  },
+  paths: {
+    darwin: ['/Applications/Visual Studio Code - Insiders.app'],
+    win32: ['C:\\Program Files\\Microsoft VS Code Insiders\\Code - Insiders.exe'],
+    linux: ['/usr/share/code-insiders'],
+  },
+
+  inputMethod: 'cdp-type-and-send',
+  inputSelector: '[contenteditable="true"][role="textbox"]',
+  scripts: {},
+};

@@ -1,0 +1,116 @@
+/**
+ * Cursor — IDE Provider
+ * 
+ * Category: ide (workbench CDP session — iframe 없음)
+ * 
+ * 특이 사항:
+ *  - .composer-view 컨테이너 (data-composer-id, data-composer-status)
+ *  - contenteditable[role="textbox"] 또는 textarea.native-input
+ *  - Fiber summaries 기반 제목 추출
+ *  - 6단계 모달 감지 계층 (overlay → run-command-review → ancestor → dialog → inline → quickInput → AI msg)
+ *  - resolve_modal 사용
+ * 
+ * @type {import('../../../src/providers/contracts').ProviderModule}
+ */
+const fs = require('fs');
+const path = require('path');
+
+const SCRIPTS_DIR = path.join(__dirname, 'scripts');
+
+function loadScript(name) {
+  try {
+    return fs.readFileSync(path.join(SCRIPTS_DIR, name), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+module.exports = {
+  type: 'cursor',
+  name: 'Cursor',
+  category: 'ide',
+
+  // ─── IDE 인프라 ───
+  displayName: 'Cursor',
+  icon: '⚡',
+  cli: 'cursor',
+  cdpPorts: [9333, 9334],
+  processNames: {
+    darwin: 'Cursor',
+    win32: ['Cursor.exe'],
+  },
+  paths: {
+    darwin: ['/Applications/Cursor.app'],
+    win32: ['C:\\Users\\*\\AppData\\Local\\Programs\\cursor\\Cursor.exe'],
+    linux: ['/opt/Cursor', '/usr/share/cursor'],
+  },
+
+  inputMethod: 'cdp-type-and-send',
+  inputSelector: '[contenteditable="true"][role="textbox"]',
+
+  scripts: {
+    readChat() {
+      return loadScript('read_chat.js');
+    },
+
+    sendMessage(text) {
+      const script = loadScript('send_message.js');
+      if (!script) return null;
+      return script.replace(/\$\{\s*MESSAGE\s*\}/g, JSON.stringify(text));
+    },
+
+    listSessions() {
+      return loadScript('list_chats.js');
+    },
+
+    switchSession(sessionId) {
+      const script = loadScript('switch_session.js');
+      if (!script) return null;
+      return script.replace(/\$\{\s*SESSION_ID\s*\}/g, JSON.stringify(sessionId));
+    },
+
+    newSession() {
+      return loadScript('new_session.js');
+    },
+
+    resolveModal(buttonText) {
+      const script = loadScript('resolve_modal.js');
+      if (!script) return null;
+      return script.replace(/\$\{\s*BUTTON_TEXT\s*\}/g, JSON.stringify(buttonText));
+    },
+
+    focusEditor() {
+      return loadScript('focus_editor.js');
+    },
+
+    openPanel() {
+      return loadScript('open_panel.js');
+    },
+
+    probe() {
+      return `(() => {
+    const checks = [];
+    try {
+        const composer = document.querySelector('.composer-view, .chat-view, [data-composer-id]');
+        checks.push({ name: 'composer_view', passed: !!composer });
+
+        const editor = document.querySelector('[contenteditable="true"][role="textbox"]') 
+            || document.querySelector('textarea.native-input');
+        checks.push({ name: 'editor', passed: !!editor });
+
+        const composerId = composer?.getAttribute('data-composer-id');
+        checks.push({ name: 'composer_id', passed: !!composerId });
+
+        const msgEls = document.querySelectorAll('[data-message-id]');
+        checks.push({ name: 'message_elements', passed: msgEls.length > 0, message: msgEls.length + ' messages' });
+
+        const healthy = checks.filter(c => c.passed).length >= 2;
+        return JSON.stringify({ healthy, checks });
+    } catch (e) {
+        checks.push({ name: 'error', passed: false, message: e.message });
+        return JSON.stringify({ healthy: false, checks });
+    }
+})()`;
+    },
+  },
+};

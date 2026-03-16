@@ -1,0 +1,59 @@
+/**
+ * pi ACP — ACP Provider
+ * 
+ * ACP adapter for pi coding agent
+ * https://github.com/svkozak/pi-acp
+ * 
+ * Install: npm install -g pi-acp
+ * 
+ * @type {import('../../../../src/providers/contracts').ProviderModule}
+ */
+module.exports = {
+  type: 'pi-acp',
+  name: 'pi ACP',
+  category: 'acp',
+
+  displayName: 'pi ACP',
+  icon: '🥧',
+  install: 'npm install -g pi-acp',
+
+  spawn: {
+    command: 'pi-acp',
+    args: [],
+    shell: false,
+  },
+
+  auth: [
+    {
+      type: 'agent',
+      id: 'pi',
+      name: 'pi Auth',
+      description: 'Configure provider through pi setup',
+    },
+  ],
+
+  settings: {
+    approvalAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Approval Alerts',
+      description: 'Show notification when agent requires approval',
+    },
+    longGeneratingAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Long Generation Alert',
+      description: 'Alert when generation takes too long',
+    },
+    longGeneratingThresholdSec: {
+      type: 'number',
+      default: 180,
+      public: true,
+      label: 'Long Generation Threshold (sec)',
+      min: 30,
+      max: 600,
+    },
+  },
+};

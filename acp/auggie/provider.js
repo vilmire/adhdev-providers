@@ -1,0 +1,60 @@
+/**
+ * Auggie CLI — ACP Provider
+ * 
+ * Augment Code's powerful software agent
+ * https://github.com/augmentcode/auggie-zed-extension
+ * 
+ * Install: npm install -g @augmentcode/auggie
+ * 
+ * @type {import('../../../../src/providers/contracts').ProviderModule}
+ */
+module.exports = {
+  type: 'auggie-acp',
+  name: 'Auggie CLI (ACP)',
+  category: 'acp',
+
+  displayName: 'Auggie CLI',
+  icon: '🧠',
+  install: 'npm install -g @augmentcode/auggie',
+
+  spawn: {
+    command: 'auggie',
+    args: ['--acp'],
+    shell: false,
+    env: { AUGMENT_DISABLE_AUTO_UPDATE: '1' },
+  },
+
+  auth: [
+    {
+      type: 'agent',
+      id: 'augment',
+      name: 'Augment Code Auth',
+      description: 'Authenticate through Augment Code setup',
+    },
+  ],
+
+  settings: {
+    approvalAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Approval Alerts',
+      description: 'Show notification when agent requires approval',
+    },
+    longGeneratingAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Long Generation Alert',
+      description: 'Alert when generation takes too long',
+    },
+    longGeneratingThresholdSec: {
+      type: 'number',
+      default: 180,
+      public: true,
+      label: 'Long Generation Threshold (sec)',
+      min: 30,
+      max: 600,
+    },
+  },
+};

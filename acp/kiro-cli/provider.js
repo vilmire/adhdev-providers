@@ -1,0 +1,59 @@
+/**
+ * Kiro CLI — ACP Provider
+ * 
+ * AWS Kiro coding agent CLI
+ * https://kiro.dev/docs/cli/acp/
+ * 
+ * Install: Download from https://kiro.dev/docs/cli/
+ * 
+ * @type {import('../../../../src/providers/contracts').ProviderModule}
+ */
+module.exports = {
+  type: 'kiro-cli-acp',
+  name: 'Kiro CLI (ACP)',
+  category: 'acp',
+
+  displayName: 'Kiro CLI',
+  icon: '🟠',
+  install: 'Download from https://kiro.dev/docs/cli/',
+
+  spawn: {
+    command: 'kiro',
+    args: ['acp'],
+    shell: false,
+  },
+
+  auth: [
+    {
+      type: 'agent',
+      id: 'kiro',
+      name: 'Kiro Auth',
+      description: 'Authenticate with AWS/Kiro account',
+    },
+  ],
+
+  settings: {
+    approvalAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Approval Alerts',
+      description: 'Show notification when agent requires approval',
+    },
+    longGeneratingAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Long Generation Alert',
+      description: 'Alert when generation takes too long',
+    },
+    longGeneratingThresholdSec: {
+      type: 'number',
+      default: 180,
+      public: true,
+      label: 'Long Generation Threshold (sec)',
+      min: 30,
+      max: 600,
+    },
+  },
+};

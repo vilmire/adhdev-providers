@@ -1,0 +1,61 @@
+/**
+ * Claude Agent — ACP Provider
+ * 
+ * ACP wrapper for Anthropic's Claude Agent SDK
+ * https://github.com/zed-industries/claude-agent-acp
+ * 
+ * Install: npm install -g @zed-industries/claude-agent-acp
+ * Auth: ANTHROPIC_API_KEY environment variable
+ * 
+ * @type {import('../../../../src/providers/contracts').ProviderModule}
+ */
+module.exports = {
+  type: 'claude-agent-acp',
+  name: 'Claude Agent (ACP)',
+  category: 'acp',
+
+  displayName: 'Claude Agent',
+  icon: '🟠',
+  install: 'npm install -g @zed-industries/claude-agent-acp  (requires ANTHROPIC_API_KEY)',
+
+  spawn: {
+    command: 'claude-agent-acp',
+    args: [],
+    shell: false,
+  },
+
+  auth: [
+    {
+      type: 'env_var',
+      id: 'anthropic',
+      name: 'Anthropic API Key',
+      vars: [{ name: 'ANTHROPIC_API_KEY' }],
+      link: 'https://console.anthropic.com/settings/keys',
+    },
+  ],
+
+  settings: {
+    approvalAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Approval Alerts',
+      description: 'Show notification when Claude requires approval',
+    },
+    longGeneratingAlert: {
+      type: 'boolean',
+      default: true,
+      public: true,
+      label: 'Long Generation Alert',
+      description: 'Alert when generation takes too long',
+    },
+    longGeneratingThresholdSec: {
+      type: 'number',
+      default: 180,
+      public: true,
+      label: 'Long Generation Threshold (sec)',
+      min: 30,
+      max: 600,
+    },
+  },
+};
