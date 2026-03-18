@@ -1,0 +1,32 @@
+{
+  "type": "antigravity",
+  "name": "Antigravity",
+  "category": "ide",
+  "displayName": "Antigravity",
+  "icon": "🚀",
+  "cli": "antigravity",
+  "cdpPorts": [
+    9335,
+    9336
+  ],
+  "processNames": {
+    "darwin": "Antigravity",
+    "win32": [
+      "Antigravity.exe"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Antigravity.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\antigravity\\Antigravity.exe"
+    ],
+    "linux": [
+      "/opt/Antigravity",
+      "/usr/share/antigravity"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]"
+}

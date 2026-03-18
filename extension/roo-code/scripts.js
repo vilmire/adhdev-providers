@@ -1,36 +1,8 @@
 /**
- * Roo Code — Extension Provider (Reference Implementation)
- * 
- * Category: extension (webview CDP session)
- * 구조: iframe → contentDocument, Fiber 기반 데이터 추출
- * 
- * Output Contract: ReadChatResult, SendMessageResult, etc.
- * 각 scripts 함수는 CDP evaluate에 넣을 JS 코드 문자열을 반환.
- * 
- * @type {import('../../../src/providers/contracts').ProviderModule}
+ * CDP Scripts for Roo Code
  */
-module.exports = {
-  // ─── 메타데이터 ───
-  type: 'roo-code',
-  name: 'Roo Code',
-  category: 'extension',
 
-  // ─── Extension 식별 ───
-  extensionId: 'RooVeterinaryInc.roo-cline',
-  extensionIdPattern: /extensionId=RooVeterinaryInc\.roo-cline/i,
-
-  // ─── VS Code Commands ───
-  vscodeCommands: {
-    focusPanel: 'roo-cline.SidebarProvider.focus',
-  },
-
-  // ─── CDP 스크립트 ───
-  scripts: {
-    /**
-     * readChat → ReadChatResult
-     * Fiber 기반 역할 판별 + DOM fallback
-     */
-    readChat() {
+module.exports.readChat = function readChat() {
       return `(() => {
     try {
         const inner = document.querySelector('iframe');
@@ -203,13 +175,9 @@ module.exports = {
         return JSON.stringify({ error: e.message || String(e) });
     }
 })()`;
-    },
+    };
 
-    /**
-     * sendMessage(text) → 'sent' | 'error: ...'
-     * Fiber onSend 직접 호출 방식
-     */
-    sendMessage(text) {
+module.exports.sendMessage = function sendMessage(text) {
       const escaped = JSON.stringify(text);
       return `(async () => {
     try {
@@ -262,13 +230,9 @@ module.exports = {
         return JSON.stringify({ sent: true });
     } catch (e) { return JSON.stringify({ sent: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * listSessions → SessionInfo[]
-     * Fiber taskHistory 기반
-     */
-    listSessions() {
+module.exports.listSessions = function listSessions() {
       return `(() => {
     try {
         const inner = document.querySelector('iframe');
@@ -347,13 +311,9 @@ module.exports = {
         return JSON.stringify({ sessions: [], error: e.message });
     }
 })()`;
-    },
+    };
 
-    /**
-     * switchSession(sessionId) → SwitchSessionResult
-     * postMessage → showTaskWithId
-     */
-    switchSession(sessionId) {
+module.exports.switchSession = function switchSession(sessionId) {
       const escaped = JSON.stringify(sessionId);
       return `(async () => {
     try {
@@ -422,12 +382,9 @@ module.exports = {
         return JSON.stringify({ switched: true });
     } catch (e) { return JSON.stringify({ switched: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * newSession → string
-     */
-    newSession() {
+module.exports.newSession = function newSession() {
       return `(() => {
     try {
         const inner = document.querySelector('iframe');
@@ -470,13 +427,9 @@ module.exports = {
         return 'no button found';
     } catch (e) { return 'error: ' + e.message; }
 })()`;
-    },
+    };
 
-    /**
-     * resolveAction(action) → boolean
-     * action: 'approve' | 'reject'
-     */
-    resolveAction(action) {
+module.exports.resolveAction = function resolveAction(action) {
       const escaped = JSON.stringify(action);
       return `(() => {
     try {
@@ -536,12 +489,9 @@ module.exports = {
         return false;
     } catch { return false; }
 })()`;
-    },
+    };
 
-    /**
-     * focusEditor → string
-     */
-    focusEditor() {
+module.exports.focusEditor = function focusEditor() {
       return `(() => {
     try {
         const inner = document.querySelector('iframe');
@@ -557,12 +507,9 @@ module.exports = {
         return 'no textarea found';
     } catch (e) { return 'error: ' + e.message; }
 })()`;
-    },
+    };
 
-    /**
-     * openPanel → 'visible' | 'panel_hidden'
-     */
-    openPanel() {
+module.exports.openPanel = function openPanel() {
       return `(() => {
     try {
         const inner = document.querySelector('iframe');
@@ -573,13 +520,9 @@ module.exports = {
         return 'panel_hidden';
     } catch (e) { return 'error: ' + e.message; }
 })()`;
-    },
+    };
 
-    /**
-     * listModels → { models: string[], current: string }
-     * dropdown-trigger 클릭 → 옵션 읽기 → Escape로 닫기
-     */
-    listModels() {
+module.exports.listModels = function listModels() {
       return `(async () => {
     try {
         const inner = document.querySelector('iframe');
@@ -610,13 +553,9 @@ module.exports = {
         return JSON.stringify({ models: [...new Set(models)], current });
     } catch (e) { return JSON.stringify({ models: [], current: '', error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * setModel(params) → { success: boolean }
-     * params.model: 선택할 모델 이름
-     */
-    setModel(params) {
+module.exports.setModel = function setModel(params) {
       const model = params?.model || params;
       const escaped = JSON.stringify(model);
       return `(async () => {
@@ -649,13 +588,9 @@ module.exports = {
         return JSON.stringify({ success: false, error: 'model not found: ' + target });
     } catch (e) { return JSON.stringify({ success: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * listModes → { modes: string[], current: string }
-     * mode-selector-trigger 클릭 → 옵션 읽기
-     */
-    listModes() {
+module.exports.listModes = function listModes() {
       return `(async () => {
     try {
         const inner = document.querySelector('iframe');
@@ -685,13 +620,9 @@ module.exports = {
         return JSON.stringify({ modes: [...new Set(modes)], current });
     } catch (e) { return JSON.stringify({ modes: [], current: '', error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * setMode(params) → { success: boolean }
-     * params.mode: 선택할 모드 이름
-     */
-    setMode(params) {
+module.exports.setMode = function setMode(params) {
       const mode = params?.mode || params;
       const escaped = JSON.stringify(mode);
       return `(async () => {
@@ -724,6 +655,5 @@ module.exports = {
         return JSON.stringify({ success: false, error: 'mode not found: ' + target });
     } catch (e) { return JSON.stringify({ success: false, error: e.message }); }
 })()`;
-    },
-  },
-};
+    };
+

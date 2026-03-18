@@ -1,29 +1,8 @@
 /**
- * Cursor — IDE Provider
- * @type {import('../../../src/providers/contracts').ProviderModule}
+ * CDP Scripts for Cursor
  */
-module.exports = {
-  type: 'cursor',
-  name: 'Cursor',
-  category: 'ide',
-  displayName: 'Cursor',
-  icon: '⚡',
-  cli: 'cursor',
-  cdpPorts: [9333, 9334],
-  processNames: { darwin: 'Cursor', win32: ['Cursor.exe'] },
-  paths: {
-    darwin: ['/Applications/Cursor.app'],
-    win32: ['C:\\Users\\*\\AppData\\Local\\Programs\\cursor\\Cursor.exe'],
-    linux: ['/opt/Cursor', '/usr/share/cursor'],
-  },
-  inputMethod: 'cdp-type-and-send',
-  inputSelector: '.aislash-editor-input[contenteditable="true"]',
-  vscodeCommands: {
-    changeModel: 'cursor.model',
-  },
 
-  scripts: {
-    readChat(params) {
+module.exports.readChat = function readChat(params) {
       return `(() => {
   try {
     const c = document.querySelector('[data-composer-id]');
@@ -81,9 +60,9 @@ module.exports = {
     return JSON.stringify({ id: '', status: 'error', messages: [] });
   }
 })()`;
-    },
+    };
 
-    sendMessage(params) {
+module.exports.sendMessage = function sendMessage(params) {
       const text = typeof params === 'string' ? params : params?.text;
       return `(() => {
   try {
@@ -98,9 +77,9 @@ module.exports = {
     return JSON.stringify({ sent: false, error: e.message });
   }
 })()`;
-    },
+    };
 
-    listSessions(params) {
+module.exports.listSessions = function listSessions(params) {
       return `(() => {
   try {
     const sessions = [];
@@ -132,9 +111,9 @@ module.exports = {
     return JSON.stringify({ sessions: [], error: e.message });
   }
 })()`;
-    },
+    };
 
-    switchSession(params) {
+module.exports.switchSession = function switchSession(params) {
       const index = typeof params === 'number' ? params : params?.index;
       const title = typeof params === 'string' ? params : params?.title;
       return `(() => {
@@ -156,9 +135,9 @@ module.exports = {
     return JSON.stringify({ switched: false, error: e.message });
   }
 })()`;
-    },
+    };
 
-    newSession(params) {
+module.exports.newSession = function newSession(params) {
       return `(() => {
   try {
     const newBtn = [...document.querySelectorAll('a.action-label.codicon-add-two, [aria-label*="New Chat"], [aria-label*="New Composer"]')]
@@ -169,9 +148,9 @@ module.exports = {
     return JSON.stringify({ created: false, error: e.message });
   }
 })()`;
-    },
+    };
 
-    focusEditor(params) {
+module.exports.focusEditor = function focusEditor(params) {
       return `(() => {
   try {
     const input = document.querySelector('.aislash-editor-input[contenteditable="true"]');
@@ -179,9 +158,9 @@ module.exports = {
     return 'not_found';
   } catch(e) { return 'error'; }
 })()`;
-    },
+    };
 
-    openPanel(params) {
+module.exports.openPanel = function openPanel(params) {
       return `(() => {
   try {
     const sidebar = document.getElementById('workbench.parts.auxiliarybar');
@@ -198,9 +177,9 @@ module.exports = {
     return 'not_found';
   } catch (e) { return 'error'; }
 })()`;
-    },
+    };
 
-    resolveAction(params) {
+module.exports.resolveAction = function resolveAction(params) {
       const action = typeof params === 'string' ? params : params?.action || 'approve';
       const buttonText = params?.button || params?.buttonText
         || (action === 'approve' ? 'Run' : action === 'reject' ? 'Skip' : action);
@@ -213,9 +192,9 @@ module.exports = {
     return JSON.stringify({ resolved: false, available: btns.map(b => b.textContent.trim()).filter(Boolean).slice(0, 15) });
   } catch(e) { return JSON.stringify({ resolved: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    listNotifications(params) {
+module.exports.listNotifications = function listNotifications(params) {
       const filter = typeof params === 'string' ? params : params?.message;
       return `(() => {
   try {
@@ -230,9 +209,9 @@ module.exports = {
     return JSON.stringify(f ? visible.filter(n => n.message.toLowerCase().includes(f.toLowerCase())) : visible);
   } catch(e) { return JSON.stringify([]); }
 })()`;
-    },
+    };
 
-    dismissNotification(params) {
+module.exports.dismissNotification = function dismissNotification(params) {
       const index = typeof params === 'number' ? params : params?.index;
       const button = typeof params === 'string' ? params : params?.button;
       const message = params?.message;
@@ -256,13 +235,9 @@ module.exports = {
     return JSON.stringify({ dismissed: false, error: 'Close button not found' });
   } catch(e) { return JSON.stringify({ dismissed: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * listModels → { models: string[], current: string }
-     * .composer-unified-dropdown-model 클릭 → Auto 토글 끄기 → 전체 모델 목록
-     */
-    listModels(params) {
+module.exports.listModels = function listModels(params) {
       return `(async () => {
   try {
     let current = '';
@@ -330,13 +305,9 @@ module.exports = {
     return JSON.stringify({ models, current });
   } catch(e) { return JSON.stringify({ models: [], current: '', error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * setModel → { success: boolean }
-     * .composer-unified-dropdown-model 클릭 → 검색 → 선택
-     */
-    setModel(params) {
+module.exports.setModel = function setModel(params) {
       const model = typeof params === 'string' ? params : params?.model;
       const escaped = JSON.stringify(model);
       return `(async () => {
@@ -409,13 +380,9 @@ module.exports = {
     return JSON.stringify({ success: false, error: 'model not found: ' + target });
   } catch(e) { return JSON.stringify({ success: false, error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * listModes → { modes: string[], current: string }
-     * .composer-unified-dropdown (모드 아이콘) 클릭 → Agent/Plan/Debug/Ask
-     */
-    listModes(params) {
+module.exports.listModes = function listModes(params) {
       return `(async () => {
   try {
     const modes = [];
@@ -448,13 +415,9 @@ module.exports = {
     return JSON.stringify({ modes, current });
   } catch(e) { return JSON.stringify({ modes: [], current: '', error: e.message }); }
 })()`;
-    },
+    };
 
-    /**
-     * setMode → { success: boolean }
-     * 모드 드롭다운 열기 → 항목 클릭
-     */
-    setMode(params) {
+module.exports.setMode = function setMode(params) {
       const mode = typeof params === 'string' ? params : params?.mode;
       const escaped = JSON.stringify(mode);
       return `(async () => {
@@ -485,6 +448,5 @@ module.exports = {
     return JSON.stringify({ success: false, error: 'mode not found: ' + target });
   } catch(e) { return JSON.stringify({ success: false, error: e.message }); }
 })()`;
-    },
-  },
-};
+    };
+

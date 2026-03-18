@@ -1,0 +1,36 @@
+{
+  "type": "pearai",
+  "name": "PearAI",
+  "category": "ide",
+  "displayName": "PearAI",
+  "icon": "🍐",
+  "cli": "pearai",
+  "cdpPorts": [
+    9355,
+    9356
+  ],
+  "processNames": {
+    "darwin": "PearAI",
+    "win32": [
+      "PearAI.exe"
+    ],
+    "linux": [
+      "pearai"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/PearAI.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\pearai\\PearAI.exe"
+    ],
+    "linux": [
+      "/opt/pearai",
+      "/usr/share/pearai"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "webviewMatchText": "chat-text-area"
+}

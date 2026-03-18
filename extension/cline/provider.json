@@ -1,0 +1,11 @@
+{
+  "type": "cline",
+  "name": "Cline",
+  "category": "extension",
+  "extensionId": "saoudrizwan.claude-dev",
+  "extensionIdPattern": "extensionId=saoudrizwan\\.claude-dev",
+  "extensionIdPattern_flags": "i",
+  "vscodeCommands": {
+    "focusPanel": "claude-dev.SidebarProvider.focus"
+  }
+}

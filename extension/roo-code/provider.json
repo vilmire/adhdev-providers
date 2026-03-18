@@ -1,0 +1,11 @@
+{
+  "type": "roo-code",
+  "name": "Roo Code",
+  "category": "extension",
+  "extensionId": "RooVeterinaryInc.roo-cline",
+  "extensionIdPattern": "extensionId=RooVeterinaryInc\\.roo-cline",
+  "extensionIdPattern_flags": "i",
+  "vscodeCommands": {
+    "focusPanel": "roo-cline.SidebarProvider.focus"
+  }
+}

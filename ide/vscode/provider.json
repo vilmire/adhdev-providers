@@ -1,0 +1,33 @@
+{
+  "type": "vscode",
+  "name": "Visual Studio Code",
+  "category": "ide",
+  "displayName": "VS Code",
+  "icon": "💙",
+  "cli": "code",
+  "cdpPorts": [
+    9339,
+    9340
+  ],
+  "processNames": {
+    "darwin": "Visual Studio Code",
+    "win32": [
+      "Code.exe"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Visual Studio Code.app"
+    ],
+    "win32": [
+      "C:\\Program Files\\Microsoft VS Code\\Code.exe",
+      "C:\\Users\\*\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
+    ],
+    "linux": [
+      "/usr/share/code",
+      "/snap/code/current"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]"
+}

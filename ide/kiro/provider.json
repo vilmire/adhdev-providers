@@ -1,0 +1,36 @@
+{
+  "type": "kiro",
+  "name": "Kiro",
+  "category": "ide",
+  "displayName": "Kiro",
+  "icon": "🪁",
+  "cli": "kiro",
+  "cdpPorts": [
+    9351,
+    9352
+  ],
+  "processNames": {
+    "darwin": "Kiro",
+    "win32": [
+      "Kiro.exe"
+    ],
+    "linux": [
+      "kiro"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Kiro.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\kiro\\Kiro.exe"
+    ],
+    "linux": [
+      "/opt/kiro",
+      "/usr/share/kiro"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "webviewMatchText": "kiro"
+}

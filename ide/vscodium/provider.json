@@ -1,0 +1,32 @@
+{
+  "type": "vscodium",
+  "name": "VSCodium",
+  "category": "ide",
+  "displayName": "VSCodium",
+  "icon": "💚",
+  "cli": "codium",
+  "cdpPorts": [
+    9343,
+    9344
+  ],
+  "processNames": {
+    "darwin": "VSCodium",
+    "win32": [
+      "VSCodium.exe"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/VSCodium.app"
+    ],
+    "win32": [
+      "C:\\Program Files\\VSCodium\\VSCodium.exe"
+    ],
+    "linux": [
+      "/usr/share/codium",
+      "/snap/codium/current"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]"
+}

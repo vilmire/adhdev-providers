@@ -1,0 +1,22 @@
+{
+  "type": "windsurf",
+  "name": "Windsurf",
+  "category": "ide",
+  "displayName": "Windsurf",
+  "icon": "🏄",
+  "cli": "windsurf",
+  "cdpPorts": [
+    9337,
+    9338
+  ],
+  "processNames": {
+    "darwin": "Windsurf"
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Windsurf.app"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]"
+}

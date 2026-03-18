@@ -1,0 +1,35 @@
+{
+  "type": "cursor",
+  "name": "Cursor",
+  "category": "ide",
+  "displayName": "Cursor",
+  "icon": "⚡",
+  "cli": "cursor",
+  "cdpPorts": [
+    9333,
+    9334
+  ],
+  "processNames": {
+    "darwin": "Cursor",
+    "win32": [
+      "Cursor.exe"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Cursor.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\cursor\\Cursor.exe"
+    ],
+    "linux": [
+      "/opt/Cursor",
+      "/usr/share/cursor"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": ".aislash-editor-input[contenteditable=\"true\"]",
+  "vscodeCommands": {
+    "changeModel": "cursor.model"
+  }
+}

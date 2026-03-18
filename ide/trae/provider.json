@@ -1,0 +1,35 @@
+{
+  "type": "trae",
+  "name": "Trae",
+  "category": "ide",
+  "displayName": "Trae",
+  "icon": "🔮",
+  "cli": "trae",
+  "cdpPorts": [
+    9353,
+    9354
+  ],
+  "processNames": {
+    "darwin": "Trae",
+    "win32": [
+      "Trae.exe"
+    ],
+    "linux": [
+      "trae"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Trae.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\trae\\Trae.exe"
+    ],
+    "linux": [
+      "/opt/trae",
+      "/usr/share/trae"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": ".chat-input-v2-input-box-editable, [contenteditable=\"true\"][role=\"textbox\"]"
+}
