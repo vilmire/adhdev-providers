@@ -1,7 +1,7 @@
 # ADHDev Provider Creation Guide
 
 > Complete guide for adding new IDE, Extension, CLI, and ACP providers to ADHDev.
-> **Just create a single provider.js — no TypeScript modifications needed.**
+> **Just create `provider.json` + `scripts.js` — no TypeScript modifications needed.**
 
 ---
 
@@ -54,27 +54,24 @@ adhdev daemon start
 
 ```
 providers/_builtin/ide/
-├── cursor/              ← inline pattern (reference implementation)
-│   └── provider.js
-├── windsurf/            ← file pattern (reference implementation)
-│   ├── provider.js
+├── cursor/              ← reference implementation
+│   ├── provider.json    ← metadata (type, name, cdpPorts, etc.)
+│   └── scripts.js       ← CDP scripts (readChat, sendMessage, etc.)
+├── windsurf/            ← file-split script pattern
+│   ├── provider.json
+│   ├── scripts.js       ← loads from scripts/ folder
 │   └── scripts/
 │       ├── read_chat.js
 │       ├── send_message.js
-│       ├── list_chats.js
-│       ├── switch_session.js
-│       ├── new_session.js
-│       ├── resolve_action.js
-│       ├── focus_editor.js
-│       └── open_panel.js
+│       └── ...
 ├── antigravity/
-│   ├── provider.js
-│   └── scripts/...
+│   ├── provider.json
+│   └── scripts.js
 ├── vscode/
-│   └── provider.js      ← infrastructure only (scripts not implemented)
+│   └── provider.json    ← infrastructure only (scripts not yet implemented)
 └── [your-ide]/          ← new provider location
-    ├── provider.js
-    └── scripts/          ← (when using file pattern)
+    ├── provider.json    ← required
+    └── scripts.js       ← required for IDE/Extension, not needed for CLI/ACP
 ```
 
 ---
@@ -82,45 +79,44 @@ providers/_builtin/ide/
 ## 1️⃣ provider.js Basic Structure
 
 > [!IMPORTANT]
-> `provider.js` must export a single object via `module.exports`.
-> Type definitions: [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts)
+> `provider.json` contains static metadata. `scripts.js` exports CDP script functions.
+> Type definitions: [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/src/providers/contracts.ts)
 
+**provider.json:**
+```json
+{
+  "type": "my-ide",
+  "name": "My IDE",
+  "category": "ide",
+  "displayName": "My IDE",
+  "icon": "🔧",
+  "cli": "my-ide",
+  "cdpPorts": [9357, 9358],
+  "processNames": { "darwin": "My IDE" },
+  "paths": { "darwin": ["/Applications/My IDE.app"] },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "versionCommand": "my-ide --version",
+  "testedVersions": ["1.0.0", "1.1.0"]
+}
+```
+
+**scripts.js:**
 ```javascript
-/**
- * [IDE Name] — IDE Provider
- * @type {import('../../../src/providers/contracts').ProviderModule}
- */
-module.exports = {
-  // ─── Required Metadata ───
-  type: 'my-ide',           // unique identifier (must not overlap)
-  name: 'My IDE',           // display name
-  category: 'ide',          // 'ide' | 'extension' | 'cli' | 'acp'
-  aliases: ['myide'],       // aliases (used in adhdev launch myide etc.)
-
-  // ─── IDE Infrastructure ───
-  displayName: 'My IDE',
-  icon: '🔧',
-  cli: 'my-ide',            // CLI command (e.g., cursor, code, windsurf)
-  cdpPorts: [9357, 9358],   // CDP ports [primary, fallback] — must not overlap!
-  processNames: {
-    darwin: 'My IDE',
-    win32: ['MyIDE.exe'],
-  },
-  paths: {
-    darwin: ['/Applications/My IDE.app'],
-    win32: ['C:\\Users\\*\\AppData\\Local\\Programs\\my-ide\\MyIDE.exe'],
-    linux: ['/opt/my-ide'],
-  },
-
-  // ─── Input Method ───
-  inputMethod: 'cdp-type-and-send',   // used by most IDEs
-  inputSelector: '[contenteditable="true"][role="textbox"]',
-
-  // ─── CDP Scripts ───
-  scripts: {
-    // ... see sections below
-  },
+module.exports.readChat = function readChat(params) {
+  return `(() => {
+    // CDP JS code to extract chat messages
+    return JSON.stringify({ id: 'active', status: 'idle', messages: [], inputContent: '' });
+  })()`;
 };
+
+module.exports.sendMessage = function sendMessage(params) {
+  const text = typeof params === 'string' ? params : params?.text;
+  return `(() => {
+    return JSON.stringify({ sent: false, needsTypeAndSend: true, selector: '[contenteditable]' });
+  })()`;
+};
+// ... more scripts
 ```
 
 ### CDP Ports Already In Use
@@ -565,10 +561,113 @@ After completing a new provider, verify all items below:
 | **ACP** | [goose/provider.js] | ACP + terminal auth |
 
 > [!TIP]
-> When writing a new provider, **copy Cursor provider.js** and modify selectors — it's the fastest approach.
+> When writing a new provider, **copy Cursor's `provider.json` + `scripts.js`** and modify selectors — it's the fastest approach.
 > For VS Code-based IDEs, the DOM structure is similar, so just change a few selectors.
-> For webview-based IDEs, refer to **Kiro provider.js**.
-> For ACP agents, refer to **gemini-cli provider.js**.
+> For webview-based IDEs, refer to **Kiro's provider.json**.
+> For ACP agents, refer to **gemini-cli's provider.json**.
+
+---
+
+## 📊 Version Detection & Compatibility Tracking
+
+ADHDev automatically detects installed versions of all providers and archives the history
+for future compatibility tracking.
+
+### How It Works
+
+```
+adhdev daemon --dev
+  └─ GET /api/providers/versions
+      ├─ IDE:  cli --version → Info.plist fallback (macOS)
+      ├─ CLI:  binary --version → -V → -v (auto-fallback)
+      ├─ ACP:  binary --version → -V → -v (auto-fallback)
+      └─ Extensions: detected at runtime via CDP (future)
+```
+
+### Version Archive
+
+Detected versions are archived to `~/.adhdev/version-history.json`:
+
+```json
+{
+  "cursor": [
+    { "version": "2.5.0", "detectedAt": "2026-02-01T...", "os": "darwin" },
+    { "version": "2.6.19", "detectedAt": "2026-03-18T...", "os": "darwin" }
+  ],
+  "claude-cli": [
+    { "version": "2.1.76", "detectedAt": "2026-03-18T...", "os": "darwin" }
+  ]
+}
+```
+
+- **Deduplication**: Same version is not recorded twice consecutively
+- **Entry limit**: Max 20 entries per provider (oldest trimmed)
+- **OS tracking**: Records which OS the version was detected on
+
+### provider.json Version Fields
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `versionCommand` | `string` | Custom version detection command (default: `"<binary> --version"`) |
+| `testedVersions` | `string[]` | Versions tested by the provider maintainer |
+
+```json
+{
+  "type": "cursor",
+  "versionCommand": "cursor --version",
+  "testedVersions": ["2.5.0", "2.6.19"]
+}
+```
+
+### Use Cases
+
+1. **Compatibility alerts**: When a user's installed version doesn't match `testedVersions`,
+   the dashboard can warn that scripts may not work correctly.
+2. **Regression tracking**: When selectors break after an IDE update, the version history
+   shows exactly when the change occurred.
+3. **Per-version script overrides**: Use the existing `versions` field in provider config
+   to provide different scripts for different IDE versions:
+
+```json
+{
+  "versions": {
+    ">=2.7.0": {
+      "scripts": {
+        "readChat": "... updated selectors for 2.7+ ..."
+      }
+    }
+  }
+}
+```
+
+### DevServer API
+
+```bash
+# Detect all provider versions (runs installation checks)
+curl http://127.0.0.1:19280/api/providers/versions
+
+# Response:
+{
+  "total": 52,
+  "installed": 13,
+  "providers": [
+    {
+      "type": "cursor",
+      "name": "Cursor",
+      "category": "ide",
+      "installed": true,
+      "version": "2.6.19",
+      "path": "/Applications/Cursor.app",
+      "binary": "/Applications/Cursor.app/Contents/Resources/app/bin/cursor"
+    }
+  ],
+  "history": { ... }
+}
+```
+
+> [!TIP]
+> Run version detection periodically (or on daemon start) to keep the archive up-to-date.
+> When a provider update breaks selectors, check the archive to identify the version change.
 
 ---
 
@@ -733,8 +832,54 @@ class ProviderLoader {
 ```
 
 > [!IMPORTANT]
-> Adding just one provider.js enables **detection → CDP connection → dashboard display → command execution**
+> Adding just one `provider.json` + `scripts.js` enables **detection → CDP connection → dashboard display → command execution**
 > to work automatically. No TypeScript code changes are required.
+
+---
+
+## ⚡ Scaffold — Quick Provider Creation
+
+Use the scaffold API or DevConsole to generate a new provider skeleton:
+
+### Via DevConsole
+
+1. Open http://127.0.0.1:19280
+2. Click **+ New** in the toolbar
+3. Fill in Type ID, Display Name, Category
+4. Category-specific fields appear automatically:
+   - **IDE**: CDP Port, CLI Command, Process Name, Install Path
+   - **Extension**: Extension ID
+   - **CLI/ACP**: Binary / Command
+5. Click **Create** → generates `~/.adhdev/providers/{type}/provider.json` + `scripts.js`
+
+### Via API
+
+```bash
+curl -X POST http://127.0.0.1:19280/api/scaffold \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "type": "zed",
+    "name": "Zed",
+    "category": "ide",
+    "cdpPorts": [9450, 9451],
+    "cli": "zed",
+    "processName": "Zed",
+    "installPath": "/Applications/Zed.app"
+  }'
+```
+
+### Generated Files
+
+| Category | Files Generated |
+|----------|----------------|
+| IDE | `provider.json` + `scripts.js` (with readChat, sendMessage, etc.) |
+| Extension | `provider.json` + `scripts.js` |
+| CLI | `provider.json` only |
+| ACP | `provider.json` only |
+
+> [!TIP]
+> After scaffold, open the provider in DevConsole → use the Wizard to discover
+> DOM selectors → implement the TODO stubs in scripts.js.
 
 ---
 
