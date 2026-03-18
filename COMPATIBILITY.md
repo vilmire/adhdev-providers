@@ -19,6 +19,8 @@
 
 > Detected via process scanning + controlled via CDP (Chrome DevTools Protocol).
 
+### OS Compatibility
+
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `antigravity` | Antigravity | ❓ | ❓ | ❓ | | |
@@ -26,10 +28,27 @@
 | `kiro` | Kiro | ❓ | ❓ | ❓ | | |
 | `pearai` | PearAI | ❓ | ❓ | ❓ | | |
 | `trae` | Trae | ❓ | ❓ | ❓ | | |
-| `vscode` | Visual Studio Code | ❓ | ❓ | ❓ | | |
-| `vscode-insiders` | VS Code Insiders | ❓ | ❓ | ❓ | | |
-| `vscodium` | VSCodium | ❓ | ❓ | ❓ | | |
+| `vscode` | Visual Studio Code | ❓ | ❓ | ❓ | | Detection only (no scripts) |
+| `vscode-insiders` | VS Code Insiders | ❓ | ❓ | ❓ | | Detection only (no scripts) |
+| `vscodium` | VSCodium | ❓ | ❓ | ❓ | | Detection only (no scripts) |
 | `windsurf` | Windsurf | ❓ | ❓ | ❓ | | |
+
+### Script Methods — IDE
+
+| Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
+|----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
+| `antigravity` | ✅ | ✅ | ➖ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `cursor` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `kiro` | webview | webview | ✅ | webview | webview¹ | webview | webview | webview | webview | webview | ✅ | ✅ |
+| `pearai` | webview | webview | ✅ | ✅/webview | webview¹ | ✅ | webview | webview | webview | webview | webview | ✅ |
+| `trae` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `vscode` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
+| `vscode-insiders` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
+| `vscodium` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
+| `windsurf` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+> ¹ `webview` = method operates via webview bridge (internal iframe communication), not direct DOM.  
+> `➖` = detection only, no AI chat integration scripts.
 
 ---
 
@@ -37,10 +56,19 @@
 
 > VS Code extensions detected inside IDE instances, controlled via CDP within the host IDE.
 
+### OS Compatibility
+
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
+
+### Script Methods — Extension
+
+| Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
+|----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
+| `cline` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `roo-code` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -48,17 +76,31 @@
 
 > Terminal-based agents spawned as child processes, controlled via PTY.
 
+### OS Compatibility
+
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `claude-cli` | Claude Code | ❓ | ❓ | ❓ | | |
 | `codex-cli` | Codex CLI | ❓ | ❓ | ❓ | | |
 | `gemini-cli` | Gemini CLI | ❓ | ❓ | ❓ | | |
 
+### Supported Operations — CLI
+
+| Operation | Description | All CLI Providers |
+|-----------|-------------|-------------------|
+| `spawn` | Start agent process in PTY | ✅ |
+| `input` | Send text/command to stdin | ✅ |
+| `output` | Read stdout/stderr stream | ✅ |
+| `resize` | Resize terminal (cols/rows) | ✅ |
+| `kill` | Terminate process | ✅ |
+
 ---
 
 ## ACP Providers
 
 > Agent Client Protocol agents spawned as subprocesses, communicating via JSON-RPC over stdio.
+
+### OS Compatibility
 
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
@@ -91,6 +133,16 @@
 | `qwen-code` | Qwen Code | ❓ | ❓ | ❓ | | |
 | `stakpak` | Stakpak | ❓ | ❓ | ❓ | | |
 | `vtcode` | VT Code | ❓ | ❓ | ❓ | | |
+
+### Supported Operations — ACP
+
+| Operation | ACP Method | Description |
+|-----------|-----------|-------------|
+| `initialize` | `initialize` | Handshake and capability negotiation |
+| `new_session` | `sessions/new` | Create a new agent session |
+| `prompt` | `sessions/prompt` | Send a prompt and stream response |
+| `list_sessions` | `sessions/list` | List active sessions |
+| `cancel` | `sessions/cancel` | Cancel an in-progress prompt |
 
 ---
 
