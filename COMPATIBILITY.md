@@ -136,13 +136,31 @@
 
 ### Supported Operations — ACP
 
-| Operation | ACP Method | Description |
-|-----------|-----------|-------------|
-| `initialize` | `initialize` | Handshake and capability negotiation |
-| `new_session` | `sessions/new` | Create a new agent session |
-| `prompt` | `sessions/prompt` | Send a prompt and stream response |
-| `list_sessions` | `sessions/list` | List active sessions |
-| `cancel` | `sessions/cancel` | Cancel an in-progress prompt |
+**Client → Agent (Editor sends to Agent)**
+
+| Method | Description | Required |
+|--------|-------------|----------|
+| `initialize` | Handshake, version negotiation, capability exchange | ✅ Required |
+| `authenticate` | Token/password auth if agent requires it | Optional |
+| `session/new` | Create a new conversation session | ✅ Required |
+| `session/prompt` | Send user message with context (files, images) | ✅ Required |
+| `session/load` | Resume an existing session | Optional |
+| `session/set_mode` | Switch agent operating mode | Optional |
+| `session/cancel` | Abort an in-progress prompt (notification) | ✅ Required |
+
+**Agent → Client (Agent requests from Editor)**
+
+| Method | Description | Required |
+|--------|-------------|----------|
+| `session/update` | Stream progress, messages, tool calls (notification) | ✅ Required |
+| `session/request_permission` | Ask user approval for an action | Optional |
+| `fs/read_text_file` | Read file content including unsaved edits | Optional |
+| `fs/write_text_file` | Write or create a file | Optional |
+| `terminal/create` | Start a shell command | Optional |
+| `terminal/output` | Provide command output | Optional |
+| `terminal/wait_for_exit` | Wait for command completion | Optional |
+| `terminal/kill` | Terminate a running command | Optional |
+| `terminal/release` | Clean up a terminal | Optional |
 
 ---
 
