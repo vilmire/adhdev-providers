@@ -1,0 +1,45 @@
+{
+  "type": "minion-code-acp",
+  "name": "Minion Code (ACP)",
+  "category": "acp",
+  "displayName": "Minion Code",
+  "icon": "👾",
+  "install": "pip install minion-code  (Python/uvx)",
+  "spawn": {
+    "command": "minion-code",
+    "args": [],
+    "shell": false
+  },
+  "auth": [
+    {
+      "type": "agent",
+      "id": "minion",
+      "name": "Minion Code Auth",
+      "description": "Configure provider through Minion Code setup"
+    }
+  ],
+  "settings": {
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Alerts",
+      "description": "Show notification when agent requires approval"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  }
+}
