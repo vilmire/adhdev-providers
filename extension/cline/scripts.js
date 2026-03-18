@@ -2,6 +2,15 @@
  * CDP Scripts for Cline
  */
 
+const fs = require('fs');
+const path = require('path');
+const SCRIPTS_DIR = path.join(__dirname, 'scripts');
+function loadScript(name) {
+  try { return fs.readFileSync(path.join(SCRIPTS_DIR, name), 'utf8'); }
+  catch { return null; }
+}
+
+
 module.exports.readChat = function readChat() {
       return loadScript('read_chat.js');
     };
