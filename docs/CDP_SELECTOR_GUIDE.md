@@ -1,16 +1,16 @@
-# CDP DOM 탐색 가이드 — AI로 Provider 스크립트 작성하기
+# CDP DOM Exploration Guide — Building Provider Scripts with AI
 
-> **⚠️ 이 문서의 API는 로컬 DevServer 전용입니다 (`adhdev daemon --dev`, `:19280`)**
-> - 프로덕션/클라우드 API(`api.adhf.dev`)와는 별개입니다 → [api.md](./api.md)
-> - Provider 스크립트 개발 시에만 사용
+> **⚠️ These APIs are local DevServer only (`adhdev daemon --dev`, `:19280`)**
+> - Separate from the production/cloud API (`api.adhf.dev`) → [api.md](./api.md)
+> - Used only during provider script development
 
-> ADHDev의 **로컬 DevServer API**를 사용하여 IDE의 DOM 구조를 분석하고,
-> `readChat`, `sendMessage` 등 provider 스크립트에 필요한 셀렉터를 찾는 방법.
-> **AI 에이전트가 DevServer API만으로 자동 수행 가능.**
+> Use ADHDev's **local DevServer API** to analyze IDE DOM structure and
+> discover selectors needed for `readChat`, `sendMessage`, and other provider scripts.
+> **An AI agent can perform this entire workflow using only API calls.**
 
 ---
 
-## 🏗️ 아키텍처
+## Architecture
 
 ```
 AI Agent (or script)
@@ -21,23 +21,23 @@ ADHDev Dev Server (:19280)
     │
     │  CDP Runtime.evaluate
     ▼
-IDE 브라우저 프로세스 (Electron)
+IDE Browser Process (Electron)
     │
-    └─ DOM 접근, JS 실행, 결과 반환
+    └─ DOM access, JS execution, result return
 ```
 
 ---
 
-## 🚀 시작하기
+## Getting Started
 
-### 1. 데몬을 dev 모드로 시작
+### 1. Start the daemon in dev mode
 
 ```bash
 adhdev daemon --dev
 # DevServer: http://127.0.0.1:19280
 ```
 
-### 2. CDP 연결 확인
+### 2. Verify CDP connection
 
 ```bash
 curl -s http://127.0.0.1:19280/api/cdp/status | python3 -m json.tool
@@ -45,33 +45,33 @@ curl -s http://127.0.0.1:19280/api/cdp/status | python3 -m json.tool
 
 ```json
 {
-  "connected": ["antigravity"],
-  "pages": { "antigravity": "remote_vs — App.tsx" }
+  "connected": ["cursor"],
+  "pages": { "cursor": "my-project — App.tsx" }
 }
 ```
 
 ---
 
-## 📡 핵심 API
+## Core APIs
 
-### `POST /api/cdp/evaluate` — JS 실행
+### `POST /api/cdp/evaluate` — Execute JS in IDE
 
-IDE 브라우저에서 임의의 JavaScript를 실행하고 결과를 반환.
+Run arbitrary JavaScript inside the IDE browser and return the result.
 
 ```bash
 curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
   -H 'Content-Type: application/json' \
   -d '{
     "expression": "document.title",
-    "ideType": "antigravity"
+    "ideType": "cursor"
   }'
 ```
 
-> **반환값은 반드시 string** — 객체는 `JSON.stringify()` 필수.
+> **Return value must be a string** — wrap objects with `JSON.stringify()`.
 
-### `POST /api/cdp/dom/find-common` — 텍스트 기반 셀렉터 탐색
+### `POST /api/cdp/dom/find-common` — Text-based selector discovery
 
-화면에 보이는 텍스트로 공통 조상 셀렉터를 자동으로 찾아줌.
+Automatically find common ancestor selectors from visible text on screen.
 
 ```bash
 curl -s -X POST http://127.0.0.1:19280/api/cdp/dom/find-common \
@@ -79,73 +79,77 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/dom/find-common \
   -d '{
     "include": ["Hello World", "Fix the bug"],
     "exclude": [],
-    "ideType": "antigravity"
+    "ideType": "cursor"
   }'
 ```
 
----
-
-## 🔍 Step-by-Step: readChat 셀렉터 찾기
-
-아래는 AI가 API만으로 Antigravity IDE의 readChat 셀렉터를 찾은 **실제 과정**입니다.
-
-### Step 1: 채팅 영역의 텍스트 두 개로 컨테이너 찾기
-
-화면에 보이는 **서로 다른 채팅 메시지의 텍스트** 2개를 include에 넣습니다.
-
-```bash
-curl -s -X POST http://127.0.0.1:19280/api/cdp/dom/find-common \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "include": ["첫번째 메시지 텍스트", "두번째 메시지 텍스트"],
-    "ideType": "antigravity"
-  }'
-```
-
-**결과 예시:**
+**Response:**
 ```json
 {
   "results": [{
-    "selector": "body > div... > div.relative.flex.flex-col",
+    "selector": "body > div... > div.chat-list",
     "isList": true,
-    "listItemCount": 174,
-    "renderedCount": 2,
-    "placeholderCount": 172,
+    "listItemCount": 42,
+    "renderedCount": 42,
+    "placeholderCount": 0,
     "items": [
-      { "index": 0, "text": "...첫번째 메시지 텍스트...", "matchedIncludes": ["첫번째 메시지 텍스트"] }
+      { "index": 0, "text": "...Hello World...", "matchedIncludes": ["Hello World"] }
     ]
   }]
 }
 ```
 
-**핵심 정보:**
-- `selector` → 채팅 리스트 컨테이너
-- `isList: true` → 리스트 구조 확인
-- `renderedCount` vs `placeholderCount` → 가상 스크롤 감지
+---
 
-### Step 2: 컨테이너 내부 구조 분석
+## Step-by-Step: Discovering readChat Selectors
+
+Below is the actual process an AI used to discover readChat selectors via API calls only.
+
+### Step 1: Find the chat container using visible text
+
+Pick **two different chat messages visible on screen** and use them as include texts.
+
+```bash
+curl -s -X POST http://127.0.0.1:19280/api/cdp/dom/find-common \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "include": ["text from first message", "text from second message"],
+    "ideType": "cursor"
+  }'
+```
+
+**Key information from results:**
+- `selector` → chat list container
+- `isList: true` → confirms list structure
+- `renderedCount` vs `placeholderCount` → detects virtual scrolling
+
+### Step 2: Analyze internal structure of the container
 
 ```bash
 curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
   -H 'Content-Type: application/json' \
   -d '{
-    "expression": "(() => { const el = document.querySelector(\"#conversation\"); const rows = el.querySelectorAll(\"div.flex.flex-row\"); const results = []; for (let i = 0; i < Math.min(rows.length, 15); i++) { const r = rows[i]; const text = (r.innerText||\"\").trim(); if (text.length < 3) continue; results.push({ cls: r.className.substring(0, 50), text: text.substring(0, 100), parentCls: (r.parentElement.className||\"\").substring(0, 40) }); } return JSON.stringify({total: rows.length, results}); })()",
-    "ideType": "antigravity"
+    "expression": "(() => { const el = document.querySelector(\"SELECTOR_FROM_STEP_1\"); const items = [...el.children]; const rendered = items.filter(c => (c.innerText||\"\").trim().length > 0); return JSON.stringify({ total: items.length, rendered: rendered.length, samples: rendered.slice(0, 5).map((c, i) => ({ tag: c.tagName, cls: c.className.substring(0, 50), text: (c.innerText||\"\").trim().substring(0, 100) })) }); })()",
+    "ideType": "cursor"
   }'
 ```
 
-### Step 3: 유저 vs 어시스턴트 메시지 구분
+### Step 3: Distinguish user vs assistant messages
 
-클래스 패턴으로 역할 구분:
+Look for class patterns that differentiate roles:
 
-```javascript
-// Antigravity 실제 결과:
-// "flex w-full flex-row"                    → 👤 유저 메시지
-// "flex flex-row my-2 first:mt-1 last:mb-1" → 🤖 어시스턴트 텍스트
-// "flex flex-row" (without my-2)            → 🔧 도구 사용 (Analyzed, Edited 등)
+```bash
+curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "expression": "(() => { const chat = document.querySelector(\"CHAT_CONTAINER\"); const rows = chat.querySelectorAll(\"div.flex.flex-row\"); const byClass = {}; rows.forEach(el => { const text = (el.innerText||\"\").trim(); if (text.length < 3) return; const cls = el.className.substring(0, 50); if (!byClass[cls]) byClass[cls] = { count: 0, samples: [] }; byClass[cls].count++; if (byClass[cls].samples.length < 2) byClass[cls].samples.push(text.substring(0, 80)); }); return JSON.stringify(byClass); })()",
+    "ideType": "cursor"
+  }'
 ```
 
-### Step 4: readChat 스크립트 완성
+### Step 4: Build the readChat script
+
+Use discovered selectors to construct the final script:
 
 ```javascript
 (() => {
@@ -155,26 +159,26 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 
     const messages = [];
 
-    // 유저 메시지
-    chat.querySelectorAll('div.flex.w-full.flex-row').forEach(el => {
+    // User messages
+    chat.querySelectorAll('USER_SELECTOR').forEach(el => {
       const text = (el.innerText || '').trim();
       if (text.length > 1) {
         messages.push({ role: 'user', content: text, y: el.getBoundingClientRect().top });
       }
     });
 
-    // 어시스턴트 메시지
-    chat.querySelectorAll('div.flex.flex-row.my-2').forEach(el => {
+    // Assistant messages
+    chat.querySelectorAll('ASSISTANT_SELECTOR').forEach(el => {
       const text = (el.innerText || '').trim();
       if (text.length > 1) {
         messages.push({ role: 'assistant', content: text, y: el.getBoundingClientRect().top });
       }
     });
 
-    // Y좌표 순 정렬 (위→아래 = 시간순)
+    // Sort by vertical position (top→bottom = chronological)
     messages.sort((a, b) => a.y - b.y);
 
-    // status 감지
+    // Status detection
     const stopBtn = chat.querySelector('button[aria-label*="stop"], button[aria-label*="Stop"]');
     const status = stopBtn ? 'generating' : 'idle';
 
@@ -191,14 +195,14 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 
 ---
 
-## 📋 탐색 패턴 레시피
+## Exploration Pattern Recipes
 
-### 패턴 A: 텍스트로 요소 찾기
+### Pattern A: Find elements by text
 
 ```javascript
-// 특정 텍스트가 포함된 모든 요소 찾기
+// Find all elements containing specific text
 (() => {
-  const searchText = "검색할 텍스트";
+  const searchText = "search text here";
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
     acceptNode: n => n.textContent.toLowerCase().includes(searchText.toLowerCase())
       ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
@@ -217,10 +221,10 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 })()
 ```
 
-### 패턴 B: 리스트 컨테이너 발견
+### Pattern B: Analyze list container children
 
 ```javascript
-// 특정 셀렉터의 자식 구조 분석
+// Analyze children structure of a selector
 (() => {
   const el = document.querySelector("YOUR_SELECTOR");
   if (!el) return JSON.stringify({error: "Not found"});
@@ -239,13 +243,13 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 })()
 ```
 
-### 패턴 C: 클래스 패턴별 요소 분류
+### Pattern C: Classify elements by class pattern
 
 ```javascript
-// 컨테이너 안의 요소를 클래스 패턴별로 분류
+// Group elements by CSS class pattern
 (() => {
-  const container = document.querySelector("#conversation");
-  const elements = container.querySelectorAll("div.flex.flex-row");
+  const container = document.querySelector("CONTAINER_SELECTOR");
+  const elements = container.querySelectorAll("div.flex");
   const byClass = {};
   elements.forEach(el => {
     const text = (el.innerText || '').trim();
@@ -261,10 +265,10 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 })()
 ```
 
-### 패턴 D: 입력 필드 셀렉터 찾기 (sendMessage용)
+### Pattern D: Find input fields (for sendMessage)
 
 ```javascript
-// contenteditable 또는 textarea 찾기
+// Find contenteditable or textarea inputs
 (() => {
   const inputs = [
     ...document.querySelectorAll('[contenteditable="true"]'),
@@ -282,10 +286,10 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 })()
 ```
 
-### 패턴 E: 버튼 찾기 (resolveAction용)
+### Pattern E: Find buttons (for resolveAction)
 
 ```javascript
-// 특정 텍스트의 버튼 찾기 (승인/거부)
+// Find visible buttons with text and coordinates
 (() => {
   const buttons = [...document.querySelectorAll('button')];
   return JSON.stringify(buttons
@@ -308,17 +312,17 @@ curl -s -X POST http://127.0.0.1:19280/api/cdp/evaluate \
 
 ---
 
-## ⚠️ 주의사항
+## Important Notes
 
-### 가상 스크롤 (Virtual Scrolling)
+### Virtual Scrolling
 
-일부 IDE(Antigravity 등)는 채팅 목록에 가상 스크롤을 사용합니다.
+Some IDEs (e.g., Antigravity) use virtual scrolling for chat lists.
 
-- 화면에 보이는 1-3개 아이템만 실제 DOM에 렌더링
-- 나머지는 높이만 잡는 빈 placeholder
-- `innerText`로 필터: `(c.innerText || '').trim().length > 0`
+- Only 1-3 visible items are actually rendered in the DOM
+- The rest are empty placeholder divs with height only
+- Filter with innerText: `(c.innerText || '').trim().length > 0`
 
-**감지 방법:**
+**Detection:**
 ```javascript
 const total = container.children.length;
 const rendered = [...container.children].filter(c => (c.innerText || '').trim().length > 0).length;
@@ -327,40 +331,40 @@ const isVirtualScroll = rendered < total * 0.5;
 
 ### textContent vs innerText
 
-| 속성 | 용도 |
-|------|------|
-| `textContent` | 숨겨진 요소 포함, 빠름, 노드 전체 텍스트 |
-| `innerText` | **렌더링된 텍스트만**, 느리지만 "보이는 것"에 가까움 |
+| Property | Use case |
+|----------|----------|
+| `textContent` | Includes hidden elements, fast, full node text |
+| `innerText` | **Rendered text only**, slower but matches what user sees |
 
-> readChat에서는 `innerText` 사용 권장 — 스크린리더와 유사한 결과.
+> Use `innerText` for readChat — produces results similar to a screen reader.
 
-### 셀렉터 안정성
+### Selector Stability
 
-| 안정도 | 셀렉터 타입 | 예시 |
-|--------|------------|------|
+| Stability | Selector type | Example |
+|-----------|--------------|---------|
 | ⭐⭐⭐ | ID | `#conversation` |
 | ⭐⭐⭐ | Role | `[role="textbox"]` |
 | ⭐⭐ | Semantic class | `.chat-message` |
 | ⭐ | Tailwind class | `.flex.flex-row.my-2` |
 
-> Tailwind 클래스 기반 셀렉터는 IDE 업데이트로 깨질 수 있음.
-> 가능하면 `id`, `role`, `data-*` 속성 기반 셀렉터 우선 사용.
+> Tailwind-based selectors may break on IDE updates.
+> Prefer `id`, `role`, `data-*` attribute selectors when available.
 
 ---
 
-## 🤖 AI 에이전트 사용 시 권장 워크플로우
+## Recommended AI Agent Workflow
 
 ```
-1. /api/cdp/status → 연결된 IDE 확인
-2. /api/cdp/evaluate → document.title 확인 (올바른 IDE인지)
-3. /api/cdp/dom/find-common → 채팅 텍스트 2개로 컨테이너 탐색
-4. /api/cdp/evaluate → 컨테이너 내부 구조 분석 (자식 태그, 클래스 패턴)
-5. /api/cdp/evaluate → 유저 vs 어시스턴트 메시지 구분 (클래스, 부모 체인)
-6. /api/cdp/evaluate → 입력 필드 셀렉터 탐색 (sendMessage용)
-7. /api/cdp/evaluate → 버튼 셀렉터 탐색 (resolveAction용)
-8. → 결과를 바탕으로 provider.js 스크립트 생성
+1. /api/cdp/status        → Verify connected IDEs
+2. /api/cdp/evaluate      → Check document.title (correct IDE?)
+3. /api/cdp/dom/find-common → Find container using 2 chat texts
+4. /api/cdp/evaluate      → Analyze container children (tags, class patterns)
+5. /api/cdp/evaluate      → Distinguish user vs assistant messages (class, parent chain)
+6. /api/cdp/evaluate      → Find input field selectors (sendMessage)
+7. /api/cdp/evaluate      → Find button selectors (resolveAction)
+8. → Generate provider.js scripts from results
 ```
 
 > [!TIP]
-> AI에게 **PROVIDER_GUIDE.md**와 **이 문서**를 컨텍스트로 제공하면,
-> API 호출만으로 provider.js 스크립트를 자동 생성할 수 있습니다.
+> Provide **PROVIDER_GUIDE.md** and **this document** as context to an AI agent,
+> and it can auto-generate provider.js scripts using only API calls.

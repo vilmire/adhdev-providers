@@ -1,51 +1,52 @@
-# ADHDev Provider 생성 가이드
+# ADHDev Provider Creation Guide
 
-> ADHDev에 새 IDE, Extension, CLI, ACP 프로바이더를 추가하기 위한 전체 안내서
-> **provider.js 하나만 생성하면 TypeScript 수정 없이 자동으로 동작합니다.**
+> Complete guide for adding new IDE, Extension, CLI, and ACP providers to ADHDev.
+> **Just create a single provider.js — no TypeScript modifications needed.**
 
 ---
 
-## 🏗️ Provider 아키텍처
+## 🏗️ Provider Architecture
 
 ```
-provider.js 생성 (ide/cli/extension/acp)
+provider.js created (ide/cli/extension/acp)
     │
     ▼
-ProviderLoader.loadAll()  ← 3단계 우선순위 로드
+ProviderLoader.loadAll()  ← 3-tier priority loading
     │
-    ├─ 1. _builtin/           (npm 번들 — 오프라인 fallback)
-    ├─ 2. .upstream/           (GitHub 자동 다운로드 — 30분마다 체크)
-    └─ 3. ~/.adhdev/providers/ (유저 커스텀 — 최종 우선, 절대 자동갱신 안 됨)
+    ├─ 1. _builtin/           (npm bundle — offline fallback)
+    ├─ 2. .upstream/           (GitHub auto-download — checked every 30min)
+    └─ 3. ~/.adhdev/providers/ (user custom — highest priority, never auto-updated)
     │
-    ├─ registerToDetector()  ← IDE: 설치 감지 (paths, cli)
-    ├─ getCdpPortMap()       ← IDE: CDP 포트 자동 할당
-    ├─ getCliDetectionList() ← CLI/ACP: 설치 감지 (spawn.command)
-    ├─ resolveAlias()        ← 별칭 해석 ('claude' → 'claude-cli')
-    └─ fetchLatest()         ← GitHub tarball 자동 다운로드
+    ├─ registerToDetector()  ← IDE: installation detection (paths, cli)
+    ├─ getCdpPortMap()       ← IDE: CDP port auto-assignment
+    ├─ getCliDetectionList() ← CLI/ACP: installation detection (spawn.command)
+    ├─ resolveAlias()        ← alias resolution ('claude' → 'claude-cli')
+    └─ fetchLatest()         ← GitHub tarball auto-download
 ```
 
-### 로딩 우선순위 (나중이 이전을 덮어씀)
+### Loading Priority (later overrides earlier)
 
-| 순서 | 디렉토리 | 자동 갱신 | 용도 |
-|------|----------|-----------|------|
-| 1 (최저) | `packages/launcher/providers/_builtin/` | npm update 시만 | 오프라인 fallback |
-| 2 | `~/.adhdev/providers/.upstream/` | ✅ 데몬 시작 시 | GitHub 최신 providers |
-| 3 (최고) | `~/.adhdev/providers/` (_upstream 제외) | ❌ **절대 안 함** | 유저 커스텀 |
+| Priority | Directory | Auto-update | Purpose |
+|----------|-----------|-------------|----------|
+| 1 (lowest) | `packages/launcher/providers/_builtin/` | npm update only | Offline fallback |
+| 2 | `~/.adhdev/providers/.upstream/` | ✅ On daemon start | Latest GitHub providers |
+| 3 (highest) | `~/.adhdev/providers/` (excl. _upstream) | ❌ **Never** | User custom |
 
-### 자동 업데이트 플로우
+### Auto-update Flow
 
 ```
-adhdev daemon 시작
-  ├─ loadAll() → 빌트인 + .upstream + 유저 커스텀 즉시 로드
-  └─ 백그라운드: fetchLatest()
-      ├─ HEAD 요청 → ETag 비교
-      ├─ 변경 없음 → 스킵 (네트워크 비용 0)
-      └─ 변경됨 → tarball 다운로드 → .upstream/ 교체 → reload()
+adhdev daemon start
+  ├─ loadAll() → builtin + .upstream + user custom loaded immediately
+  └─ background: fetchLatest()
+      ├─ HEAD request → ETag comparison
+      ├─ no change → skip (zero network cost)
+      └─ changed → download tarball → replace .upstream/ → reload()
 ```
 
 > [!IMPORTANT]
-> **유저 커스텀 보호**: `~/.adhdev/providers/` 에 직접 생성한 provider.js는 어떤 상황에서도
-> 자동 갱신되지 않습니다. `.upstream/`만 자동 교체되며, 유저 커스텀이 항상 우선합니다.
+> **User custom protection**: provider.js files you create directly in `~/.adhdev/providers/`
+> are never auto-updated under any circumstances. Only `.upstream/` is auto-replaced,
+> and user custom always takes priority.
 
 ---
 
