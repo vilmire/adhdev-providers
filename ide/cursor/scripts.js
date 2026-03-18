@@ -39,17 +39,23 @@ module.exports.readChat = function readChat(params) {
 
     const msgs = [];
     document.querySelectorAll('.composer-human-ai-pair-container').forEach((p, i) => {
+      if (p.children.length === 0) return; // skip virtual-scroll placeholders
       const h = p.querySelector('.composer-human-message');
-      const userText = h ? h.textContent.trim().substring(0, 6000) : '';
-      if (h) msgs.push({ role: 'user', content: userText, index: msgs.length });
-      // pair의 첫 번째 자식은 사용자 메시지 블록 — 그 안의 rendered는 건너뜀
-      const firstChild = p.children[0];
-      p.querySelectorAll('.composer-rendered-message').forEach(a => {
-        if (firstChild && firstChild.contains(a)) return;
-        if (a.closest('.composer-human-message')) return;
-        const t = a.textContent.trim();
-        if (t && t !== userText) msgs.push({ role: 'assistant', content: t.substring(0, 6000), index: msgs.length });
-      });
+      if (h) {
+        const userText = (h.innerText || '').trim().substring(0, 6000);
+        if (userText) msgs.push({ role: 'user', content: userText, index: msgs.length });
+      }
+      // Iterate direct children after the first (user message block)
+      for (let ci = 1; ci < p.children.length; ci++) {
+        const b = p.children[ci];
+        if ((b.className || '').includes('opacity-50')) continue;
+        const t = (b.innerText || '').trim();
+        if (t.length < 2) continue;
+        // Filter noise: "Thought for Xs", "Explored N files"
+        if (/^Thought\nfor \d+s?$/i.test(t) || /^Explored\n/i.test(t)) continue;
+        const hasTool = b.querySelector('.composer-tool-former-message, .composer-diff-block, .composer-code-block-container');
+        msgs.push({ role: hasTool ? 'tool' : 'assistant', content: t.substring(0, 6000), index: msgs.length });
+      }
     });
     const inputEl = document.querySelector('.aislash-editor-input[contenteditable="true"]');
     const inputContent = inputEl?.textContent?.trim() || '';
