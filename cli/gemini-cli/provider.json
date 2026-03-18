@@ -1,0 +1,64 @@
+{
+  "type": "gemini-cli",
+  "name": "Gemini CLI",
+  "category": "cli",
+  "aliases": [
+    "gemini"
+  ],
+  "icon": "♊",
+  "displayName": "Gemini CLI",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "표시 모드",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "알림"
+    }
+  },
+  "binary": "gemini",
+  "spawn": {
+    "command": "gemini",
+    "args": [
+      "--yolo"
+    ],
+    "shell": true,
+    "env": {}
+  },
+  "patterns": {
+    "prompt": [
+      {},
+      {},
+      {}
+    ],
+    "generating": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "approval": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "ready": [
+      {},
+      {}
+    ]
+  }
+}

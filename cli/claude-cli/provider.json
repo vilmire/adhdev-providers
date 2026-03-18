@@ -1,0 +1,78 @@
+{
+  "type": "claude-cli",
+  "name": "Claude Code",
+  "category": "cli",
+  "aliases": [
+    "claude",
+    "claude-code"
+  ],
+  "icon": "🤖",
+  "displayName": "Claude Code",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "표시 모드",
+      "description": "terminal: PTY 터미널 뷰, chat: 파싱된 대화 뷰",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "알림",
+      "description": "상태 변경 시 알림을 표시합니다"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "자동 승인",
+      "description": "도구 실행 승인을 자동으로 허용합니다"
+    }
+  },
+  "binary": "claude",
+  "spawn": {
+    "command": "claude",
+    "args": [],
+    "shell": false,
+    "env": {}
+  },
+  "patterns": {
+    "prompt": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "generating": [
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "approval": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "ready": [
+      {},
+      {}
+    ]
+  }
+}

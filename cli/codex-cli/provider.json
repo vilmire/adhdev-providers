@@ -1,0 +1,60 @@
+{
+  "type": "codex-cli",
+  "name": "Codex CLI",
+  "category": "cli",
+  "aliases": [
+    "codex"
+  ],
+  "icon": "🧠",
+  "displayName": "Codex CLI",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "표시 모드",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "알림"
+    }
+  },
+  "binary": "codex",
+  "spawn": {
+    "command": "codex",
+    "args": [
+      "--full-auto"
+    ],
+    "shell": false,
+    "env": {}
+  },
+  "patterns": {
+    "prompt": [
+      {},
+      {},
+      {}
+    ],
+    "generating": [
+      {},
+      {},
+      {}
+    ],
+    "approval": [
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "ready": [
+      {},
+      {}
+    ]
+  }
+}
