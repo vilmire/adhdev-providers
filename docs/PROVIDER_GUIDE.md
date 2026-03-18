@@ -27,7 +27,7 @@ ProviderLoader.loadAll()  ← 3-tier priority loading
 ### Loading Priority (later overrides earlier)
 
 | Priority | Directory | Auto-update | Purpose |
-|----------|-----------|-------------|----------|
+|----------|-----------|-------------|---------|
 | 1 (lowest) | `packages/launcher/providers/_builtin/` | npm update only | Offline fallback |
 | 2 | `~/.adhdev/providers/.upstream/` | ✅ On daemon start | Latest GitHub providers |
 | 3 (highest) | `~/.adhdev/providers/` (excl. _upstream) | ❌ **Never** | User custom |
@@ -50,13 +50,13 @@ adhdev daemon start
 
 ---
 
-## 📁 디렉토리 구조
+## 📁 Directory Structure
 
 ```
 providers/_builtin/ide/
-├── cursor/              ← 인라인 패턴 (참조 구현체)
+├── cursor/              ← inline pattern (reference implementation)
 │   └── provider.js
-├── windsurf/            ← 파일 패턴 (참조 구현체)
+├── windsurf/            ← file pattern (reference implementation)
 │   ├── provider.js
 │   └── scripts/
 │       ├── read_chat.js
@@ -71,37 +71,37 @@ providers/_builtin/ide/
 │   ├── provider.js
 │   └── scripts/...
 ├── vscode/
-│   └── provider.js      ← 인프라만 (스크립트 미구현)
-└── [your-ide]/          ← 새 프로바이더 위치
+│   └── provider.js      ← infrastructure only (scripts not implemented)
+└── [your-ide]/          ← new provider location
     ├── provider.js
-    └── scripts/          ← (파일 패턴 사용 시)
+    └── scripts/          ← (when using file pattern)
 ```
 
 ---
 
-## 1️⃣ provider.js 기본 골격
+## 1️⃣ provider.js Basic Structure
 
 > [!IMPORTANT]
-> `provider.js`는 `module.exports`로 하나의 객체를 내보내야 합니다.
-> 타입 정의: [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts)
+> `provider.js` must export a single object via `module.exports`.
+> Type definitions: [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts)
 
 ```javascript
 /**
- * [IDE 이름] — IDE Provider
+ * [IDE Name] — IDE Provider
  * @type {import('../../../src/providers/contracts').ProviderModule}
  */
 module.exports = {
-  // ─── 필수 메타데이터 ───
-  type: 'my-ide',           // 고유 식별자 (중복 불가)
-  name: 'My IDE',           // 표시 이름
+  // ─── Required Metadata ───
+  type: 'my-ide',           // unique identifier (must not overlap)
+  name: 'My IDE',           // display name
   category: 'ide',          // 'ide' | 'extension' | 'cli' | 'acp'
-  aliases: ['myide'],       // 별칭 (adhdev launch myide 등에서 사용)
+  aliases: ['myide'],       // aliases (used in adhdev launch myide etc.)
 
-  // ─── IDE 인프라 ───
+  // ─── IDE Infrastructure ───
   displayName: 'My IDE',
   icon: '🔧',
-  cli: 'my-ide',            // CLI 명령어 (예: cursor, code, windsurf)
-  cdpPorts: [9357, 9358],   // CDP 포트 [primary, fallback] — 기존과 겹치지 않게!
+  cli: 'my-ide',            // CLI command (e.g., cursor, code, windsurf)
+  cdpPorts: [9357, 9358],   // CDP ports [primary, fallback] — must not overlap!
   processNames: {
     darwin: 'My IDE',
     win32: ['MyIDE.exe'],
@@ -112,18 +112,18 @@ module.exports = {
     linux: ['/opt/my-ide'],
   },
 
-  // ─── 입력 방식 ───
-  inputMethod: 'cdp-type-and-send',   // 대부분의 IDE에서 사용
+  // ─── Input Method ───
+  inputMethod: 'cdp-type-and-send',   // used by most IDEs
   inputSelector: '[contenteditable="true"][role="textbox"]',
 
-  // ─── CDP 스크립트 ───
+  // ─── CDP Scripts ───
   scripts: {
-    // ... 아래 섹션 참조
+    // ... see sections below
   },
 };
 ```
 
-### 이미 사용 중인 CDP 포트
+### CDP Ports Already In Use
 
 | Port | Provider |
 |------|----------|
@@ -138,43 +138,43 @@ module.exports = {
 | 9355-9356 | PearAI |
 
 > [!WARNING]
-> 새 프로바이더 추가 시 **기존 포트와 겹치지 않도록** 다음 번호(9357~)부터 사용하세요.
+> When adding a new provider, **avoid overlapping with existing ports** — use 9357 and above.
 
-### aliases 필드
+### aliases Field
 
-`aliases`를 정의하면 `adhdev launch <alias>` 등에서 사용 가능합니다.
-TypeScript 코드에 별칭 맵을 추가할 필요 없이 provider.js에서 선언만 하면 됩니다.
+Defining `aliases` enables usage in `adhdev launch <alias>` etc.
+No need to add alias maps in TypeScript code — just declare in provider.js.
 
 ```javascript
-// CLI 예시
+// CLI example
 module.exports = {
   type: 'claude-cli',
-  aliases: ['claude', 'claude-code'],  // adhdev launch claude → claude-cli로 해석
+  aliases: ['claude', 'claude-code'],  // adhdev launch claude → resolves to claude-cli
   // ...
 };
 
-// IDE 예시 (선택사항)
+// IDE example (optional)
 module.exports = {
   type: 'vscode',
-  aliases: ['code', 'vs'],  // adhdev launch code → vscode로 해석
+  aliases: ['code', 'vs'],  // adhdev launch code → resolves to vscode
   // ...
 };
 ```
 
 ---
 
-## 2️⃣ 스크립트 구현 — 두 가지 패턴
+## 2️⃣ Script Implementation — Two Patterns
 
-### 패턴 A: 인라인 (Cursor 방식)
+### Pattern A: Inline (Cursor style)
 
-`provider.js` 안에 template literal로 직접 작성합니다.
+Write directly inside `provider.js` using template literals.
 
 ```javascript
 scripts: {
   readChat(params) {
     return `(() => {
   try {
-    // ... CDP JS 코드 ...
+    // ... CDP JS code ...
     return JSON.stringify({ id, status, messages, inputContent, activeModal });
   } catch(e) {
     return JSON.stringify({ id: '', status: 'error', messages: [] });
@@ -184,12 +184,12 @@ scripts: {
 }
 ```
 
-**장점:** 파일 하나로 완결, 파라미터 치환이 자연스러움 (`${JSON.stringify(text)}`)
-**단점:** 코드 길어지면 관리 어려움, syntax highlight 없음
+**Pros:** Self-contained in one file, natural parameter substitution (`${JSON.stringify(text)}`)
+**Cons:** Hard to manage when code grows long, no syntax highlighting
 
-### 패턴 B: 파일 분리 (Windsurf 방식)
+### Pattern B: File Separation (Windsurf style)
 
-`scripts/` 폴더에 개별 `.js` 파일을 두고 `loadScript()`로 로드합니다.
+Place individual `.js` files in `scripts/` folder and load with `loadScript()`.
 
 ```javascript
 const fs = require('fs');
@@ -201,7 +201,7 @@ function loadScript(name) {
   catch { return null; }
 }
 
-// scripts 객체
+// scripts object
 scripts: {
   readChat() { return loadScript('read_chat.js'); },
   sendMessage(params) {
@@ -212,30 +212,30 @@ scripts: {
 }
 ```
 
-**장점:** syntax highlight 가능, DevConsole에서 개별 편집/테스트 용이
-**단점:** 파일 관리 필요, 파라미터 치환 시 `${MESSAGE}` 플레이스홀더 필요
+**Pros:** Syntax highlighting, easy to edit/test individually in DevConsole
+**Cons:** Requires file management, needs `${MESSAGE}` placeholder for parameter substitution
 
 > [!TIP]
-> 스크립트가 30줄 이하면 **인라인**, 그 이상이면 **파일 분리**를 추천합니다.
+> For scripts under 30 lines, use **inline**; for longer scripts, use **file separation**.
 
 ---
 
-## 3️⃣ 스크립트 Output Contract
+## 3️⃣ Script Output Contract
 
-모든 스크립트는 **반드시 JSON 문자열**을 반환해야 합니다.
-[contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts) 참조.
+All scripts **must return a JSON string**.
+See [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts) for reference.
 
 ### Core Scripts
 
 #### readChat(params?) → `ReadChatResult`
 ```typescript
 {
-  id: string;              // 세션 ID
+  id: string;              // session ID
   status: AgentStatus;     // 'idle' | 'generating' | 'waiting_approval' | 'error'
   messages: ChatMessage[]; // { role, content, index }
   title?: string;
-  inputContent?: string;   // 현재 입력 창 텍스트
-  activeModal?: {          // 승인 대기 모달
+  inputContent?: string;   // current input field text
+  activeModal?: {          // pending approval modal
     message: string;
     buttons: string[];
   } | null;
@@ -247,8 +247,8 @@ scripts: {
 {
   sent: boolean;
   error?: string;
-  needsTypeAndSend?: boolean;  // true → daemon이 CDP Input API로 타이핑
-  selector?: string;           // needsTypeAndSend 시 대상 selector
+  needsTypeAndSend?: boolean;  // true → daemon types via CDP Input API
+  selector?: string;           // target selector when needsTypeAndSend
 }
 ```
 
@@ -266,49 +266,49 @@ scripts: {
 
 ### UI Control Scripts
 
-#### focusEditor(params?) → `string` (예: `'focused'`, `'not_found'`)
-#### openPanel(params?) → `string` (예: `'visible'`, `'opened'`, `'not_found'`)
+#### focusEditor(params?) → `string` (e.g., `'focused'`, `'not_found'`)
+#### openPanel(params?) → `string` (e.g., `'visible'`, `'opened'`, `'not_found'`)
 
 ### Modal/Approval Scripts
 
-#### resolveAction(params) — 두 가지 반환 방식
+#### resolveAction(params) — Two return methods
 
 ```typescript
 // params: { action: 'approve'|'reject'|'custom', button?: string, buttonText?: string }
 ```
 
-**방식 1: Script-Click** — 스크립트가 직접 `el.click()` 호출 (Cursor 등)
+**Method 1: Script-Click** — script calls `el.click()` directly (Cursor etc.)
 
 ```js
-// Cursor는 div.cursor-pointer 요소를 사용하므로 직접 click 가능
+// Cursor uses div.cursor-pointer elements, so direct click works
 return JSON.stringify({ resolved: true, clicked: "Run⏎" });
 return JSON.stringify({ resolved: false, available: ["Send", "Cancel"] });
 ```
 
-**방식 2: Coordinate-Click** — 좌표 반환 → 데몬이 CDP 마우스 클릭 (Antigravity 등)
+**Method 2: Coordinate-Click** — return coordinates → daemon performs CDP mouse click (Antigravity etc.)
 
 ```js
-// el.click()이 이벤트 전파가 안 되는 경우 좌표 반환
+// When el.click() doesn't propagate events properly, return coordinates
 return JSON.stringify({ found: true, text: "Accept", x: 800, y: 450, w: 120, h: 32 });
 return JSON.stringify({ found: false });
 ```
 
 > [!IMPORTANT]
-> 데몬 처리 순서: `resolved: true` → 성공 / `found: true` + `x,y` → CDP 클릭 / 둘 다 아님 → 실패
+> Daemon processing order: `resolved: true` → success / `found: true` + `x,y` → CDP click / neither → fail
 
-#### 승인 감지 (readChat에서 waiting_approval)
+#### Approval Detection (waiting_approval in readChat)
 
-IDE마다 승인 UI가 다르므로 각 provider의 readChat에서 적절히 감지해야 합니다:
+Each IDE has different approval UI, so each provider's readChat must detect appropriately:
 
-| IDE | 감지 방식 |
-|-----|---------|
-| Cursor | `.run-command-review-active` CSS 클래스 + `div.cursor-pointer` 버튼 (`Run⏎`, `SkipEsc`) |
-| Antigravity | `<button>` 텍스트 매칭 (`Allow This Conversation`, `Deny` 등) |
-| Windsurf | Fiber props 또는 버튼 텍스트 |
+| IDE | Detection method |
+|-----|-----------------|
+| Cursor | `.run-command-review-active` CSS class + `div.cursor-pointer` buttons (`Run⏎`, `SkipEsc`) |
+| Antigravity | `<button>` text matching (`Allow This Conversation`, `Deny` etc.) |
+| Windsurf | Fiber props or button text |
 
 > [!TIP]
-> Cursor 2.6.19+에서는 승인 버튼이 `<button>`이 아닌 `<div class="cursor-pointer">`이며,
-> 버튼 텍스트에 단축키가 붙어있습니다 (예: `"Run⏎"`, `"SkipEsc"`).
+> In Cursor 2.6.19+, approval buttons are `<div class="cursor-pointer">` not `<button>`,
+> and button text includes keyboard shortcuts (e.g., `"Run⏎"`, `"SkipEsc"`).
 
 #### listNotifications(params?) → `Array<{ index, message, severity, buttons }>`
 #### dismissNotification(params) → `{ dismissed: boolean, error?: string }`
@@ -321,163 +321,163 @@ IDE마다 승인 UI가 다르므로 각 provider의 readChat에서 적절히 감
 #### setMode(params) → `{ success: boolean, mode?: string, error?: string }`
 
 > [!NOTE]
-> Webview 기반 IDE(Kiro, PearAI)는 `webviewListModels`, `webviewSetModel` 등 webview prefix 스크립트를 사용합니다.
-> `handleExtensionScript`가 자동으로 webview variant 존재 시 우선 실행합니다.
+> Webview-based IDEs (Kiro, PearAI) use `webviewListModels`, `webviewSetModel` etc. with webview prefix scripts.
+> `handleExtensionScript` automatically prioritizes webview variants when they exist.
 
 
 ---
 
-## 3½. 데몬 분기 로직 — provider.js가 제어하는 것
+## 3½. Daemon Routing Logic — What provider.js Controls
 
 > [!IMPORTANT]
-> 데몬(daemon-commands.ts)은 **IDE 이름으로 분기하지 않습니다.**
-> 모든 분기는 provider.js에 정의한 **속성과 스크립트 반환값**으로 결정됩니다.
+> The daemon (daemon-commands.ts) **does not branch by IDE name.**
+> All routing is determined by **properties and script return values** defined in provider.js.
 
-### IDE 유형별 자동 분기
+### Automatic Routing by IDE Type
 
 ```
-daemon이 명령 수신 (readChat, sendMessage, etc.)
+daemon receives command (readChat, sendMessage, etc.)
   │
   ├─ provider.category === 'cli' or 'acp'?
-  │   └─ CLI/ACP adapter로 전송 (stdin/stdout JSON-RPC)
+  │   └─ CLI/ACP adapter (stdin/stdout JSON-RPC)
   │
   ├─ provider.category === 'extension'?
-  │   └─ AgentStream → webview iframe에서 실행
+  │   └─ AgentStream → webview iframe execution
   │
   └─ provider.category === 'ide'?
       │
-      ├─ scripts.webviewReadChat 존재?  (★ webview IDE)
-      │   └─ evaluateInWebviewFrame() → webview iframe 내부에서 JS 실행
-      │   └─ provider.webviewMatchText로 올바른 iframe 매칭
+      ├─ scripts.webviewReadChat exists?  (★ webview IDE)
+      │   └─ evaluateInWebviewFrame() → JS runs inside webview iframe
+      │   └─ provider.webviewMatchText matches correct iframe
       │
-      └─ scripts.readChat만 존재?  (★ 메인프레임 IDE)
-          └─ cdp.evaluate() → 메인프레임에서 JS 실행
-          └─ provider.inputMethod로 입력 방식 결정
+      └─ scripts.readChat only?  (★ mainframe IDE)
+          └─ cdp.evaluate() → JS runs in mainframe
+          └─ provider.inputMethod determines input method
 ```
 
-### 메인프레임 IDE vs Webview IDE 차이
+### Mainframe IDE vs Webview IDE Differences
 
-| 속성 | 메인프레임 (Cursor, Windsurf, Trae) | Webview (Kiro, PearAI) |
-|------|--------------------------------------|-------------------------|
-| `inputMethod` | `'cdp-type-and-send'` | 없음 (webview 스크립트에서 처리) |
-| `inputSelector` | `'[contenteditable="true"]...'` | 없음 |
-| `webviewMatchText` | 없음 | `'Kiro'` 등 iframe body 매칭 텍스트 |
-| 스크립트 이름 | `readChat`, `sendMessage` | `webviewReadChat`, `webviewSendMessage` |
-| 실행 컨텍스트 | IDE 메인 프레임 DOM | webview iframe 내부 DOM |
+| Property | Mainframe (Cursor, Windsurf, Trae) | Webview (Kiro, PearAI) |
+|----------|-------------------------------------|------------------------|
+| `inputMethod` | `'cdp-type-and-send'` | none (handled in webview script) |
+| `inputSelector` | `'[contenteditable="true"]...'` | none |
+| `webviewMatchText` | none | `'Kiro'` etc. (iframe body match text) |
+| Script names | `readChat`, `sendMessage` | `webviewReadChat`, `webviewSendMessage` |
+| Execution context | IDE main frame DOM | webview iframe internal DOM |
 
-### 메인프레임 IDE 만들기
+### Creating a Mainframe IDE
 
 ```javascript
 module.exports = {
   type: 'my-ide',
   category: 'ide',
-  inputMethod: 'cdp-type-and-send',       // ← 이것이 메인프레임 방식 결정
+  inputMethod: 'cdp-type-and-send',       // ← this determines mainframe mode
   inputSelector: '[contenteditable="true"][role="textbox"]',
   scripts: {
     readChat() { return `(() => { ... })()`; },
     sendMessage(text) {
-      // needsTypeAndSend: true → 데몬이 inputSelector로 CDP 타이핑
+      // needsTypeAndSend: true → daemon types via CDP into inputSelector
       return `(() => JSON.stringify({ sent: false, needsTypeAndSend: true }))()`;
     },
   },
 };
 ```
 
-### Webview IDE 만들기
+### Creating a Webview IDE
 
 ```javascript
 module.exports = {
   type: 'my-webview-ide',
   category: 'ide',
-  webviewMatchText: 'MyWebviewApp',        // ← iframe body에 이 텍스트가 있으면 매칭
-  // inputMethod 없음! webview 내부에서 직접 처리
+  webviewMatchText: 'MyWebviewApp',        // ← matches if iframe body contains this text
+  // no inputMethod! handled directly inside webview
   scripts: {
-    // webview 접두사 → evaluateInWebviewFrame()으로 자동 라우팅
+    // webview prefix → auto-routed to evaluateInWebviewFrame()
     webviewReadChat() { return `(() => { ... })()`; },
     webviewSendMessage(text) { return `(() => { ... })()`; },
     webviewListSessions() { return `(() => { ... })()`; },
 
-    // 메인프레임에서 실행할 스크립트 (패널 열기 등)
+    // scripts to run in mainframe (open panel etc.)
     openPanel() { return `(() => { ... })()`; },
     focusEditor() { return `(() => { ... })()`; },
   },
 };
 ```
 
-### sendMessage 반환값에 따른 데몬 동작
+### Daemon Behavior Based on sendMessage Return Values
 
-| 반환값 | 데몬 동작 |
-|--------|-----------|
-| `{ sent: true }` | 완료 (스크립트가 직접 전송) |
-| `{ sent: false, needsTypeAndSend: true }` | CDP로 `inputSelector`에 타이핑 + Enter |
-| `{ sent: false, needsTypeAndSend: true, selector: '...' }` | 지정된 셀렉터에 타이핑 |
-| `{ sent: false, needsTypeAndSend: true, clickCoords: {x,y} }` | 좌표 클릭 후 타이핑 |
+| Return value | Daemon action |
+|-------------|---------------|
+| `{ sent: true }` | Done (script sent directly) |
+| `{ sent: false, needsTypeAndSend: true }` | CDP type + Enter into `inputSelector` |
+| `{ sent: false, needsTypeAndSend: true, selector: '...' }` | Type into specified selector |
+| `{ sent: false, needsTypeAndSend: true, clickCoords: {x,y} }` | Click coordinates then type |
 
-### resolveAction 반환값에 따른 데몬 동작
+### Daemon Behavior Based on resolveAction Return Values
 
-| 반환값 | 데몬 동작 |
-|--------|-----------|
-| `{ resolved: true }` | 완료 (스크립트가 직접 클릭) |
-| `{ found: true, x, y, w, h }` | CDP 마우스 클릭 (좌표 기반) |
-| `{ resolved: false }` / `{ found: false }` | 실패 |
+| Return value | Daemon action |
+|-------------|---------------|
+| `{ resolved: true }` | Done (script clicked directly) |
+| `{ found: true, x, y, w, h }` | CDP mouse click (coordinate-based) |
+| `{ resolved: false }` / `{ found: false }` | Failed |
 
 > [!TIP]
-> 새 IDE 추가 시 **TS 코드를 볼 필요가 없습니다.**
-> provider.js에 올바른 속성만 설정하면 데몬이 자동으로 적절한 경로를 선택합니다.
+> When adding a new IDE, **you don't need to read TS code.**
+> Just set the correct properties in provider.js and the daemon automatically picks the right path.
 
 ---
 
-## 4️⃣ 개발 워크플로우 (DevConsole 활용)
+## 4️⃣ Development Workflow (Using DevConsole)
 
-### Step 1: IDE를 CDP 모드로 실행
+### Step 1: Launch IDE in CDP Mode
 
 ```bash
-# 예시: Cursor
+# Example: Cursor
 adhdev launch cursor --cdp
 
-# 또는 기존 IDE를 CDP 포트와 함께 재실행
+# Or re-launch existing IDE with CDP port
 /Applications/MyIDE.app/Contents/MacOS/MyIDE --remote-debugging-port=9350
 ```
 
-### Step 2: DevConsole 열기
+### Step 2: Open DevConsole
 
 ```bash
 adhdev daemon --dev
-# 브라우저에서 http://127.0.0.1:19280 접속
+# Open http://127.0.0.1:19280 in browser
 ```
 
-### Step 3: DOM 탐색 및 스크립트 작성
+### Step 3: DOM Exploration and Script Writing
 
-1. **📸 Screenshot** 버튼으로 현재 IDE 화면 캡처
-2. **CSS selector** 입력란에서 요소 탐색 (`Query` 버튼)
-3. **🖥 Editor** 탭에서 CDP JS 코드 작성 → **▶ Run** 으로 즉시 테스트
-4. 테스트한 코드를 `provider.js`에 복사
+1. **📸 Screenshot** button to capture current IDE screen
+2. **CSS selector** input field to explore elements (`Query` button)
+3. **🖥 Editor** tab to write CDP JS code → **▶ Run** for immediate testing
+4. Copy tested code to `provider.js`
 
-### Step 4: 스크립트 편집 모드 활용
+### Step 4: Using Script Edit Mode
 
-1. **📜 Scripts ▾** 드롭다운에서 스크립트 이름 클릭 → 편집 모드 진입
-2. 코드 수정 후 **▶ Run**으로 직접 실행하여 Output 확인
-3. 만족스러우면 **💾 Save Script** 버튼으로 `provider.js`에 반영
+1. **📜 Scripts ▾** dropdown → click script name → enter edit mode
+2. Modify code → **▶ Run** to test directly and check Output
+3. When satisfied → **💾 Save Script** button to save to `provider.js`
 
-### Step 5: 파라미터가 필요한 스크립트
+### Step 5: Scripts Requiring Parameters
 
-- **⚙ params** 버튼 클릭 → JSON 파라미터 입력 → 실행
-- 예: `sendMessage`에 `{"text": "Hello"}`
+- **⚙ params** button → enter JSON parameters → run
+- Example: `sendMessage` with `{"text": "Hello"}`
 
 ---
 
-## 5️⃣ _helpers 활용 (선택사항)
+## 5️⃣ Using _helpers (Optional)
 
-[_helpers/index.js](file:///Users/vilmire/Work/remote_vs/packages/launcher/providers/_helpers/index.js)에서 공통 유틸을 가져다 쓸 수 있습니다.
+[_helpers/index.js](file:///Users/vilmire/Work/remote_vs/packages/launcher/providers/_helpers/index.js) provides common utilities you can use.
 
-| 헬퍼 | 용도 |
-|------|------|
-| `getWebviewDoc(selector)` | Extension webview iframe의 document 접근 |
-| `getFiber(selectors)` | React Fiber 데이터 추출 |
-| `typeAndSubmit(varName, selectorExpr)` | 텍스트 입력 + Enter 전송 |
-| `waitFor(selector, timeout)` | 요소 출현 대기 |
-| `htmlToMdCode()` | HTML → Markdown 변환 함수 선언 |
-| `isNoiseText(text)` | 노이즈 텍스트 필터링 |
+| Helper | Purpose |
+|--------|---------|
+| `getWebviewDoc(selector)` | Access Extension webview iframe document |
+| `getFiber(selectors)` | Extract React Fiber data |
+| `typeAndSubmit(varName, selectorExpr)` | Text input + Enter send |
+| `waitFor(selector, timeout)` | Wait for element appearance |
+| `htmlToMdCode()` | HTML → Markdown converter function declaration |
+| `isNoiseText(text)` | Noise text filtering |
 
 ```javascript
 const { htmlToMdCode, waitFor } = require('../../_helpers/index.js');
@@ -494,136 +494,136 @@ scripts: {
 ```
 
 > [!NOTE]
-> 헬퍼 사용은 **완전히 선택사항**입니다. 각 `provider.js`는 독립적이어도 됩니다.
+> Using helpers is **completely optional**. Each `provider.js` can be fully independent.
 
 ---
 
-## 6️⃣ DOM 탐색 팁
+## 6️⃣ DOM Exploration Tips
 
-### IDE별 공통 패턴
+### Common Patterns Across IDEs
 
-대부분의 VS Code 기반 IDE는 다음 구조를 공유합니다:
+Most VS Code-based IDEs share the following structure:
 
-| 요소 | 셀렉터 패턴 |
-|------|-----------|
-| 사이드바 | `#workbench.parts.auxiliarybar` |
-| 에디터 입력 | `[contenteditable="true"][role="textbox"]` |
-| 알림 토스트 | `.notifications-toasts .notification-toast` |
-| 다이얼로그 | `.monaco-dialog-box, [role="dialog"]` |
-| 액션 버튼 | `a.action-label.codicon-*` |
+| Element | Selector pattern |
+|---------|-----------------|
+| Sidebar | `#workbench.parts.auxiliarybar` |
+| Editor input | `[contenteditable="true"][role="textbox"]` |
+| Notification toast | `.notifications-toasts .notification-toast` |
+| Dialog | `.monaco-dialog-box, [role="dialog"]` |
+| Action button | `a.action-label.codicon-*` |
 
-### 상태 감지 전략
+### Status Detection Strategy
 
 ```
-1. data-* 속성 확인 (가장 안정적)
+1. data-* attribute check (most stable)
    → Cursor: data-composer-status="streaming"
 
-2. Fiber props 탐색 (React 기반 UI)
+2. Fiber props exploration (React-based UI)
    → Windsurf: fiber.memoizedProps.isRunning
 
-3. Stop 버튼 존재 여부 (범용)
+3. Stop button presence (universal)
    → button[aria-label*="stop"], text="Stop"
 
-4. Placeholder 텍스트 (폴백)
-   → input placeholder에 "wait" / "generating" 포함
+4. Placeholder text (fallback)
+   → input placeholder contains "wait" / "generating"
 ```
 
 ---
 
-## 7️⃣ 검증 체크리스트
+## 7️⃣ Verification Checklist
 
-새 프로바이더를 완성한 후 아래 항목을 모두 확인하세요:
+After completing a new provider, verify all items below:
 
-- [ ] `readChat` — idle 상태에서 메시지 목록 정상 반환
-- [ ] `readChat` — generating 상태 감지 정상 동작
-- [ ] `readChat` — waiting_approval 상태 감지 (모달 버튼 목록 포함)
-- [ ] `sendMessage` — `needsTypeAndSend: true` 반환 시 daemon이 정상 타이핑
-- [ ] `listSessions` — 세션 목록 (title, active 상태 포함)
-- [ ] `switchSession` — index/title 기반 전환 동작
-- [ ] `newSession` — 새 채팅 생성
-- [ ] `focusEditor` — 입력 창에 포커스
-- [ ] `openPanel` — 채팅 패널 토글
-- [ ] `resolveAction` — 승인/거부 버튼 클릭
-- [ ] `listNotifications` — 알림 목록 출력
-- [ ] `dismissNotification` — 알림 닫기
-- [ ] DevConsole에서 모든 스크립트 ▶ Run 테스트 통과
-- [ ] `node -c provider.js` — 구문 오류 없음
+- [ ] `readChat` — returns message list correctly in idle state
+- [ ] `readChat` — correctly detects generating status
+- [ ] `readChat` — detects waiting_approval status (including modal button list)
+- [ ] `sendMessage` — `needsTypeAndSend: true` return triggers normal daemon typing
+- [ ] `listSessions` — session list (including title, active status)
+- [ ] `switchSession` — switching based on index/title
+- [ ] `newSession` — new chat creation
+- [ ] `focusEditor` — focuses input field
+- [ ] `openPanel` — chat panel toggle
+- [ ] `resolveAction` — approve/reject button click
+- [ ] `listNotifications` — notification list output
+- [ ] `dismissNotification` — dismiss notification
+- [ ] All scripts pass ▶ Run tests in DevConsole
+- [ ] `node -c provider.js` — no syntax errors
 
 ---
 
-## 8️⃣ 참조 구현체
+## 8️⃣ Reference Implementations
 
-| 패턴 | 프로바이더 | 특징 |
-|------|-----------|------|
-| **인라인** | [cursor/provider.js] | 가장 완성도 높음, 간결한 구현 |
-| **파일 분리** | [windsurf/provider.js] | Fiber 활용, HTML→Markdown 변환 |
-| **파일 분리** | [antigravity/provider.js] | CDP 마우스 클릭 좌표 반환 패턴 |
-| **Webview** | [kiro/provider.js] | webviewMatchText + webview* 스크립트 패턴 |
-| **Webview** | [pearai/provider.js] | webview iframe 기반 채팅 UI |
-| **파일 분리** | [trae/provider.js] | webviewMatchText + 메인프레임 스크립트 혼합 |
+| Pattern | Provider | Features |
+|---------|----------|----------|
+| **Inline** | [cursor/provider.js] | Most complete, concise implementation |
+| **File separation** | [windsurf/provider.js] | Fiber usage, HTML→Markdown conversion |
+| **File separation** | [antigravity/provider.js] | CDP mouse click coordinate return pattern |
+| **Webview** | [kiro/provider.js] | webviewMatchText + webview* script pattern |
+| **Webview** | [pearai/provider.js] | webview iframe-based chat UI |
+| **File separation** | [trae/provider.js] | webviewMatchText + mainframe script hybrid |
 | **ACP** | [gemini-cli/provider.js] | ACP + env_var auth + agent auth |
 | **ACP** | [goose/provider.js] | ACP + terminal auth |
 
 > [!TIP]
-> 새 프로바이더 작성 시 **Cursor provider.js를 복사**하고 셀렉터만 수정하는 것이 가장 빠릅니다.
-> VS Code 기반 IDE라면 특히 DOM 구조가 유사하므로 셀렉터 몇 개만 바꾸면 됩니다.
-> Webview 기반 IDE라면 **Kiro provider.js**를 참조하세요.
-> ACP 에이전트라면 **gemini-cli provider.js**를 참조하세요.
+> When writing a new provider, **copy Cursor provider.js** and modify selectors — it's the fastest approach.
+> For VS Code-based IDEs, the DOM structure is similar, so just change a few selectors.
+> For webview-based IDEs, refer to **Kiro provider.js**.
+> For ACP agents, refer to **gemini-cli provider.js**.
 
 ---
 
-## 9️⃣ ACP Provider 작성 가이드
+## 9️⃣ ACP Provider Guide
 
-> ACP (Agent Client Protocol) 에이전트를 추가하는 가이드입니다.
-> ACP 에이전트는 stdin/stdout JSON-RPC 2.0으로 통신합니다.
+> Guide for adding ACP (Agent Client Protocol) agents.
+> ACP agents communicate via stdin/stdout JSON-RPC 2.0.
 
-### 디렉토리 구조
+### Directory Structure
 
 ```
 providers/_builtin/acp/
-├── gemini-cli/      ← env_var auth (참조)
+├── gemini-cli/      ← env_var auth (reference)
 │   └── provider.js
-├── goose/           ← terminal auth (참조)
+├── goose/           ← terminal auth (reference)
 │   └── provider.js
-├── [your-agent]/    ← 새 ACP 프로바이더
+├── [your-agent]/    ← new ACP provider
 │   └── provider.js
 ```
 
-### provider.js 기본 골격
+### provider.js Basic Structure
 
 ```javascript
 module.exports = {
-  type: 'my-agent-acp',        // 고유 식별자
-  name: 'My Agent (ACP)',      // 표시 이름
-  category: 'acp',             // 반드시 'acp'
-  aliases: ['my-agent'],       // 별칭 (adhdev launch my-agent 등)
+  type: 'my-agent-acp',        // unique identifier
+  name: 'My Agent (ACP)',      // display name
+  category: 'acp',             // must be 'acp'
+  aliases: ['my-agent'],       // aliases (adhdev launch my-agent etc.)
 
   displayName: 'My Agent',
   icon: '🤖',
-  install: 'npm install -g my-agent',  // 설치 명령어 (에러 메시지에 표시)
+  install: 'npm install -g my-agent',  // install command (shown in error messages)
 
   spawn: {
-    command: 'my-agent',  // which로 설치 체크 + CLI 감지에 사용
-    args: ['--acp'],      // ACP 모드 활성화 인자
+    command: 'my-agent',  // used for which install check + CLI detection
+    args: ['--acp'],      // ACP mode activation argument
     shell: false,
   },
 
-  // ─── 인증 설정 ───
+  // ─── Authentication Config ───
   auth: [
-    // 1. API 키 기반 (env_var)
+    // 1. API key based (env_var)
     {
       type: 'env_var',
       id: 'api-key',
       name: 'API Key',
-      link: 'https://my-agent.dev/keys',  // 키 발급 URL
+      link: 'https://my-agent.dev/keys',  // key issuance URL
       vars: [
         { name: 'MY_AGENT_API_KEY', label: 'API Key', secret: true },
         { name: 'MY_AGENT_ORG', label: 'Organization', optional: true },
       ],
     },
-    // 2. 자체 인증 (agent)
+    // 2. Self auth (agent)
     // { type: 'agent', id: 'oauth', name: 'OAuth', description: 'First run will open browser' },
-    // 3. 터미널 명령 (terminal)
+    // 3. Terminal command (terminal)
     // { type: 'terminal', id: 'config', name: 'Configure', args: ['configure'] },
   ],
 
@@ -645,38 +645,38 @@ module.exports = {
 };
 ```
 
-### 인증 타입 (auth[]) — 문서용
+### Authentication Types (auth[]) — Documentation Only
 
-> **Note**: ADHDev는 API 키를 저장하거나 주입하지 않습니다 (v0.7.1+).
-> `auth[]` 필드는 문서화 목적으로만 사용되며, 각 도구가 자치적으로 인증을 처리합니다.
-> 인증 실패 시 stderr 에러 메시지가 대시보드에 그대로 표시됩니다.
+> **Note**: ADHDev does not store or inject API keys (v0.7.1+).
+> The `auth[]` field is used for documentation purposes only; each tool handles authentication independently.
+> On auth failure, stderr error messages are displayed directly on the dashboard.
 
-| type | 용도 | 비고 |
-|------|------|------|
-| `env_var` | API 키 기반 인증 | 유저가 직접 환경변수 설정 |
-| `agent` | 에이전트 자체 OAuth/브라우저 인증 | 첨 실행 시 자동 처리 |
-| `terminal` | CLI 명령으로 인증 설정 | 유저가 직접 실행 |
+| type | Purpose | Note |
+|------|---------|------|
+| `env_var` | API key-based auth | User sets environment variables manually |
+| `agent` | Agent self OAuth/browser auth | Auto-handled on first run |
+| `terminal` | Auth setup via CLI command | User runs manually |
 
-### 동작 플로우
+### Behavior Flow
 
 ```
-1. Dashboard CLIs 탭 → Launch 선택
-2. daemon-cli.ts → which 체크 → AcpProviderInstance 생성
+1. Dashboard CLIs tab → select Launch
+2. daemon-cli.ts → which check → AcpProviderInstance created
 3. spawn(command, args) → JSON-RPC initialize → session/new
-4. Dashboard에서 채팅 가능
-5. 인증 실패 시 → stderr 에러 메시지가 대시보드에 표시
+4. Chat available on Dashboard
+5. On auth failure → stderr error messages displayed on dashboard
 ```
 
-### 에러 핸들링 (자동)
+### Error Handling (Automatic)
 
-- **미설치**: `which` 실패 → "Not installed" 에러 + install 가이드
-- **인증 실패**: stderr에서 `unauthorized`, `api_key missing` 등 감지 → `errorReason: 'auth_failed'`
-- **빠른 종료**: 3초 이내 exit → `errorReason: 'crash'` + stderr 마지막 3줄
-- **핸드셰이크 실패**: initialize 타임아웃 → `errorReason: 'init_failed'`
+- **Not installed**: `which` failure → "Not installed" error + install guide
+- **Auth failure**: stderr detects `unauthorized`, `api_key missing` etc. → `errorReason: 'auth_failed'`
+- **Quick exit**: exit within 3 seconds → `errorReason: 'crash'` + last 3 stderr lines
+- **Handshake failure**: initialize timeout → `errorReason: 'init_failed'`
 
 > [!TIP]
-> 새 ACP 에이전트 추가는 provider.js 하나만 만들면 됩니다.
-> `providers/_builtin/acp/gemini-cli/provider.js`를 복사하는 것이 가장 빠릅니다.
+> Adding a new ACP agent only requires creating a single provider.js.
+> Copying `providers/_builtin/acp/gemini-cli/provider.js` is the fastest approach.
 
 ---
 
@@ -684,20 +684,20 @@ module.exports = {
 
 ```typescript
 class ProviderLoader {
-  loadAll(): void                              // _builtin + .upstream + ~/.adhdev/providers 로드
-  resolve(type, context?): ResolvedProvider    // OS/버전 오버라이드 적용
+  loadAll(): void                              // load _builtin + .upstream + ~/.adhdev/providers
+  resolve(type, context?): ResolvedProvider    // apply OS/version overrides
   get(type): ProviderModule | undefined
   getAll(): ProviderModule[]
   getByCategory(cat): ProviderModule[]
   
-  // ─── 헬퍼 (다른 모듈에서 사용) ───
-  getCdpPortMap(): Record<string, number[]>    // IDE별 CDP 포트
-  getMacAppIdentifiers(): Record<string, string>  // IDE → macOS 앱 이름
-  getWinProcessNames(): Record<string, string[]>  // IDE → Windows 프로세스
-  getAvailableIdeTypes(): string[]             // IDE 카테고리만
-  registerToDetector(): void                   // core detector에 IDE 등록
-  resolveAlias(alias): string                  // 별칭 → type 해석
-  fetchLatest(): Promise<void>                 // GitHub tarball 다운로드 (.upstream/)
+  // ─── Helpers (used by other modules) ───
+  getCdpPortMap(): Record<string, number[]>    // CDP ports per IDE
+  getMacAppIdentifiers(): Record<string, string>  // IDE → macOS app name
+  getWinProcessNames(): Record<string, string[]>  // IDE → Windows process names
+  getAvailableIdeTypes(): string[]             // IDE category only
+  registerToDetector(): void                   // register IDE to core detector
+  resolveAlias(alias): string                  // alias → type resolution
+  fetchLatest(): Promise<void>                 // download GitHub tarball (.upstream/)
   
   watch(): void                                // hot-reload
   stopWatch(): void
@@ -706,67 +706,66 @@ class ProviderLoader {
 
 ---
 
-## 1️⃣1️⃣ 새 IDE 추가 시 End-to-End 흐름
+## 1️⃣1️⃣ End-to-End Flow When Adding a New IDE
 
 ```
-① provider.js 생성
+① provider.js created
    providers/_builtin/ide/zed/provider.js
                 │
 ② ProviderLoader.loadAll()
-   → 자동 발견 (재귀 스캔)
+   → auto-discovered (recursive scan)
                 │
 ③ registerToDetector()
-   → core detector에 IDE 정의 등록 (paths, processNames)
+   → IDE definition registered to core detector (paths, processNames)
                 │
 ④ daemon initCdp()
-   → getCdpPortMap() → CDP 연결 시작
+   → getCdpPortMap() → CDP connection starts
                 │
 ⑤ daemon statusReport
-   → managedIdes에 자동 포함 (cdpManagers.keys()에서)
-   → availableProviders에 포함 (프론트엔드 전달)
+   → auto-included in managedIdes (from cdpManagers.keys())
+   → included in availableProviders (delivered to frontend)
                 │
-⑥ Dashboard 표시
-   → DaemonContext에서 ':ide:' 패턴으로 IDE 탭 자동 생성
+⑥ Dashboard display
+   → DaemonContext auto-creates IDE tab from ':ide:' pattern
    → formatIdeType('zed') → 'Zed' (fallback capitalize)
                 │
-⑦ 사용자 인터랙션 — TS 코드 수정 0개
+⑦ User interaction — zero TS code changes
 ```
 
 > [!IMPORTANT]
-> provider.js 하나 추가만으로 **감지 → CDP 연결 → 대시보드 표시 → 명령 실행**이 자동 동작합니다.
-> TypeScript 코드 변경이 필요한 경우는 없습니다.
+> Adding just one provider.js enables **detection → CDP connection → dashboard display → command execution**
+> to work automatically. No TypeScript code changes are required.
 
 ---
 
-## 1️⃣2️⃣ Scope 제한사항
+## 1️⃣2️⃣ Scope Limitations
 
-1. **Electron 기반 IDE만** — `--remote-debugging-port` 사용 전제. Zed, IntelliJ 등 비-Electron IDE 미지원.
-2. **launch 로직 공통** — 모든 IDE가 동일한 Electron launch 인자 사용. provider별 커스텀 launch는 미구현.
-3. **CLI adapter TypeScript 유지** — PTY 라이프사이클(spawn, handleOutput)은 TS 런타임 코드. provider.js는 config/patterns만 제공.
-4. **P2P-first** — 모든 데이터(채팅, 커맨드, 스크린샷)는 P2P로 직접 전송. 서버 WS는 signaling + 경량 메타만.
+1. **Electron-based IDEs only** — requires `--remote-debugging-port`. Zed, IntelliJ and other non-Electron IDEs not supported.
+2. **Common launch logic** — all IDEs use identical Electron launch arguments. Per-provider custom launch not implemented.
+3. **CLI adapter TypeScript maintained** — PTY lifecycle (spawn, handleOutput) is TS runtime code. provider.js provides config/patterns only.
+4. **P2P-first** — all data (chat, commands, screenshots) transmitted directly via P2P. Server WS for signaling + lightweight meta only.
 
 ---
 
-## 1️⃣3️⃣ 하드코딩 제거 현황
+## 1️⃣3️⃣ Hardcoding Removal Status
 
-### ✅ 완전 제거됨
+### ✅ Fully Removed
 
-| 위치 | 이전 | 이후 |
-|------|------|------|
-| `launch.ts` getCdpPorts | 하드코딩 포트 맵 | `providerLoader.getCdpPortMap()` |
-| `launch.ts` getMacAppIdentifiers | 하드코딩 앱 이름 | `providerLoader.getMacAppIdentifiers()` |
-| `launch.ts` getWinProcessNames | 하드코딩 프로세스 | `providerLoader.getWinProcessNames()` |
-| `launch.ts` getAvailableIdeIds | 하드코딩 IDE 목록 | `providerLoader.getAvailableIdeTypes()` |
-| `Dashboard.tsx` CLI_IDES | 하드코딩 | `isCliConv()` — id 패턴 `:cli:` |
-| `MachineDetail.tsx` CLI_TYPES | 하드코딩 | `isCliEntry()` — id 패턴 |
-| `detector.ts` IDE_DEFINITIONS | 하드코딩 | `registerIDEDefinition()` 런타임 등록 |
+| Location | Before | After |
+|----------|--------|-------|
+| `launch.ts` getCdpPorts | Hardcoded port map | `providerLoader.getCdpPortMap()` |
+| `launch.ts` getMacAppIdentifiers | Hardcoded app names | `providerLoader.getMacAppIdentifiers()` |
+| `launch.ts` getWinProcessNames | Hardcoded process names | `providerLoader.getWinProcessNames()` |
+| `launch.ts` getAvailableIdeIds | Hardcoded IDE list | `providerLoader.getAvailableIdeTypes()` |
+| `Dashboard.tsx` CLI_IDES | Hardcoded | `isCliConv()` — id pattern `:cli:` |
+| `MachineDetail.tsx` CLI_TYPES | Hardcoded | `isCliEntry()` — id pattern |
+| `detector.ts` IDE_DEFINITIONS | Hardcoded | `registerIDEDefinition()` runtime registration |
 
-### ⚠️ 의도적 유지 (fallback)
+### ⚠️ Intentionally Kept (fallback)
 
-| 위치 | 내용 | 이유 |
-|------|------|------|
-| `adhdev-daemon.ts` | `fallbackType = 'cursor'` | 감지 실패 시 기본값 |
-| `adhdev-daemon.ts` | fallback 포트 맵 | ProviderLoader 로드 실패 시 |
-| `Dashboard.tsx` | `IDE_TYPE_LABELS` | 표시명 오버라이드 (fallback) |
-| `detector.ts` | `BUILTIN_IDE_DEFINITIONS` | 런타임 등록 전 기본값 |
-
+| Location | Content | Reason |
+|----------|---------|--------|
+| `adhdev-daemon.ts` | `fallbackType = 'cursor'` | Default on detection failure |
+| `adhdev-daemon.ts` | fallback port map | On ProviderLoader load failure |
+| `Dashboard.tsx` | `IDE_TYPE_LABELS` | Display name override (fallback) |
+| `detector.ts` | `BUILTIN_IDE_DEFINITIONS` | Default before runtime registration |
