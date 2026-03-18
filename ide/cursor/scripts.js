@@ -52,7 +52,7 @@ module.exports.readChat = function readChat(params) {
         const t = (b.innerText || '').trim();
         if (t.length < 2) continue;
         // Filter noise: "Thought for Xs", "Explored N files"
-        if (/^Thought\nfor \d+s?$/i.test(t) || /^Explored\n/i.test(t)) continue;
+        if (/^Thought\\nfor \\d+s?$/i.test(t) || /^Explored\\n/i.test(t)) continue;
         const hasTool = b.querySelector('.composer-tool-former-message, .composer-diff-block, .composer-code-block-container');
         msgs.push({ role: hasTool ? 'tool' : 'assistant', content: t.substring(0, 6000), index: msgs.length });
       }
