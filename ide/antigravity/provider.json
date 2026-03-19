@@ -30,12 +30,12 @@
   "inputMethod": "cdp-type-and-send",
   "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
   "versionCommand": "antigravity --version",
-  "testedVersions": ["1.107.0"],
-  "versions": {
-    "< 1.107.0": {
-      "__dir": "scripts/legacy"
-    }
-  },
+  "providerVersion": "1.0.0",
+  "compatibility": [
+    { "ideVersion": ">=1.107.0", "scriptDir": "scripts/1.107" },
+    { "ideVersion": ">=1.105.0", "scriptDir": "scripts/1.106" }
+  ],
+  "defaultScriptDir": "scripts/1.107",
   "settings": {
     "approvalAlert": {
       "type": "boolean",

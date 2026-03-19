@@ -1,0 +1,260 @@
+{
+  "version": "2026.03.19",
+  "providers": {
+    "agentpool-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "AgentPool (ACP)"
+    },
+    "amp-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Amp (ACP)"
+    },
+    "auggie-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Auggie CLI (ACP)"
+    },
+    "autodev-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "AutoDev (ACP)"
+    },
+    "autohand-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Autohand Code (ACP)"
+    },
+    "blackbox-ai-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Blackbox AI (ACP)"
+    },
+    "claude-agent-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Claude Agent (ACP)"
+    },
+    "cline-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Cline (ACP)"
+    },
+    "codebuddy-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Codebuddy Code (ACP)"
+    },
+    "codex-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Codex (ACP)"
+    },
+    "corust-agent-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Corust Agent (ACP)"
+    },
+    "crow-cli-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "crow-cli (ACP)"
+    },
+    "cursor-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Cursor (ACP)"
+    },
+    "deepagents-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "DeepAgents (ACP)"
+    },
+    "dimcode-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "DimCode (ACP)"
+    },
+    "docker-cagent-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Docker cagent (ACP)"
+    },
+    "factory-droid-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Factory Droid (ACP)"
+    },
+    "fast-agent-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "fast-agent (ACP)"
+    },
+    "gemini-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Gemini CLI (ACP)"
+    },
+    "github-copilot-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "GitHub Copilot (ACP)"
+    },
+    "goose-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Goose (ACP)"
+    },
+    "junie-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Junie (ACP)"
+    },
+    "kilo-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Kilo (ACP)"
+    },
+    "kimi-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Kimi CLI (ACP)"
+    },
+    "minion-code-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Minion Code (ACP)"
+    },
+    "mistral-vibe-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Mistral Vibe (ACP)"
+    },
+    "nova-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Nova (ACP)"
+    },
+    "openclaw-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "OpenClaw (ACP)"
+    },
+    "opencode-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "OpenCode (ACP)"
+    },
+    "openhands-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "OpenHands (ACP)"
+    },
+    "pi-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "pi ACP"
+    },
+    "qoder-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Qoder CLI (ACP)"
+    },
+    "qwen-code-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Qwen Code (ACP)"
+    },
+    "stakpak-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "Stakpak (ACP)"
+    },
+    "vtcode-acp": {
+      "providerVersion": "0.0.0",
+      "category": "acp",
+      "name": "VT Code (ACP)"
+    },
+    "claude-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Claude Code"
+    },
+    "codex-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Codex CLI"
+    },
+    "gemini-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Gemini CLI"
+    },
+    "cline": {
+      "providerVersion": "0.0.0",
+      "category": "extension",
+      "name": "Cline"
+    },
+    "roo-code": {
+      "providerVersion": "0.0.0",
+      "category": "extension",
+      "name": "Roo Code"
+    },
+    "antigravity": {
+      "providerVersion": "1.0.0",
+      "category": "ide",
+      "name": "Antigravity",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.107.0",
+          "scriptDir": "scripts/1.107"
+        },
+        {
+          "ideVersion": ">=1.105.0",
+          "scriptDir": "scripts/1.106"
+        }
+      ]
+    },
+    "cursor": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Cursor"
+    },
+    "kiro": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Kiro"
+    },
+    "pearai": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "PearAI"
+    },
+    "trae": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Trae"
+    },
+    "vscode-insiders": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Visual Studio Code - Insiders"
+    },
+    "vscode": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Visual Studio Code"
+    },
+    "vscodium": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "VSCodium"
+    },
+    "windsurf": {
+      "providerVersion": "0.0.0",
+      "category": "ide",
+      "name": "Windsurf"
+    }
+  }
+}

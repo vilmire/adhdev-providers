@@ -1,0 +1,55 @@
+name: Generate Registry
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/provider.json'
+      - '**/scripts.js'
+
+jobs:
+  generate-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate registry.json
+        run: |
+          python3 -c "
+          import json, glob
+
+          registry = {'version': '$(date +%Y.%m.%d)', 'providers': {}}
+
+          for pj in sorted(glob.glob('**/provider.json', recursive=True)):
+              parts = pj.split('/')
+              # Skip version subdirs (1.107/, 0.48/ etc)
+              if any(p[0].isdigit() and '.' in p for p in parts):
+                  continue
+              if 'legacy' in parts:
+                  continue
+              try:
+                  with open(pj) as f:
+                      d = json.load(f)
+                  if 'type' not in d or 'category' not in d:
+                      continue
+                  entry = {
+                      'providerVersion': d.get('providerVersion', '0.0.0'),
+                      'category': d['category'],
+                      'name': d.get('name', d['type']),
+                  }
+                  if d.get('compatibility'):
+                      entry['compatibility'] = d['compatibility']
+                  registry['providers'][d['type']] = entry
+              except: pass
+
+          with open('registry.json', 'w') as f:
+              json.dump(registry, f, indent=2, ensure_ascii=False)
+          print(f'Generated registry.json with {len(registry[\"providers\"])} providers')
+          "
+
+      - name: Commit registry.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add registry.json
+          git diff --cached --quiet || git commit -m "chore: auto-generate registry.json"
+          git push
