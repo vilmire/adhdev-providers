@@ -7,35 +7,28 @@
 
 const fs   = require('fs');
 const path = require('path');
-const DIR  = __dirname;  // scripts/legacy/
+const DIR  = __dirname;  // scripts/1.106/
 
 function load(name) {
     try { return fs.readFileSync(path.join(DIR, name), 'utf-8'); }
     catch { return null; }
 }
 
-// Non-model/mode scripts fall back to parent scripts/
-const PARENT_DIR = path.join(DIR, '..');
-function loadParent(name) {
-    try { return fs.readFileSync(path.join(PARENT_DIR, name), 'utf-8'); }
-    catch { return null; }
-}
-
-module.exports.readChat     = () => loadParent('read_chat.js');
-module.exports.focusEditor  = () => loadParent('focus_editor.js');
-module.exports.listSessions = () => loadParent('list_chats.js');
-module.exports.newSession   = () => loadParent('new_session.js');
+module.exports.readChat     = () => load('read_chat.js');
+module.exports.focusEditor  = () => load('focus_editor.js');
+module.exports.listSessions = () => load('list_chats.js');
+module.exports.newSession   = () => load('new_session.js');
 module.exports.listModels   = () => load('list_models.js');
 module.exports.listModes    = () => load('list_modes.js');
 
 module.exports.sendMessage = (text) => {
-    const script = loadParent('send_message.js');
+    const script = load('send_message.js');
     if (!script) return null;
     return script.replace(/\$\{\s*MESSAGE\s*\}/g, JSON.stringify(text));
 };
 
 module.exports.switchSession = (sessionId) => {
-    const script = loadParent('switch_session.js');
+    const script = load('switch_session.js');
     if (!script) return null;
     return script.replace(/\$\{\s*SESSION_ID\s*\}/g, JSON.stringify(sessionId));
 };
@@ -44,7 +37,7 @@ module.exports.resolveAction = (params) => {
     const action     = typeof params === 'string' ? params : params?.action || 'approve';
     const buttonText = params?.button || params?.buttonText
         || (action === 'approve' ? 'Accept' : action === 'reject' ? 'Reject' : action);
-    const script = loadParent('resolve_action.js');
+    const script = load('resolve_action.js');
     if (!script) return null;
     return script.replace(/\$\{\s*BUTTON_TEXT\s*\}/g, JSON.stringify(buttonText));
 };
