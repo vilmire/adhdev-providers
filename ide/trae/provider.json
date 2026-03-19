@@ -31,5 +31,29 @@
     ]
   },
   "inputMethod": "cdp-type-and-send",
-  "inputSelector": ".chat-input-v2-input-box-editable, [contenteditable=\"true\"][role=\"textbox\"]"
+  "inputSelector": ".chat-input-v2-input-box-editable, [contenteditable=\"true\"][role=\"textbox\"]",
+  "settings": {
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  }
 }

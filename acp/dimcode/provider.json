@@ -21,6 +21,13 @@
     }
   ],
   "settings": {
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls without user confirmation"
+    },
     "approvalAlert": {
       "type": "boolean",
       "default": true,
