@@ -1,7 +1,6 @@
 /**
- * Antigravity — set_mode
- * Conversation mode 버튼 / 패널에서 Planning/Fast 선택
- * Updated for Antigravity v0.x+ DOM
+ * Antigravity — set_mode  [>= 1.107.0]
+ * mode trigger: BUTTON with py-1 pl-1 pr-2 opacity-70
  * ${MODE} → JSON.stringify(modeName)
  * → { success: boolean, mode?: string }
  */
@@ -9,53 +8,56 @@
     try {
         const target = ${MODE};
 
-        // 1. 드롭다운이 열린 상태: "Conversation mode" 패널에서 항목 클릭
-        const headers = document.querySelectorAll('.text-xs.px-2.pb-1.opacity-80');
-        for (const header of headers) {
-            if (header.textContent?.trim() === 'Conversation mode') {
-                const parent = header.parentElement;
-                if (!parent) continue;
-                const items = parent.querySelectorAll('.font-medium');
-                for (const item of items) {
-                    const text = item.textContent?.trim();
-                    if (text && text.toLowerCase() === target.toLowerCase()) {
-                        item.click();
-                        await new Promise(r => setTimeout(r, 300));
-                        return JSON.stringify({ success: true, mode: text });
-                    }
-                }
-                break;
-            }
+        // ── Helper: find mode button ──────────────────────────────────────────
+        function findModeBtn() {
+            return [...document.querySelectorAll('button')].find(b => {
+                const cls = b.className || '';
+                return cls.includes('py-1') &&
+                       cls.includes('pl-1') &&
+                       cls.includes('pr-2') &&
+                       cls.includes('opacity-70') &&
+                       b.offsetWidth > 0;
+            }) || null;
         }
 
-        // 2. 드롭다운 닫힌 상태: 현재 모드 버튼 클릭해서 드롭다운 열기
-        const modeBtn = [...document.querySelectorAll('button')].find(b => {
-            const cls = b.className || '';
-            return cls.includes('py-1') && cls.includes('pl-1') && cls.includes('pr-2') && cls.includes('opacity-70') && b.offsetWidth > 0;
-        });
-        if (modeBtn) {
-            modeBtn.click();
-            await new Promise(r => setTimeout(r, 400));
-
-            // 다시 패널 탐색
-            const hdrs2 = document.querySelectorAll('.text-xs.px-2.pb-1.opacity-80');
-            for (const h of hdrs2) {
-                if (h.textContent?.trim() === 'Conversation mode') {
-                    const p = h.parentElement;
-                    if (!p) continue;
-                    const items = p.querySelectorAll('.font-medium');
-                    for (const item of items) {
+        // ── Helper: click item in open "Conversation mode" panel ─────────────
+        function clickModeItem(targetName) {
+            const headers = document.querySelectorAll('.text-xs.px-2.pb-1.opacity-80');
+            for (const header of headers) {
+                if (header.textContent?.trim() === 'Conversation mode') {
+                    const parent = header.parentElement;
+                    if (!parent) continue;
+                    for (const item of parent.querySelectorAll('.font-medium')) {
                         const text = item.textContent?.trim();
-                        if (text && text.toLowerCase() === target.toLowerCase()) {
+                        if (text && text.toLowerCase() === targetName.toLowerCase()) {
                             item.click();
-                            return JSON.stringify({ success: true, mode: text });
+                            return text;
                         }
                     }
                     break;
                 }
             }
-            // 찾지 못하면 닫기
+            return null;
+        }
+
+        // ── Step 1: Panel already open — direct click ─────────────────────────
+        const direct = clickModeItem(target);
+        if (direct) {
+            await new Promise(r => setTimeout(r, 300));
+            return JSON.stringify({ success: true, mode: direct });
+        }
+
+        // ── Step 2: Open panel via mode button, then click ───────────────────
+        const modeBtn = findModeBtn();
+        if (modeBtn) {
             modeBtn.click();
+            await new Promise(r => setTimeout(r, 400));
+
+            const hit = clickModeItem(target);
+            if (hit) {
+                return JSON.stringify({ success: true, mode: hit });
+            }
+            modeBtn.click(); // Close if not found
         }
 
         return JSON.stringify({ success: false, error: 'mode not found: ' + target });

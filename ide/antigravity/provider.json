@@ -28,5 +28,12 @@
     ]
   },
   "inputMethod": "cdp-type-and-send",
-  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]"
+  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "versionCommand": "antigravity --version",
+  "testedVersions": ["1.107.0"],
+  "versions": {
+    "< 1.107.0": {
+      "__dir": "scripts/legacy"
+    }
+  }
 }
