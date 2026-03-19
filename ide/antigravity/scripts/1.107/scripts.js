@@ -17,10 +17,10 @@
 
 const fs   = require('fs');
 const path = require('path');
-const SCRIPTS_DIR = path.join(__dirname, 'scripts');
+const DIR  = __dirname;  // scripts/1.107/
 
 function load(name) {
-    try { return fs.readFileSync(path.join(SCRIPTS_DIR, name), 'utf-8'); }
+    try { return fs.readFileSync(path.join(DIR, name), 'utf-8'); }
     catch { return null; }
 }
 
