@@ -9,6 +9,13 @@
     9351,
     9352
   ],
+  "targetFilter": {
+    "urlIncludes": "workbench.html",
+    "urlExcludes": [
+      "agent"
+    ],
+    "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
+  },
   "processNames": {
     "darwin": "Kiro",
     "win32": [
