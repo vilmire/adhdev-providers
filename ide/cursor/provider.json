@@ -34,6 +34,12 @@
   },
   "inputMethod": "cdp-type-and-send",
   "inputSelector": ".aislash-editor-input[contenteditable=\"true\"]",
+  "versionCommand": "cursor --version",
+  "providerVersion": "1.0.0",
+  "compatibility": [
+    { "ideVersion": ">=0.49.0", "scriptDir": "scripts/0.49" }
+  ],
+  "defaultScriptDir": "scripts/0.49",
   "vscodeCommands": {
     "changeModel": "cursor.model"
   },
