@@ -86,6 +86,23 @@
         const title = document.title.split(' \u2014 ')[0].trim() || 'Cascade';
 
         // ─── 4. HTML → Markdown 변환기 ───
+        const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER']);
+        function extractCodeText(node) {
+            if (node.nodeType === 3) return node.textContent || '';
+            if (node.nodeType !== 1) return '';
+            if (node.tagName === 'BR') return '\n';
+            const parts = [];
+            for (const child of node.childNodes) {
+                const isBlock = child.nodeType === 1 && BLOCK_TAGS.has(child.tagName);
+                const text = extractCodeText(child);
+                if (text) {
+                    if (isBlock && parts.length > 0) parts.push('\n');
+                    parts.push(text);
+                    if (isBlock) parts.push('\n');
+                }
+            }
+            return parts.join('').replace(/\n{2,}/g, '\n');
+        }
         function htmlToMd(node) {
             if (node.nodeType === 3) return node.textContent || '';
             if (node.nodeType !== 1) return '';
@@ -121,7 +138,7 @@
             if (tag === 'PRE') {
                 const codeEl = node.querySelector('code');
                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                const code = (codeEl || node).innerText || '';
+                const code = extractCodeText(codeEl || node);
                 return '\n```' + lang + '\n' + code.trim() + '\n```\n';
             }
             if (tag === 'CODE') {

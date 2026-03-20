@@ -33,6 +33,27 @@
         const title = document.title.split(' \u2014 ')[0].trim() || 'Active Session';
 
         // ─── HTML → Markdown 변환기 (대시보드가 ReactMarkdown+remarkGfm 사용) ───
+        // extractCodeText: layout-independent code text extraction
+        // Works on cloneNode'd (detached) elements where innerText == textContent
+        // Walks child nodes and inserts \n between block-level elements (DIV, P, etc.)
+        const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER']);
+        function extractCodeText(node) {
+            if (node.nodeType === 3) return node.textContent || '';
+            if (node.nodeType !== 1) return '';
+            if (node.tagName === 'BR') return '\n';
+            const parts = [];
+            for (const child of node.childNodes) {
+                const isBlock = child.nodeType === 1 && BLOCK_TAGS.has(child.tagName);
+                const text = extractCodeText(child);
+                if (text) {
+                    if (isBlock && parts.length > 0) parts.push('\n');
+                    parts.push(text);
+                    if (isBlock) parts.push('\n');
+                }
+            }
+            // Collapse multiple consecutive newlines into single \n
+            return parts.join('').replace(/\n{2,}/g, '\n');
+        }
         function htmlToMd(node) {
             if (node.nodeType === 3) return node.textContent || '';
             if (node.nodeType !== 1) return '';
@@ -77,9 +98,9 @@
             if (tag === 'PRE') {
                 const codeEl = node.querySelector('code');
                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                // innerText preserves line breaks from block-level child elements (e.g. <div class="line">)
-                // textContent concatenates without newlines, causing code to appear as single line
-                const code = (codeEl || node).innerText || '';
+                // Custom extraction: walk child nodes and insert \n between block elements
+                // This works on cloneNode'd elements (no layout → innerText == textContent)
+                const code = extractCodeText(codeEl || node);
                 return '\n```' + lang + '\n' + code.trim() + '\n```\n';
             }
             if (tag === 'CODE') {

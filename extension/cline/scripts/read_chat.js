@@ -120,7 +120,20 @@
                             if (el.tagName === 'PRE') {
                                 const codeEl = el.querySelector('code');
                                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                                const code = (codeEl || el).innerText || '';
+                                const BLOCK_TAGS_C = new Set(['DIV', 'P', 'BR', 'LI', 'TR']);
+                                const extractCode = (n) => {
+                                    if (n.nodeType === 3) return n.textContent || '';
+                                    if (n.nodeType !== 1) return '';
+                                    if (n.tagName === 'BR') return '\n';
+                                    const ps = [];
+                                    for (const c of n.childNodes) {
+                                        const ib = c.nodeType === 1 && BLOCK_TAGS_C.has(c.tagName);
+                                        const tx = extractCode(c);
+                                        if (tx) { if (ib && ps.length > 0) ps.push('\n'); ps.push(tx); if (ib) ps.push('\n'); }
+                                    }
+                                    return ps.join('').replace(/\n{2,}/g, '\n');
+                                };
+                                const code = extractCode(codeEl || el);
                                 structured += '\n```' + lang + '\n' + code.trim() + '\n```\n';
                                 return;
                             }
