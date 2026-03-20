@@ -120,7 +120,7 @@
                             if (el.tagName === 'PRE') {
                                 const codeEl = el.querySelector('code');
                                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                                const code = (codeEl || el).textContent || '';
+                                const code = (codeEl || el).innerText || '';
                                 structured += '\n```' + lang + '\n' + code.trim() + '\n```\n';
                                 return;
                             }

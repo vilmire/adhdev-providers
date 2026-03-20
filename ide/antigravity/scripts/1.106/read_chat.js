@@ -77,7 +77,9 @@
             if (tag === 'PRE') {
                 const codeEl = node.querySelector('code');
                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                const code = (codeEl || node).textContent || '';
+                // innerText preserves line breaks from block-level child elements (e.g. <div class="line">)
+                // textContent concatenates without newlines, causing code to appear as single line
+                const code = (codeEl || node).innerText || '';
                 return '\n```' + lang + '\n' + code.trim() + '\n```\n';
             }
             if (tag === 'CODE') {

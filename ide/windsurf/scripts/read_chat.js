@@ -121,7 +121,7 @@
             if (tag === 'PRE') {
                 const codeEl = node.querySelector('code');
                 const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                const code = (codeEl || node).textContent || '';
+                const code = (codeEl || node).innerText || '';
                 return '\n```' + lang + '\n' + code.trim() + '\n```\n';
             }
             if (tag === 'CODE') {
