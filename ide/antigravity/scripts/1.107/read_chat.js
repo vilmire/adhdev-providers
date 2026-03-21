@@ -155,7 +155,7 @@
                 const hash = 'user:' + text.slice(0, 200);
                 if (seenHashes.has(hash)) continue;
                 seenHashes.add(hash);
-                collected.push({ role: 'user', text, el });
+                collected.push({ role: 'user', text, el, kind: 'standard' });
             }
         }
 
@@ -164,6 +164,8 @@
         for (const ab of assistantBlocks) {
             if (ab.offsetHeight < 10) continue;
             if (ab.closest('[class*="max-h-"][class*="overflow-y-auto"]')) continue;
+            // Thought 내부의 블록은 제외 (thinking으로 별도 수집)
+            if (ab.closest('.isolate')?.querySelector('button')?.textContent?.startsWith('Thought for')) continue;
 
             let text = getCleanMd(ab);
             if (!text || text.length < 2) continue;
@@ -172,7 +174,66 @@
             const hash = 'assistant:' + text.slice(0, 200);
             if (seenHashes.has(hash)) continue;
             seenHashes.add(hash);
-            collected.push({ role: 'assistant', text, el: ab });
+            collected.push({ role: 'assistant', text, el: ab, kind: 'standard' });
+        }
+
+        // ─── Thought 수집 (AI 사고 과정) ───
+        const thoughtBtns = scroll.querySelectorAll('button');
+        for (const btn of thoughtBtns) {
+            const label = (btn.textContent || '').trim();
+            if (!label.startsWith('Thought for')) continue;
+            const sibling = btn.nextElementSibling;
+            if (!sibling) continue;
+            // 실제 thinking 텍스트는 sibling 내부의 .leading-relaxed.select-text에 있음
+            const contentEl = sibling.querySelector('.leading-relaxed.select-text');
+            if (!contentEl) continue;
+            const clone = contentEl.cloneNode(true);
+            clone.querySelectorAll('button, svg, style, script, [role="button"]').forEach(n => n.remove());
+            const thinkText = (clone.innerText || clone.textContent || '').trim();
+            if (!thinkText || thinkText.length < 5) continue;
+            const hash = 'think:' + thinkText.slice(0, 200);
+            if (seenHashes.has(hash)) continue;
+            seenHashes.add(hash);
+            // 순수 텍스트만 전달 (마크다운 포맷은 프론트엔드에서 처리)
+            collected.push({ role: 'assistant', text: thinkText.slice(0, 3000), el: btn, kind: 'thought', meta: { label } });
+        }
+
+        // ─── Terminal/Tool Call 수집 (명령 실행 결과) ───
+        const termHeaders = scroll.querySelectorAll('div.mb-1.px-2.py-1');
+        for (const h of termHeaders) {
+            const spanEl = h.querySelector('span');
+            const label = (spanEl?.textContent || '').trim();
+            if (!label.match(/^(Ran|Running) command/i)) continue;
+            const parent = h.parentElement;
+            if (!parent) continue;
+            const pre = parent.querySelector('pre');
+            const cmdText = (pre?.textContent || '').trim();
+            if (!cmdText || cmdText.length < 2) continue;
+            const hash = 'term:' + cmdText.slice(0, 200);
+            if (seenHashes.has(hash)) continue;
+            seenHashes.add(hash);
+            // 순수 텍스트만 전달 (라벨/아이콘은 프론트엔드에서 처리)
+            const isRunning = label.startsWith('Running');
+            collected.push({ role: 'assistant', text: cmdText.slice(0, 3000), el: h, kind: 'terminal', meta: { label, isRunning } });
+        }
+
+        // ─── Tool Call 요약 수집 (Searched, Analyzed, Edited 등) ───
+        const toolDivs = scroll.querySelectorAll('div[data-tooltip-id]');
+        for (const td of toolDivs) {
+            const cls = (td.className || '').toString();
+            if (!cls.includes('cursor-pointer') || !cls.includes('text-sm')) continue;
+            // span 단위로 읽어서 공백으로 연결 (textContent는 "SearchedDevServer"처럼 붙음)
+            const spans = td.querySelectorAll('span');
+            const text = spans.length > 0
+                ? Array.from(spans).map(s => (s.textContent || '').trim()).filter(Boolean).join(' ')
+                : (td.textContent || '').trim();
+            if (!text.match(/^(Searched|Analyzed|Edited|Read|Viewed|Created|Listed|Checked)/)) continue;
+            if (text.length > 120) continue;
+            const hash = 'tool:' + text;
+            if (seenHashes.has(hash)) continue;
+            seenHashes.add(hash);
+            // 간결하게 한 줄 요약
+            collected.push({ role: 'assistant', text: text, el: td, kind: 'tool' });
         }
 
         // 3. DOM 순서 정렬
@@ -183,15 +244,16 @@
             return 0;
         });
 
-        // 최신 30개만 유지 (대화 첫 로드 시 수백 개 수집 방지)
-        const trimmed = collected.length > 30 ? collected.slice(-30) : collected;
+        // 최신 50개만 유지 (thinking/tool_use 포함으로 늘림)
+        const trimmed = collected.length > 50 ? collected.slice(-50) : collected;
 
         const final = trimmed.map((m, i) => ({
             id: 'msg_' + i,
             role: m.role,
             content: m.text.length > 6000 ? m.text.slice(0, 6000) + '\n[... truncated]' : m.text,
             index: i,
-            kind: 'standard',
+            kind: m.kind || 'standard',
+            meta: m.meta || undefined,
             vsc_history: true
         }));
 

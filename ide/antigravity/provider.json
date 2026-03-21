@@ -63,6 +63,27 @@
       "label": "Long Generation Threshold (sec)",
       "min": 30,
       "max": 600
+    },
+    "showThinking": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Show Thinking",
+      "description": "Display AI thinking/reasoning process in chat"
+    },
+    "showToolCalls": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Show Tool Calls",
+      "description": "Display tool call summaries (Searched, Analyzed, Edited, etc.)"
+    },
+    "showTerminal": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Show Terminal",
+      "description": "Display terminal command execution and output"
     }
   }
 }
