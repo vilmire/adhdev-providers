@@ -61,40 +61,50 @@
   "spawn": {
     "command": "claude",
     "args": [],
-    "shell": false,
+    "shell": true,
     "env": {}
   },
   "patterns": {
     "prompt": [
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {}
+      { "source": "Type your message", "flags": "i" },
+      { "source": "^>\\s*$", "flags": "m" },
+      { "source": "[›❯]\\s*[\\r\\n]", "flags": "" },
+      { "source": "[›❯]\\s*$", "flags": "m" },
+      { "source": "for\\s*shortcuts", "flags": "i" },
+      { "source": "\\?\\s*for\\s*help", "flags": "i" },
+      { "source": "Press enter", "flags": "i" }
     ],
     "generating": [
-      {},
-      {},
-      {},
-      {},
-      {}
+      { "source": "[\\u2800-\\u28ff]", "flags": "" },
+      { "source": "esc to (cancel|interrupt|stop)", "flags": "i" },
+      { "source": "generating\\.\\.\\.", "flags": "i" },
+      { "source": "Claude is (?:thinking|processing|working)", "flags": "i" },
+      { "source": "Flummoxing", "flags": "i" }
     ],
     "approval": [
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {}
+      { "source": "Allow\\s*once", "flags": "i" },
+      { "source": "Always\\s*allow", "flags": "i" },
+      { "source": "\\(y/n\\)", "flags": "i" },
+      { "source": "\\[Y/n\\]", "flags": "i" },
+      { "source": "Run\\s*this\\s*command", "flags": "i" },
+      { "source": "Allow\\s*tool", "flags": "i" },
+      { "source": "Yes,?\\s*don'?t\\s*ask", "flags": "i" },
+      { "source": "Deny", "flags": "i" },
+      { "source": "Do you want to proceed", "flags": "i" }
     ],
     "ready": [
-      {},
-      {}
+      { "source": "for\\s*shortcuts", "flags": "i" },
+      { "source": "[›❯]\\s*$", "flags": "m" }
+    ],
+    "dialog": [
+      { "source": "Quick safety check", "flags": "i" },
+      { "source": "Is this a project", "flags": "i" },
+      { "source": "Enter to confirm", "flags": "i" }
     ]
+  },
+  "approvalKeys": {
+    "0": "1",
+    "1": "2",
+    "2": "3"
   }
 }
