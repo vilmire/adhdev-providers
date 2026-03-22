@@ -2,6 +2,18 @@
 
 > How to add new providers or improve existing ones for ADHDev.
 
+## Contributor License Agreement (CLA)
+
+Before your Pull Request can be merged, you must sign our [CLA](./CLA.md).
+
+When you open a PR, a bot will automatically ask you to sign it by replying with:
+
+> I have read the CLA Document and I hereby sign the CLA
+
+This is a one-time step. The CLA grants ADHDev the right to distribute your contribution under both open-source and commercial licenses.
+
+---
+
 ## Quick Start
 
 ### 1. Fork & Clone
