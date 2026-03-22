@@ -266,8 +266,14 @@
         // 5. 모달/승인 감지 — Run⌥⏎/Reject 인라인 + Deny/Allow 브라우저 승인
         let activeModal = null;
         try {
+            // Strip Mac symbols and Windows shortcut labels (e.g. "RunAlt+⏎" → "Run")
+            const stripShortcut = (s) => s
+                .replace(/[⌥⏎⇧⌫⌘⌃↵]/g, '')
+                .replace(/\s*(Alt|Ctrl|Shift|Cmd|Enter|Return|Esc|Tab|Backspace)(\+\s*\w+)*/gi, '')
+                .trim();
             const isApprovalLike = (el) => {
-                const t = (el.textContent || '').trim().toLowerCase();
+                const raw = (el.textContent || '').trim();
+                const t = stripShortcut(raw).toLowerCase();
                 // 드롭다운 옵션 제외
                 if (t === 'ask every time') return false;
                 return /^(run|reject|skip|approve|allow|deny|cancel|accept|yes|no)\b/i.test(t)
@@ -293,11 +299,9 @@
                 const approvalBtns = panelBtns.filter(isApprovalLike);
                 if (approvalBtns.length > 0) {
                     const hasActionBtn = approvalBtns.some(b => {
-                        const t = (b.textContent || '').trim().toLowerCase();
-                        return t.indexOf('run') === 0 || t === 'reject' || t.indexOf('reject') === 0
-                            || t === 'skip' || t.indexOf('skip') === 0
-                            || t === 'deny' || t === 'allow' || t === 'always allow' || t === 'always deny'
-                            || t === 'accept' || t === 'approve';
+                        const t = stripShortcut((b.textContent || '').trim()).toLowerCase();
+                        return /^(run|reject|skip|deny|allow|accept|approve|yes|no)\b/.test(t)
+                            || t === 'always allow' || t === 'always deny';
                     });
                     if (hasActionBtn) {
                         const btnTexts = [...new Set(
