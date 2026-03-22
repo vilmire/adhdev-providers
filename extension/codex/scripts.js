@@ -88,3 +88,7 @@ module.exports.exploreControlsWebview = function exploreControlsWebview() {
 module.exports.exploreDropdownWebview = function exploreDropdownWebview() {
   return loadScript('explore_dropdown_webview.js');
 };
+
+module.exports.inspectCodeWebview = function inspectCodeWebview() {
+  return loadScript('inspect_code_webview.js');
+};
