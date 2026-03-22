@@ -46,6 +46,17 @@ module.exports.setModel = function setModel(params) {
   return script.replace(/\$\{\s*MODEL\s*\}/g, JSON.stringify(model));
 };
 
+module.exports.listModes = function listModes() {
+  return loadScript('list_modes.js');
+};
+
+module.exports.setMode = function setMode(params) {
+  const mode = params?.mode || params;
+  const script = loadScript('set_mode.js');
+  if (!script) return null;
+  return script.replace(/\$\{\s*MODE\s*\}/g, JSON.stringify(mode));
+};
+
 module.exports.newSession = function newSession() {
   return loadScript('new_session.js');
 };

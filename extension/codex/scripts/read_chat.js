@@ -301,9 +301,12 @@
       status = 'generating';
     }
 
-    const approvalPatterns = /^(approve|accept|allow|confirm|run|proceed|yes|승인|허용|실행)/i;
-    if (buttonTexts.some(b => approvalPatterns.test(b)) ||
-        buttonLabels.some(l => approvalPatterns.test(l))) {
+    // Codex approval buttons appear as distinct action buttons (e.g. "Approve", "Always approve", "Deny")
+    // They typically appear at the bottom of a tool-call/action block
+    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부)/i;
+    const hasApprovalButton = buttonTexts.some(b => approvalSpecificPatterns.test(b)) ||
+        buttonLabels.some(l => approvalSpecificPatterns.test(l));
+    if (hasApprovalButton) {
       status = 'waiting_approval';
     }
 
