@@ -22,12 +22,34 @@
  */
 (() => {
   try {
-    const root = document.getElementById('root');
+    // When executed via evaluateInSession, we're in the outer vscode-webview
+    // iframe. The Codex React app lives in a child iframe. Try to access it.
+    let doc = document;
+    let root = doc.getElementById('root');
+
+    if (!root) {
+      // Traverse into inner iframe(s)
+      const iframes = doc.querySelectorAll('iframe');
+      for (const iframe of iframes) {
+        try {
+          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (innerDoc) {
+            const innerRoot = innerDoc.getElementById('root');
+            if (innerRoot) {
+              doc = innerDoc;
+              root = innerRoot;
+              break;
+            }
+          }
+        } catch (e) { /* cross-origin, skip */ }
+      }
+    }
+
     if (!root) return JSON.stringify({ error: 'no root element' });
 
     const isVisible = root.offsetHeight > 0;
 
-    const headerEl = document.querySelector('[style*="view-transition-name: header-title"]');
+    const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = (headerEl?.textContent || '').trim();
     const isTaskList = headerText === '작업' || headerText === 'Tasks';
 
@@ -216,7 +238,7 @@
 
     // ─── 1. Messages ───
     const messages = [];
-    const turnEls = document.querySelectorAll('[data-content-search-turn-key]');
+    const turnEls = doc.querySelectorAll('[data-content-search-turn-key]');
 
     for (const turnEl of turnEls) {
       const turnKey = turnEl.getAttribute('data-content-search-turn-key');
@@ -243,7 +265,7 @@
 
     // Fallback
     if (messages.length === 0 && !isTaskList) {
-      const threadArea = document.querySelector('[data-thread-find-target="conversation"]');
+      const threadArea = doc.querySelector('[data-thread-find-target="conversation"]');
       if (threadArea) {
         const text = extractRichContent(threadArea);
         if (text.length > 0) {
@@ -258,7 +280,7 @@
 
     // ─── 2. Input field ───
     let inputContent = '';
-    const proseMirror = document.querySelector('.ProseMirror');
+    const proseMirror = doc.querySelector('.ProseMirror');
     if (proseMirror) {
       const placeholder = proseMirror.querySelector('.placeholder');
       const text = (proseMirror.textContent || '').trim();
@@ -269,7 +291,7 @@
 
     // ─── 3. Status ───
     let status = 'idle';
-    const buttons = Array.from(document.querySelectorAll('button'))
+    const buttons = Array.from(doc.querySelectorAll('button'))
       .filter(b => b.offsetWidth > 0);
     const buttonTexts = buttons.map(b => (b.textContent || '').trim().toLowerCase());
     const buttonLabels = buttons.map(b => (b.getAttribute('aria-label') || '').toLowerCase());
@@ -293,7 +315,7 @@
     // ─── 4. Model / Mode ───
     let model = '';
     let mode = '';
-    const footerButtons = document.querySelectorAll(
+    const footerButtons = doc.querySelectorAll(
       '[class*="thread-composer-max-width"] button, [class*="pb-2"] button'
     );
     for (const btn of footerButtons) {
@@ -318,7 +340,7 @@
     }
 
     // ─── 6. Task info ───
-    const taskBtn = document.querySelector('[aria-label*="작업"], [aria-label*="task" i]');
+    const taskBtn = doc.querySelector('[aria-label*="작업"], [aria-label*="task" i]');
     const taskInfo = taskBtn ? (taskBtn.textContent || '').trim() : '';
 
     return JSON.stringify({
