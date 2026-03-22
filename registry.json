@@ -1,5 +1,5 @@
 {
-  "version": "2026.03.21",
+  "version": "2026.03.22",
   "providers": {
     "agentpool-acp": {
       "providerVersion": "0.0.0",
@@ -195,6 +195,11 @@
       "providerVersion": "0.0.0",
       "category": "extension",
       "name": "Cline"
+    },
+    "codex": {
+      "providerVersion": "0.0.0",
+      "category": "extension",
+      "name": "Codex"
     },
     "roo-code": {
       "providerVersion": "0.0.0",
