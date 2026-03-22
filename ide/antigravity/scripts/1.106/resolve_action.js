@@ -1,17 +1,15 @@
 /**
  * Antigravity v1 — resolve_action
- * 
- * 버튼 찾기 + 좌표 반환 (CDP Input.dispatchMouseEvent로 클릭)
+ *
+ * 스크롤 최하단 → scrollIntoView → .click()
  * 파라미터: ${BUTTON_TEXT}
- * 
- * 핵심: viewport 안에 보이는 버튼 중 마지막(최신) 매칭 우선
  */
 (() => {
     const want = ${ BUTTON_TEXT };
     const wantNorm = (want || '').replace(/\s+/g, ' ').trim().toLowerCase();
-    
+
     function norm(t) { return (t || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
-    
+
     function matches(el) {
         const raw = (el.textContent || '').trim();
         const t = norm(raw);
@@ -35,15 +33,16 @@
         }
         return false;
     }
-    
+
+    // 1. 채팅 패널 스크롤을 최하단으로
+    const conv = document.querySelector('.antigravity-agent-side-panel') || document.querySelector('#conversation');
+    const scrollEl = conv ? (conv.querySelector('.overflow-y-auto') || conv) : null;
+    if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
+
+    // 2. viewport 필터 없이 DOM에 있는 모든 visible 버튼 검색
     const sel = 'button, [role="button"]';
-    const allBtns = [...document.querySelectorAll(sel)].filter(b => {
-        if (!b.offsetWidth || !b.getBoundingClientRect().height) return false;
-        const rect = b.getBoundingClientRect();
-        // viewport 안에 보이는 것만 (y > 0, y < window.innerHeight)
-        return rect.y > 0 && rect.y < window.innerHeight;
-    });
-    
+    const allBtns = [...document.querySelectorAll(sel)].filter(b => b.offsetWidth > 0 && b.offsetHeight > 0);
+
     // 마지막(최신) 매칭 우선 — 역순 검색
     let found = null;
     for (let i = allBtns.length - 1; i >= 0; i--) {
@@ -52,17 +51,13 @@
             break;
         }
     }
-    
+
     if (found) {
-        const rect = found.getBoundingClientRect();
-        return JSON.stringify({
-            found: true,
-            text: found.textContent?.trim()?.substring(0, 40),
-            x: Math.round(rect.x + rect.width / 2),
-            y: Math.round(rect.y + rect.height / 2),
-            w: Math.round(rect.width),
-            h: Math.round(rect.height)
-        });
+        const text = found.textContent?.trim()?.substring(0, 40);
+        // 버튼이 화면에 보이도록 스크롤 후 클릭
+        try { found.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+        try { found.click(); } catch (_) {}
+        return JSON.stringify({ resolved: true, clicked: text });
     }
     return JSON.stringify({ found: false, want: wantNorm });
 })()
