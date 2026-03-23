@@ -221,6 +221,17 @@
         }
       ]
     },
+    "cursor": {
+      "providerVersion": "1.0.0",
+      "category": "ide",
+      "name": "Cursor",
+      "compatibility": [
+        {
+          "ideVersion": ">=0.49.0",
+          "scriptDir": "scripts/0.49"
+        }
+      ]
+    },
     "kiro": {
       "providerVersion": "0.0.0",
       "category": "ide",
