@@ -1,6 +1,6 @@
 # ADHDev Provider Compatibility Matrix
 
-> **Last updated:** 2026-03-18  
+> **Last updated:** 2026-03-22  
 > **How to contribute:** Submit a PR updating the status for your OS/version. See [Status Legend](#status-legend) below.
 
 ## Status Legend

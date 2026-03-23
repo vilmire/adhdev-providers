@@ -51,6 +51,7 @@
 
         resolve(JSON.stringify({
           currentModel,
+          current: currentModel,
           models,
           count: models.length,
         }));

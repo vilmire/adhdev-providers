@@ -90,7 +90,8 @@
       { "source": "Allow\\s*tool", "flags": "i" },
       { "source": "Yes,?\\s*don'?t\\s*ask", "flags": "i" },
       { "source": "Deny", "flags": "i" },
-      { "source": "Do you want to proceed", "flags": "i" }
+      { "source": "Do you want to proceed", "flags": "i" },
+      { "source": "Esc to cancel", "flags": "i" }
     ],
     "ready": [
       { "source": "for\\s*shortcuts", "flags": "i" },

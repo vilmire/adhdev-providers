@@ -28,7 +28,7 @@ ProviderLoader.loadAll()  ← 3-tier priority loading
 
 | Priority | Directory | Auto-update | Purpose |
 |----------|-----------|-------------|---------|
-| 1 (lowest) | `packages/launcher/providers/_builtin/` | npm update only | Offline fallback |
+| 1 (lowest) | `packages/daemon-core/providers/_builtin/` | npm update only | Offline fallback |
 | 2 | `~/.adhdev/providers/.upstream/` | ✅ On daemon start | Latest GitHub providers |
 | 3 (highest) | `~/.adhdev/providers/` (excl. _upstream) | ❌ **Never** | User custom |
 
@@ -219,7 +219,7 @@ scripts: {
 ## 3️⃣ Script Output Contract
 
 All scripts **must return a JSON string**.
-See [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/launcher/src/providers/contracts.ts) for reference.
+See [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/src/providers/contracts.ts) for reference.
 
 ### Core Scripts
 
@@ -464,7 +464,7 @@ adhdev daemon --dev
 
 ## 5️⃣ Using _helpers (Optional)
 
-[_helpers/index.js](file:///Users/vilmire/Work/remote_vs/packages/launcher/providers/_helpers/index.js) provides common utilities you can use.
+[_helpers/index.js](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/providers/_helpers/index.js) provides common utilities you can use.
 
 | Helper | Purpose |
 |--------|---------|

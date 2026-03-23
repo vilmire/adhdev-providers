@@ -8,7 +8,7 @@
 ├── ide/            — IDE providers (Cursor, Antigravity, Windsurf, Kiro, etc.)
 ├── cli/            — CLI agent providers (Gemini CLI, Claude Code, Codex CLI)
 ├── extension/      — VS Code extension providers (Cline, Roo Code)
-├── acp/            — ACP agent providers (40+ agents)
+├── acp/            — ACP agent providers (35 agents)
 ├── registry.json   — Auto-generated provider index (used by daemon)
 ├── validate.js     — Provider schema validator
 ├── CONTRIBUTING.md — How to add a new provider
