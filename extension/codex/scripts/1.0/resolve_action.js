@@ -13,14 +13,21 @@
     const buttons = Array.from(document.querySelectorAll('button'))
       .filter(b => b.offsetWidth > 0);
 
-    // Map action to button text patterns
+    const actionLower = (action || '').toLowerCase();
     const patterns = {
       approve: /^(approve|accept|allow|confirm|run|proceed|yes|승인|허용|실행|확인)/i,
       deny: /^(deny|reject|no|거부|아니오)/i,
       cancel: /^(cancel|stop|취소|중지)/i,
     };
 
-    const pattern = patterns[action.toLowerCase()] || patterns.approve;
+    let pattern;
+    if (patterns[actionLower]) {
+      pattern = patterns[actionLower];
+    } else {
+      // Escape custom string for regex
+      const escapedAction = action.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      pattern = new RegExp(`^${escapedAction}$`, 'i');
+    }
 
     for (const btn of buttons) {
       const text = (btn.textContent || '').trim();
