@@ -52,6 +52,11 @@
     const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = (headerEl?.textContent || '').trim();
     const isTaskList = headerText === '작업' || headerText === 'Tasks';
+    
+    // If we accidentally evaluated inside the Tasks webview instead of Chat, tell Daemon to try the next matching webview
+    if (isTaskList) {
+      return JSON.stringify({ __adhdev_skip_iframe: true, error: 'Found Tasks webview instead of Chat' });
+    }
 
     // ─── Rich content extractor ───
     const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'HR', 'SECTION', 'ARTICLE']);
@@ -291,23 +296,64 @@
 
     // ─── 3. Status ───
     let status = 'idle';
+    // Filter out disabled buttons to avoid matching old historical prompts
     const buttons = Array.from(doc.querySelectorAll('button'))
-      .filter(b => b.offsetWidth > 0);
-    const buttonTexts = buttons.map(b => (b.textContent || '').trim().toLowerCase());
-    const buttonLabels = buttons.map(b => (b.getAttribute('aria-label') || '').toLowerCase());
+      .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'));
+    
+    const getBtnLabel = (b) => {
+      let t = (b.textContent || '').trim();
+      return t || (b.getAttribute('aria-label') || '').trim();
+    };
+    
+    const buttonLabels = buttons.map(getBtnLabel).map(t => t.toLowerCase());
 
-    if (buttonTexts.includes('cancel') || buttonTexts.includes('취소') ||
-        buttonLabels.some(l => l.includes('cancel') || l.includes('취소') || l.includes('stop') || l.includes('중지'))) {
+    if (buttonLabels.some(l => l.includes('cancel') || l.includes('취소') || l.includes('stop') || l.includes('중지'))) {
       status = 'generating';
     }
 
-    // Codex approval buttons appear as distinct action buttons (e.g. "Approve", "Always approve", "Deny")
-    // They typically appear at the bottom of a tool-call/action block
-    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부)/i;
-    const hasApprovalButton = buttonTexts.some(b => approvalSpecificPatterns.test(b)) ||
-        buttonLabels.some(l => approvalSpecificPatterns.test(l));
-    if (hasApprovalButton) {
-      status = 'waiting_approval';
+    // ─── 5. Approval Modal & Status ───
+    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부|yes|no|allow|disallow|예|아니오|허용|실행|run|proceed|accept)/i;
+    let activeModal = null;
+
+    const approvalBtns = buttons.filter(b => {
+      const lbl = getBtnLabel(b);
+      return lbl && lbl.length < 40 && approvalSpecificPatterns.test(lbl);
+    });
+
+    if (approvalBtns.length > 0) {
+      // Grab the last matching button which is generally the active prompt at the bottom
+      const targetBtn = approvalBtns[approvalBtns.length - 1];
+      let p = targetBtn.parentElement;
+      let messageText = '';
+      
+      // Traverse upward to capture the contextual text block describing the prompt
+      while (p && p !== doc.body) {
+        // Clone to safely remove button texts from the extracted message
+        const clone = p.cloneNode(true);
+        clone.querySelectorAll('button').forEach(el => el.remove());
+        const t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+        if (t.length > 5 && t.length < 2000) {
+          messageText = t;
+          break;
+        }
+        p = p.parentElement;
+      }
+      
+      if (!messageText) messageText = 'Codex wants to perform an action';
+      
+      // Find all peer buttons inside this prompt block
+      let containerBtns = p ? Array.from(p.querySelectorAll('button')).filter(b => !b.disabled && b.offsetWidth > 0) : approvalBtns;
+      if (containerBtns.length === 0 || containerBtns.length > 6) containerBtns = approvalBtns;
+
+      const actions = containerBtns.map(b => getBtnLabel(b)).filter(t => t && t.length < 40);
+
+      if (actions.length > 0) {
+        status = 'waiting_approval';
+        activeModal = {
+          message: messageText,
+          buttons: [...new Set(actions)]
+        };
+      }
     }
 
     if (isTaskList) {
@@ -325,21 +371,6 @@
       const text = (btn.textContent || '').trim();
       if (/^(GPT-|gpt-|o\d|claude-)/i.test(text)) model = text;
       if (/^(낮음|중간|높음|low|medium|high)$/i.test(text)) mode = text;
-    }
-
-    // ─── 5. Approval modal ───
-    let activeModal = null;
-    if (status === 'waiting_approval') {
-      const approvalBtns = buttons
-        .map(b => (b.textContent || '').trim())
-        .filter(t => t && t.length > 0 && t.length < 40 &&
-          /approve|accept|allow|confirm|run|proceed|cancel|deny|reject|승인|허용|실행|취소|거부/i.test(t));
-      if (approvalBtns.length > 0) {
-        activeModal = {
-          message: 'Codex wants to perform an action',
-          buttons: [...new Set(approvalBtns)],
-        };
-      }
     }
 
     // ─── 6. Task info ───

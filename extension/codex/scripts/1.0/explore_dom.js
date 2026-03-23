@@ -45,11 +45,17 @@
 
     // 6. Check if we're on a task list or chat view
     const hasConversationList = document.querySelectorAll('[role="button"][class*="rounded-lg"]').length > 0;
-    const headerText = document.querySelector('[style*="view-transition-name: header-title"]')?.textContent?.trim() || '';
+    const headerEl = document.querySelector('[style*="view-transition-name: header-title"]');
+    const headerText = (headerEl?.textContent || '').trim();
+    const isTaskList = headerText === '작업' || headerText === 'Tasks';
+
+    if (isTaskList) {
+      return JSON.stringify({ __adhdev_skip_iframe: true, error: 'Found Tasks webview instead of Chat' });
+    }
 
     return JSON.stringify({
       headerText,
-      isTaskList: headerText === '작업' || headerText === 'Tasks',
+      isTaskList,
       modelFound: modelMatch ? modelMatch[0] : null,
       textareaCount: textareas.length,
       textareas: Array.from(textareas).map(t => ({
