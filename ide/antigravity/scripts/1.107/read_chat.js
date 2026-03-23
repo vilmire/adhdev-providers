@@ -30,7 +30,8 @@
             if (animMarkdown && animMarkdown.offsetWidth > 0) status = 'generating';
         }
 
-        const title = document.title.split(' \u2014 ')[0].trim() || 'Active Session';
+        const titleParts = document.title.split(' \u2014 ');
+        const title = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim() || 'Active Session';
 
         // ─── HTML → Markdown 변환기 (대시보드가 ReactMarkdown+remarkGfm 사용) ───
         // extractCodeText: layout-independent code text extraction

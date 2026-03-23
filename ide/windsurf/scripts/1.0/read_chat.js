@@ -83,7 +83,8 @@
             }
         }
 
-        const title = document.title.split(' \u2014 ')[0].trim() || 'Cascade';
+        const titleParts = document.title.split(' \u2014 ');
+        const title = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim() || 'Cascade';
 
         // ─── 4. HTML → Markdown 변환기 ───
         const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER']);

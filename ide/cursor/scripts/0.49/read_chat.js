@@ -309,7 +309,7 @@
 
     // ─── Title ───
     const titleParts = document.title.split(' — ');
-    const projectTitle = (titleParts.length >= 2 ? titleParts[titleParts.length - 2] : titleParts[0] || '').trim();
+    const projectTitle = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim();
 
     return JSON.stringify({ id, status, title: projectTitle, messages, inputContent, activeModal });
   } catch(e) {

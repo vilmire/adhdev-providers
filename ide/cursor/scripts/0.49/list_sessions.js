@@ -30,7 +30,7 @@
     if (sessions.length === 0 && activeComposer) {
       sessions.push({
         id: activeId,
-        title: document.title.split(' — ')[0],
+        title: (() => { const p = document.title.split(' — '); return p.length >= 2 ? p[p.length - 1] : p[0]; })(),
         active: true,
         index: 0,
       });
