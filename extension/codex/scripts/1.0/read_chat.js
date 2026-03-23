@@ -323,29 +323,47 @@
     if (approvalBtns.length > 0) {
       // Grab the last matching button which is generally the active prompt at the bottom
       const targetBtn = approvalBtns[approvalBtns.length - 1];
-      let p = targetBtn.parentElement;
-      let messageText = '';
       
-      // Traverse upward to capture the contextual text block describing the prompt
+      // Traverse upward to find the card/block containing the buttons (usually 2 to 6 buttons grouped together)
+      let bestContainer = targetBtn.parentElement;
+      let p = targetBtn.parentElement;
+      
       while (p && p !== doc.body) {
-        // Clone to safely remove button texts from the extracted message
-        const clone = p.cloneNode(true);
-        clone.querySelectorAll('button').forEach(el => el.remove());
-        const t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-        if (t.length > 5 && t.length < 2000) {
-          messageText = t;
+        const btnCount = p.querySelectorAll('button').length;
+        if (btnCount >= 2 && btnCount <= 6) {
+          bestContainer = p;
+          // Don't break immediately, see if the next parent is an even better logical card container,
+          // but usually breaking here is safe enough if we already captured the peer buttons.
           break;
         }
         p = p.parentElement;
       }
       
-      if (!messageText) messageText = 'Codex wants to perform an action';
+      // If we couldn't find a multi-button container, just traverse up a bit to get contextual text
+      if (!p || p === doc.body) {
+         p = targetBtn.parentElement;
+         while (p && p !== doc.body) {
+            const tempClone = p.cloneNode(true);
+            tempClone.querySelectorAll('button').forEach(el => el.remove());
+            if ((tempClone.textContent || '').replace(/\s+/g, '').length > 5) {
+               bestContainer = p;
+               break;
+            }
+            p = p.parentElement;
+         }
+      }
+
+      // Extract message text by removing buttons from the clone
+      const clone = bestContainer.cloneNode(true);
+      clone.querySelectorAll('button').forEach(el => el.remove());
+      const t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+      let messageText = t.length > 5 ? t : 'Codex wants to perform an action';
       
-      // Find all peer buttons inside this prompt block
-      let containerBtns = p ? Array.from(p.querySelectorAll('button')).filter(b => !b.disabled && b.offsetWidth > 0) : approvalBtns;
+      // Find all peer buttons inside this optimal prompt block
+      let containerBtns = Array.from(bestContainer.querySelectorAll('button')).filter(b => !b.disabled && b.offsetWidth > 0);
       if (containerBtns.length === 0 || containerBtns.length > 6) containerBtns = approvalBtns;
 
-      const actions = containerBtns.map(b => getBtnLabel(b)).filter(t => t && t.length < 40);
+      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 40);
 
       if (actions.length > 0) {
         status = 'waiting_approval';
