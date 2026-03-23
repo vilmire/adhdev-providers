@@ -1,1 +1,70 @@
-JSON.stringify((() => { const frames = document.querySelectorAll('iframe.webview'); const results = []; frames.forEach((f, i) => { try { results.push({ index: i, src: f.src?.substring(0, 200), id: f.id?.substring(0, 100), class: f.className?.substring(0, 100) }); } catch(e) { results.push({ index: i, error: e.message }); } }); return { total: frames.length, frames: results }; })())
+{
+  "type": "cursor",
+  "name": "Cursor",
+  "category": "ide",
+  "displayName": "Cursor",
+  "icon": "⚡",
+  "cli": "cursor",
+  "cdpPorts": [
+    9333,
+    9334
+  ],
+  "targetFilter": {
+    "urlIncludes": "workbench.html",
+    "urlExcludes": ["agent"],
+    "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
+  },
+  "processNames": {
+    "darwin": "Cursor",
+    "win32": [
+      "Cursor.exe"
+    ]
+  },
+  "paths": {
+    "darwin": [
+      "/Applications/Cursor.app"
+    ],
+    "win32": [
+      "C:\\Users\\*\\AppData\\Local\\Programs\\cursor\\Cursor.exe"
+    ],
+    "linux": [
+      "/opt/Cursor",
+      "/usr/share/cursor"
+    ]
+  },
+  "inputMethod": "cdp-type-and-send",
+  "inputSelector": ".aislash-editor-input[contenteditable=\"true\"]",
+  "versionCommand": "cursor --version",
+  "providerVersion": "1.0.0",
+  "compatibility": [
+    { "ideVersion": ">=0.49.0", "scriptDir": "scripts/0.49" }
+  ],
+  "defaultScriptDir": "scripts/0.49",
+  "vscodeCommands": {
+    "changeModel": "cursor.model"
+  },
+  "settings": {
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  }
+}
