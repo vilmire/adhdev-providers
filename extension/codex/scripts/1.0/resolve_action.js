@@ -10,8 +10,8 @@
   try {
     const action = ${ACTION};
     
-    const buttons = Array.from(document.querySelectorAll('button'))
-      .filter(b => b.offsetWidth > 0);
+    const buttons = Array.from(document.querySelectorAll('button, [role="radio"], [role="button"], input[type="radio"] + label'))
+      .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'));
 
     const actionLower = (action || '').toLowerCase();
     const patterns = {
@@ -29,12 +29,26 @@
       pattern = new RegExp(`^${escapedAction}$`, 'i');
     }
 
+    const getBtnLabel = (b) => {
+      let t = (b.textContent || '').trim();
+      return t || (b.getAttribute('aria-label') || '').trim();
+    };
+
     for (const btn of buttons) {
-      const text = (btn.textContent || '').trim();
-      const label = btn.getAttribute('aria-label') || '';
-      if (pattern.test(text) || pattern.test(label)) {
+      const text = getBtnLabel(btn);
+      if (pattern.test(text)) {
         btn.click();
-        return JSON.stringify({ success: true, action, clicked: text || label });
+        
+        // If this is a multiple-choice form, we likely just clicked a radio option.
+        // We must also click "Submit(제출)" immediately after.
+        if (!/^(제출|submit|건너뛰기|skip|cancel|취소)$/i.test(action)) {
+          setTimeout(() => {
+            const submitBtn = buttons.find(b => /^(제출|submit)$/i.test(getBtnLabel(b)));
+            if (submitBtn && submitBtn !== btn) submitBtn.click();
+          }, 100);
+        }
+        
+        return JSON.stringify({ success: true, action, clicked: text });
       }
     }
 

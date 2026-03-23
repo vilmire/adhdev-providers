@@ -297,7 +297,8 @@
     // ─── 3. Status ───
     let status = 'idle';
     // Filter out disabled buttons to avoid matching old historical prompts
-    const buttons = Array.from(doc.querySelectorAll('button'))
+    // Include roles often used by multiple-choice forms
+    const buttons = Array.from(doc.querySelectorAll('button, [role="radio"], [role="button"], input[type="radio"] + label'))
       .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'));
     
     const getBtnLabel = (b) => {
@@ -312,12 +313,14 @@
     }
 
     // ─── 5. Approval Modal & Status ───
-    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부|yes|no|allow|disallow|예|아니오|허용|실행|run|proceed|accept)/i;
+    // Updated patterns to include Submit(제출) and Skip(건너뛰기) and numbered form options mapping
+    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부|yes|no|allow|disallow|(\d+\.\s*)?예|(\d+\.\s*)?네|(\d+\.\s*)?아니오|허용|실행|진행|run|proceed|accept|제출|submit|건너뛰기|skip)/i;
     let activeModal = null;
 
     const approvalBtns = buttons.filter(b => {
       const lbl = getBtnLabel(b);
-      return lbl && lbl.length < 40 && approvalSpecificPatterns.test(lbl);
+      // To prevent matching arbitrary text boxes that just happen to start with "Run" but are very long
+      return lbl && lbl.length < 100 && approvalSpecificPatterns.test(lbl);
     });
 
     if (approvalBtns.length > 0) {
@@ -329,8 +332,8 @@
       let p = targetBtn.parentElement;
       
       while (p && p !== doc.body) {
-        const btnCount = p.querySelectorAll('button').length;
-        if (btnCount >= 2 && btnCount <= 6) {
+        const btnCount = p.querySelectorAll('button, [role="radio"], [role="button"]').length;
+        if (btnCount >= 2 && btnCount <= 8) {
           bestContainer = p;
           // Don't break immediately, see if the next parent is an even better logical card container,
           // but usually breaking here is safe enough if we already captured the peer buttons.
@@ -344,7 +347,7 @@
          p = targetBtn.parentElement;
          while (p && p !== doc.body) {
             const tempClone = p.cloneNode(true);
-            tempClone.querySelectorAll('button').forEach(el => el.remove());
+            tempClone.querySelectorAll('button, [role="radio"], [role="button"]').forEach(el => el.remove());
             if ((tempClone.textContent || '').replace(/\s+/g, '').length > 5) {
                bestContainer = p;
                break;
@@ -355,15 +358,16 @@
 
       // Extract message text by removing buttons from the clone
       const clone = bestContainer.cloneNode(true);
-      clone.querySelectorAll('button').forEach(el => el.remove());
+      clone.querySelectorAll('button, [role="radio"], [role="button"]').forEach(el => el.remove());
       const t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
       let messageText = t.length > 5 ? t : 'Codex wants to perform an action';
       
       // Find all peer buttons inside this optimal prompt block
-      let containerBtns = Array.from(bestContainer.querySelectorAll('button')).filter(b => !b.disabled && b.offsetWidth > 0);
-      if (containerBtns.length === 0 || containerBtns.length > 6) containerBtns = approvalBtns;
+      let containerBtns = Array.from(bestContainer.querySelectorAll('button, [role="radio"], [role="button"]'))
+         .filter(b => !b.disabled && b.offsetWidth > 0);
+      if (containerBtns.length === 0 || containerBtns.length > 10) containerBtns = approvalBtns;
 
-      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 40);
+      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150);
 
       if (actions.length > 0) {
         status = 'waiting_approval';
