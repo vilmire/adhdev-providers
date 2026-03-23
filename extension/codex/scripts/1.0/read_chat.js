@@ -328,11 +328,14 @@
     const actionControls = Array.from(contentArea.querySelectorAll(selectors))
       .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'))
       .filter(b => {
-        const lbl = getBtnLabel(b).toLowerCase();
-        // Filter out generic message utility buttons (copy, edit, read aloud) that are always present
-        if (/^(copy|edit|like|dislike|read aloud|play|stop|복사|편집|수정|재생|정지|좋아요|싫어요)$/i.test(lbl)) return false;
-        // Ignore purely icon buttons with no label
-        if (!lbl || lbl.length === 0) return false;
+        // A true language-agnostic approach relies on the button's DOM traits, not label translation.
+        const visibleText = (b.textContent || '').trim();
+        // 1. Generic utility tools (Copy, Edit, Thumbs Up) in Codex are universally icon-only buttons (containing SVGs but no inner textual DOM content).
+        if (visibleText.length === 0) return false;
+        
+        // 2. Certain generic layout elements might sneak into selectors. Exclude obvious toolbar groups if visible text is just a tiny number (like vote counts)
+        if (visibleText.length < 2 && b.querySelector('svg')) return false;
+
         return true;
       });
 
