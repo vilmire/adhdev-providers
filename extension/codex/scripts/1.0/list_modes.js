@@ -3,6 +3,8 @@
  *
  * Finds the mode / autonomy dropdown next to the model chip in the composer footer,
  * opens it (Radix), reads options, closes. UI expects `modes` + `current` (see ModelModeBar).
+ *
+ * Uses the same multi-searchRoot strategy as readChat for reliable mode button discovery.
  */
 (() => {
   try {
@@ -25,38 +27,36 @@
       return { doc, root };
     }
 
-    function isModelMenuButton(b) {
-      const text = (b.textContent || '').trim();
-      if (b.getAttribute('aria-haspopup') !== 'menu') return false;
+    function isModelText(text) {
       return /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text);
     }
 
-    /** Mode chip: menu trigger in composer that is not the model selector. */
-    function findModeMenuButton(doc) {
-      const composer =
-        doc.querySelector('[class*="thread-composer-max-width"]') ||
-        doc.querySelector('[class*="thread-composer"]') ||
-        doc.querySelector('[class*="pb-2"]') ||
-        doc.getElementById('root') ||
-        doc.body;
+    /**
+     * Find the mode menu button using the same multi-root strategy as readChat.
+     * Searches multiple container scopes and both doc frames.
+     */
+    function findModeButton(doc) {
+      for (const d of [doc, document]) {
+        const searchRoots = [
+          d.querySelector('[class*="thread-composer-max-width"]'),
+          d.querySelector('[class*="thread-composer"]'),
+          d.querySelector('[class*="pb-2"]'),
+          d.body,
+        ].filter(Boolean);
 
-      const buttons = Array.from(composer.querySelectorAll('button')).filter(
-        (b) => b.offsetWidth > 0 && b.offsetHeight > 0,
-      );
-
-      const menuTriggers = buttons.filter(
-        (b) => b.getAttribute('aria-haspopup') === 'menu' && !isModelMenuButton(b),
-      );
-
-      if (menuTriggers.length === 0) return null;
-
-      const byAria = menuTriggers.find((b) => {
-        const al = (b.getAttribute('aria-label') || '').toLowerCase();
-        return /mode|agent|ask|plan|autonomy|codex|모드|에이전트|플랜/i.test(al);
-      });
-      if (byAria) return byAria;
-
-      return menuTriggers[0];
+        for (const searchRoot of searchRoots) {
+          const menuBtns = Array.from(searchRoot.querySelectorAll('button[aria-haspopup="menu"]'))
+            .filter(b => b.offsetWidth > 0);
+          for (const btn of menuBtns) {
+            const text = (btn.textContent || '').trim();
+            // Skip model buttons — we want the mode button
+            if (!isModelText(text) && text.length > 0 && text.length < 30) {
+              return btn;
+            }
+          }
+        }
+      }
+      return null;
     }
 
     function openMenu(btn) {
@@ -77,8 +77,7 @@
     const { doc, root } = resolveDoc();
     if (!root) return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'no root' });
 
-    // Search both inner doc and outer document (composer footer may be in outer frame)
-    const modeBtn = findModeMenuButton(doc) || (doc !== document ? findModeMenuButton(document) : null);
+    const modeBtn = findModeButton(doc);
     if (!modeBtn) {
       return JSON.stringify({
         modes: [],
@@ -88,7 +87,6 @@
       });
     }
 
-    // Determine which document owns the button (for menu queries later)
     const menuDoc = modeBtn.ownerDocument || doc;
     const currentLabel = (modeBtn.textContent || '').trim();
     openMenu(modeBtn);
