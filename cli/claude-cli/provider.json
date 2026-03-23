@@ -86,7 +86,7 @@
       { "source": "Always\\s*allow", "flags": "i" },
       { "source": "\\(y/n\\)", "flags": "i" },
       { "source": "\\[Y/n\\]", "flags": "i" },
-      { "source": "Run\\s*this\\s*command", "flags": "i" },
+      { "source": "Run\\s+\\w+\\s+command", "flags": "i" },
       { "source": "Allow\\s*tool", "flags": "i" },
       { "source": "Yes,?\\s*don'?t\\s*ask", "flags": "i" },
       { "source": "Deny", "flags": "i" },
