@@ -12,35 +12,15 @@
     
     // Find ProseMirror editor
     const editor = document.querySelector('.ProseMirror');
-    if (!editor) return JSON.stringify({ error: 'ProseMirror editor not found' });
+    if (!editor) return JSON.stringify({ error: 'Editor not found' });
 
     // Focus the editor
     editor.focus();
 
-    // Clear existing content
-    const existingP = editor.querySelector('p');
-    if (existingP) {
-      existingP.textContent = message;
-      // Dispatch input event for ProseMirror to detect the change
-      editor.dispatchEvent(new InputEvent('input', {
-        bubbles: true,
-        cancelable: true,
-        inputType: 'insertText',
-        data: message,
-      }));
-    } else {
-      // Fallback: create new paragraph
-      const p = document.createElement('p');
-      p.textContent = message;
-      editor.innerHTML = '';
-      editor.appendChild(p);
-      editor.dispatchEvent(new InputEvent('input', {
-        bubbles: true,
-        cancelable: true,
-        inputType: 'insertText',
-        data: message,
-      }));
-    }
+    // Use execCommand to safely insert text. This avoids TrustedHTML errors 
+    // and naturally triggers ProseMirror's state updates and Keyboard/Input events.
+    document.execCommand('selectAll', false, null);
+    document.execCommand('insertText', false, message);
 
     // Wait a tick then submit via Enter key
     setTimeout(() => {
