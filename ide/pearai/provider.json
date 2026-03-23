@@ -64,5 +64,6 @@
       "max": 600
     }
   },
-  "defaultScriptDir": "scripts/1.0"
+  "defaultScriptDir": "scripts/1.0",
+  "compatibility": []
 }
