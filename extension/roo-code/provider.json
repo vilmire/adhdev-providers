@@ -31,5 +31,6 @@
       "min": 30,
       "max": 600
     }
-  }
+  },
+  "defaultScriptDir": "scripts/1.0"
 }
