@@ -55,7 +55,7 @@
       editor.dispatchEvent(enterEvent);
     }, 100);
 
-    return JSON.stringify({ success: true, message: message.substring(0, 100) });
+    return JSON.stringify({ sent: true, success: true, message: message.substring(0, 100) });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e) });
   }
