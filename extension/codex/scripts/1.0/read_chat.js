@@ -297,8 +297,14 @@
     // ─── 3. Status ───
     let status = 'idle';
     // Filter out disabled buttons to avoid matching old historical prompts
-    // Include roles often used by multiple-choice forms
-    const buttons = Array.from(doc.querySelectorAll('button, [role="radio"], [role="button"], input[type="radio"] + label'))
+    // Include roles, inputs, custom vscode tags, and generic interactive lists used by multiple-choice forms
+    const selectors = [
+      'button', '[role="radio"]', '[role="button"]', '[role="option"]', '[role="menuitem"]',
+      'input[type="radio"] + label', 'input[type="radio"] ~ span', 'input[type="checkbox"] + label',
+      'vscode-button', 'vscode-radio', 'vscode-checkbox', 'vscode-option', 'li'
+    ].join(', ');
+    
+    const buttons = Array.from(doc.querySelectorAll(selectors))
       .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'));
     
     const getBtnLabel = (b) => {
@@ -312,63 +318,65 @@
       status = 'generating';
     }
 
-    // ─── 5. Approval Modal & Status ───
-    // Updated patterns to include Submit(제출) and Skip(건너뛰기) and numbered form options mapping
-    const approvalSpecificPatterns = /^(approve|always approve|deny|reject|승인|항상 승인|거부|yes|no|allow|disallow|(\d+\.\s*)?예|(\d+\.\s*)?네|(\d+\.\s*)?아니오|허용|실행|진행|run|proceed|accept|제출|submit|건너뛰기|skip)/i;
+    // ─── 5. Universal Approval Modal Detection (Language-Agnostic) ───
+    // By detecting the layout/window of action cards rather than English/Korean strings, we support all localized versions of Codex.
     let activeModal = null;
 
-    const approvalBtns = buttons.filter(b => {
-      const lbl = getBtnLabel(b);
-      // To prevent matching arbitrary text boxes that just happen to start with "Run" but are very long
-      return lbl && lbl.length < 100 && approvalSpecificPatterns.test(lbl);
-    });
+    // Isolate the chat message stream area (to prevent catching composer/footer buttons)
+    const contentArea = doc.querySelector('.flex-1.overflow-hidden, .overflow-y-auto') || doc.body;
 
-    if (approvalBtns.length > 0) {
-      // Grab the last matching button which is generally the active prompt at the bottom
-      const targetBtn = approvalBtns[approvalBtns.length - 1];
+    const actionControls = Array.from(contentArea.querySelectorAll(selectors))
+      .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'))
+      .filter(b => {
+        const lbl = getBtnLabel(b).toLowerCase();
+        // Filter out generic message utility buttons (copy, edit, read aloud) that are always present
+        if (/^(copy|edit|like|dislike|read aloud|play|stop|복사|편집|수정|재생|정지|좋아요|싫어요)$/i.test(lbl)) return false;
+        // Ignore purely icon buttons with no label
+        if (!lbl || lbl.length === 0) return false;
+        return true;
+      });
+
+    if (actionControls.length > 0) {
+      // The assumption is the ACTIVE prompt is exactly the last set of action controls in the conversation stream
+      const targetBtn = actionControls[actionControls.length - 1];
       
-      // Traverse upward to find the card/block containing the buttons (usually 2 to 6 buttons grouped together)
       let bestContainer = targetBtn.parentElement;
       let p = targetBtn.parentElement;
       
-      while (p && p !== doc.body) {
-        const btnCount = p.querySelectorAll('button, [role="radio"], [role="button"]').length;
-        if (btnCount >= 2 && btnCount <= 8) {
+      while (p && p !== contentArea && p !== doc.body) {
+        const btnCount = p.querySelectorAll(selectors).length;
+        // Group the controls into a logical block card. Up to ~12 controls is safe for complex forms.
+        if (btnCount >= 1 && btnCount <= 12) {
           bestContainer = p;
-          // Don't break immediately, see if the next parent is an even better logical card container,
-          // but usually breaking here is safe enough if we already captured the peer buttons.
-          break;
         }
+        if (btnCount > 15) break; // Gone too high (e.g. encompassing multiple assistant messages)
         p = p.parentElement;
       }
       
-      // If we couldn't find a multi-button container, just traverse up a bit to get contextual text
-      if (!p || p === doc.body) {
-         p = targetBtn.parentElement;
-         while (p && p !== doc.body) {
-            const tempClone = p.cloneNode(true);
-            tempClone.querySelectorAll('button, [role="radio"], [role="button"]').forEach(el => el.remove());
-            if ((tempClone.textContent || '').replace(/\s+/g, '').length > 5) {
-               bestContainer = p;
-               break;
-            }
-            p = p.parentElement;
+      // If no text, navigate up one more level to grab context
+      const clone = bestContainer.cloneNode(true);
+      clone.querySelectorAll(selectors).forEach(el => el.remove());
+      let messageText = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+
+      if (messageText.length < 5 && bestContainer.parentElement && bestContainer.parentElement !== doc.body) {
+         const outerClone = bestContainer.parentElement.cloneNode(true);
+         outerClone.querySelectorAll(selectors).forEach(el => el.remove());
+         const outerText = (outerClone.textContent || '').replace(/\s+/g, ' ').trim();
+         if (outerText.length >= 5) {
+             messageText = outerText;
+             bestContainer = bestContainer.parentElement; // Expand the capture boundary
          }
       }
-
-      // Extract message text by removing buttons from the clone
-      const clone = bestContainer.cloneNode(true);
-      clone.querySelectorAll('button, [role="radio"], [role="button"]').forEach(el => el.remove());
-      const t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-      let messageText = t.length > 5 ? t : 'Codex wants to perform an action';
       
-      // Find all peer buttons inside this optimal prompt block
-      let containerBtns = Array.from(bestContainer.querySelectorAll('button, [role="radio"], [role="button"]'))
+      if (!messageText || messageText.length < 2) messageText = 'Agent requires an interaction';
+      
+      // Extract all peer actions localized inside this specific card
+      let containerBtns = Array.from(bestContainer.querySelectorAll(selectors))
          .filter(b => !b.disabled && b.offsetWidth > 0);
-      if (containerBtns.length === 0 || containerBtns.length > 10) containerBtns = approvalBtns;
+      
+      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150 && /\S/.test(label));
 
-      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150);
-
+      // As long as we found localized actions, we trigger waiting_approval!
       if (actions.length > 0) {
         status = 'waiting_approval';
         activeModal = {
