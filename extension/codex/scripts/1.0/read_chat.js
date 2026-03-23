@@ -442,15 +442,53 @@
     if (!isVisible && messages.length === 0) status = 'panel_hidden';
 
     // ─── 4. Model / Mode ───
+    // Language-agnostic detection via DOM structure.
+    // Model: button text matching model name patterns (GPT-*, o1-*, claude-* — always English).
+    // Mode: non-model aria-haspopup="menu" button in composer area (language-agnostic).
     let model = '';
     let mode = '';
-    const footerButtons = doc.querySelectorAll(
-      '[class*="thread-composer-max-width"] button, [class*="pb-2"] button'
-    );
-    for (const btn of footerButtons) {
-      const text = (btn.textContent || '').trim();
-      if (/^(GPT-|gpt-|o\d|claude-)/i.test(text)) model = text;
-      if (/^(낮음|중간|높음|low|medium|high)$/i.test(text)) mode = text;
+    for (const d of [doc, document]) {
+      // Search in composer area, or common footer containers
+      const searchRoots = [
+        d.querySelector('[class*="thread-composer-max-width"]'),
+        d.querySelector('[class*="thread-composer"]'),
+        d.querySelector('[class*="pb-2"]'),
+        d.body,
+      ].filter(Boolean);
+
+      for (const searchRoot of searchRoots) {
+        if (model && mode) break;
+
+        // aria-haspopup="menu" buttons — dropdown triggers for model/mode
+        if (!model || !mode) {
+          const menuBtns = Array.from(searchRoot.querySelectorAll('button[aria-haspopup="menu"]'))
+            .filter(b => b.offsetWidth > 0);
+          for (const btn of menuBtns) {
+            const text = (btn.textContent || '').trim();
+            if (!model && /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
+              model = text;
+            } else if (!mode && text.length > 0 && text.length < 30) {
+              mode = text;
+            }
+          }
+        }
+
+        // Fallback: any visible button with model-like text
+        if (!model) {
+          const allBtns = Array.from(searchRoot.querySelectorAll('button'))
+            .filter(b => b.offsetWidth > 0);
+          for (const btn of allBtns) {
+            const text = (btn.textContent || '').trim();
+            if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
+              model = text;
+              break;
+            }
+          }
+        }
+
+        if (model) break; // found model, no need to keep searching this scope
+      }
+      if (model) break; // found in this frame
     }
 
     // ─── 6. Task info ───
