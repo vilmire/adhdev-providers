@@ -419,9 +419,13 @@
         return opt;
       }).filter(o => o.length > 0);
 
-      // Combine: options first, then button labels (deduped)
-      const allActions = [...options, ...allBtns];
-      const uniqueActions = [...new Set(allActions)];
+      // Merge numbered options from both sources (buttons + text parsing)
+      const allNumbered = [...new Set([...allBtns.filter(b => /^\d+\./.test(b)), ...options])];
+      allNumbered.sort((a, b) => (parseInt(a) || 999) - (parseInt(b) || 999));
+      const actionBtns = allBtns.filter(b => !/^\d+\./.test(b));
+
+      // Combine: sorted numbered options first, then action buttons (deduped)
+      const uniqueActions = [...new Set([...allNumbered, ...actionBtns])];
 
       if (uniqueActions.length > 0) {
         status = 'waiting_approval';
