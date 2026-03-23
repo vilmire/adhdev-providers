@@ -319,73 +319,167 @@
     }
 
     // ─── 5. Universal Approval Modal Detection (Language-Agnostic) ───
-    // By detecting the layout/window of action cards rather than English/Korean strings, we support all localized versions of Codex.
+    // The approval/interaction panel in Codex is rendered OUTSIDE the chat scroll area,
+    // typically in a sibling "request-input-panel" region at the bottom.
+    // We must scan the ENTIRE document body to find it.
     let activeModal = null;
 
-    // Isolate the chat message stream area (to prevent catching composer/footer buttons)
-    const contentArea = doc.querySelector('.flex-1.overflow-hidden, .overflow-y-auto') || doc.body;
-
-    const actionControls = Array.from(contentArea.querySelectorAll(selectors))
-      .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'))
-      .filter(b => {
-        // A true language-agnostic approach relies on the button's DOM traits, not label translation.
-        const visibleText = (b.textContent || '').trim();
-        // 1. Generic utility tools (Copy, Edit, Thumbs Up) in Codex are universally icon-only buttons (containing SVGs but no inner textual DOM content).
-        if (visibleText.length === 0) return false;
-        
-        // 2. Certain generic layout elements might sneak into selectors. Exclude obvious toolbar groups if visible text is just a tiny number (like vote counts)
-        if (visibleText.length < 2 && b.querySelector('svg')) return false;
-
-        return true;
-      });
-
-    if (actionControls.length > 0) {
-      // The assumption is the ACTIVE prompt is exactly the last set of action controls in the conversation stream
-      const targetBtn = actionControls[actionControls.length - 1];
-      
-      let bestContainer = targetBtn.parentElement;
-      let p = targetBtn.parentElement;
-      
-      while (p && p !== contentArea && p !== doc.body) {
-        const btnCount = p.querySelectorAll(selectors).length;
-        // Group the controls into a logical block card. Up to ~12 controls is safe for complex forms.
-        if (btnCount >= 1 && btnCount <= 12) {
-          bestContainer = p;
+    // Look for the request-input-panel area first (contains radio options + submit/skip)
+    // The approval panel lives in the outer webview document, NOT inside the inner iframe (doc).
+    // Use `document` (the webview frame root) to find it, same as explore_dom.js does.
+    const searchDocs = [document, doc]; // outer first, then inner iframe
+    let requestPanel = null;
+    for (const d of searchDocs) {
+      requestPanel = d.querySelector('[class*="request-input-panel"]');
+      if (requestPanel) break;
+      // Also search all textareas for the class
+      const tas = d.querySelectorAll('textarea');
+      for (const ta of tas) {
+        if (ta.className && ta.className.includes('request-input-panel')) {
+          requestPanel = ta;
+          break;
         }
-        if (btnCount > 15) break; // Gone too high (e.g. encompassing multiple assistant messages)
+      }
+      if (requestPanel) break;
+    }
+    // Walk up from the request-input-panel to find the full approval card
+    let approvalArea = null;
+    if (requestPanel) {
+      let p = requestPanel;
+      for (let i = 0; i < 12 && p && p.parentElement; i++) {
         p = p.parentElement;
+        const btns = p.querySelectorAll('button').length;
+        const radios = p.querySelectorAll('[role="radio"], [role="option"]').length;
+        const total = btns + radios;
+        if (btns >= 4) {
+          // Found the approval card with enough interactive elements
+          approvalArea = p;
+          break;
+        }
       }
-      
-      // If no text, navigate up one more level to grab context
-      const clone = bestContainer.cloneNode(true);
-      clone.querySelectorAll(selectors).forEach(el => el.remove());
-      let messageText = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+    }
 
-      if (messageText.length < 5 && bestContainer.parentElement && bestContainer.parentElement !== doc.body) {
-         const outerClone = bestContainer.parentElement.cloneNode(true);
-         outerClone.querySelectorAll(selectors).forEach(el => el.remove());
-         const outerText = (outerClone.textContent || '').replace(/\s+/g, ' ').trim();
-         if (outerText.length >= 5) {
-             messageText = outerText;
-             bestContainer = bestContainer.parentElement; // Expand the capture boundary
-         }
+    // Fall back to outer webview document.body (NOT doc.body which is inner iframe)
+    const contentArea = approvalArea || document.body;
+
+    if (approvalArea) {
+      // ─── Codex Approval Panel (request-input-panel based) ───
+      // The approval form has:
+      //   - Option items as plain divs (e.g., "1.\n예", "2.\n네,...", "3.\n아니요,...")
+      //   - Action buttons (e.g., "건너뛰기", "제출⏎") as <button> elements
+      // We need to extract BOTH for the dashboard.
+      
+      // Find parent container that has all options (level 3 from textarea, btns >= 4)
+      // approvalArea is already set to this level.
+      
+      // Get the prompt message (from grandparent that starts with "Do you want...")
+      let messageText = '';
+      let msgParent = approvalArea.parentElement;
+      for (let i = 0; i < 5 && msgParent; i++) {
+        const t = (msgParent.innerText || '').trim();
+        if (t.length > 20 && /[?？]/.test(t.substring(0, 200))) {
+          // Found a parent whose text starts with a question
+          messageText = t.split('\n')[0].trim();
+          break;
+        }
+        msgParent = msgParent.parentElement;
       }
-      
-      if (!messageText || messageText.length < 2) messageText = 'Agent requires an interaction';
-      
-      // Extract all peer actions localized inside this specific card
-      let containerBtns = Array.from(bestContainer.querySelectorAll(selectors))
-         .filter(b => !b.disabled && b.offsetWidth > 0);
-      
-      const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150 && /\S/.test(label));
+      if (!messageText) {
+        // Fallback: use the approvalArea parent's text, first sentence
+        const parentText = (approvalArea.parentElement?.innerText || approvalArea.innerText || '').trim();
+        const firstLine = parentText.split('\n')[0].trim();
+        messageText = firstLine.length > 5 ? firstLine : 'Agent requires an interaction';
+      }
 
-      // As long as we found localized actions, we trigger waiting_approval!
-      if (actions.length > 0) {
+      // Extract option labels from the panel's direct/nested children
+      const allBtns = Array.from(approvalArea.querySelectorAll('button'))
+        .filter(b => b.offsetWidth > 0 && !b.disabled)
+        .map(b => (b.textContent || '').trim())
+        .filter(t => t.length > 0 && t.length < 150);
+
+      // Extract numbered option text items (the entire panel text, split by option numbering)
+      const panelText = (approvalArea.innerText || '').trim();
+      // Parse "1.\n예\n2.\n네,...\n3.\n아니요,...\n건너뛰기\n제출⏎" format
+      const optionMatches = panelText.match(/\d+\.\n[^\n]+(?:\n[^\d][^\n]*)*/g) || [];
+      let options = optionMatches.map(o => o.replace(/\n/g, '').trim()).filter(o => o.length > 0);
+      
+      // Clean: remove any trailing button labels that got captured in the last option
+      const btnLabelsSet = new Set(allBtns);
+      options = options.map(opt => {
+        let changed = true;
+        while (changed) {
+          changed = false;
+          for (const bl of btnLabelsSet) {
+            if (opt.endsWith(bl)) {
+              opt = opt.slice(0, -bl.length).trim();
+              changed = true;
+            }
+          }
+        }
+        return opt;
+      }).filter(o => o.length > 0);
+
+      // Combine: options first, then button labels (deduped)
+      const allActions = [...options, ...allBtns];
+      const uniqueActions = [...new Set(allActions)];
+
+      if (uniqueActions.length > 0) {
         status = 'waiting_approval';
         activeModal = {
           message: messageText,
-          buttons: [...new Set(actions)]
+          buttons: uniqueActions
         };
+      }
+    } else {
+      // ─── Fallback: generic selector-based detection ───
+      const actionControls = Array.from(contentArea.querySelectorAll(selectors))
+        .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'))
+        .filter(b => {
+          const visibleText = (b.textContent || '').trim();
+          if (visibleText.length === 0) return false;
+          if (visibleText.length < 2 && b.querySelector('svg')) return false;
+          return true;
+        });
+
+      if (actionControls.length > 0) {
+        const targetBtn = actionControls[actionControls.length - 1];
+        let bestContainer = targetBtn.parentElement;
+        let p = targetBtn.parentElement;
+        
+        while (p && p !== contentArea && p !== document.body) {
+          const btnCount = p.querySelectorAll(selectors).length;
+          if (btnCount >= 1 && btnCount <= 12) bestContainer = p;
+          if (btnCount > 15) break;
+          p = p.parentElement;
+        }
+        
+        const clone = bestContainer.cloneNode(true);
+        clone.querySelectorAll(selectors).forEach(el => el.remove());
+        let messageText = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+
+        if (messageText.length < 5 && bestContainer.parentElement) {
+          const outerClone = bestContainer.parentElement.cloneNode(true);
+          outerClone.querySelectorAll(selectors).forEach(el => el.remove());
+          const outerText = (outerClone.textContent || '').replace(/\s+/g, ' ').trim();
+          if (outerText.length >= 5) {
+            messageText = outerText;
+            bestContainer = bestContainer.parentElement;
+          }
+        }
+        
+        if (!messageText || messageText.length < 2) messageText = 'Agent requires an interaction';
+        
+        let containerBtns = Array.from(bestContainer.querySelectorAll(selectors))
+          .filter(b => !b.disabled && b.offsetWidth > 0);
+        const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150 && /\S/.test(label));
+
+        if (actions.length > 0) {
+          status = 'waiting_approval';
+          activeModal = {
+            message: messageText,
+            buttons: [...new Set(actions)]
+          };
+        }
       }
     }
 
