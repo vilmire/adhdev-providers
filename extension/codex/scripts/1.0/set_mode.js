@@ -38,6 +38,7 @@
       const composer =
         doc.querySelector('[class*="thread-composer-max-width"]') ||
         doc.querySelector('[class*="thread-composer"]') ||
+        doc.querySelector('[class*="pb-2"]') ||
         doc.getElementById('root') ||
         doc.body;
 
