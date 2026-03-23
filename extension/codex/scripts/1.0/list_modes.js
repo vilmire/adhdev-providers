@@ -76,7 +76,8 @@
     const { doc, root } = resolveDoc();
     if (!root) return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'no root' });
 
-    const modeBtn = findModeMenuButton(doc);
+    // Search both inner doc and outer document (composer footer may be in outer frame)
+    const modeBtn = findModeMenuButton(doc) || (doc !== document ? findModeMenuButton(document) : null);
     if (!modeBtn) {
       return JSON.stringify({
         modes: [],
@@ -86,14 +87,16 @@
       });
     }
 
+    // Determine which document owns the button (for menu queries later)
+    const menuDoc = modeBtn.ownerDocument || doc;
     const currentLabel = (modeBtn.textContent || '').trim();
     openMenu(modeBtn);
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        let menu = doc.querySelector('[role="menu"][data-state="open"]');
+        let menu = menuDoc.querySelector('[role="menu"][data-state="open"]');
         if (!menu) {
-          menu = doc.querySelector('[role="menu"]');
+          menu = menuDoc.querySelector('[role="menu"]');
         }
 
         const collected = [];
@@ -114,7 +117,7 @@
           }
         }
 
-        doc.dispatchEvent(
+        menuDoc.dispatchEvent(
           new KeyboardEvent('keydown', {
             key: 'Escape',
             code: 'Escape',

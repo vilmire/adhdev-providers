@@ -99,8 +99,10 @@
           : '';
     if (!want) return JSON.stringify({ success: false, error: 'empty mode' });
 
-    const modeBtn = findModeMenuButton(doc);
+    const modeBtn = findModeMenuButton(doc) || (doc !== document ? findModeMenuButton(document) : null);
     if (!modeBtn) return JSON.stringify({ success: false, error: 'mode menu button not found' });
+
+    const menuDoc = modeBtn.ownerDocument || doc;
 
     const currentLabel = (modeBtn.textContent || '').trim();
     if (currentLabel.toLowerCase() === want.toLowerCase()) {
@@ -111,11 +113,11 @@
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        let menu = doc.querySelector('[role="menu"][data-state="open"]');
-        if (!menu) menu = doc.querySelector('[role="menu"]');
+        let menu = menuDoc.querySelector('[role="menu"][data-state="open"]');
+        if (!menu) menu = menuDoc.querySelector('[role="menu"]');
 
         if (!menu) {
-          doc.dispatchEvent(
+          menuDoc.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }),
           );
           return resolve(JSON.stringify({ success: false, error: 'mode menu did not open' }));
@@ -136,7 +138,7 @@
         }
 
         if (!match) {
-          doc.dispatchEvent(
+          menuDoc.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }),
           );
           const available = items
