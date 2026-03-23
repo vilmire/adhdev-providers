@@ -359,8 +359,8 @@
       }
     }
 
-    // Fall back to outer webview document.body (NOT doc.body which is inner iframe)
-    const contentArea = approvalArea || document.body;
+
+
 
     if (approvalArea) {
       // ─── Codex Approval Panel (request-input-panel based) ───
@@ -434,58 +434,7 @@
           buttons: uniqueActions
         };
       }
-    } else {
-      // ─── Fallback: generic selector-based detection ───
-      const actionControls = Array.from(contentArea.querySelectorAll(selectors))
-        .filter(b => b.offsetWidth > 0 && !b.disabled && !b.closest('[inert]'))
-        .filter(b => {
-          const visibleText = (b.textContent || '').trim();
-          if (visibleText.length === 0) return false;
-          if (visibleText.length < 2 && b.querySelector('svg')) return false;
-          return true;
-        });
-
-      if (actionControls.length > 0) {
-        const targetBtn = actionControls[actionControls.length - 1];
-        let bestContainer = targetBtn.parentElement;
-        let p = targetBtn.parentElement;
-        
-        while (p && p !== contentArea && p !== document.body) {
-          const btnCount = p.querySelectorAll(selectors).length;
-          if (btnCount >= 1 && btnCount <= 12) bestContainer = p;
-          if (btnCount > 15) break;
-          p = p.parentElement;
-        }
-        
-        const clone = bestContainer.cloneNode(true);
-        clone.querySelectorAll(selectors).forEach(el => el.remove());
-        let messageText = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-
-        if (messageText.length < 5 && bestContainer.parentElement) {
-          const outerClone = bestContainer.parentElement.cloneNode(true);
-          outerClone.querySelectorAll(selectors).forEach(el => el.remove());
-          const outerText = (outerClone.textContent || '').replace(/\s+/g, ' ').trim();
-          if (outerText.length >= 5) {
-            messageText = outerText;
-            bestContainer = bestContainer.parentElement;
-          }
-        }
-        
-        if (!messageText || messageText.length < 2) messageText = 'Agent requires an interaction';
-        
-        let containerBtns = Array.from(bestContainer.querySelectorAll(selectors))
-          .filter(b => !b.disabled && b.offsetWidth > 0);
-        const actions = containerBtns.map(b => getBtnLabel(b)).filter(label => label && label.length < 150 && /\S/.test(label));
-
-        if (actions.length > 0) {
-          status = 'waiting_approval';
-          activeModal = {
-            message: messageText,
-            buttons: [...new Set(actions)]
-          };
-        }
-      }
-    }
+    } // end if (approvalArea)
 
     if (isTaskList) {
       status = messages.length === 0 ? 'idle' : status;
