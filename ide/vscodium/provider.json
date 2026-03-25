@@ -36,6 +36,12 @@
   },
   "inputMethod": "cdp-type-and-send",
   "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "versionCommand": "codium --version",
+  "providerVersion": "0.0.0",
+  "compatibility": [
+    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+  ],
+  "defaultScriptDir": "scripts/1.0",
   "settings": {
     "approvalAlert": {
       "type": "boolean",

@@ -39,6 +39,12 @@
   },
   "inputMethod": "cdp-type-and-send",
   "inputSelector": ".chat-input-v2-input-box-editable, [contenteditable=\"true\"][role=\"textbox\"]",
+  "versionCommand": "trae --version",
+  "providerVersion": "0.0.0",
+  "compatibility": [
+    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+  ],
+  "defaultScriptDir": "scripts/1.0",
   "settings": {
     "approvalAlert": {
       "type": "boolean",
@@ -62,7 +68,5 @@
       "min": 30,
       "max": 600
     }
-  },
-  "defaultScriptDir": "scripts/1.0",
-  "compatibility": []
+  }
 }
