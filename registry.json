@@ -240,32 +240,68 @@
     "pearai": {
       "providerVersion": "0.0.0",
       "category": "ide",
-      "name": "PearAI"
+      "name": "PearAI",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     },
     "trae": {
       "providerVersion": "0.0.0",
       "category": "ide",
-      "name": "Trae"
+      "name": "Trae",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     },
     "vscode-insiders": {
       "providerVersion": "0.0.0",
       "category": "ide",
-      "name": "Visual Studio Code - Insiders"
+      "name": "Visual Studio Code - Insiders",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     },
     "vscode": {
       "providerVersion": "0.0.0",
       "category": "ide",
-      "name": "Visual Studio Code"
+      "name": "Visual Studio Code",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     },
     "vscodium": {
       "providerVersion": "0.0.0",
       "category": "ide",
-      "name": "VSCodium"
+      "name": "VSCodium",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     },
     "windsurf": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "ide",
-      "name": "Windsurf"
+      "name": "Windsurf",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
     }
   }
 }
