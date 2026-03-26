@@ -37,10 +37,9 @@
   "versionCommand": "antigravity --version",
   "providerVersion": "1.0.0",
   "compatibility": [
-    { "ideVersion": ">=1.107.0", "scriptDir": "scripts/1.107" },
-    { "ideVersion": ">=1.105.0", "scriptDir": "scripts/1.106" }
+    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
   ],
-  "defaultScriptDir": "scripts/1.107",
+  "defaultScriptDir": "scripts/1.0",
   "settings": {
     "approvalAlert": {
       "type": "boolean",

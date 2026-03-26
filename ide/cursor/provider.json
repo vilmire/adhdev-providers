@@ -37,9 +37,9 @@
   "versionCommand": "cursor --version",
   "providerVersion": "1.0.0",
   "compatibility": [
-    { "ideVersion": ">=0.49.0", "scriptDir": "scripts/0.49" }
+    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
   ],
-  "defaultScriptDir": "scripts/0.49",
+  "defaultScriptDir": "scripts/1.0",
   "vscodeCommands": {
     "changeModel": "cursor.model"
   },
