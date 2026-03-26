@@ -212,12 +212,8 @@
       "name": "Antigravity",
       "compatibility": [
         {
-          "ideVersion": ">=1.107.0",
-          "scriptDir": "scripts/1.107"
-        },
-        {
-          "ideVersion": ">=1.105.0",
-          "scriptDir": "scripts/1.106"
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
         }
       ]
     },
@@ -227,8 +223,8 @@
       "name": "Cursor",
       "compatibility": [
         {
-          "ideVersion": ">=0.49.0",
-          "scriptDir": "scripts/0.49"
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
         }
       ]
     },
