@@ -57,33 +57,23 @@
   "binary": "codex",
   "spawn": {
     "command": "codex",
-    "args": [
-      "--full-auto"
-    ],
+    "args": [],
     "shell": false,
     "env": {}
   },
   "patterns": {
     "prompt": [
-      {},
-      {},
-      {}
+      { "source": "To get started, describe a task or try one of these commands", "flags": "i" },
+      { "source": "^>\\s*$", "flags": "m" }
     ],
     "generating": [
-      {},
-      {},
-      {}
+      { "source": "Working \\(\\d+s", "flags": "i" }
     ],
     "approval": [
-      {},
-      {},
-      {},
-      {},
-      {}
+      { "source": "Always approve this session", "flags": "i" },
+      { "source": "Approve and run now", "flags": "i" },
+      { "source": "Allow command\\?", "flags": "i" }
     ],
-    "ready": [
-      {},
-      {}
-    ]
+    "ready": []
   }
 }
