@@ -1,39 +1,22 @@
 /**
- * Generic fallback — list_models
+ * Kiro — webview_list_modes
+ * Maps the Autopilot toggle to modes "Autopilot" and "Manual".
  */
 (() => {
     try {
-        const models = [];
-        let current = '';
-
-        // Try generic Model string from select/button
-        const sel = document.querySelectorAll('select, [class*="model"], [id*="model"]');
-        for (const el of sel) {
-            const txt = (el.textContent || '').trim();
-            if (txt && /claude|gpt|gemini|sonnet|opus/i.test(txt)) {
-                if (txt.length < 50) {
-                    models.push(txt);
-                    if (!current) current = txt;
-                }
-            }
+        const toggle = document.querySelector('#autonomy-mode-toggle-switch');
+        if (!toggle) {
+            // Fallback for older versions or if UI changed
+            return JSON.stringify({ modes: ['Default'], current: 'Default' });
         }
 
-        if (models.length === 0) {
-            const btns = document.querySelectorAll('button');
-            for (const b of btns) {
-                const txt = (b.textContent || '').trim();
-                if (txt && /claude|gpt|gemini|sonnet/i.test(txt) && txt.length < 30) {
-                    models.push(txt);
-                    current = txt;
-                }
-            }
-        }
+        const isAutopilot = toggle.checked;
 
         return JSON.stringify({ 
-            models: [...new Set(models)], 
-            current: current || 'Default' 
+            modes: ['Autopilot', 'Manual'], 
+            current: isAutopilot ? 'Autopilot' : 'Manual' 
         });
     } catch (e) {
-        return JSON.stringify({ models: [], current: '', error: e.message });
+        return JSON.stringify({ modes: [], current: '', error: e.message });
     }
 })()

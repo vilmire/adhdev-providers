@@ -137,7 +137,7 @@
             status = 'waiting_approval';
             activeModal = {
                 message: normalize(cascade.querySelector('button')?.closest('[class*="terminal"],[class*="shadow-step"],.monaco-dialog-box,[role="dialog"]')?.innerText || 'Approval required'),
-                actions: approvalActions,
+                buttons: approvalActions,
             };
         } else {
             const stopButton = Array.from(cascade.querySelectorAll('button, [role="button"]')).find(el => {

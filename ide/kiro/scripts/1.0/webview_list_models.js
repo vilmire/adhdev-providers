@@ -1,32 +1,35 @@
 /**
- * Generic fallback — list_models
+ * Kiro — webview_list_models
  */
-(() => {
+(async () => {
     try {
-        const models = [];
-        let current = '';
+        const trigger = document.querySelector('.kiro-dropdown-trigger');
+        if (!trigger) {
+            return JSON.stringify({ models: [], current: 'Default', error: 'No dropdown found' });
+        }
 
-        // Try generic Model string from select/button
-        const sel = document.querySelectorAll('select, [class*="model"], [id*="model"]');
-        for (const el of sel) {
-            const txt = (el.textContent || '').trim();
-            if (txt && /claude|gpt|gemini|sonnet|opus/i.test(txt)) {
-                if (txt.length < 50) {
-                    models.push(txt);
-                    if (!current) current = txt;
-                }
+        const current = (trigger.querySelector('.kiro-dropdown-selected-text')?.textContent || '').trim();
+
+        // Check if menu is already open
+        const wasExpanded = trigger.getAttribute('aria-expanded') === 'true';
+
+        if (!wasExpanded) {
+            trigger.click();
+            await new Promise(r => setTimeout(r, 150));
+        }
+
+        const models = [];
+        const items = document.querySelectorAll('.kiro-dropdown-item, [role="menuitem"], [role="option"]');
+        for (const item of items) {
+            const txt = (item.textContent || '').trim();
+            if (txt && txt.length < 50) {
+                models.push(txt);
             }
         }
 
-        if (models.length === 0) {
-            const btns = document.querySelectorAll('button');
-            for (const b of btns) {
-                const txt = (b.textContent || '').trim();
-                if (txt && /claude|gpt|gemini|sonnet/i.test(txt) && txt.length < 30) {
-                    models.push(txt);
-                    current = txt;
-                }
-            }
+        // Close menu
+        if (!wasExpanded) {
+            trigger.click();
         }
 
         return JSON.stringify({ 

@@ -54,7 +54,29 @@
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         await new Promise(r => setTimeout(r, 400));
 
-        // ─── 3. Enter 키 전송 ───
+        // ─── 3. 전송 버튼 클릭 (Enter 키가 안 먹힐 때 대비) ───
+        const sendBtns = Array.from(document.querySelectorAll('button, div[role="button"], span[role="button"]'))
+            .filter(b => {
+                const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+                const title = (b.getAttribute('title') || '').toLowerCase();
+                const text = (b.textContent || '').toLowerCase();
+                const className = (b.className || '').toLowerCase();
+                return aria.includes('send') || aria.includes('submit') || 
+                       title.includes('send') || title.includes('submit') ||
+                       className.includes('send') || className.includes('submit') ||
+                       b.querySelector('svg'); // Fallback for icon-only buttons next to input
+            });
+
+        // Find the button closest to the editor
+        let submitBtn = null;
+        if (sendBtns.length > 0) {
+            // grab the one visually right/bottom to the editor, or just the last svg button
+            submitBtn = sendBtns[sendBtns.length - 1]; 
+            submitBtn.click();
+            await new Promise(r => setTimeout(r, 100));
+        }
+
+        // ─── 4. Enter 키 전송 (Fallback) ───
         const enterOpts = {
             key: 'Enter', code: 'Enter',
             keyCode: 13, which: 13,
