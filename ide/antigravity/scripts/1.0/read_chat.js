@@ -290,7 +290,7 @@
                     .map(b => (b.innerText || '').trim())
                     .filter(t => t.length > 0 && t.length < 30);
                 if (msg || buttons.length > 0) {
-                    activeModal = { message: msg.slice(0, 300), actions: buttons, width: dialog.offsetWidth, height: dialog.offsetHeight };
+                    activeModal = { message: msg.slice(0, 300), buttons, width: dialog.offsetWidth, height: dialog.offsetHeight };
                 }
             }
             // B: 인라인 approval 버튼 (Run⌥⏎, Reject, Deny, Allow 등)
@@ -315,7 +315,7 @@
                             if (wrapper.offsetHeight > 40) break;
                         }
                         const msg = wrapper ? (wrapper.textContent || '').trim().slice(0, 300) : '';
-                        activeModal = { message: msg, actions: btnTexts, width: 400, height: 100 };
+                        activeModal = { message: msg, buttons: btnTexts, width: 400, height: 100 };
                     }
                 }
             }
@@ -335,7 +335,7 @@
                         const msg = card ? (card.innerText || '').trim().slice(0, 300) : '';
                         const btnTexts = footerBtns.map(b => (b.innerText || '').trim()).filter(t => t.length > 0 && t.length < 40);
                         if (btnTexts.length >= 2) {
-                            activeModal = { message: msg, actions: btnTexts, width: card ? card.offsetWidth : 300, height: card ? card.offsetHeight : 100 };
+                            activeModal = { message: msg, buttons: btnTexts, width: card ? card.offsetWidth : 300, height: card ? card.offsetHeight : 100 };
                             break;
                         }
                     }

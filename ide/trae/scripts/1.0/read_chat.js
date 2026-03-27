@@ -85,7 +85,7 @@
             if (buttons.length > 0) {
                 activeModal = {
                     message: dialog.textContent.trim().substring(0, 200),
-                    actions: buttons,
+                    buttons: buttons,
                 };
                 status = 'waiting_approval';
             }
