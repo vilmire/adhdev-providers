@@ -21,7 +21,7 @@
     const rawStatus = c?.getAttribute('data-composer-status') || 'idle';
     let status = rawStatus;
     if (rawStatus === 'thinking' || rawStatus === 'streaming') status = 'generating';
-    else if (rawStatus === 'completed' || rawStatus === 'idle' || !rawStatus) status = 'idle';
+    else if (rawStatus === 'completed' || rawStatus === 'cancelled' || rawStatus === 'idle' || !rawStatus) status = 'idle';
 
     // ─── Approval Detection ───
     let activeModal = null;
@@ -37,7 +37,7 @@
       const toolMsg = lastRendered || reviewContainer?.querySelector('.composer-tool-former-message:last-of-type');
       activeModal = {
         message: toolMsg?.textContent?.trim()?.substring(0, 200) || 'Command approval required',
-        buttons: clickableEls.map(b => b.textContent.trim().replace(/[⏎↵]/g, '').trim()).filter(Boolean),
+        actions: clickableEls.map(b => b.textContent.trim().replace(/[⏎↵]/g, '').trim()).filter(Boolean),
       };
     }
 
