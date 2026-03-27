@@ -11,7 +11,7 @@
 (params) => {
   try {
     const btns = [...document.querySelectorAll('button, [role="button"], .cursor-pointer')].filter(b => b.offsetWidth > 0);
-    const searchText = (params.buttonText || '').toLowerCase();
+    const searchText = (params.buttonText || params.action || params.button || '').toLowerCase();
     const target = btns.find(b => (b.textContent||'').trim().replace(/[⏎↵]/g, '').trim().toLowerCase().includes(searchText));
     if (target) { target.click(); return JSON.stringify({ resolved: true, clicked: target.textContent.trim() }); }
     return JSON.stringify({ resolved: false, available: btns.map(b => b.textContent.trim()).filter(Boolean).slice(0, 15) });
