@@ -39,7 +39,6 @@
   },
   "inputMethod": "cdp-type-and-send",
   "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
-  "webviewMatchText": "kiro",
   "settings": {
     "approvalAlert": {
       "type": "boolean",
