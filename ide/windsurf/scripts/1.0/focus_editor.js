@@ -13,18 +13,24 @@
  */
 (() => {
     try {
+        const cascade = document.querySelector('#windsurf\\.cascadePanel') || document.querySelector('.chat-client-root');
+        const root = cascade || document;
         const editor =
-            document.querySelector('[contenteditable="true"][role="textbox"]') ||
-            document.querySelector('[data-lexical-editor="true"]') ||
-            document.querySelector('.chat-input textarea') ||
-            document.querySelector('.cascade-input [contenteditable="true"]') ||
-            document.querySelector('textarea:not(.xterm-helper-textarea)');
-        if (editor) {
-            editor.focus();
-            return true;
+            root.querySelector('[data-lexical-editor="true"]') ||
+            root.querySelector('[contenteditable="true"][role="textbox"]') ||
+            root.querySelector('.chat-input textarea') ||
+            root.querySelector('.cascade-input [contenteditable="true"]') ||
+            root.querySelector('textarea:not(.xterm-helper-textarea)');
+
+        if (!editor) {
+            return JSON.stringify({ focused: false });
         }
-        return false;
+
+        editor.focus();
+        if (typeof editor.click === 'function') editor.click();
+
+        return JSON.stringify({ focused: document.activeElement === editor || editor.contains?.(document.activeElement) || true });
     } catch (e) {
-        return false;
+        return JSON.stringify({ focused: false, error: e.message });
     }
 })()

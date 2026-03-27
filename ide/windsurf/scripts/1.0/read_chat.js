@@ -1,315 +1,253 @@
 /**
- * Windsurf v1 — read_chat (v1 — Cascade DOM + Fiber)
- * 
- * Windsurf는 VS Code 포크, 채팅 UI를 "Cascade"라고 부릅니다.
- * 
- * DOM 구조:
- *   #windsurf.cascadePanel → .chat-client-root
- *   스크롤: .cascade-scrollbar
- *   메시지 리스트: .cascade-scrollbar .pb-20 > .flex.flex-col > .flex.flex-col.gap-2\.5
- *   사용자 메시지: hasProse=false, hasWhitespace=true
- *   AI 메시지: [class*="prose"] (prose-sm)
- *   피드백 UI: .mark-js-ignore (무시)
- *   입력: [data-lexical-editor="true"]
- *   
- * Fiber props:
- *   cascadeId: 세션 ID
- *   isRunning: 생성 중 여부
- *   hasPendingTerminalCommand: 승인 대기
- *   copyableText: AI 응답 마크다운 원본
- * 
- * 최종 확인: Windsurf (2026-03-06)
+ * Windsurf v1 — read_chat
  */
 (() => {
     try {
-        // ─── 1. 컨테이너 ───
-        const cascade = document.querySelector('#windsurf\\.cascadePanel')
-            || document.querySelector('.chat-client-root');
+        const cascade = document.querySelector('#windsurf\\.cascadePanel') || document.querySelector('.chat-client-root');
+        const normalize = (text) => (text || '').replace(/[\u200b\u00a0]+/g, ' ').replace(/\s+/g, ' ').trim();
+        const cleanText = (text) => normalize((text || '').replace(/Run⌥⏎/g, 'Run').replace(/\b(Skip|Accept|Reject|Approve|Allow|Deny)\b/g, ' $1 ').replace(/\s+/g, ' '));
+        const isVisible = (el) => !!(el && el.offsetWidth > 0 && el.offsetHeight > 0);
+
         if (!cascade) {
-            return { id: 'no_cascade', status: 'idle', title: 'No Cascade', messages: [], inputContent: '', activeModal: null };
+            return JSON.stringify({ id: 'no_cascade', status: 'idle', title: 'Cascade', messages: [], inputContent: '', activeModal: null });
         }
 
-        // ─── 2. Fiber에서 cascadeId, isRunning 추출 (턴 요소에서 탐색) ───
-        let cascadeId = 'cascade';
-        let isRunning = false;
-        let hasPendingCmd = false;
-        try {
-            // 턴 요소에서 Fiber 탐색 (cascadePanel 루트보다 깊이 6에서 cascadeId 발견)
-            const scrollArea = cascade.querySelector('.cascade-scrollbar');
-            const gapEls = scrollArea ? scrollArea.querySelectorAll('[class*="gap-2"]') : [];
-            let firstTurn = null;
-            for (const el of gapEls) {
-                if (el.children.length >= 1 && el.closest('.cascade-scrollbar')) {
-                    firstTurn = el.children[0]; break;
-                }
+        const title = normalize(
+            document.querySelector('[id^="cascade-tab-"] .truncate, [id^="cascade-tab-"] span')?.textContent
+            || document.title.split(' — ').pop()
+            || 'Cascade'
+        );
+
+        const activeTab = Array.from(document.querySelectorAll('[id^="cascade-tab-"]')).find(isVisible);
+        let cascadeId = activeTab?.id?.replace(/^cascade-tab-/, '') || 'active';
+        let fiberRunning = false;
+        let fiberPendingCommand = false;
+
+        const readFiberValue = (node) => {
+            if (!node || typeof node !== 'object') return;
+            const key = Object.keys(node).find(name => name.startsWith('__reactFiber'));
+            if (!key) return;
+            let fiber = node[key];
+            for (let depth = 0; fiber && depth < 40; depth += 1, fiber = fiber.return) {
+                const props = fiber.memoizedProps || fiber.pendingProps || {};
+                if (!cascadeId && typeof props.cascadeId === 'string') cascadeId = props.cascadeId;
+                if (props.cascadeId && typeof props.cascadeId === 'string') cascadeId = props.cascadeId;
+                if (props.isRunning === true) fiberRunning = true;
+                if (props.hasPendingTerminalCommand === true) fiberPendingCommand = true;
             }
-            const fiberTarget = firstTurn || cascade;
-            const fk = Object.keys(fiberTarget).find(k => k.startsWith('__reactFiber'));
-            if (fk) {
-                let fiber = fiberTarget[fk];
-                for (let d = 0; d < 50 && fiber; d++) {
-                    const p = fiber.memoizedProps || fiber.pendingProps || {};
-                    if (p.cascadeId && typeof p.cascadeId === 'string') cascadeId = p.cascadeId;
-                    if (p.isRunning === true) isRunning = true;
-                    if (p.hasPendingTerminalCommand === true) hasPendingCmd = true;
-                    fiber = fiber.return;
-                }
-            }
-        } catch (_) { }
+        };
 
-        // ─── 3. 상태 감지 ───
-        let status = 'idle';
-        if (isRunning) status = 'generating';
+        readFiberValue(cascade);
 
-        // Signal A: Stop 버튼
-        if (status === 'idle') {
-            const allBtns = Array.from(document.querySelectorAll('button'));
-            const stopBtn = allBtns.find(b => {
-                if (b.offsetWidth === 0) return false;
-                const label = (b.getAttribute('aria-label') || '').toLowerCase();
-                const text = (b.textContent || '').trim().toLowerCase();
-                return label.includes('stop') || label === 'cancel generation'
-                    || text === 'stop' || text === 'stop generating';
-            });
-            if (stopBtn) status = 'generating';
-        }
-
-        // Signal B: 입력창 placeholder
-        if (status === 'idle') {
-            const editor = cascade.querySelector('[data-lexical-editor="true"]');
-            if (editor) {
-                const ph = (editor.getAttribute('placeholder') || '').toLowerCase();
-                if (ph.includes('wait') || ph.includes('generating')) status = 'generating';
-            }
-        }
-
-        const titleParts = document.title.split(' \u2014 ');
-        const title = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim() || 'Cascade';
-
-        // ─── 4. HTML → Markdown 변환기 ───
         const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'SECTION', 'ARTICLE', 'HEADER', 'FOOTER']);
-        function extractCodeText(node) {
-            if (node.nodeType === 3) return node.textContent || '';
-            if (node.nodeType !== 1) return '';
+        const extractCodeText = (node) => {
+            if (!node) return '';
+            if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
             if (node.tagName === 'BR') return '\n';
             const parts = [];
             for (const child of node.childNodes) {
-                const isBlock = child.nodeType === 1 && BLOCK_TAGS.has(child.tagName);
+                const block = child.nodeType === Node.ELEMENT_NODE && BLOCK_TAGS.has(child.tagName);
                 const text = extractCodeText(child);
-                if (text) {
-                    if (isBlock && parts.length > 0) parts.push('\n');
-                    parts.push(text);
-                    if (isBlock) parts.push('\n');
-                }
+                if (!text) continue;
+                if (block && parts.length > 0) parts.push('\n');
+                parts.push(text);
+                if (block) parts.push('\n');
             }
-            return parts.join('').replace(/\n{2,}/g, '\n');
-        }
-        function htmlToMd(node) {
-            if (node.nodeType === 3) return node.textContent || '';
-            if (node.nodeType !== 1) return '';
+            return parts.join('').replace(/\n{3,}/g, '\n\n');
+        };
+        const htmlToMd = (node) => {
+            if (!node) return '';
+            if (node.nodeType === Node.TEXT_NODE) return node.textContent || '';
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
             const tag = node.tagName;
             if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'SVG') return '';
-            if (tag === 'TABLE') {
-                const rows = Array.from(node.querySelectorAll('tr'));
-                if (rows.length === 0) return '';
-                const table = rows.map(tr =>
-                    Array.from(tr.querySelectorAll('th, td')).map(cell => (cell.textContent || '').trim().replace(/\|/g, '\\|'))
-                );
-                const colCount = Math.max(...table.map(r => r.length));
-                const header = table[0] || [];
-                const sep = Array(colCount).fill('---');
-                const body = table.slice(1);
-                let md = '| ' + header.join(' | ') + ' |\n';
-                md += '| ' + sep.join(' | ') + ' |\n';
-                for (const row of body) {
-                    while (row.length < colCount) row.push('');
-                    md += '| ' + row.join(' | ') + ' |\n';
-                }
-                return '\n' + md + '\n';
-            }
-            if (tag === 'UL') return '\n' + Array.from(node.children).map(li => '- ' + childrenToMd(li).trim()).join('\n') + '\n';
-            if (tag === 'OL') return '\n' + Array.from(node.children).map((li, i) => (i + 1) + '. ' + childrenToMd(li).trim()).join('\n') + '\n';
-            if (tag === 'LI') return childrenToMd(node);
-            if (tag === 'H1') return '\n# ' + childrenToMd(node).trim() + '\n';
-            if (tag === 'H2') return '\n## ' + childrenToMd(node).trim() + '\n';
-            if (tag === 'H3') return '\n### ' + childrenToMd(node).trim() + '\n';
-            if (tag === 'H4') return '\n#### ' + childrenToMd(node).trim() + '\n';
-            if (tag === 'STRONG' || tag === 'B') return '**' + childrenToMd(node).trim() + '**';
-            if (tag === 'EM' || tag === 'I') return '*' + childrenToMd(node).trim() + '*';
-            if (tag === 'PRE') {
-                const codeEl = node.querySelector('code');
-                const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-                const code = extractCodeText(codeEl || node);
-                return '\n```' + lang + '\n' + code.trim() + '\n```\n';
-            }
-            if (tag === 'CODE') {
-                if (node.parentElement && node.parentElement.tagName === 'PRE') return node.textContent || '';
-                return '`' + (node.textContent || '').trim() + '`';
-            }
-            if (tag === 'BLOCKQUOTE') return '\n> ' + childrenToMd(node).trim().replace(/\n/g, '\n> ') + '\n';
-            if (tag === 'A') return '[' + childrenToMd(node).trim() + '](' + (node.getAttribute('href') || '') + ')';
             if (tag === 'BR') return '\n';
-            if (tag === 'P') return '\n' + childrenToMd(node).trim() + '\n';
-            return childrenToMd(node);
-        }
-        function childrenToMd(node) {
-            return Array.from(node.childNodes).map(htmlToMd).join('');
-        }
+            if (tag === 'CODE' && node.parentElement?.tagName !== 'PRE') {
+                return '`' + extractCodeText(node).replace(/`/g, '\\`') + '`';
+            }
+            if (tag === 'PRE') {
+                return `\n\n\0\u0006\n${extractCodeText(node).trim()}\n\0\u0006\n\n`;
+            }
+            if (tag === 'A') {
+                const text = normalize(Array.from(node.childNodes).map(htmlToMd).join('')) || normalize(node.textContent);
+                const href = node.getAttribute('href') || '';
+                return href ? `[${text || href}](${href})` : text;
+            }
+            if (tag === 'TABLE') {
+                const rows = Array.from(node.querySelectorAll('tr')).map(tr => Array.from(tr.querySelectorAll('th,td')).map(cell => normalize(cell.textContent).replace(/\|/g, '\\|')));
+                if (!rows.length) return '';
+                const colCount = Math.max(...rows.map(row => row.length));
+                const header = rows[0].concat(Array(Math.max(0, colCount - rows[0].length)).fill(''));
+                const body = rows.slice(1).map(row => row.concat(Array(Math.max(0, colCount - row.length)).fill('')));
+                const divider = Array(colCount).fill('---');
+                return '\n' + ['| ' + header.join(' | ') + ' |', '| ' + divider.join(' | ') + ' |', ...body.map(row => '| ' + row.join(' | ') + ' |')].join('\n') + '\n';
+            }
+            const children = Array.from(node.childNodes).map(htmlToMd).join('');
+            if (tag === 'P') return children.trim() + '\n\n';
+            if (tag === 'LI') return '- ' + children.trim() + '\n';
+            if (tag === 'UL' || tag === 'OL') return '\n' + children + '\n';
+            if (/H[1-6]/.test(tag)) return '\n' + '#'.repeat(Number(tag[1])) + ' ' + normalize(node.textContent) + '\n\n';
+            return children;
+        };
+        const getCopyableText = (node) => {
+            if (!node) return '';
+            const nodes = [node, ...node.querySelectorAll('*')].slice(0, 80);
+            for (const candidate of nodes) {
+                const key = Object.keys(candidate).find(name => name.startsWith('__reactFiber'));
+                if (!key) continue;
+                let fiber = candidate[key];
+                for (let depth = 0; fiber && depth < 15; depth += 1, fiber = fiber.return) {
+                    const props = fiber.memoizedProps || fiber.pendingProps || {};
+                    if (typeof props.copyableText === 'string' && props.copyableText.trim()) {
+                        return props.copyableText.trim();
+                    }
+                }
+            }
+            return '';
+        };
+        const getCleanMd = (node) => htmlToMd(node)
+            .replace(/\u00060\u0006/g, '```')
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/[ \t]+\n/g, '\n')
+            .trim();
 
-        function getCleanMd(el) {
-            const clone = el.cloneNode(true);
-            clone.querySelectorAll('button, [role="button"], style, script, svg, .codicon, [class*="feedback"]').forEach(n => n.remove());
-            clone.querySelectorAll('*').forEach(child => {
-                if (!child.parentNode) return;
-                const t = (child.textContent || '').trim();
-                if (t.length > 60) return;
-                const low = t.toLowerCase();
-                if (/^(analyzed\s+\d|edited\s+\d|ran\s+\S|terminal\s|reading|searching)/i.test(low)) child.remove();
+        const collectApprovalActions = () => {
+            const dialogs = [document.querySelector('.monaco-dialog-box, [role="dialog"]'), cascade].filter(Boolean);
+            const actionNames = [];
+            for (const root of dialogs) {
+                const buttons = Array.from(root.querySelectorAll('button, [role="button"], .monaco-button')).filter(isVisible);
+                for (const button of buttons) {
+                    const label = normalize(button.innerText || button.textContent || button.getAttribute('aria-label'));
+                    if (!label || label.length > 40) continue;
+                    if (!/^(run|skip|accept|reject|approve|allow|deny)\b/i.test(label)) continue;
+                    if (!actionNames.some(existing => existing.toLowerCase() === label.toLowerCase())) {
+                        actionNames.push(label);
+                    }
+                }
+            }
+            return actionNames;
+        };
+
+        const approvalActions = collectApprovalActions();
+        let status = 'idle';
+        let activeModal = null;
+
+        if (approvalActions.length > 0) {
+            status = 'waiting_approval';
+            activeModal = {
+                message: normalize(cascade.querySelector('button')?.closest('[class*="terminal"],[class*="shadow-step"],.monaco-dialog-box,[role="dialog"]')?.innerText || 'Approval required'),
+                actions: approvalActions,
+            };
+        } else {
+            const stopButton = Array.from(cascade.querySelectorAll('button, [role="button"]')).find(el => {
+                if (!isVisible(el)) return false;
+                const text = normalize(el.innerText || el.textContent || el.getAttribute('aria-label'));
+                return /^(stop|cancel generation|stop generating)\b/i.test(text);
             });
-            let md = htmlToMd(clone);
-            md = md.replace(/\n{3,}/g, '\n\n').trim();
-            return md;
-        }
-
-        // ─── 5. 메시지 수집 ───
-        const collected = [];
-        const seenHashes = new Set();
-
-        const scrollArea = cascade.querySelector('.cascade-scrollbar');
-        if (!scrollArea) {
-            return { id: cascadeId, status, title, messages: [], inputContent: '', activeModal: null };
-        }
-
-        // 메시지 리스트 컨테이너 찾기: .gap-2.5 중 자식 2개 이상
-        let msgContainer = null;
-        const gapEls = scrollArea.querySelectorAll('[class*="gap-2"]');
-        for (const el of gapEls) {
-            if (el.children.length >= 2 && el.closest('.cascade-scrollbar')) {
-                msgContainer = el; break;
+            const spinnerSignal = Array.from(cascade.querySelectorAll('*')).some(el => {
+                if (!isVisible(el)) return false;
+                const cls = String(el.className || '');
+                return /animate-spin|animate-pulse|animate-bounce|loading-spinner|lucide-loader|stream/i.test(cls);
+            });
+            const stateLabelSignal = Array.from(cascade.querySelectorAll('*')).some(el => {
+                if (!isVisible(el)) return false;
+                if (el.children.length > 2) return false;
+                if (el.closest('[class*="popover"], [class*="tooltip"], [data-radix-popper-content-wrapper]')) return false;
+                const text = normalize(el.innerText || el.textContent || el.getAttribute('aria-label'));
+                return text.length > 0 && text.length <= 30 && /^(thinking|generating|sailing|loading)\b/i.test(text);
+            });
+            if (fiberRunning || stopButton || spinnerSignal || stateLabelSignal) {
+                status = 'generating';
             }
         }
 
-        if (msgContainer) {
-            const turns = Array.from(msgContainer.children);
-            for (const turn of turns) {
-                // .mark-js-ignore = 피드백 UI → 무시
-                if ((turn.className || '').includes('mark-js-ignore')) continue;
-                if (turn.offsetHeight < 10) continue;
+        const scroll = cascade.querySelector('.cascade-scrollbar');
+        const candidates = scroll
+            ? Array.from(scroll.querySelectorAll('div')).filter(el => String(el.className || '').includes('flex flex-col gap-2.5') && el.children.length > 0)
+            : [];
+        const listRoot = candidates.sort((left, right) => right.children.length - left.children.length)[0] || null;
 
-                // 역할 판별: .prose = AI, 아니면 user
-                const proseEl = turn.querySelector('[class*="prose"]');
-                const role = proseEl ? 'assistant' : 'user';
+        const messages = [];
+        const seen = new Set();
+        if (listRoot) {
+            for (const child of Array.from(listRoot.children)) {
+                if (!isVisible(child)) continue;
+                const rawText = normalize(child.innerText || child.textContent);
+                if (!rawText) continue;
+                if ((child.className || '').includes('mark-js-ignore') || /feedback submitted/i.test(rawText)) continue;
 
-                let text = '';
-                if (role === 'assistant') {
-                    // AI: Fiber copyableText가 있으면 사용 (이미 마크다운!)
-                    try {
-                        const fk = Object.keys(turn).find(k => k.startsWith('__reactFiber'));
-                        if (fk) {
-                            let fiber = turn[fk];
-                            for (let d = 0; d < 20 && fiber; d++) {
-                                const p = fiber.memoizedProps || {};
-                                if (p.copyableText && typeof p.copyableText === 'string' && p.copyableText.length > 5) {
-                                    text = p.copyableText;
-                                    break;
-                                }
-                                fiber = fiber.return;
-                            }
-                        }
-                    } catch (_) { }
+                readFiberValue(child);
 
-                    // Fiber에 없으면 HTML→Markdown
-                    if (!text) {
-                        const mdRoot = proseEl || turn;
-                        text = getCleanMd(mdRoot);
-                    }
-                } else {
-                    // 사용자: whitespace-pre-wrap 요소에서 텍스트 추출
-                    const whitespace = turn.querySelector('[class*="whitespace"]');
-                    text = (whitespace || turn).innerText?.trim() || '';
+                const isUser = !!child.querySelector('.justify-end');
+                let kind = 'standard';
+                if (/Command\b/i.test(rawText) || child.querySelector('.terminal-text, [class*="bg-ide-terminal-background"]')) {
+                    kind = 'terminal';
+                } else if (/tasks done|Created Todo List|\bnew\b \+\d+|shadow-step/i.test(rawText + ' ' + (child.innerHTML || ''))) {
+                    kind = 'tool';
+                } else if (!isUser && /step-by-step reasoning|reasoning process|thought process/i.test(rawText)) {
+                    kind = 'thought';
                 }
 
-                if (!text || text.length < 1) continue;
+                let content = '';
+                if (isUser) {
+                    const bubble = child.querySelector('[class*="whitespace-pre-wrap"]') || child;
+                    content = normalize(bubble.innerText || bubble.textContent);
+                } else if (kind === 'terminal') {
+                    const label = normalize(child.querySelector('.codeium-text-medium')?.textContent || 'Command');
+                    const command = normalize(child.querySelector('.terminal-text,.whitespace-pre-wrap,.monaco-tokenized-source')?.textContent || rawText)
+                        .replace(/\bRun\b.*$/i, '')
+                        .replace(/\bSkip\b.*$/i, '')
+                        .trim();
+                    content = `${label}\n\n\0\u0006sh\n${command}\n\0\u0006`.replace(/\u00060\u0006/g, '```');
+                } else if (kind === 'tool') {
+                    content = cleanText(rawText);
+                } else {
+                    const prose = child.querySelector('.prose');
+                    content = getCopyableText(child) || getCleanMd(prose || child) || cleanText(rawText);
+                }
 
-                const hash = role + ':' + text.slice(0, 200);
-                if (seenHashes.has(hash)) continue;
-                seenHashes.add(hash);
-                collected.push({ role, text, el: turn });
+                content = content.replace(/\n{3,}/g, '\n\n').trim();
+                if (!content) continue;
+
+                const hash = `${isUser ? 'user' : 'assistant'}:${kind}:${content.slice(0, 240)}`;
+                if (seen.has(hash)) continue;
+                seen.add(hash);
+
+                const message = {
+                    role: isUser ? 'user' : 'assistant',
+                    content: content.length > 12000 ? `${content.slice(0, 12000)}\n[... truncated]` : content,
+                    index: messages.length,
+                };
+                if (kind !== 'standard') message.kind = kind;
+                if (kind === 'terminal') {
+                    message.meta = {
+                        label: normalize(child.querySelector('.codeium-text-medium')?.textContent || 'Command'),
+                        isRunning: status === 'generating' && /command/i.test(content),
+                    };
+                }
+                messages.push(message);
             }
         }
 
-        // DOM 순서 정렬
-        collected.sort((a, b) => {
-            const pos = a.el.compareDocumentPosition(b.el);
-            if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
-            if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
-            return 0;
-        });
-
-        // 최신 30개만
-        const trimmed = collected.length > 30 ? collected.slice(-30) : collected;
-
-        const final = trimmed.map((m, i) => ({
-            id: 'msg_' + i,
-            role: m.role,
-            content: m.text.length > 6000 ? m.text.slice(0, 6000) + '\n[... truncated]' : m.text,
-            index: i,
-            kind: 'standard'
-        }));
-
-        // ─── 6. 입력창 ───
         const editor = cascade.querySelector('[data-lexical-editor="true"]')
             || cascade.querySelector('[contenteditable="true"][role="textbox"]')
             || cascade.querySelector('textarea:not(.xterm-helper-textarea)');
-        const inputContent = editor ? (editor.innerText || editor.value || '').trim() : '';
+        const inputContent = normalize(editor?.innerText || editor?.value || '');
 
-        // ─── 7. 모달/승인 감지 ───
-        let activeModal = null;
-        try {
-            // Fiber: hasPendingTerminalCommand
-            if (hasPendingCmd) {
-                const allBtns = Array.from(document.querySelectorAll('button')).filter(b => b.offsetWidth > 0);
-                const approvalBtns = allBtns.filter(b => {
-                    const t = (b.textContent || '').trim().toLowerCase();
-                    return /^(run|reject|skip|approve|allow|deny|cancel|accept)\b/i.test(t);
-                });
-                const btnTexts = [...new Set(approvalBtns.map(b => (b.textContent || '').trim()).filter(t => t.length < 40))];
-                activeModal = { message: 'Terminal command pending', buttons: btnTexts.length > 0 ? btnTexts : ['Run', 'Reject'] };
-            }
+        if (status === 'idle' && fiberPendingCommand && approvalActions.length > 0) {
+            status = 'waiting_approval';
+        }
 
-            // Dialog 폴백
-            if (!activeModal) {
-                const dialog = document.querySelector('.monaco-dialog-box, [role="dialog"]');
-                if (dialog && dialog.offsetWidth > 80) {
-                    const msg = (dialog.querySelector('.dialog-message') || dialog).innerText?.trim() || '';
-                    const buttons = Array.from(dialog.querySelectorAll('.monaco-button, button'))
-                        .map(b => (b.innerText || '').trim()).filter(t => t.length > 0 && t.length < 30);
-                    if (msg || buttons.length > 0) {
-                        activeModal = { message: msg.slice(0, 300), buttons };
-                    }
-                }
-            }
-
-            // 인라인 승인 버튼
-            if (!activeModal) {
-                const allBtns = Array.from(document.querySelectorAll('button')).filter(b => b.offsetWidth > 0);
-                const approvalBtns = allBtns.filter(b => {
-                    const t = (b.textContent || '').trim().toLowerCase();
-                    if (t.length > 40) return false;
-                    return /^(run|reject|skip|approve|allow|deny)\b/i.test(t)
-                        || t === 'always allow' || t === 'always deny';
-                });
-                if (approvalBtns.length >= 2) {
-                    const btnTexts = [...new Set(approvalBtns.map(b => (b.textContent || '').trim()))];
-                    activeModal = { message: '', buttons: btnTexts };
-                }
-            }
-
-            if (activeModal) status = 'waiting_approval';
-        } catch (_) { activeModal = null; }
-
-        return { id: cascadeId, status, title, messages: final, inputContent, activeModal };
+        return JSON.stringify({
+            id: cascadeId,
+            status,
+            title,
+            messages,
+            inputContent,
+            activeModal,
+        });
     } catch (e) {
-        return { id: 'error', status: 'error', error: e.message, messages: [] };
+        return JSON.stringify({ id: 'error', status: 'idle', title: 'Cascade', messages: [], inputContent: '', activeModal: null, error: e.message });
     }
 })()

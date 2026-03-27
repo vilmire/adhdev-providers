@@ -1,68 +1,82 @@
 /**
  * Windsurf v1 — resolve_action
  * 
- * 승인 다이얼로그/인라인 버튼을 클릭합니다.
- * 
- * 파라미터: ${ BUTTON_TEXT } — 클릭할 버튼 텍스트 (lowercase)
- * 
- * 최종 확인: Windsurf (2026-03-06)
+ * Cascade 패널 내의 승인/거절 버튼을 찾아 좌표를 반환합니다.
  */
-(() => {
+(async (params) => {
     try {
-        const want = ${ BUTTON_TEXT };
-        const normalize = (s) => (s || '').replace(/[\s\u200b\u00a0]+/g, ' ').trim().toLowerCase();
-        const matches = (text) => {
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        
+        // 검색할 핵심 단어
+        const want = normalize(params?.buttonText || params?.button || params?.action || 'run');
+        
+        const isMatch = (text) => {
             const t = normalize(text);
             if (!t) return false;
-            if (t === want) return true;
-            if (t.indexOf(want) === 0) return true;
-            if (want === 'run' && (/^run\s*/.test(t) || t === 'enter' || t === '⏎')) return true;
-            if (want === 'approve' && (t.includes('approve') || t === 'always allow' || t === 'allow')) return true;
-            if (want === 'reject' && (t.includes('reject') || t === 'deny' || t === 'always deny')) return true;
-            return false;
+            // 긍정 액션 (Run / Accept)
+            if (want === 'run' || want === 'approve' || want === 'accept') {
+                return /run|allow|approve|accept|apply|ok|yes|proceed|continue|keep/i.test(t);
+            }
+            // 부정 액션 (Skip / Reject)
+            if (want === 'skip' || want === 'reject' || want === 'deny') {
+                return /skip|deny|reject|cancel|no|discard/i.test(t);
+            }
+            return t.includes(want);
         };
-        const click = (el) => {
-            el.focus?.();
+
+        const isVisible = (el) => {
             const rect = el.getBoundingClientRect();
-            const x = rect.left + rect.width / 2;
-            const y = rect.top + rect.height / 2;
-            for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
-                el.dispatchEvent(new PointerEvent(type, {
-                    bubbles: true, cancelable: true, view: window,
-                    clientX: x, clientY: y, pointerId: 1, pointerType: 'mouse'
-                }));
-            }
-            return true;
+            return rect.width > 0 && rect.height > 0 && 
+                   window.getComputedStyle(el).visibility !== 'hidden' &&
+                   window.getComputedStyle(el).display !== 'none';
         };
 
-        // 1. Dialog 내부
-        const dialog = document.querySelector('.monaco-dialog-box, [role="dialog"]');
-        if (dialog && dialog.offsetWidth > 80) {
-            const btns = dialog.querySelectorAll('.monaco-button, button');
-            for (const b of btns) {
-                if (matches(b.textContent)) return click(b);
-            }
+        const cascade = document.querySelector('#windsurf\\.cascadePanel') || document.querySelector('.chat-client-root') || document;
+        
+        // 모든 버튼 수집
+        const buttons = Array.from(cascade.querySelectorAll('button, [role="button"], .monaco-button'))
+            .filter(el => isVisible(el) && !el.disabled && !el.classList.contains('disabled'));
+
+        // 가장 아래(최신)에 있는 버튼 우선
+        const target = buttons.reverse().find(el => {
+            const label = el.innerText || el.textContent || el.getAttribute('aria-label') || '';
+            return isMatch(label);
+        });
+
+        if (target) {
+            target.focus?.();
+            const rect = target.getBoundingClientRect();
+            
+            // Synthetic click (DOM 수준)
+            try { 
+                const init = { bubbles: true, cancelable: true, view: window, buttons: 1 };
+                target.dispatchEvent(new MouseEvent('mousedown', init));
+                target.dispatchEvent(new MouseEvent('mouseup', init));
+                target.click(); 
+            } catch(e) {}
+            
+            return JSON.stringify({
+                found: true,
+                x: Math.round(rect.x + rect.width / 2),
+                y: Math.round(rect.y + rect.height / 2),
+                label: (target.innerText || target.textContent || '').trim()
+            });
         }
 
-        // 2. 모든 보이는 버튼
-        const sel = 'button, [role="button"], .monaco-button';
-        const allBtns = Array.from(document.querySelectorAll(sel))
-            .filter(b => b.offsetWidth > 0 && b.offsetHeight > 0);
-        for (const b of allBtns) {
-            if (matches(b.textContent)) return click(b);
+        // 버튼 상호작용 실패 시 Enter 시도 (긍정 액션인 경우)
+        if (want === 'run' || want === 'approve' || want === 'accept') {
+            const cmdEnter = (type) => document.dispatchEvent(new KeyboardEvent(type, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, metaKey: true, bubbles: true, cancelable: true }));
+            cmdEnter('keydown');
+            await wait(20);
+            cmdEnter('keyup');
+            return JSON.stringify({ resolved: true, method: 'cmd_enter_fallback' });
         }
 
-        // 3. Enter 키 폴백 (run)
-        if (want === 'run') {
-            document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', {
-                key: 'Enter', code: 'Enter', keyCode: 13,
-                bubbles: true, cancelable: true
-            }));
-            return true;
-        }
-
-        return false;
+        return JSON.stringify({ found: false });
     } catch (e) {
-        return false;
+        return JSON.stringify({ found: false, error: e.message });
     }
-})()
+})
+
+

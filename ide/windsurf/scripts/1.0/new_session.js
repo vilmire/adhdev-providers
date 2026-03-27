@@ -14,56 +14,45 @@
  *
  * 최종 확인: Windsurf 1.108.x (2026-03-10)
  */
-(() => {
+(async () => {
     try {
-        // ─── 1. aria-label 기반 ───
-        const allBtns = Array.from(document.querySelectorAll('button, [role="button"], .action-item'))
-            .filter(b => b.offsetWidth > 0);
+        const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const cascade = document.querySelector('#windsurf\\.cascadePanel') || document.querySelector('.chat-client-root');
+        const beforeTabs = document.querySelectorAll('[id^="cascade-tab-"]').length;
+        const headerButtons = Array.from((cascade || document).querySelectorAll('button')).filter(el => el.offsetWidth > 0 && el.offsetHeight > 0);
 
-        for (const btn of allBtns) {
-            const label = (btn.getAttribute('aria-label') || '').toLowerCase();
-            if (label.includes('new chat') || label.includes('new cascade') ||
-                label.includes('new conversation') || label.includes('start new') ||
-                label.includes('new session')) {
-                btn.click();
-                return 'clicked (aria)';
+        const clickSequence = (el) => {
+            const rect = el.getBoundingClientRect();
+            const init = { bubbles: true, cancelable: true, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerId: 1, pointerType: 'mouse' };
+            el.focus?.();
+            for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+                el.dispatchEvent(new PointerEvent(type, init));
             }
+        };
+
+        let button = headerButtons.find(el => /lucide-plus/.test(el.innerHTML));
+
+        if (!button) {
+            button = headerButtons.find(el => {
+                const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+                const label = ((el.getAttribute('aria-label') || '') + ' ' + (el.getAttribute('title') || '')).toLowerCase();
+                return text === '+' || label.includes('new chat') || label.includes('new cascade') || label.includes('new conversation') || label.includes('new session');
+            });
         }
 
-        // ─── 2. 텍스트 기반 ───
-        for (const btn of allBtns) {
-            const text = (btn.textContent || '').trim();
-            if (text === '+' || text === 'New Chat' || text === 'New Cascade' ||
-                text === 'Start New Chat' || text === 'New Session') {
-                btn.click();
-                return 'clicked (text)';
-            }
+        if (button) {
+            clickSequence(button);
+            await wait(300);
+            const afterTabs = document.querySelectorAll('[id^="cascade-tab-"]').length;
+            return JSON.stringify({ created: afterTabs >= beforeTabs });
         }
 
-        // ─── 3. Codicon 아이콘(+) 기반 ───
-        for (const btn of allBtns) {
-            const hasPlus = btn.querySelector('.codicon-plus, .codicon-add, [class*="plus"]');
-            if (hasPlus) {
-                const label = (btn.getAttribute('aria-label') || btn.getAttribute('title') || '').toLowerCase();
-                // Cascade 관련 컨텍스트이거나 라벨이 비어있으면 새 세션 버튼일 가능성
-                if (label.includes('chat') || label.includes('cascade') ||
-                    label.includes('new') || label === '') {
-                    btn.click();
-                    return 'clicked (icon)';
-                }
-            }
-        }
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', code: 'KeyL', keyCode: 76, which: 76, metaKey: true, bubbles: true, cancelable: true }));
+        document.dispatchEvent(new KeyboardEvent('keyup', { key: 'l', code: 'KeyL', keyCode: 76, which: 76, metaKey: true, bubbles: true, cancelable: true }));
+        await wait(300);
 
-        // ─── 4. Cmd+L 단축키 (macOS: metaKey, Windows/Linux: ctrlKey) ───
-        // Windsurf에서 Cmd+L은 Cascade 패널 토글/새 세션 생성
-        document.dispatchEvent(new KeyboardEvent('keydown', {
-            key: 'l', code: 'KeyL', keyCode: 76,
-            metaKey: true, ctrlKey: false,
-            bubbles: true, cancelable: true,
-        }));
-
-        return 'sent Cmd+L';
+        return JSON.stringify({ created: document.querySelectorAll('[id^="cascade-tab-"]').length >= beforeTabs });
     } catch (e) {
-        return 'error: ' + e.message;
+        return JSON.stringify({ created: false, error: e.message });
     }
 })()
