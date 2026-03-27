@@ -21,7 +21,7 @@
     const rawStatus = c?.getAttribute('data-composer-status') || 'idle';
     let status = rawStatus;
     if (rawStatus === 'thinking' || rawStatus === 'streaming') status = 'generating';
-    else if (rawStatus === 'completed' || rawStatus === 'idle' || !rawStatus) status = 'idle';
+    else if (rawStatus === 'completed' || rawStatus === 'cancelled' || rawStatus === 'idle' || !rawStatus) status = 'idle';
 
     // ─── Approval Detection ───
     let activeModal = null;
