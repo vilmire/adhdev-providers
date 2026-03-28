@@ -67,9 +67,6 @@
   "patterns": {
     "prompt": [
       { "source": "Type your message", "flags": "i" },
-      { "source": "^>\\s*$", "flags": "m" },
-      { "source": "[›❯]\\s*[\\r\\n]", "flags": "" },
-      { "source": "[›❯]\\s*$", "flags": "m" },
       { "source": "for\\s*shortcuts", "flags": "i" },
       { "source": "\\?\\s*for\\s*help", "flags": "i" },
       { "source": "Press enter", "flags": "i" }
@@ -85,10 +82,7 @@
       { "source": "Allow\\s*once", "flags": "i" },
       { "source": "Always\\s*allow", "flags": "i" },
       { "source": "\\(y/n\\)", "flags": "i" },
-      { "source": "\\[Y/n\\]", "flags": "i" },
-      { "source": "Run\\s+\\w+\\s+command", "flags": "i" },
-      { "source": "Yes,?\\s*don'?t\\s*ask", "flags": "i" },
-      { "source": "\\bDeny\\b", "flags": "i" }
+      { "source": "\\[Y/n\\]", "flags": "i" }
     ],
     "ready": [
       { "source": "for\\s*shortcuts", "flags": "i" },
