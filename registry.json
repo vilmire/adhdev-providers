@@ -182,7 +182,7 @@
       "name": "Aider",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=0.86.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -193,7 +193,7 @@
       "name": "Claude Code",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=2.1.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -204,7 +204,7 @@
       "name": "Codex CLI",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=0.42.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -215,7 +215,7 @@
       "name": "Cursor CLI",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=2026.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -226,7 +226,7 @@
       "name": "Gemini CLI",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=0.35.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -248,7 +248,7 @@
       "name": "Goose",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=3.20.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -259,7 +259,7 @@
       "name": "OpenCode CLI",
       "compatibility": [
         {
-          "ideVersion": ">=1.0.0",
+          "ideVersion": ">=1.3.0",
           "scriptDir": "scripts/1.0"
         }
       ]
