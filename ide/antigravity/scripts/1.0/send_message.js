@@ -1,44 +1,44 @@
 /**
  * Antigravity v1 — send_message
  *
- * Antigravity는 contenteditable div[role="textbox"]를 사용.
- * 여러 개의 contenteditable이 있을 수 있으므로 y좌표가 가장 큰 (메인 채팅) 것을 선택.
+ * Antigravity contenteditable div[role="textbox"] use.
+ * Multiple contenteditablemay exist, so select the one with largest y coordinate (main chat).
  *
- * ⚠️ Enter 이벤트에 composed: true + which 필수 (Shadow DOM 경계 통과 + React 호환)
- * ⚠️ keydown + keypress + keyup 전체 시퀀스 필요
+ * ⚠️ Enter event composed: true + which (Shadow DOM crossing boundary + React compatibility)
+ * ⚠️ keydown + keypress + keyup full sequence needed
  *
- * 파라미터: ${ MESSAGE }
- * 최종 확인: 2026-03-10
+ * Parameter: ${ MESSAGE }
+ * final Check: 2026-03-10
  */
 (async () => {
     try {
         const msg = ${ MESSAGE };
 
-        // ─── 1. 메인 채팅 입력 필드 찾기 ───
+        // ─── 1. Find main chat input field ───
         const editors = document.querySelectorAll('[contenteditable="true"][role="textbox"]');
         if (!editors.length) return 'error: no contenteditable textbox found';
 
-        // y좌표가 가장 큰 (화면 아래쪽 = 메인 채팅) 에디터 선택
+ // y (bottom of screen = chat) editor Select
         const editor = [...editors].reduce((a, b) =>
             b.getBoundingClientRect().y > a.getBoundingClientRect().y ? b : a
         );
 
-        // ─── 2. 텍스트 삽입 ───
+        // ─── 2. text insertion ───
         editor.focus();
 
-        // 기존 내용 삭제
+ // content delete
         document.execCommand('selectAll', false, null);
         document.execCommand('delete', false, null);
 
-        // 텍스트 삽입
+        // text insertion
         document.execCommand('insertText', false, msg);
 
-        // React에 변경 알림
+        // Reactnotify changes to
         editor.dispatchEvent(new Event('input', { bubbles: true }));
 
         await new Promise(r => setTimeout(r, 300));
 
-        // ─── 3. Enter 키 전송 (full sequence) ───
+        // ─── 3. Enter key sending (full sequence) ───
         const enterOpts = {
             key: 'Enter', code: 'Enter',
             keyCode: 13, which: 13,

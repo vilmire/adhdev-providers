@@ -1,8 +1,8 @@
 /**
  * Cursor — switch_session
  *
- * 사이드바 셀 클릭으로 세션 전환:
- *   제목 매칭 (params.title) 또는 인덱스 (params.index)
+ * by clicking Switch session:
+ *   title matching (params.title) or index (params.index)
  *
  * params.index: number, params.title: string|null
  * → { switched: true/false, title?, error? }

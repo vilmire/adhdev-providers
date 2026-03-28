@@ -1,13 +1,13 @@
 /**
  * Cursor v1 — focus_editor
  *
- * CURSOR.md 4-5: 셀렉터 우선순위
+ * CURSOR.md 4-5: Selector priority
  *   [contenteditable="true"][role="textbox"]
  *   → .chat-input textarea
  *   → .composer-input
  *   → textarea
  *
- * 최종 확인: 2026-03-06
+ * final Check: 2026-03-06
  */
 (() => {
     const editor = document.querySelector('[contenteditable="true"][role="textbox"]')

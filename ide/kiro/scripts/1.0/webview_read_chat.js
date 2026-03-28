@@ -1,16 +1,16 @@
 /**
- * Kiro — webview_read_chat (webview iframe 내부에서 실행)
+ * Kiro — webview_read_chat (webview iframe runs inside)
  *
- * Kiro의 채팅 UI는 webview iframe 안에 위치하며,
- * 데몬의 evaluateInWebviewFrame을 통해 실행됨.
+ * Kiro chat UI webview iframe located at,
+ * evaluateInWebviewFrame execute.
  *
- * DOM 구조:
+ * DOM structure:
  *   .kiro-chat-timeline
- *     .kiro-chat-message (유저/어시스턴트 메시지)
- *       .kiro-chat-message-meta → .kiro-chat-message-role (발신자)
- *       .kiro-chat-message-body → .kiro-chat-message-markdown (내용)
+ *     .kiro-chat-message (user/assistant messages)
+ *       .kiro-chat-message-meta → .kiro-chat-message-role (sender)
+ *       .kiro-chat-message-body → .kiro-chat-message-markdown (content)
  *
- * 반환: ReadChatResult { id, status, messages, inputContent? }
+ * Return: ReadChatResult { id, status, messages, inputContent? }
  */
 (() => {
     try {
@@ -104,18 +104,18 @@
             }
         });
 
-        // 상태 감지 및 activeModal 추출
+ // status detection activeModal extract
         let status = 'idle';
         let activeModal = undefined;
 
-        // "Working" / "Cancel" 버튼 → generating
+        // "Working" / "Cancel" button → generating
         const snackbar = document.querySelector('.kiro-snackbar');
         if (snackbar && snackbar.offsetWidth > 0) {
             const barText = (snackbar.textContent || '').toLowerCase();
             if (barText.includes('working') || barText.includes('cancel')) {
                 status = 'generating';
             } else if (barText.includes('waiting') || barText.includes('input')) {
-                // 승인 대기 중 (waiting on your input)
+                // Waiting for approval (waiting on your input)
                 const titleEl = snackbar.querySelector('.kiro-snackbar-title, .thinking-text');
                 const actionsEl = snackbar.querySelectorAll('.kiro-snackbar-actions button');
                 const buttons = Array.from(actionsEl).map(b => (b.textContent || '').trim());
@@ -139,11 +139,11 @@
             }
         }
 
-        // 입력 필드 내용
+        // Input field content
         const input = document.querySelector('.tiptap.ProseMirror, [contenteditable="true"]');
         const inputContent = input ? input.textContent?.trim() : '';
 
-        // 세션 탭
+ // session 
         const tab = document.querySelector('.kiro-tabs-item.active, .kiro-tabs-item[aria-selected="true"]');
         const title = tab?.textContent?.trim() || '';
 

@@ -1,14 +1,14 @@
 /**
  * Cursor — set_model
  *
- * 모델 드롭다운에서 대상 모델 선택:
- *   1. 드롭다운 열기
- *   2. Auto 토글 끄기 (필요 시)
- *   3. 검색 입력으로 필터
- *   4. 매칭 아이템 클릭
- *   5. 원래 Auto 상태 복원
+ * Select target model from model dropdown:
+ *   1. Open dropdown
+ *   2. Turn off Auto toggle (if needed)
+ *   3. Filter via search input
+ *   4. Click matching item
+ *   5. Restore original Auto state
  *
- * params.model: string — 모델 이름 (🧠 접미사 가능)
+ * params.model: string — Model name (🧠 may have suffix)
  * → { success: true/false, model? }
  */
 async (params) => {
@@ -24,11 +24,11 @@ async (params) => {
     const menu = document.querySelector('[data-testid="model-picker-menu"]');
     if (!menu) return JSON.stringify({ success: false, error: 'Model picker menu not found' });
 
-    // 🧠 접미사 처리
+    // 🧠 Handle suffix
     const wantBrain = target.includes('🧠');
     const searchName = target.replace(/\s*🧠\s*$/, '').trim();
 
-    // Auto 토글 끄기
+    // Auto toggle turn off
     const autoItem = menu.querySelector('.composer-unified-context-menu-item[data-is-selected="true"]');
     const autoToggle = autoItem ? [...autoItem.querySelectorAll('[class*="rounded-full"]')].find(el => el.offsetWidth === 24 && el.offsetHeight === 14) : null;
     let wasAutoOn = false;
@@ -41,7 +41,7 @@ async (params) => {
       }
     }
 
-    // 검색 입력으로 필터링
+ // Filter via search input
     const refreshedMenu = document.querySelector('[data-testid="model-picker-menu"]');
     const searchInput = refreshedMenu?.querySelector('input[placeholder="Search models"]');
     if (searchInput) {
@@ -51,7 +51,7 @@ async (params) => {
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // 아이템에서 찾기
+ // from search
     const items = (refreshedMenu || menu).querySelectorAll('.composer-unified-context-menu-item');
     for (const item of items) {
       const nameEl = item.querySelector('.monaco-highlighted-label');
@@ -67,7 +67,7 @@ async (params) => {
       }
     }
 
-    // Auto 복원 + 닫기
+ // Auto + close
     if (wasAutoOn) {
       const nm = document.querySelector('[data-testid="model-picker-menu"]');
       const nai = nm?.querySelector('.composer-unified-context-menu-item');

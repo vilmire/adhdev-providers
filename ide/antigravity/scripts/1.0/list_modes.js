@@ -1,6 +1,6 @@
 /**
  * Antigravity — list_modes
- * 현재 모드 + 사용 가능한 모드 목록 추출
+ * Current mode + use Mode list extract
  *
  * Version compatibility:
  *   v0 (old): span-based mode button (plain text, no opacity class)

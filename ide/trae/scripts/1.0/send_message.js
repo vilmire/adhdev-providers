@@ -1,16 +1,16 @@
 /**
  * Trae — send_message
  *
- * Trae는 .chat-input-v2-input-box-editable (contenteditable / Lexical) 사용.
- * Lexical의 내부 state를 올바르게 업데이트하기 위해 Selection API + execCommand 사용.
+ * Trae .chat-input-v2-input-box-editable (contenteditable / Lexical) use.
+ * Lexical inside state to correctly update Selection API + execCommand use.
  *
- * 파라미터: ${ MESSAGE }
+ * Parameter: ${ MESSAGE }
  */
 (async () => {
     try {
         const msg = ${ MESSAGE };
 
-        // ─── 1. 입력 필드 찾기 ───
+        // ─── 1. Find input field ───
         const editor =
             document.querySelector('.chat-input-v2-input-box-editable') ||
             document.querySelector('[contenteditable="true"][role="textbox"]') ||
@@ -18,11 +18,11 @@
 
         if (!editor) return JSON.stringify({ sent: false, error: 'no input found' });
 
-        // ─── 2. 포커스 + 전체 선택 + 삭제 + 삽입 ───
+        // ─── 2. focus + all Select + delete + insert ───
         editor.focus();
         await new Promise(r => setTimeout(r, 100));
 
-        // Selection API로 전체 선택
+ // Selection API all Select
         const sel = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(editor);
@@ -30,23 +30,23 @@
         sel.addRange(range);
         await new Promise(r => setTimeout(r, 50));
 
-        // 삭제 후 삽입 (Lexical state 동기화)
+        // Delete and insert (sync Lexical state)
         document.execCommand('delete', false, null);
         await new Promise(r => setTimeout(r, 50));
         document.execCommand('insertText', false, msg);
         
-        // Input 이벤트
+        // Input event
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         await new Promise(r => setTimeout(r, 500));
 
-        // ─── 3. send 버튼 클릭 ───
+        // ─── 3. send button click ───
         const sendBtn = document.querySelector('.chat-input-v2-send-button');
         if (sendBtn && !sendBtn.disabled) {
             sendBtn.click();
             return JSON.stringify({ sent: true, method: 'button' });
         }
 
-        // 버튼이 아직 disabled이면 Enter 키 시도
+ // button If still disabled, try Enter key
         const enterOpts = {
             key: 'Enter', code: 'Enter',
             keyCode: 13, which: 13,
@@ -57,7 +57,7 @@
         editor.dispatchEvent(new KeyboardEvent('keypress', enterOpts));
         editor.dispatchEvent(new KeyboardEvent('keyup', enterOpts));
 
-        // 여전히 안 되면 needsTypeAndSend 폴백
+        // If still fails needsTypeAndSend fallback
         return JSON.stringify({
             sent: false,
             needsTypeAndSend: true,

@@ -1,23 +1,23 @@
 /**
  * Windsurf v1 — open_panel
  *
- * Cascade(AI 채팅) 패널이 닫혀 있을 때 열기.
+ * Cascade(AI chat) If panel is closed when present open.
  *
- * Windsurf의 Cascade 패널은 Secondary Side Bar (#workbench.parts.auxiliarybar)에 위치.
- * 닫혀 있으면 offsetWidth === 0.
- * Cmd+L 단축키로 열 수 있음 (WINDSURF.md §2.5).
+ * WindsurfCascade panel of is Secondary Side Bar (#workbench.parts.auxiliarybar)located at.
+ * closed offsetWidth === 0.
+ * Cmd+L via shortcut can be opened (WINDSURF.md §2.5).
  *
- * 반환: 'visible' | 'opened' | 'error: ...'
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * Return: 'visible' | 'opened' | 'error: ...'
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (() => {
     try {
-        // ─── 1. Cascade 패널이 이미 열려 있는지 확인 ───
+        // ─── 1. Check if Cascade panel is already open ───
         const cascade = document.querySelector('#windsurf\\.cascadePanel') ||
             document.querySelector('.chat-client-root');
         const sidebar = document.getElementById('workbench.parts.auxiliarybar');
 
-        // 패널이 존재하고 보이면 이미 열린 상태
+        // panelexists and visible means already open
         if (cascade && cascade.offsetWidth > 0 && cascade.offsetHeight > 0) {
             return 'visible';
         }
@@ -25,7 +25,7 @@
             return 'visible';
         }
 
-        // ─── 2. Toggle 버튼 클릭 시도 ───
+        // ─── 2. Attempt to click toggle button ───
         const toggleBtns = Array.from(document.querySelectorAll('li.action-item a, button, [role="button"]'));
         for (const btn of toggleBtns) {
             const label = (btn.getAttribute('aria-label') || '').toLowerCase();
@@ -38,7 +38,7 @@
             }
         }
 
-        // ─── 3. Cmd+L 단축키 폴백 (Windsurf 공식 단축키) ───
+        // ─── 3. Cmd+L shortcut fallback (Windsurf official shortcut) ───
         // keyCode: 76, modifiers: 4 (Meta/Cmd)
         document.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'l', code: 'KeyL', keyCode: 76,

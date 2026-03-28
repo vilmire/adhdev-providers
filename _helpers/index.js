@@ -1,17 +1,17 @@
 /**
- * Provider Helpers — 공유 유틸리티
+ * Provider Helpers — Shared utilities
  * 
- * 각 provider.js에서 require해 사용할 수 있는 공통 함수들.
- * 사용은 선택사항 — 각 provider.js는 독립적이어도 됨.
+ * Common functions available via require in each provider.js.
+ * Usage is optional — each provider.js can be self-contained.
  * 
- * 사용법 (provider.js 내부):
+ * Usage (inside provider.js):
  *   const { getWebviewDoc, htmlToMd, waitFor } = require('../../_helpers/index.js');
  */
 
 /**
- * Extension webview iframe의 contentDocument 접근
- * @param {string} [selector='iframe'] - iframe 셀렉터
- * @returns {string} CDP evaluate용 JS 코드 (document 변수를 설정)
+ * Access contentDocument of extension webview iframe
+ * @param {string} [selector='iframe'] - iframe selector
+ * @returns {string} JS code for CDP evaluate (sets document variable)
  */
 function getWebviewDoc(selector = 'iframe') {
   return `
@@ -21,11 +21,11 @@ function getWebviewDoc(selector = 'iframe') {
 }
 
 /**
- * React Fiber 데이터 추출 헬퍼 코드
- * 특정 엔트리 포인트에서 시작해 memoizedState를 순회
- * @param {string[]} entrySelectors - 엔트리 포인트 CSS 셀렉터
- * @param {number} [maxDepth=200] - Fiber 트리 최대 순회 깊이
- * @returns {string} CDP evaluate용 JS 코드 (변수 _fiberData를 설정)
+ * React Fiber data extraction helper code
+ * Traverse memoizedState starting from specific entry points
+ * @param {string[]} entrySelectors - Entry point CSS selectors
+ * @param {number} [maxDepth=200] - Max Fiber tree traversal depth
+ * @returns {string} JS code for CDP evaluate (sets _fiberData variable)
  */
 function getFiber(entrySelectors, maxDepth = 200) {
   const sels = JSON.stringify(entrySelectors);
@@ -61,10 +61,10 @@ function getFiber(entrySelectors, maxDepth = 200) {
 }
 
 /**
- * 텍스트 입력 + Enter 전송 코드 생성
- * @param {string} varName - 텍스트가 저장된 변수명
- * @param {string} selectorExpr - 에디터 요소 참조 JS 표현식
- * @returns {string} CDP evaluate용 JS 코드
+ * Generate text input + Enter submission code
+ * @param {string} varName - Variable name containing the text
+ * @param {string} selectorExpr - JS expression referencing the editor element
+ * @returns {string} JS code for CDP evaluate
  */
 function typeAndSubmit(varName, selectorExpr) {
   return `
@@ -85,10 +85,10 @@ function typeAndSubmit(varName, selectorExpr) {
 }
 
 /**
- * 요소 대기 코드 생성
- * @param {string} selector - CSS 셀렉터
- * @param {number} [timeout=5000] - 최대 대기 시간 (ms)
- * @returns {string} CDP evaluate용 JS 코드 (표현식 → 요소 또는 null)
+ * Generate element wait code
+ * @param {string} selector - CSS selector
+ * @param {number} [timeout=5000] - Max wait time (ms)
+ * @returns {string} JS code for CDP evaluate (expression → element or null)
  */
 function waitFor(selector, timeout = 5000) {
   return `
@@ -106,9 +106,9 @@ function waitFor(selector, timeout = 5000) {
 }
 
 /**
- * HTML → Markdown 변환 함수 (CDP 코드 문자열)
- * 대시보드가 ReactMarkdown+remarkGfm을 사용하므로 HTML을 GFM으로 변환 필요
- * @returns {string} htmlToMd, childrenToMd 함수 선언 코드
+ * HTML → Markdown conversion function (CDP code string)
+ * Dashboard uses ReactMarkdown+remarkGfm, so HTML must be converted to GFM
+ * @returns {string} htmlToMd, childrenToMd function declaration code
  */
 function htmlToMdCode() {
   return `
@@ -166,9 +166,9 @@ function htmlToMdCode() {
 }
 
 /**
- * 노이즈 텍스트 필터링 (상태 메시지, MCP 등)
- * @param {string} text - 원본 텍스트
- * @returns {boolean} true면 노이즈
+ * Noise text filtering (status messages, MCP, etc.)
+ * @param {string} text - Original text
+ * @returns {boolean} true if noise
  */
 function isNoiseText(text) {
   const low = (text || '').trim().toLowerCase();

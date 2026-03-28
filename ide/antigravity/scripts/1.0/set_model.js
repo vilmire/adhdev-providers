@@ -1,6 +1,6 @@
 /**
  * Antigravity — set_model
- * 모델 드롭다운에서 모델 선택
+ * model from Select model
  *
  * Version compatibility:
  *   v0 (old): .flex.min-w-0.max-w-full.cursor-pointer.items-center trigger

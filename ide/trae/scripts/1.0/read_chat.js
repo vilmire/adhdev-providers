@@ -1,12 +1,12 @@
 /**
  * Trae — read_chat
  *
- * Trae는 메인 DOM에서 직접 채팅 내용에 접근 가능.
- * 채팅 턴은 .chat-turn 요소로 구분.
- * 유저: .user-chat-bubble-request__content-wrapper
- * 어시스턴트: .assistant-chat-turn-content .chat-markdown
+ * Trae from main DOM chat content accessible.
+ * chat is .chat-turn element .
+ * : .user-chat-bubble-request__content-wrapper
+ * : .assistant-chat-turn-content .chat-markdown
  *
- * 반환: ReadChatResult { id, status, messages, title?, inputContent?, activeModal? }
+ * Return: ReadChatResult { id, status, messages, title?, inputContent?, activeModal? }
  */
 (() => {
     try {
@@ -15,7 +15,7 @@
             return JSON.stringify({ id: '', status: 'idle', messages: [] });
         }
 
-        // ─── 1. 메시지 수집 ───
+        // ─── 1. Collect messages ───
         const messages = [];
         const turns = auxbar.querySelectorAll('.chat-turn');
 
@@ -50,22 +50,22 @@
             }
         });
 
-        // ─── 2. 상태 감지 ───
+        // ─── 2. status detection ───
         let status = 'idle';
 
-        // Stop 버튼 존재 → generating
+        // Stop button exists → generating
         const stopBtn = auxbar.querySelector('button[class*="stop"], [aria-label*="stop" i], [aria-label*="Stop"]');
         if (stopBtn && stopBtn.offsetWidth > 0) {
             status = 'generating';
         }
 
-        // progress bar 활성 → generating
+ // progress bar → generating
         const progress = auxbar.querySelector('.monaco-progress-container:not(.done)');
         if (progress && progress.offsetWidth > 0) {
             status = 'generating';
         }
 
-        // latest-assistant-bar가 가장 정확한 상태 표시 (최종 판정)
+ // latest-assistant-bar most accurate (final determination)
         const latestBar = auxbar.querySelector('.latest-assistant-bar');
         if (latestBar) {
             const barText = latestBar.textContent.toLowerCase();
@@ -76,7 +76,7 @@
             }
         }
 
-        // ─── 3. 승인 대기 모달 ───
+        // ─── 3. approval wait modal ───
         let activeModal = null;
         const dialogs = auxbar.querySelectorAll('[role="dialog"], .monaco-dialog-box, [class*="approval"], [class*="confirm"]');
         if (dialogs.length > 0) {
@@ -91,11 +91,11 @@
             }
         }
 
-        // ─── 4. 입력 필드 내용 ───
+        // ─── 4. Input field content ───
         const input = auxbar.querySelector('.chat-input-v2-input-box-editable, [contenteditable="true"]');
         const inputContent = input ? input.textContent.trim() : '';
 
-        // ─── 5. 세션 ID / 타이틀 ───
+        // ─── 5. Session ID / Title ───
         const sessionTab = auxbar.querySelector('[class*="session-tab"], [class*="chat-title"]');
         const title = sessionTab ? sessionTab.textContent.trim() : '';
 

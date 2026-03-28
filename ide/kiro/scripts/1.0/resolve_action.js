@@ -1,10 +1,10 @@
 /**
  * Kiro — resolve_action
  *
- * 승인/거부 버튼 찾기 + 좌표 반환.
- * Kiro의 approval 다이얼로그는 메인 DOM에 표시됨.
+ * Find approve/reject buttons + coordinates Return.
+ * Kiroapproval dialog is displayed in main DOM.
  *
- * 파라미터: ${ BUTTON_TEXT }
+ * Parameter: ${ BUTTON_TEXT }
  */
 (() => {
     const want = ${ BUTTON_TEXT };

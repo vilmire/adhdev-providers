@@ -1,11 +1,11 @@
 /**
  * Cursor — list_notifications
  *
- * VS Code 알림 토스트 목록:
+ * VS Code notification toast list:
  *   .notifications-toasts .notification-toast
  *   .notification-list-item
  *
- * params.filter: string|null — 메시지 필터
+ * params.filter: string|null — Message filter
  * → [{ index, message, severity, buttons }]
  */
 (params) => {

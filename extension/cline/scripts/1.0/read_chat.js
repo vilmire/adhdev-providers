@@ -1,18 +1,18 @@
 /**
- * Cline v1 — read_chat (v2 — Fiber 기반 역할 판별)
+ * Cline v1 — read_chat (v2 — Fiber based Determine role)
  *
- * 구조 (Cline 3.x — saoudrizwan.claude-dev):
+ * structure (Cline 3.x — saoudrizwan.claude-dev):
  *   1. outer webview iframe → inner contentDocument
- *   2. data-testid="virtuoso-item-list" (React Virtuoso) — 활성 메시지 블록
- *   3. React Fiber → data 배열에서 메시지 타입 직접 추출
+ *   2. data-testid="virtuoso-item-list" (React Virtuoso) — active message blocks
+ *   3. React Fiber → extract message type directly from data array
  *      - type: "say", say: "user_feedback" → user
  *      - type: "say", say: "text" → assistant
  *      - type: "say", say: "checkpoint_created" → system (skip)
- *      - type: "ask", ask: "followup" → assistant (질문)
- *      - type: "ask", ask: "tool" → assistant (tool 승인 대기)
- *   4. DOM textContent에서 콘텐츠 추출 + 정제
+ *      - type: "ask", ask: "followup" → assistant (question)
+ *      - type: "ask", ask: "tool" → assistant (tool approval wait)
+ *   4. Extract content from DOM textContent + sanitize
  *
- * 최종 확인: 2026-03-07
+ * final Check: 2026-03-07
  */
 (() => {
     try {
@@ -26,7 +26,7 @@
 
         const isVisible = root.offsetHeight > 0;
 
-        // ─── 1. Fiber에서 data 배열 추출 ───
+        // ─── 1. Extract data array from Fiber ───
         const virtuosoList = doc.querySelector('[data-testid="virtuoso-item-list"]');
         let fiberData = null;
 
@@ -48,11 +48,11 @@
             }
         }
 
-        // ─── 2. 메시지 파싱 ───
+        // ─── 2. Message parsing ───
         const messages = [];
 
         if (fiberData) {
-            // ★ Fiber 기반: 가장 정확한 역할 판별
+            // ★ Fiber based: most accurate Determine role
             for (let i = 0; i < fiberData.length; i++) {
                 const item = fiberData[i];
                 if (!item || typeof item !== 'object') continue;
@@ -62,20 +62,20 @@
                 const askSub = item.ask;    // "followup", "tool", "command", etc.
                 const text = item.text || '';
 
-                // 시스템 이벤트 스킵
+                // Skip system events
                 if (saySub === 'checkpoint_created') continue;
                 if (saySub === 'api_req_started' || saySub === 'api_req_finished') continue;
                 if (saySub === 'shell_integration_warning') continue;
 
-                // 역할 판별
+                // Determine role
                 let role = 'assistant';
                 if (saySub === 'user_feedback') role = 'user';
                 if (saySub === 'user_feedback_diff') role = 'user';
 
-                // 콘텐츠 추출
+                // Extract content
                 let content = '';
                 if (text) {
-                    // ask.followup의 text는 JSON일 수 있음
+                    // ask.followup text may be JSON
                     if (askSub === 'followup' && text.startsWith('{')) {
                         try {
                             const parsed = JSON.parse(text);
@@ -86,15 +86,15 @@
                     }
                 }
 
-                // DOM 텍스트 fallback (Fiber text가 비어있을 때)
+                // DOM text fallback (when Fiber text is empty)
                 if (!content && virtuosoList && virtuosoList.children[i]) {
                     content = (virtuosoList.children[i].textContent || '').trim();
                 }
 
-                // 너무 짧거나 빈 콘텐츠 스킵
+                // Skip too short or empty content
                 if (!content || content.length < 2) continue;
 
-                // 노이즈 정리
+                // Clean noise
                 content = content
                     .replace(/CheckpointCompareRestore(Save)?/gi, '')
                     .replace(/^\s*API Request.*$/gm, '')
@@ -104,7 +104,7 @@
 
                 if (content.length < 2) continue;
 
-                // 코드 블록 보존 (DOM에서 구조 추출)
+                // Preserve code blocks (extract structure from DOM)
                 if (virtuosoList.children[i]) {
                     const domItem = virtuosoList.children[i];
                     const preBlocks = domItem.querySelectorAll('pre');
@@ -147,20 +147,20 @@
                     }
                 }
 
-                // 길이 제한
+                // Length limit
                 if (content.length > 2000) content = content.substring(0, 2000) + '…';
 
                 messages.push({
                     role,
                     content,
                     timestamp: item.ts || (Date.now() - (fiberData.length - i) * 1000),
-                    // 디버그: 메시지 서브타입
+                    // Debug: Message subtype
                     _type: msgType,
                     _sub: saySub || askSub,
                 });
             }
         } else if (virtuosoList && virtuosoList.children.length > 0) {
-            // Fallback: DOM 기반 파싱 (Fiber 접근 실패 시)
+            // Fallback: DOM based parsing (Fiber on access failure)
             for (let i = 0; i < virtuosoList.children.length; i++) {
                 const item = virtuosoList.children[i];
                 const rawText = (item.textContent || '').trim();
@@ -180,14 +180,14 @@
             }
         }
 
-        // ─── 3. 입력 필드 ───
+        // ─── 3. Input field ───
         let inputContent = '';
         const chatInput = doc.querySelector('[data-testid="chat-input"]');
         if (chatInput) {
             inputContent = chatInput.value || chatInput.textContent || '';
         }
 
-        // ─── 4. 상태 판별 ───
+        // ─── 4. Status determination ───
         let status = 'idle';
         const buttons = Array.from(doc.querySelectorAll('button'))
             .filter(b => b.offsetWidth > 0);
@@ -195,7 +195,7 @@
 
         if (buttonTexts.includes('cancel')) status = 'generating';
 
-        // Fiber data에서 마지막 type=ask인지 확인
+ // Fiber datafrom last type=ask Check
         if (fiberData && fiberData.length > 0) {
             const last = fiberData[fiberData.length - 1];
             if (last.type === 'ask') {
@@ -204,13 +204,13 @@
             }
         }
 
-        // 버튼 기반 보완
+        // button based complement
         const approvalPatterns = /^(proceed|approve|allow|accept|save|run command|yes|confirm)/i;
         if (buttonTexts.some(b => approvalPatterns.test(b))) status = 'waiting_approval';
 
         if (!isVisible && messages.length === 0) status = 'panel_hidden';
 
-        // ─── 5. 모델/모드 ───
+        // ─── 5. model/mode ───
         let model = '';
         const modeSwitch = doc.querySelector('[data-testid="mode-switch"]');
         if (modeSwitch) model = (modeSwitch.textContent || '').trim();
@@ -220,7 +220,7 @@
         }
         const mode = modeSwitch ? (modeSwitch.textContent || '').trim() : '';
 
-        // ─── 6. 승인 모달 ───
+        // ─── 6. Approval modal ───
         let activeModal = null;
         if (status === 'waiting_approval') {
             const approvalBtns = buttons
@@ -246,7 +246,7 @@
             }
         }
 
-        // ─── 7. 토큰/비용 ───
+        // ─── 7. Token/Cost ───
         let tokenInfo = '';
         const costEl = doc.querySelector('[data-testid*="cost"], [data-testid*="token"]');
         if (costEl) tokenInfo = (costEl.textContent || '').trim();

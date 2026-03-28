@@ -1,14 +1,14 @@
 /**
  * Windsurf v1 — open_panel
  *
- * Cascade(AI 채팅) 패널이 닫혀 있을 때 열기.
+ * Cascade(AI chat) If panel is closed when present open.
  *
- * Windsurf의 Cascade 패널은 Secondary Side Bar (#workbench.parts.auxiliarybar)에 위치.
- * 닫혀 있으면 offsetWidth === 0.
- * Cmd+L 단축키로 열 수 있음 (WINDSURF.md §2.5).
+ * WindsurfCascade panel of is Secondary Side Bar (#workbench.parts.auxiliarybar)located at.
+ * closed offsetWidth === 0.
+ * Cmd+L via shortcut can be opened (WINDSURF.md §2.5).
  *
- * 반환: 'visible' | 'opened' | 'error: ...'
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * Return: 'visible' | 'opened' | 'error: ...'
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (async () => {
     try {

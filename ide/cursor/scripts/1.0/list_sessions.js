@@ -1,11 +1,11 @@
 /**
  * Cursor — list_sessions
  *
- * 사이드바 셀 목록에서 세션 파싱:
- *   셀: .agent-sidebar-cell
- *   제목: .agent-sidebar-cell-text
- *   선택 상태: data-selected="true"
- *   활성 ID: [data-composer-id]에서 추출
+ * Parse sessions from sidebar cell list:
+ *   Cell: .agent-sidebar-cell
+ *   Title: .agent-sidebar-cell-text
+ *   Selection state: data-selected="true"
+ *   Active ID: [data-composer-id]extracted from
  *
  * → { sessions: [{ id, title, active, index }] }
  */

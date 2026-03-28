@@ -1,11 +1,11 @@
 /**
  * Windsurf v1 — resolve_action
  * 
- * 승인 다이얼로그/인라인 버튼을 클릭합니다.
+ * approval Click dialogue/inline button.
  * 
- * 파라미터: ${ BUTTON_TEXT } — 클릭할 버튼 텍스트 (lowercase)
+ * Parameter: ${ BUTTON_TEXT } — click button text (lowercase)
  * 
- * 최종 확인: Windsurf (2026-03-06)
+ * final Check: Windsurf (2026-03-06)
  */
 (() => {
     try {
@@ -35,7 +35,7 @@
             return true;
         };
 
-        // 1. Dialog 내부
+        // 1. Dialog inside
         const dialog = document.querySelector('.monaco-dialog-box, [role="dialog"]');
         if (dialog && dialog.offsetWidth > 80) {
             const btns = dialog.querySelectorAll('.monaco-button, button');
@@ -44,7 +44,7 @@
             }
         }
 
-        // 2. 모든 보이는 버튼
+        // 2. all visible button
         const sel = 'button, [role="button"], .monaco-button';
         const allBtns = Array.from(document.querySelectorAll(sel))
             .filter(b => b.offsetWidth > 0 && b.offsetHeight > 0);
@@ -52,7 +52,7 @@
             if (matches(b.textContent)) return click(b);
         }
 
-        // 3. Enter 키 폴백 (run)
+        // 3. Enter key fallback (run)
         if (want === 'run') {
             document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', {
                 key: 'Enter', code: 'Enter', keyCode: 13,

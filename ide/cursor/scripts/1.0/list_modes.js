@@ -1,10 +1,10 @@
 /**
  * Cursor — list_modes
  *
- * 모드 드롭다운 목록 추출:
- *   버튼: .composer-unified-dropdown (model이 아닌 것)
- *   메뉴: [data-testid="model-picker-menu"] 또는 .typeahead-popover
- *   아이템: .composer-unified-context-menu-item
+ * mode list extract:
+ * button: .composer-unified-dropdown (model )
+ * : [data-testid="model-picker-menu"] or .typeahead-popover
+ * : .composer-unified-context-menu-item
  *
  * → { modes[], current }
  */
@@ -32,7 +32,7 @@
       }
     }
 
-    // 닫기
+    // close
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 
     return JSON.stringify({ modes, current });

@@ -1,13 +1,13 @@
 /**
  * Codex Extension — new_session
- * Clicks the "새 채팅" / "New chat" button
+ * Clicks the "New chat" / "New chat" button
  */
 (() => {
   try {
     const buttons = Array.from(document.querySelectorAll('button')).filter(b => b.offsetWidth > 0);
     const newChatBtn = buttons.find(b => {
       const label = (b.getAttribute('aria-label') || '').toLowerCase();
-      return label.includes('새 채팅') || label.includes('new chat') || label.includes('new');
+      return label.includes('New chat') || label.includes('new chat') || label.includes('new');
     });
 
     if (newChatBtn) {

@@ -1,24 +1,24 @@
 /**
  * Windsurf v1 — send_message
  *
- * Windsurf는 Lexical 에디터 ([data-lexical-editor="true"])를 사용합니다.
- * contenteditable div이므로 execCommand('insertText') 또는 InputEvent로 입력 가능.
+ * Windsurf Lexical editor ([data-lexical-editor="true"])uses.
+ * contenteditable divsince it is execCommand('insertText') or InputEventallows input via.
  *
- * ⚠️ Lexical은 입력 이벤트를 정밀하게 감지하므로:
- *   - execCommand('insertText')가 가장 안정적
- *   - nativeSetter 방식은 동작하지 않음
- *   - InputEvent('insertText')를 폴백으로 사용
+ * ⚠️ Lexicalis input event detect:
+ *   - execCommand('insertText') is most stable
+ *   - nativeSetter approach does not work
+ *   - Uses InputEvent('insertText') as fallback
  *
- * Enter 키는 KeyboardEvent 전체 시퀀스 필요 (keydown + keypress + keyup).
+ * Enter key needs KeyboardEvent full sequence (keydown + keypress + keyup).
  *
- * 파라미터: ${ MESSAGE }
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * Parameter: ${ MESSAGE }
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (async () => {
     try {
         const msg = ${ MESSAGE };
 
-        // ─── 1. Lexical 에디터 찾기 (폴백 체인) ───
+        // ─── 1. Find Lexical editor (fallback chain) ───
         const editor =
             document.querySelector('[data-lexical-editor="true"]') ||
             document.querySelector('[contenteditable="true"][role="textbox"]') ||
@@ -31,7 +31,7 @@
         const isTextarea = editor.tagName === 'TEXTAREA';
 
         if (isTextarea) {
-            // ─── textarea 폴백 (미로그인 등) ───
+            // ─── textarea fallback (not logged in, etc.) ───
             editor.focus();
             const proto = HTMLTextAreaElement.prototype;
             const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
@@ -55,22 +55,22 @@
             return 'sent';
         }
 
-        // ─── 2. contenteditable (Lexical) 에디터 ───
+        // ─── 2. contenteditable (Lexical) editor ───
         editor.focus();
 
-        // 기존 내용 선택 후 삭제
+        // Select existing content and delete
         document.execCommand('selectAll', false, null);
         document.execCommand('delete', false, null);
 
-        // 텍스트 삽입 (Lexical은 execCommand('insertText')를 인식)
+        // text insertion (Lexicalis execCommand('insertText')recognizes)
         document.execCommand('insertText', false, msg);
 
-        // React/Lexical에 변경 알림
+        // React/Lexicalnotify changes to
         editor.dispatchEvent(new Event('input', { bubbles: true }));
 
         await new Promise(r => setTimeout(r, 300));
 
-        // ─── 3. Enter 키 전송 (전체 시퀀스) ───
+        // ─── 3. Enter key sending (full sequence) ───
         const enterOpts = {
             key: 'Enter', code: 'Enter',
             keyCode: 13, which: 13,

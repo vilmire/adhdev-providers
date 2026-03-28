@@ -1,6 +1,6 @@
 /**
  * Cline — list_models
- * 드롭다운에서 사용 가능한 모델 목록 + 현재 선택된 모델 반환
+ * Available from dropdown Model list + current Select return model
  * → { models: string[], current: string }
  */
 (async () => {
@@ -9,7 +9,7 @@
         const doc = inner?.contentDocument || inner?.contentWindow?.document;
         if (!doc) return JSON.stringify({ models: [], current: '', error: 'no doc' });
 
-        // 현재 모델: mode-switch 또는 model selector에서 읽기
+        // Current model: read from mode-switch or model selector
         let current = '';
         const modeSwitch = doc.querySelector('[data-testid="mode-switch"]');
         if (modeSwitch) current = (modeSwitch.textContent || '').trim();
@@ -18,15 +18,15 @@
             if (modelSel) current = (modelSel.textContent || '').trim();
         }
 
-        // 드롭다운 트리거 찾기
+        // Dropdown trigger search
         const trigger = doc.querySelector('[data-testid="model-selector"], [data-testid*="model-dropdown"], [data-testid="dropdown-trigger"]');
         if (!trigger) return JSON.stringify({ models: [], current, error: 'no model trigger' });
 
-        // 드롭다운 열기
+        // Open dropdown
         trigger.click();
         await new Promise(r => setTimeout(r, 300));
 
-        // 옵션 수집
+        // collect options
         const options = doc.querySelectorAll('[data-testid*="dropdown-option"], [role="option"], [class*="dropdown"] [class*="item"], [class*="listbox"] [class*="option"]');
         const models = [];
         for (const opt of options) {
@@ -34,7 +34,7 @@
             if (text && text.length > 1 && text.length < 100) models.push(text);
         }
 
-        // 닫기
+        // close
         doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         if (trigger.click) trigger.click(); // fallback close
 

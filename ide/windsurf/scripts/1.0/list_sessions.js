@@ -1,9 +1,9 @@
 /**
  * Windsurf v1 — list_sessions
  * 
- * Cascade 세션 리스트를 가져옵니다.
- * 1. 상단 탭 ([id^="cascade-tab-"])
- * 2. 히스토리 패널 ([data-kb-navigate="true"])
+ * Cascade session get list.
+ * 1. top tabs ([id^="cascade-tab-"])
+ * 2. history panel ([data-kb-navigate="true"])
  */
  (async () => {
     try {
@@ -20,7 +20,7 @@
         const seenIds = new Set();
         const seenTitles = new Set();
 
-        // 1. 상단 탭
+        // 1. top tabs
         const tabs = Array.from(document.querySelectorAll('[id^="cascade-tab-"]')).filter(isVisible);
         for (const tab of tabs) {
             const fullId = tab.id || '';
@@ -28,7 +28,7 @@
             const title = normalize(tab.textContent);
             if (!title || title === 'New Cascade') continue;
             
-            // 활성 상태 확인: 특정 클래스 or 내부 요소의 클래스 or ARIA 속성
+            // Check active status: specific class or internal element class or ARIA attribute
             const isActive = tab.classList.contains('bg-ide-tab-active-background-color') || 
                            !!tab.querySelector('.bg-ide-tab-active-background-color') ||
                            tab.getAttribute('aria-selected') === 'true';
@@ -43,7 +43,7 @@
             });
         }
 
-        // 2. 히스토리 패널
+        // 2. history panel
         const historyButton = Array.from(cascade.querySelectorAll('button')).find(el => isVisible(el) && /lucide-history/.test(el.innerHTML || ''));
         const existingPanel = Array.from(cascade.querySelectorAll('div')).find(el => isVisible(el) && (String(el.className || '').includes('group/panel') || el.hasAttribute('data-kb-navigate')));
         const wasOpen = !!existingPanel;

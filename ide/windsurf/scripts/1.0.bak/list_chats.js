@@ -1,18 +1,18 @@
 /**
  * Windsurf v1 — list_chats
  * 
- * Cascade 탭 목록을 가져옵니다.
- * 패널이 닫혀 있으면 먼저 열고 탭이 렌더링될 때까지 대기합니다.
- * cascade-tab-{uuid} 요소들의 React Fiber에서 제목을 추출합니다.
+ * Cascade get tab list.
+ * If panel is closed open first and wait until tab is rendered.
+ * cascade-tab-{uuid} element React Fiberfrom title extract.
  * 
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (async () => {
     try {
-        // ─── 1. 패널이 닫혀 있으면 열기 ───
+ // ─── 1. If panel is closed open ───
         let tabs = document.querySelectorAll('[id^="cascade-tab-"]');
         if (tabs.length === 0) {
-            // Cascade 패널 보이는지 확인
+            // Check if Cascade panel is visible Check
             const cascade = document.querySelector('#windsurf\\.cascadePanel') ||
                 document.querySelector('.chat-client-root');
             const sidebar = document.getElementById('workbench.parts.auxiliarybar');
@@ -20,7 +20,7 @@
                 (sidebar && sidebar.offsetWidth > 0 && cascade);
 
             if (!panelVisible) {
-                // Toggle 버튼 클릭 시도
+                // Attempt to click toggle button
                 const toggleBtns = Array.from(document.querySelectorAll('li.action-item a, button, [role="button"]'));
                 let toggled = false;
                 for (const btn of toggleBtns) {
@@ -34,7 +34,7 @@
                         }
                     }
                 }
-                // 버튼 없으면 Cmd+L
+ // button Cmd+L
                 if (!toggled) {
                     document.dispatchEvent(new KeyboardEvent('keydown', {
                         key: 'l', code: 'KeyL', keyCode: 76,
@@ -48,7 +48,7 @@
                     }));
                 }
 
-                // 패널 렌더링 대기 (최대 3초)
+                // Wait for panel render (max 3 seconds)
                 for (let i = 0; i < 30; i++) {
                     await new Promise(r => setTimeout(r, 100));
                     tabs = document.querySelectorAll('[id^="cascade-tab-"]');
@@ -57,7 +57,7 @@
             }
         }
 
-        // ─── 2. 탭 정보 수집 ───
+ // ─── 2. ───
         tabs = document.querySelectorAll('[id^="cascade-tab-"]');
         if (tabs.length === 0) return [];
 
@@ -73,7 +73,7 @@
             let cascadeId = tabId;
             let status = 'completed';
 
-            // React Fiber에서 제목 추출
+            // Extract title from React Fiber
             const fk = Object.keys(tab).find(k => k.startsWith('__reactFiber'));
             if (fk) {
                 let fiber = tab[fk];
@@ -95,7 +95,7 @@
                 }
             }
 
-            // DOM 폴백
+            // DOM fallback
             if (!title) {
                 title = tab.textContent?.trim().substring(0, 100) || ('Chat ' + (result.length + 1));
             }

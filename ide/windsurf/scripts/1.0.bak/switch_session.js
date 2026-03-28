@@ -1,13 +1,13 @@
 /**
  * Windsurf v1 — switch_session
  * 
- * Cascade 세션(대화) 탭을 전환합니다.
- * cascade-tab-{id} 내부의 실제 클릭 가능한 자식 DIV의
- * React onClick 핸들러를 직접 호출합니다.
+ * Cascade session(conversation) .
+ * cascade-tab-{id} actual clickable child DIV inside
+ * React onClick calls directly.
  * 
- * 파라미터: ${ SESSION_ID } — 전환할 세션 ID (cascade-tab의 UUID)
+ * Parameter: ${ SESSION_ID } — session ID (cascade-tab UUID)
  * 
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (() => {
     try {
@@ -32,7 +32,7 @@
             return false;
         }
 
-        // 1. cascade-tab-{id} 요소 찾기
+        // 1. cascade-tab-{id} element search
         const tab = document.getElementById('cascade-tab-' + id);
         if (tab) {
             if (clickReact(tab)) return 'switched';
@@ -41,7 +41,7 @@
             return 'switched-dom';
         }
 
-        // 2. 제목으로 매칭
+ // 2. title matching
         const tabs = document.querySelectorAll('[id^="cascade-tab-"]');
         for (const t of tabs) {
             if (t.textContent?.trim() === id) {

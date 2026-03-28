@@ -1,12 +1,12 @@
 /**
- * Kiro — webview_new_session (webview iframe 내부에서 실행)
+ * Kiro — webview_new_session (webview iframe runs inside)
  *
- * "New Session" 버튼/탭 클릭.
- * Kiro는 탭 바에 + 버튼 또는 "New Session" 액션이 있음.
+ * "New Session" button/ click.
+ * Kiro + button or "New Session" .
  */
 (() => {
     try {
-        // kiro-icon-button (+ 버튼) 찾기
+        // kiro-icon-button (+ button) search
         const addBtns = document.querySelectorAll('.kiro-icon-button, button, [role="button"]');
         for (const btn of addBtns) {
             const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
@@ -18,7 +18,7 @@
             }
         }
 
-        // Checkpoint > New Session 영역 찾기
+        // Checkpoint > New Session area search
         const allText = document.querySelectorAll('*');
         for (const el of allText) {
             if (el.children.length === 0 && (el.textContent || '').trim() === 'New Session') {

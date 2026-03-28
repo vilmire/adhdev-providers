@@ -1,29 +1,29 @@
 /**
- * Antigravity v1 — switch_session (v7 — CDP 마우스 클릭 좌표 반환)
+ * Antigravity v1 — switch_session (v7 — CDP click Return)
  *
- * ⚠️ 삭제 버튼(trash SVG)에 절대 접근하지 않음.
+ * ⚠️ delete button(trash SVG)never accessed.
  * 
- * 두 가지 모드:
- *   1) 히스토리 토글을 열고 행 좌표를 찾으면 {clickX, clickY} 반환 → daemon이 CDP 클릭으로 처리
- *   2) 워크스페이스 다이얼로그가 뜨면 첫 번째 행 좌표 반환 (자동 선택용)
+ * two types mode:
+ *   1) Open history toggle and if row coordinates found {clickX, clickY} Return → daemon handles via CDP click
+ * 2) workspace row Return ( Select)
  *
- * 파라미터: ${SESSION_ID} — 대화 제목 (문자열)
+ * Parameter: ${SESSION_ID} — conversation title ()
  */
 (async () => {
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     const id = ${SESSION_ID};
 
     try {
-        // 1. 히스토리 토글 클릭
+        // 1. history toggle click
         const toggle = document.querySelector('[data-past-conversations-toggle="true"]');
         if (!toggle) return JSON.stringify({ error: 'no_toggle' });
         toggle.click();
         await sleep(1200);
 
-        // 2. 컨테이너 찾기 (기존 로직: "Current" 텍스트 또는 "Select a conversation" input)
+ // 2. Container search ( : "Current" text or "Select a conversation" input)
         let container = null;
 
-        // 2a. "Current" 텍스트 기반
+        // 2a. "Current" text-based
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
         while (walker.nextNode()) {
             if (walker.currentNode.textContent.trim() === 'Current') {
@@ -49,7 +49,7 @@
             }
         }
 
-        // 2b. 폴백: "Select a conversation" input 기반
+        // 2b. fallback: "Select a conversation" input based
         if (!container) {
             const searchInput = Array.from(document.querySelectorAll('input[type="text"]'))
                 .find(i => i.offsetWidth > 0 && (i.placeholder || '').includes('Select a conversation'));
@@ -72,14 +72,14 @@
             return JSON.stringify({ error: 'no_container' });
         }
 
-        // 3. 행 매칭
+        // 3. row matching
         const rows = container.querySelectorAll('[class*="cursor-pointer"][class*="justify-between"][class*="rounded-md"]');
         const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
         const idNorm = norm(id);
         let targetRow = null;
 
         for (const row of rows) {
-            // 현재 활성 대화 스킵
+            // Skip currently active conversation
             if ((row.className || '').includes('focusBackground')) continue;
             const titleEl = row.querySelector('span span');
             const title = titleEl ? norm(titleEl.textContent) : '';
@@ -95,7 +95,7 @@
             return JSON.stringify({ error: 'no_match', rowCount: rows.length });
         }
 
-        // 4. 행의 좌표 계산 → daemon이 CDP Input.dispatchMouseEvent로 클릭
+ // 4. row calculation → daemon CDP Input.dispatchMouseEvent click
         const rect = targetRow.getBoundingClientRect();
         const clickX = Math.round(rect.left + rect.width * 0.3);
         const clickY = Math.round(rect.top + rect.height / 2);

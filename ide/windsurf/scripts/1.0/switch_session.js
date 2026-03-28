@@ -1,9 +1,9 @@
 /**
  * Windsurf v1 — switch_session
  * 
- * Cascade 세션(대화) 탭을 전환합니다.
- * 1. 상단 탭 ([id^="cascade-tab-"])
- * 2. 히스토리 패널 ([data-kb-navigate="true"])
+ * Cascade session(conversation) .
+ * 1. top tabs ([id^="cascade-tab-"])
+ * 2. history panel ([data-kb-navigate="true"])
  */
 (async (params) => {
     try {
@@ -31,18 +31,18 @@
 
         let target = null;
 
-        // 1. ID로 찾기 (상단 탭 우선)
+ // 1. ID search (top tabs first)
         if (id) {
             target = document.getElementById(`cascade-tab-${id}`) || document.getElementById(id);
         }
 
-        // 2. 상단 탭에서 타이틀로 찾기
+ // 2. top tabsfrom title search
         if (!target && title) {
             const tabs = Array.from(document.querySelectorAll('[id^="cascade-tab-"]'));
             target = tabs.find(tab => normalize(tab.textContent).includes(title));
         }
 
-        // 3. 히스토리 패널에서 찾기
+        // 3. history panelfrom search
         if (!target) {
             const cascade = document.querySelector('#windsurf\\.cascadePanel') || document.querySelector('.chat-client-root');
             if (cascade) {
@@ -63,7 +63,7 @@
         }
 
         if (!target) {
-            // 히스토리 패널 닫기
+            // Close history panel
             document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
             return JSON.stringify({ switched: false, error: 'Session not found among visible tabs or history rows' });
         }
@@ -71,7 +71,7 @@
         const coords = clickSequence(target.querySelector('.cursor-pointer') || target);
         await wait(200);
 
-        // 히스토리 패널 닫기 (만약 열렸다면)
+ // Close history panel ( )
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
 
         return JSON.stringify({ switched: true, coords });

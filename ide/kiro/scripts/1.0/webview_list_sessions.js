@@ -1,7 +1,7 @@
 /**
- * Kiro — webview_list_sessions (webview iframe 내부에서 실행)
+ * Kiro — webview_list_sessions (webview iframe runs inside)
  *
- * Kiro의 세션 탭 목록을 반환.
+ * Kiro session list Return.
  * DOM: .kiro-tabs-item
  */
 (() => {

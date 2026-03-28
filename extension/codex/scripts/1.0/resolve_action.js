@@ -17,9 +17,9 @@
 
     const actionLower = (action || '').toLowerCase();
     const patterns = {
-      approve: /^(approve|accept|allow|confirm|run|proceed|yes|승인|허용|실행|확인)/i,
+      approve: /^(approve|accept|allow|confirm|run|proceed|yes|approval|허용|execute|Check)/i,
       deny: /^(deny|reject|no|거부|아니오)/i,
-      cancel: /^(cancel|stop|취소|중지)/i,
+      cancel: /^(cancel|stop|cancel|stop)/i,
     };
 
     // Determine what to search for: use buttonText if provided, otherwise match action pattern
@@ -63,7 +63,7 @@
       const clickedText = getBtnLabel(targetBtn);
       if (/^\d+\./.test(clickedText)) {
         setTimeout(() => {
-          const submitBtn = buttons.find(b => /^(제출|submit)/i.test(getBtnLabel(b)));
+          const submitBtn = buttons.find(b => /^(Submit|submit)/i.test(getBtnLabel(b)));
           if (submitBtn && submitBtn !== targetBtn) submitBtn.click();
         }, 150);
       }

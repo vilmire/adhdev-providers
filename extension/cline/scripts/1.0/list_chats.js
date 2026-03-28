@@ -1,13 +1,13 @@
 /**
- * Cline v1 — list_chats (Fiber + DOM 이중 접근)
+ * Cline v1 — list_chats (Fiber + DOM dual access)
  *
- * 1차: React Fiber에서 taskHistory 배열 추출
- *      __reactFiber, __reactProps, __reactContainer 모두 탐색
- * 2차: Virtuoso DOM 파싱
+ * 1st: extract taskHistory array from React Fiber
+ *      Search all of __reactFiber, __reactProps, __reactContainer
+ * 2nd: Virtuoso DOM parsing
  *
- * 반환: JSON 문자열 — [{id, title, status, time, cost, tokensIn, tokensOut, modelId}]
+ * Return: JSON string — [{id, title, status, time, cost, tokensIn, tokensOut, modelId}]
  *
- * 최종 확인: 2026-03-07
+ * final Check: 2026-03-07
  */
 (() => {
     try {
@@ -15,7 +15,7 @@
         const doc = inner?.contentDocument || inner?.contentWindow?.document;
         if (!doc) return JSON.stringify({ error: 'no_doc', panel: 'hidden' });
 
-        // Fiber 키 찾기 helper — __reactFiber, __reactProps, __reactContainer 모두 검색
+        // Fiber key search helper — search all __reactFiber, __reactProps, __reactContainer
         const findFiberKey = (el) => Object.keys(el).find(k =>
             k.startsWith('__reactFiber') || k.startsWith('__reactProps') || k.startsWith('__reactContainer'));
 
@@ -23,14 +23,14 @@
             const fk = findFiberKey(el);
             if (!fk) return null;
             let fiber = el[fk];
-            // __reactContainer인 경우 내부 fiber tree root로 접근
+            // If __reactContainer, access inner fiber tree root
             if (fk.startsWith('__reactContainer') && fiber?._internalRoot?.current) {
                 fiber = fiber._internalRoot.current;
             }
             return fiber;
         };
 
-        // ─── 1차: Fiber props에서 taskHistory 찾기 ───
+        // ─── 1st: search taskHistory from Fiber props ───
         const allEls = doc.querySelectorAll('*');
         let taskHistory = null;
 
@@ -44,7 +44,7 @@
                     taskHistory = props.taskHistory;
                     break;
                 }
-                // memoizedState 체인에서도 탐색
+                // Also search in memoizedState chain
                 if (fiber.memoizedState) {
                     let st = fiber.memoizedState;
                     while (st) {
@@ -82,7 +82,7 @@
             return JSON.stringify(results);
         }
 
-        // ─── 2차: Virtuoso DOM 파싱 ───
+        // ─── 2nd: Virtuoso DOM parsing ───
         const items = doc.querySelectorAll('[data-item-index]');
         if (items.length > 0) {
             const results = Array.from(items).slice(0, 50).map(el => ({

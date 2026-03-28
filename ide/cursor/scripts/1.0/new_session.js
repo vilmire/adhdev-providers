@@ -1,7 +1,7 @@
 /**
  * Cursor — new_session
  *
- * 새 채팅/컴포저 버튼 클릭:
+ * New chat/ button click:
  *   a.action-label.codicon-add-two
  *   [aria-label*="New Chat"]
  *   [aria-label*="New Composer"]

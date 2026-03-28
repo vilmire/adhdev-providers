@@ -1,16 +1,16 @@
 /**
- * Kiro — webview_send_message (webview iframe 내부에서 실행)
+ * Kiro — webview_send_message (webview iframe runs inside)
  *
- * Kiro의 채팅 입력은 webview iframe 안의 ProseMirror/tiptap 에디터.
- * execCommand('insertText') + Enter 키 이벤트로 메시지 전송.
+ * Kiro chat input webview iframe ProseMirror/tiptap editor.
+ * execCommand('insertText') + Enter via key event Send message.
  *
- * 파라미터: ${ MESSAGE }
+ * Parameter: ${ MESSAGE }
  */
 (async () => {
     try {
         const msg = ${ MESSAGE };
 
-        // ─── 1. 입력 필드 찾기 ───
+        // ─── 1. Find input field ───
         const editor =
             document.querySelector('.tiptap.ProseMirror') ||
             document.querySelector('[contenteditable="true"]') ||
@@ -39,7 +39,7 @@
         editor.focus();
         await new Promise(r => setTimeout(r, 100));
 
-        // 전체 선택 + 삭제 + 삽입
+        // all Select + delete + insert
         const sel = window.getSelection();
         const range = document.createRange();
         range.selectNodeContents(editor);
@@ -54,7 +54,7 @@
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         await new Promise(r => setTimeout(r, 400));
 
-        // ─── 3. 전송 버튼 클릭 (Enter 키가 안 먹힐 때 대비) ───
+ // ─── 3. button click (Enter ) ───
         const sendBtns = Array.from(document.querySelectorAll('button, div[role="button"], span[role="button"]'))
             .filter(b => {
                 const aria = (b.getAttribute('aria-label') || '').toLowerCase();
@@ -76,7 +76,7 @@
             await new Promise(r => setTimeout(r, 100));
         }
 
-        // ─── 4. Enter 키 전송 (Fallback) ───
+        // ─── 4. Enter key sending (Fallback) ───
         const enterOpts = {
             key: 'Enter', code: 'Enter',
             keyCode: 13, which: 13,

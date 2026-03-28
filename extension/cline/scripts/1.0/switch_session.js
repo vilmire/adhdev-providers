@@ -1,15 +1,15 @@
 /**
  * Cline v1 — switch_session (Fiber hooks → showTaskWithId gRPC)
  *
- * 전략:
- * 1. Fiber DFS에서 taskHistory, showHistoryView 찾기
- * 2. Done 클릭으로 히스토리 닫기 → showHistoryView() → 재열기
- * 3. Virtuoso 렌더링 대기 (최대 5초, 500ms 간격 재시도 + scroll/resize 트리거)
- * 4. 렌더된 아이템의 Fiber hooks에서 showTaskWithId 콜백 추출
- * 5. showTaskWithId(taskId) 호출 → gRPC로 Task 전환
+ * strategy:
+ * 1. Find taskHistory, showHistoryView in Fiber DFS
+ * 2. Done by clicking history close → showHistoryView() → reopen
+ * 3. Virtuoso Render wait (max 5 secs, retry every 500ms + scroll/resize )
+ * 4. Rendered item Fiber hooksfrom showTaskWithId callback extract
+ * 5. showTaskWithId(taskId) call → Switch Task via gRPC
  *
- * 파라미터: ${ SESSION_ID } — task ID (숫자 문자열) 또는 제목
- * 최종 확인: 2026-03-07
+ * Parameter: ${ SESSION_ID } — task ID (number string) or title
+ * final Check: 2026-03-07
  */
 (async () => {
     try {
@@ -31,7 +31,7 @@
             return fiber;
         };
 
-        // ─── 1. Fiber DFS에서 taskHistory, showHistoryView 찾기 ───
+        // ─── 1. Find taskHistory, showHistoryView in Fiber DFS ───
         const root = doc.getElementById('root');
         if (!root) return false;
         const rootFk = findFiberKey(root);
@@ -73,7 +73,7 @@
 
         if (!taskHistory || taskHistory.length === 0) return false;
 
-        // 대상 task 찾기 (ID 또는 제목 매칭)
+        // target task search (ID or title matching)
         const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
         const idNorm = norm(sessionId);
         let targetTask = taskHistory.find(t => String(t.id) === sessionId);
@@ -86,9 +86,9 @@
         if (!targetTask) return false;
         const targetId = String(targetTask.id);
 
-        // ─── 2. showHistoryView가 없으면 Fiber root DFS 재시도 ───
+ // ─── 2. showHistoryView Fiber root DFS retry ───
         if (!showHistoryView) {
-            // DOM 요소 기반 탐색 (Fiber root에서 못 찾은 경우)
+            // DOM element-based search (when not found from Fiber root)
             for (const el of doc.querySelectorAll('*')) {
                 let fiber = getFiber(el);
                 for (let d = 0; d < 20 && fiber; d++) {
@@ -104,8 +104,8 @@
         }
         if (!showHistoryView) return false;
 
-        // ─── 3. 히스토리 뷰 토글 (닫기 → 열기) ───
-        // Done 버튼으로 닫기
+ // ─── 3. history toggle (close → open) ───
+        // Done via button close
         const doneBtn = Array.from(doc.querySelectorAll('button'))
             .find(b => b.textContent.trim() === 'Done' && b.offsetHeight > 0);
         if (doneBtn) {
@@ -113,14 +113,14 @@
             await new Promise(r => setTimeout(r, 400));
         }
 
-        // 히스토리 열기
+        // history open
         showHistoryView();
 
-        // ─── 4. Virtuoso 렌더링 대기 (최대 5초, 500ms 간격 재시도) ───
+        // ─── 4. Virtuoso Render wait (max 5 secs, retry every 500ms) ───
         let il = null;
         for (let attempt = 0; attempt < 10; attempt++) {
             await new Promise(r => setTimeout(r, 500));
-            // scroll + resize 트리거
+            // Trigger scroll + resize
             const sd = doc.querySelector('.overflow-y-scroll, [data-testid=virtuoso-scroller]');
             if (sd) {
                 sd.dispatchEvent(new Event('scroll', { bubbles: true }));
@@ -132,12 +132,12 @@
 
         if (!il || il.children.length === 0) return false;
 
-        // ─── 5. Fiber hooks에서 showTaskWithId 추출 ───
+        // ─── 5. Fiber hooksfrom showTaskWithId extract ───
         let showTaskFn = null;
         const findFiberKeySimple = (el) => Object.keys(el).find(k => k.startsWith('__reactFiber'));
 
         for (const child of il.children) {
-            // child 또는 child 내부의 모든 요소에서 탐색
+            // Search in child or all elements inside child
             const targets = [child, ...child.querySelectorAll('*')];
             for (const el of targets) {
                 const fk = findFiberKeySimple(el);
@@ -168,7 +168,7 @@
             if (showTaskFn) break;
         }
 
-        // Fallback: Fiber DFS 전체 탐색
+        // Fallback: Fiber DFS all search
         if (!showTaskFn) {
             const visited2 = new Set();
             const dfs2 = (f, depth) => {
@@ -193,7 +193,7 @@
 
         if (!showTaskFn) return false;
 
-        // ─── 6. showTaskWithId(targetId) 호출 ───
+        // ─── 6. showTaskWithId(targetId) call ───
         try {
             await showTaskFn(targetId);
         } catch {

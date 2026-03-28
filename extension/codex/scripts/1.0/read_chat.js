@@ -51,7 +51,7 @@
 
     const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = (headerEl?.textContent || '').trim();
-    const isTaskList = headerText === '작업' || headerText === 'Tasks';
+    const isTaskList = headerText === 'Tasks' || headerText === 'Tasks';
     
     // If we accidentally evaluated inside the Tasks webview instead of Chat, tell Daemon to try the next matching webview
     if (isTaskList) {
@@ -314,7 +314,7 @@
     
     const buttonLabels = buttons.map(getBtnLabel).map(t => t.toLowerCase());
 
-    if (buttonLabels.some(l => l.includes('cancel') || l.includes('취소') || l.includes('stop') || l.includes('중지'))) {
+    if (buttonLabels.some(l => l.includes('cancel') || l.includes('cancel') || l.includes('stop') || l.includes('stop'))) {
       status = 'generating';
     }
 
@@ -365,8 +365,8 @@
     if (approvalArea) {
       // ─── Codex Approval Panel (request-input-panel based) ───
       // The approval form has:
-      //   - Option items as plain divs (e.g., "1.\n예", "2.\n네,...", "3.\n아니요,...")
-      //   - Action buttons (e.g., "건너뛰기", "제출⏎") as <button> elements
+      //   - Option items as plain divs (e.g., "1.\nyes", "2.\nyes,...", "3.\nno,...")
+      //   - Action buttons (e.g., "skip", "Submit⏎") as <button> elements
       // We need to extract BOTH for the dashboard.
       
       // Find parent container that has all options (level 3 from textarea, btns >= 4)
@@ -399,7 +399,7 @@
 
       // Extract numbered option text items (the entire panel text, split by option numbering)
       const panelText = (approvalArea.innerText || '').trim();
-      // Parse "1.\n예\n2.\n네,...\n3.\n아니요,...\n건너뛰기\n제출⏎" format
+      // Parse "1.\nyes\n2.\nyes,...\n3.\nno,...\nskip\nSubmit⏎" format
       const optionMatches = panelText.match(/\d+\.\n[^\n]+(?:\n[^\d][^\n]*)*/g) || [];
       let options = optionMatches.map(o => o.replace(/\n/g, '').trim()).filter(o => o.length > 0);
       
@@ -492,7 +492,7 @@
     }
 
     // ─── 6. Task info ───
-    const taskBtn = doc.querySelector('[aria-label*="작업"], [aria-label*="task" i]');
+    const taskBtn = doc.querySelector('[aria-label*="Tasks"], [aria-label*="task" i]');
     const taskInfo = taskBtn ? (taskBtn.textContent || '').trim() : '';
 
     return JSON.stringify({

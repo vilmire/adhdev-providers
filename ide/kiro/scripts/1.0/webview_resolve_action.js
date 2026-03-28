@@ -1,7 +1,7 @@
 /**
  * Kiro — webview_resolve_action
  * Kiro's approval dialog uses buttons in the kiro-snackbar.
- * 파라미터: ${ BUTTON_TEXT }
+ * Parameter: ${ BUTTON_TEXT }
  */
 (() => {
     try {

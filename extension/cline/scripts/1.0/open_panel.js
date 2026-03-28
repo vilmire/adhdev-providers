@@ -1,15 +1,15 @@
 /**
  * Cline v1 — open_panel
  *
- * 패널 상태 확인 및 열기 시도.
+ * Check panel status and attempt to open.
  *
- * iframe 컨텍스트에서는 VS Code API 접근이 제한적이므로,
- * 패널이 숨겨져 있을 때는 'panel_hidden' 상태를 반환.
- * → daemon의 AgentStreamManager 또는
- *   agent_stream_focus 메시지를 통해 열어야 함.
+ * VS Code API access is limited from iframe context,
+ * When panel is hidden 'panel_hidden' Return status.
+ * → daemon AgentStreamManager or
+ *   agent_stream_focus must be opened via message.
  *
- * 반환: 'visible' | 'panel_hidden'
- * 최종 확인: 2026-03-07
+ * Return: 'visible' | 'panel_hidden'
+ * final Check: 2026-03-07
  */
 (() => {
     try {

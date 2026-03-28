@@ -1,6 +1,6 @@
 /**
  * Antigravity — list_models
- * 모델 드롭다운 트리거 버튼 + 항목 목록 추출
+ * model button + list extract
  *
  * Version compatibility:
  *   v0 (old): .flex.min-w-0.max-w-full.cursor-pointer.items-center (exact CSS selector works)

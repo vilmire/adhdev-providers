@@ -1,9 +1,9 @@
 /**
  * Cursor — open_panel
  *
- * 채팅/컴포저 패널 열기:
- *   1. 이미 보이면 'visible' 반환
- *   2. Agent/Chat/Composer 탭 찾아서 클릭
+ * chat/ panel open:
+ *   1. If already visible 'visible' Return
+ *   2. Find and click Agent/Chat/Composer tab
  */
 (() => {
   try {

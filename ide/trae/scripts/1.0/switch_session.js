@@ -1,8 +1,8 @@
 /**
  * Trae — switch_session
  *
- * Trae 세션 탭 전환.
- * 파라미터: ${ SESSION_ID }
+ * Trae Switch session tab.
+ * Parameter: ${ SESSION_ID }
  */
 (() => {
     try {

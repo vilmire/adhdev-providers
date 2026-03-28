@@ -1,7 +1,7 @@
 /**
  * Cursor — focus_editor
  *
- * 채팅 입력 필드에 포커스:
+ * Focus chat input field:
  *   .aislash-editor-input[contenteditable="true"]
  */
 (() => {

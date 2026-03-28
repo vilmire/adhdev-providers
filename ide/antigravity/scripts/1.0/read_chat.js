@@ -1,30 +1,30 @@
 /**
- * Antigravity v1 — read_chat (v4 — 스크롤 아래만, 가시 영역만 수집)
+ * Antigravity v1 — read_chat (v4 — scroll , area )
  * 
- * 원칙:
- * - 스크롤은 아래로만 (위로 절대 안 감)
- * - 가상화로 사라진 과거 사용자 메시지는 무시
- * - 현재 보이는 메시지만 수집 (최신 턴 중심)
+ * :
+ * - scrollis ( )
+ * - use ignore
+ * - current (latest )
  * 
- * DOM 구조:
- *   사용자: bg-gray-500/15 + select-text + p-2, 내부 whitespace-pre-wrap
- *   어시스턴트: .leading-relaxed.select-text
+ * DOM structure:
+ *   User: bg-gray-500/15 + select-text + p-2, inside whitespace-pre-wrap
+ * : .leading-relaxed.select-text
  */
 (() => {
     try {
         const conv = document.querySelector('#conversation') || document.querySelector('.antigravity-agent-side-panel') || document.body;
         const scroll = conv.querySelector('.overflow-y-auto') || conv;
 
-        // 1. 상태 감지 — 사이드바 하단 Send/Stop 버튼 기반 (오탐 방지)
+        // 1. status detection — Based on Send/Stop button at bottom of sidebar (prevent false positives)
         let status = 'idle';
 
-        // 시그널 A (1순위): 사이드바 하단 빨간 Stop 사각형 (.bg-red-500) — generating 중일 때 표시됨
+ // A (1st priority): Red Stop square (.bg-red-500) — generating displayed when generating
         const stopSquare = conv.querySelector('[class*="bg-red-500"]') || conv.querySelector('button[class*="rounded"] [class*="bg-red"]');
         if (stopSquare && stopSquare.offsetWidth > 0) {
             status = 'generating';
         }
 
-        // 시그널 B: conv 내부의 animate-markdown (생성 중 마크다운 렌더링)
+ // Signal B: conv inside animate-markdown (create markdown rendering during creation)
         if (status === 'idle') {
             const animMarkdown = scroll.querySelector('.leading-relaxed [class*="animate-markdown"]');
             if (animMarkdown && animMarkdown.offsetWidth > 0) status = 'generating';
@@ -33,7 +33,7 @@
         const titleParts = document.title.split(' \u2014 ');
         const title = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim() || 'Active Session';
 
-        // ─── HTML → Markdown 변환기 (대시보드가 ReactMarkdown+remarkGfm 사용) ───
+        // ─── HTML → Markdown converter (Dashboard uses ReactMarkdown+remarkGfm) ───
         // extractCodeText: layout-independent code text extraction
         // Works on cloneNode'd (detached) elements where innerText == textContent
         // Walks child nodes and inserts \n between block-level elements (DIV, P, etc.)
@@ -60,10 +60,10 @@
             if (node.nodeType !== 1) return '';
             const tag = node.tagName;
 
-            // 스타일/스크립트 제거
+            // Remove styles/scripts
             if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'SVG') return '';
 
-            // 테이블 → GFM
+            // Table → GFM
             if (tag === 'TABLE') {
                 const rows = Array.from(node.querySelectorAll('tr'));
                 if (rows.length === 0) return '';
@@ -122,9 +122,9 @@
 
         function getCleanMd(el) {
             const clone = el.cloneNode(true);
-            // 노이즈 제거
+            // Remove noise
             clone.querySelectorAll('button, [role="button"], style, script, svg, .codicon, [class*="feedback"], [aria-label*="Good"], [aria-label*="Bad"]').forEach(n => n.remove());
-            // 상태 텍스트 제거 (leaf만, 60자 이하만)
+            // Remove status text (leaf only, 60 chars or less)
             clone.querySelectorAll('*').forEach(child => {
                 if (!child.parentNode) return;
                 const t = (child.textContent || '').trim();
@@ -134,17 +134,17 @@
                 if (/^(mcp|customizationmcp|serversexport)/i.test(low)) child.remove();
             });
             let md = htmlToMd(clone);
-            // "Thought for X seconds" 제거
+            // Remove "Thought for X seconds"
             md = md.replace(/^Thought for\s+[\d.]+\s*(seconds?|s)\s*/i, '');
             md = md.replace(/\n{3,}/g, '\n\n').trim();
             return md;
         }
 
-        // 2. 메시지 수집 (스크롤 조작 없음 — 현재 DOM에 있는 것만)
+        // 2. Collect messages (scroll No manipulation — current DOMonly those in)
         const collected = [];
         const seenHashes = new Set();
 
-        // 사용자 메시지 (bg-gray-500/15 + select-text + p-2)
+ // use (bg-gray-500/15 + select-text + p-2)
         const allDivs = scroll.querySelectorAll('div');
         for (const el of allDivs) {
             const cls = (el.className || '');
@@ -160,12 +160,12 @@
             }
         }
 
-        // 어시스턴트 메시지 (leading-relaxed.select-text) — HTML→Markdown 변환
+ // (leading-relaxed.select-text) — HTML→Markdown conversion
         const assistantBlocks = scroll.querySelectorAll('.leading-relaxed.select-text');
         for (const ab of assistantBlocks) {
             if (ab.offsetHeight < 10) continue;
             if (ab.closest('[class*="max-h-"][class*="overflow-y-auto"]')) continue;
-            // Thought 내부의 블록은 제외 (thinking으로 별도 수집)
+            // Exclude blocks inside Thought (collected separately as thinking)
             if (ab.closest('.isolate')?.querySelector('button')?.textContent?.startsWith('Thought for')) continue;
 
             let text = getCleanMd(ab);
@@ -178,14 +178,14 @@
             collected.push({ role: 'assistant', text, el: ab, kind: 'standard' });
         }
 
-        // ─── Thought 수집 (AI 사고 과정) ───
+        // ─── Thought collection (AI thought process) ───
         const thoughtBtns = scroll.querySelectorAll('button');
         for (const btn of thoughtBtns) {
             const label = (btn.textContent || '').trim();
             if (!label.startsWith('Thought for')) continue;
             const sibling = btn.nextElementSibling;
             if (!sibling) continue;
-            // 실제 thinking 텍스트는 sibling 내부의 .leading-relaxed.select-text에 있음
+            // Actual thinking text is in .leading-relaxed.select-text inside sibling
             const contentEl = sibling.querySelector('.leading-relaxed.select-text');
             if (!contentEl) continue;
             const clone = contentEl.cloneNode(true);
@@ -195,11 +195,11 @@
             const hash = 'think:' + thinkText.slice(0, 200);
             if (seenHashes.has(hash)) continue;
             seenHashes.add(hash);
-            // 순수 텍스트만 전달 (마크다운 포맷은 프론트엔드에서 처리)
+            // Pass plain text only (markdown format handled by frontend)
             collected.push({ role: 'assistant', text: thinkText.slice(0, 3000), el: btn, kind: 'thought', meta: { label } });
         }
 
-        // ─── Terminal/Tool Call 수집 (명령 실행 결과) ───
+        // ─── Terminal/Tool Call collection (command execute result) ───
         const termHeaders = scroll.querySelectorAll('div.mb-1.px-2.py-1');
         for (const h of termHeaders) {
             const spanEl = h.querySelector('span');
@@ -213,17 +213,17 @@
             const hash = 'term:' + cmdText.slice(0, 200);
             if (seenHashes.has(hash)) continue;
             seenHashes.add(hash);
-            // 순수 텍스트만 전달 (라벨/아이콘은 프론트엔드에서 처리)
+            // Pass plain text only (labels/icons handled by frontend)
             const isRunning = label.startsWith('Running');
             collected.push({ role: 'assistant', text: cmdText.slice(0, 3000), el: h, kind: 'terminal', meta: { label, isRunning } });
         }
 
-        // ─── Tool Call 요약 수집 (Searched, Analyzed, Edited 등) ───
+ // ─── Tool Call summary collection (Searched, Analyzed, Edited ) ───
         const toolDivs = scroll.querySelectorAll('div[data-tooltip-id]');
         for (const td of toolDivs) {
             const cls = (td.className || '').toString();
             if (!cls.includes('cursor-pointer') || !cls.includes('text-sm')) continue;
-            // span 단위로 읽어서 공백으로 연결 (textContent는 "SearchedDevServer"처럼 붙음)
+ // Read per-span and join with spaces (textContent "SearchedDevServer"attached like)
             const spans = td.querySelectorAll('span');
             const text = spans.length > 0
                 ? Array.from(spans).map(s => (s.textContent || '').trim()).filter(Boolean).join(' ')
@@ -233,11 +233,11 @@
             const hash = 'tool:' + text;
             if (seenHashes.has(hash)) continue;
             seenHashes.add(hash);
-            // 간결하게 한 줄 요약
+            // Concise one-line summary
             collected.push({ role: 'assistant', text: text, el: td, kind: 'tool' });
         }
 
-        // 3. DOM 순서 정렬
+        // 3. DOM Order sorting
         collected.sort((a, b) => {
             const pos = a.el.compareDocumentPosition(b.el);
             if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
@@ -245,7 +245,7 @@
             return 0;
         });
 
-        // 최신 50개만 유지 (thinking/tool_use 포함으로 늘림)
+        // latest 50only keep (thinking/tool_use increased to include)
         const trimmed = collected.length > 50 ? collected.slice(-50) : collected;
 
         const final = trimmed.map((m, i) => ({
@@ -258,13 +258,13 @@
             vsc_history: true
         }));
 
-        // 4. 입력창
+        // 4. input field
         const editor = conv.querySelector('[contenteditable="true"][role="textbox"]') ||
             conv.querySelector('[data-lexical-editor="true"]') ||
             conv.querySelector('textarea');
         const inputContent = editor ? (editor.innerText || editor.value || '').trim() : '';
 
-        // 5. 모달/승인 감지 — Run⌥⏎/Reject 인라인 + Deny/Allow 브라우저 승인
+ // 5. modal/approval detect — Run⌥⏎/Reject + Deny/Allow browser approval
         let activeModal = null;
         try {
             // Strip Mac symbols and Windows shortcut labels (e.g. "RunAlt+⏎" → "Run")
@@ -275,14 +275,14 @@
             const isApprovalLike = (el) => {
                 const raw = (el.textContent || '').trim();
                 const t = stripShortcut(raw).toLowerCase();
-                // 드롭다운 옵션 제외
+                // Exclude dropdown options
                 if (t === 'ask every time') return false;
                 return /^(run|reject|skip|approve|allow|deny|cancel|accept|yes|no)\b/i.test(t)
                     || t === 'always allow' || t === 'always deny'
                     || t.includes('run ') || t.includes('approve') || t.includes('reject')
                     || t.includes('skip');
             };
-            // A: 전통적 모달 다이얼로그
+ // A: modal 
             const dialog = document.querySelector('.monaco-dialog-box, [role="dialog"], .monaco-modal-block');
             if (dialog && dialog.offsetWidth > 80 && dialog.offsetHeight > 40) {
                 const msg = (dialog.querySelector('.dialog-message, .dialog-message-text') || dialog).innerText?.trim() || '';
@@ -293,8 +293,8 @@
                     activeModal = { message: msg.slice(0, 300), buttons, width: dialog.offsetWidth, height: dialog.offsetHeight };
                 }
             }
-            // B: 인라인 approval 버튼 (Run⌥⏎, Reject, Deny, Allow 등)
-            // ⚠ 사이드바(conv) 내부의 버튼만 검사 — 에디터의 Accept/Reject Changes 제외
+ // B: approval button (Run⌥⏎, Reject, Deny, Allow )
+            // ⚠ Only check buttons inside sidebar (conv) — exclude editor Accept/Reject Changes
             if (!activeModal) {
                 const panelBtns = Array.from(conv.querySelectorAll('button')).filter(b => b.offsetWidth > 0 && b.offsetHeight > 0);
                 const approvalBtns = panelBtns.filter(isApprovalLike);
@@ -319,14 +319,14 @@
                     }
                 }
             }
-            // C: footer 기반 사용량/quota 다이얼로그 (Dismiss / See Plans / Enable Overages 등)
-            // <footer> 요소가 conv 안에 존재하고 2개 이상 버튼이 있으면 사용자 액션이 필요한 카드로 판단
+ // C: footer based usage/quota (Dismiss / See Plans / Enable Overages )
+ // <footer> element conv exists 2 button considered a card requiring user action
             if (!activeModal) {
                 const footers = Array.from(conv.querySelectorAll('footer')).filter(f => f.offsetWidth > 0 && f.offsetHeight > 0);
                 for (const footer of footers) {
                     const footerBtns = Array.from(footer.querySelectorAll('button, a')).filter(b => b.offsetWidth > 0);
                     if (footerBtns.length >= 2) {
-                        // 카드 컨테이너: footer 상위에서 충분한 높이를 가진 첫 번째 요소
+                        // Card Container: First element with sufficient height above footer
                         let card = footer.parentElement;
                         for (let up = 0; up < 4 && card; up++) {
                             if (card.offsetHeight > 60) break;
@@ -341,7 +341,7 @@
                     }
                 }
             }
-            // 모달이 감지되면 status를 waiting_approval로 변경
+            // If modal detected, change status to waiting_approval
             if (activeModal) status = 'waiting_approval';
         } catch (e) { activeModal = null; }
 

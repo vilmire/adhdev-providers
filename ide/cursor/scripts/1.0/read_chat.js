@@ -1,16 +1,16 @@
 /**
  * Cursor — read_chat (v2 — thoughts, tools, terminal, DOM-ordered)
  *
- * DOM 구조 (v0.49):
- *   컴포저: [data-composer-id] + [data-composer-status]
- *   메시지 쌍: .composer-human-ai-pair-container
- *   사용자: .composer-human-message
- *   AI 텍스트: .composer-rendered-message (assistant content)
- *   사고: .ui-step-group-collapsible → header에 "Thought briefly" 등
- *   도구: .composer-tool-former-message (file edits, reads)
- *   코드블록: .composer-code-block-container (terminal commands)
+ * DOM structure (v0.49):
+ *   Composer: [data-composer-id] + [data-composer-status]
+ *   Message pair: .composer-human-ai-pair-container
+ *   User: .composer-human-message
+ *   AI text: .composer-rendered-message (assistant content)
+ * Thinking: .ui-step-group-collapsible → header "Thought briefly" 
+ *   Tool: .composer-tool-former-message (file edits, reads)
+ *   Code block: .composer-code-block-container (terminal commands)
  *   Diff: .composer-diff-block (code changes)
- *   승인: .run-command-review-active + button/cursor-pointer 요소
+ *   Approval: .run-command-review-active + button/cursor-pointer elements
  *
  * → { id, status, title, messages[], inputContent, activeModal }
  */

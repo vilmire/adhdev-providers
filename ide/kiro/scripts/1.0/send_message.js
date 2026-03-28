@@ -1,11 +1,11 @@
 /**
  * Kiro — send_message
  *
- * Kiro의 채팅 입력은 webview iframe 안에 있어 메인 DOM에서 직접 접근 불가.
- * auxbar 하단의 입력 필드 좌표를 계산하여 clickCoords로 반환.
- * 데몬이 CDP Input API로 해당 좌표에 클릭+타이핑+Enter를 수행.
+ * Kiro chat input is inside webview iframe, so direct access from main DOM is not possible.
+ * auxbar at the bottom of Input field calculate coordinates and return as clickCoords.
+ * CDP Input API click++Enter row.
  *
- * 파라미터: ${ MESSAGE }
+ * Parameter: ${ MESSAGE }
  */
 (() => {
     try {

@@ -1,11 +1,11 @@
 /**
  * Windsurf v1 — list_chats
  * 
- * Cascade 탭 목록을 가져옵니다.
- * 패널이 닫혀 있으면 먼저 열고 탭이 렌더링될 때까지 대기합니다.
- * cascade-tab-{uuid} 요소들의 React Fiber에서 제목을 추출합니다.
+ * Cascade get tab list.
+ * If panel is closed open first and wait until tab is rendered.
+ * cascade-tab-{uuid} element React Fiberfrom title extract.
  * 
- * 최종 확인: Windsurf 1.108.x (2026-03-10)
+ * final Check: Windsurf 1.108.x (2026-03-10)
  */
 (async () => {
     try {

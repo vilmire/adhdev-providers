@@ -1,10 +1,10 @@
 /**
  * PearAI — webview_resolve_action
  *
- * PearAI Agent(Roo Code 기반)는 승인/거절 버튼을 webview 내부에 렌더링함.
- * 버튼을 찾아 직접 click() 이벤트 발생.
+ * PearAI Agent(Roo Code based)renders approve/reject button inside webview.
+ * button click() event .
  *
- * 파라미터: ${ BUTTON_TEXT }
+ * Parameter: ${ BUTTON_TEXT }
  */
 (() => {
     try {

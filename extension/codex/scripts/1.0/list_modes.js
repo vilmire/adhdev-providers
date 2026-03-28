@@ -109,7 +109,7 @@
               text &&
               text.length > 0 &&
               text.length < 80 &&
-              !/^모델|^model\b|^select\b/i.test(text)
+              !/^model|^model\b|^select\b/i.test(text)
             ) {
               collected.push(text);
             }

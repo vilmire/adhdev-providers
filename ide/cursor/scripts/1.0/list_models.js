@@ -1,13 +1,13 @@
 /**
  * Cursor — list_models
  *
- * 모델 드롭다운 목록 추출:
- *   버튼: .composer-unified-dropdown-model
- *   메뉴: [data-testid="model-picker-menu"]
- *   아이템: .composer-unified-context-menu-item
- *   모델명: .monaco-highlighted-label
- *   Think 모드: codicon-br (brain) 아이콘
- *   Auto 토글: rounded-full 24x14 요소
+ * model list extract:
+ *   button: .composer-unified-dropdown-model
+ * : [data-testid="model-picker-menu"]
+ * : .composer-unified-context-menu-item
+ *   model name: .monaco-highlighted-label
+ *   Think mode: codicon-br (brain) icon
+ *   Auto toggle: rounded-full 24x14 element
  *
  * → { models[], current }
  */
@@ -21,14 +21,14 @@
       current = modelBtn.textContent?.trim() || '';
     }
 
-    // 드롭다운 열기
+    // Open dropdown
     if (modelBtn) {
       modelBtn.click();
       await new Promise(r => setTimeout(r, 500));
 
       const menu = document.querySelector('[data-testid="model-picker-menu"]');
       if (menu) {
-        // Auto 토글 확인 및 끄기
+ // Auto toggle Check turn off
         const autoItem = menu.querySelector('.composer-unified-context-menu-item[data-is-selected="true"]');
         const autoToggle = autoItem ? [...autoItem.querySelectorAll('[class*="rounded-full"]')].find(el => el.offsetWidth === 24 && el.offsetHeight === 14) : null;
         let wasAutoOn = false;
@@ -41,7 +41,7 @@
           }
         }
 
-        // 모델 목록 수집 (Auto 끈 상태)
+ // Model list (Auto turned off state)
         const refreshedMenu = document.querySelector('[data-testid="model-picker-menu"]');
         if (refreshedMenu) {
           const items = refreshedMenu.querySelectorAll('.composer-unified-context-menu-item');
@@ -57,7 +57,7 @@
           }
         }
 
-        // Auto 다시 켜기 (원래 상태 복원)
+        // Auto Turn on again (restore original state)
         if (wasAutoOn) {
           const newMenu = document.querySelector('[data-testid="model-picker-menu"]');
           const newAutoItem = newMenu?.querySelector('.composer-unified-context-menu-item');
@@ -69,7 +69,7 @@
         }
       }
 
-      // 닫기 (Escape)
+      // close (Escape)
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     }
 

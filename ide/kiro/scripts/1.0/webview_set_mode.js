@@ -1,7 +1,7 @@
 /**
  * Kiro — webview_set_mode
  * Toggles the Autopilot switch based on requested mode.
- * 파라미터: ${ MODE }
+ * Parameter: ${ MODE }
  */
 (() => {
     try {

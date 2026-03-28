@@ -49,13 +49,13 @@
     const newChatBtn = allButtons.find(b => {
       const label = (b.getAttribute('aria-label') || '').toLowerCase();
       const text = (b.textContent || '').trim().toLowerCase();
-      return label.includes('new') || label.includes('새') || text.includes('new') || text.includes('새');
+      return label.includes('new') || label.includes('new') || text.includes('new') || text.includes('new');
     });
 
     // 6. Look for back/navigation buttons
     const backBtn = allButtons.find(b => {
       const label = (b.getAttribute('aria-label') || '').toLowerCase();
-      return label.includes('back') || label.includes('뒤로') || label.includes('돌아가');
+      return label.includes('back') || label.includes('back') || label.includes('go back');
     });
 
     return JSON.stringify({

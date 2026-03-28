@@ -70,7 +70,7 @@
 
         const available = Array.from(items)
           .map(el => (el.textContent || '').trim())
-          .filter(t => t.length > 0 && t.length < 60 && !t.includes('모델 선택'));
+          .filter(t => t.length > 0 && t.length < 60 && !t.includes('Select model'));
 
         resolve(JSON.stringify({
           success: false,

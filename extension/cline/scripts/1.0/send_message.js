@@ -1,16 +1,16 @@
 /**
  * Cline v1 — send_message
  *
- * 구조:
- *   1. outer webview → inner iframe의 contentDocument 접근
- *   2. data-testid="chat-input" textarea에 값 설정 (React controlled)
- *   3. React Fiber에서 onSend 함수 찾아 직접 호출 (가장 확실한 방법)
- *   4. Fallback: data-testid="send-button" 클릭 or Enter 키
+ * structure:
+ *   1. outer webview → access inner iframe contentDocument
+ *   2. Set value on data-testid="chat-input" textarea (React controlled)
+ *   3. React Fiberfrom Find onSend function and call directly (most reliable)
+ *   4. Fallback: data-testid="send-button" click or Enter key
  *
- * ⚠️ Cline의 send-button은 DIV 태그이며, 일반 click 이벤트로는 React가
- *    전송을 처리하지 않음. Fiber onSend()를 직접 호출해야 정확하게 동작.
+ * ⚠️ Cline send-button is a DIV tag, and React normal click event
+ *    Does not handle sending. Must call Fiber onSend() directly for correct behavior.
  *
- * 최종 확인: 2026-03-07
+ * final Check: 2026-03-07
  */
 (async () => {
     try {
@@ -18,7 +18,7 @@
         const doc = inner?.contentDocument || inner?.contentWindow?.document;
         if (!doc) return 'error: no doc';
 
-        // ─── 1. 입력 필드 찾기 ───
+        // ─── 1. Find input field ───
         let target = doc.querySelector('[data-testid="chat-input"]');
         if (!target) {
             const textareas = doc.querySelectorAll('textarea');
@@ -31,7 +31,7 @@
         }
         if (!target) return 'error: no chat-input';
 
-        // ─── 2. React controlled input 값 설정 ───
+        // ─── 2. Set React controlled input value ───
         const proto = inner.contentWindow?.HTMLTextAreaElement?.prototype
             || HTMLTextAreaElement.prototype;
         const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
@@ -42,14 +42,14 @@
             target.value = ${ MESSAGE };
         }
 
-        // React 이벤트 트리거
+        // Trigger React event
         target.dispatchEvent(new Event('input', { bubbles: true }));
         target.dispatchEvent(new Event('change', { bubbles: true }));
 
-        // React setState 반영 대기
+        // Wait for React setState to reflect
         await new Promise(r => setTimeout(r, 300));
 
-        // ─── 3. Fiber onSend 직접 호출 (최우선) ───
+        // ─── 3. Fiber onSend Call directly (first) ───
         const allEls = doc.querySelectorAll('*');
         for (const el of allEls) {
             const fk = Object.keys(el).find(k => k.startsWith('__reactFiber'));
@@ -65,7 +65,7 @@
             }
         }
 
-        // ─── 4. Fallback: send-button 클릭 ───
+        // ─── 4. Fallback: send-button click ───
         const sendBtn = doc.querySelector('[data-testid="send-button"]');
         if (sendBtn) {
             try {
@@ -81,7 +81,7 @@
             } catch (e) { }
         }
 
-        // ─── 5. 최후 Fallback: Enter 키 ───
+        // ─── 5. Final Fallback: Enter key ───
         target.focus();
         target.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'Enter', code: 'Enter', keyCode: 13,

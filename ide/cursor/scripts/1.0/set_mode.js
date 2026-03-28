@@ -1,11 +1,11 @@
 /**
  * Cursor — set_mode
  *
- * 모드 드롭다운에서 대상 모드 선택:
- *   1. 드롭다운 열기
- *   2. 매칭 아이템 클릭
+ * Select target mode from mode dropdown:
+ *   1. Open dropdown
+ *   2. Click matching item
  *
- * params.mode: string — 모드 이름
+ * params.mode: string — Mode name
  * → { success: true/false, mode? }
  */
 async (params) => {

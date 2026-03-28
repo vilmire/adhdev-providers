@@ -1,15 +1,15 @@
 /**
  * Windsurf v1 — focus_editor
  * 
- * Cascade(채팅) 입력창에 포커스를 맞춥니다.
- * Windsurf는 VS Code 포크로, 채팅 UI를 "Cascade"라고 부릅니다.
+ * Cascade(chat) focus on input field.
+ * Windsurf VS Code fork, chat UI "Cascade"is called.
  * 
- * DOM 구조:
+ * DOM structure:
  *   #windsurf.cascadePanel → .chat-client-root
- *   입력: [contenteditable="true"][role="textbox"]
- *         또는 textarea (미로그인)
+ *   input: [contenteditable="true"][role="textbox"]
+ * or textarea ()
  * 
- * 최종 확인: Windsurf (2026-03-06)
+ * final Check: Windsurf (2026-03-06)
  */
 (() => {
     try {

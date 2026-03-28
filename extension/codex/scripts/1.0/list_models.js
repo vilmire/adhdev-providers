@@ -35,7 +35,7 @@
           const items = menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"], div[class*="cursor-interaction"]');
           for (const item of items) {
             const text = (item.textContent || '').trim();
-            if (text && text.length > 0 && text.length < 60 && !text.includes('모델 선택') && !text.includes('Model')) {
+            if (text && text.length > 0 && text.length < 60 && !text.includes('Select model') && !text.includes('Model')) {
               models.push({
                 name: text,
                 selected: text === currentModel,

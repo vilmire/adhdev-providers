@@ -1,12 +1,12 @@
 /**
  * Trae — new_session
  *
- * "New Task" 생성 (⌃⌘N 단축키 또는 버튼 클릭).
- * Trae는 메인 DOM에서 접근 가능.
+ * "New Task" create (⌃⌘N shortcut or button click).
+ * Trae from main DOM accessible.
  */
 (() => {
     try {
-        // 버튼 찾기
+        // button search
         const buttons = document.querySelectorAll('button, [role="button"], .action-item a');
         for (const btn of buttons) {
             const text = (btn.textContent || '').trim();
@@ -17,7 +17,7 @@
             }
         }
 
-        // 단축키 폴백: ⌃⌘N
+        // shortcut fallback: ⌃⌘N
         document.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'n', code: 'KeyN', keyCode: 78,
             metaKey: true, ctrlKey: true,

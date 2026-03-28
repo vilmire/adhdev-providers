@@ -1,21 +1,21 @@
 /**
  * Kiro — open_panel
  *
- * Kiro AI 채팅 패널 열기.
- * Secondary Side Bar (#workbench.parts.auxiliarybar)에 위치.
- * "Toggle Secondary Side Bar (⌥⌘B)" 또는 "Kiro" 버튼으로 열기.
+ * Kiro AI chat panel open.
+ * Secondary Side Bar (#workbench.parts.auxiliarybar)located at.
+ * "Toggle Secondary Side Bar (⌥⌘B)" or "Kiro" via button open.
  *
- * 반환: 'visible' | 'opened' | 'error: ...'
+ * Return: 'visible' | 'opened' | 'error: ...'
  */
 (() => {
     try {
-        // 1. 이미 열려 있는지 확인
+        // 1. if already open Check
         const sidebar = document.getElementById('workbench.parts.auxiliarybar');
         if (sidebar && sidebar.offsetWidth > 0 && sidebar.offsetHeight > 0) {
             return 'visible';
         }
 
-        // 2. Toggle 버튼 클릭 시도
+        // 2. Attempt to click toggle button
         const toggleBtns = Array.from(document.querySelectorAll('li.action-item a, button, [role="button"]'));
         for (const btn of toggleBtns) {
             const label = (btn.getAttribute('aria-label') || '').toLowerCase();
@@ -28,7 +28,7 @@
             }
         }
 
-        // 3. Cmd+Shift+I 단축키 폴백 (Kiro 기본 단축키)
+        // 3. Cmd+Shift+I shortcut fallback (Kiro default shortcut)
         document.dispatchEvent(new KeyboardEvent('keydown', {
             key: 'b', code: 'KeyB', keyCode: 66,
             metaKey: true, altKey: true, ctrlKey: false,

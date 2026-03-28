@@ -1,9 +1,9 @@
 /**
  * Cursor — dismiss_notification
  *
- * 알림 토스트 닫기/버튼 클릭:
- *   인덱스 또는 메시지 매칭으로 대상 선택
- *   버튼 텍스트 지정 시 해당 버튼 클릭, 아니면 닫기
+ * Close notification toast / click button:
+ *   Select target by index or message matching
+ *   Click specified button text, otherwise close
  *
  * params.index: number, params.button: string|null, params.message: string|null
  * → { dismissed: true/false }

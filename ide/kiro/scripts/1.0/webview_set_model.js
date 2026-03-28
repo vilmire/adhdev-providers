@@ -1,6 +1,6 @@
 /**
  * Kiro — webview_set_model
- * 파라미터: ${ MODEL }
+ * Parameter: ${ MODEL }
  */
 (async () => {
     try {

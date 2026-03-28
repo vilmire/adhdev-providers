@@ -1,11 +1,11 @@
 /**
  * Cursor — resolve_action
  *
- * 승인/거부 버튼 찾기 + 클릭:
- *   button, [role="button"], .cursor-pointer 중 텍스트 매칭
- *   Cursor는 단축키 라벨을 붙임 (e.g. "Run⏎", "SkipEsc") → ⏎↵ 제거 후 비교
+ * approval/ button search + click:
+ * button, [role="button"], .cursor-pointer text matching
+ * Cursor (e.g. "Run⏎", "SkipEsc") → ⏎↵ remove then compare
  *
- * params.buttonText: string — 찾을 버튼 텍스트
+ * params.buttonText: string — to find button text
  * → { resolved: true/false, clicked?, available? }
  */
 (params) => {

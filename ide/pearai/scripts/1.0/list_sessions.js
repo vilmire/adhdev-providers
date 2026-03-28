@@ -1,8 +1,8 @@
 /**
- * PearAI — webview_list_sessions (webview iframe 내부에서 실행)
+ * PearAI — webview_list_sessions (webview iframe runs inside)
  *
- * PearAI(Roo Code/Cline 기반) 세션 목록을 추출.
- * 히스토리 뷰의 task-item 과 홈 화면의 최근 작업 카드 둘 다 지원.
+ * PearAI(Roo Code/Cline based) Session list extract.
+ * history task-item Tasks .
  */
 (() => {
     try {
@@ -20,7 +20,7 @@
             });
         };
 
-        // ─── 히스토리 항목: data-testid="task-item-*" ───
+        // ─── History items: data-testid="task-item-*" ───
         const taskItems = document.querySelectorAll('[data-testid^="task-item-"]');
 
         if (taskItems.length > 0) {
@@ -31,21 +31,21 @@
                 const testId = item.getAttribute('data-testid') || '';
                 const taskId = testId.replace('task-item-', '');
 
-                // 전체 텍스트에서 제목 추출
+                // Extract title from full text
                 const fullText = (item.textContent || '').trim();
 
-                // 구조: "MARCH 16, 1:31 AM 173 B test123 Tokens:10.4k 229"
-                // 전략: Tokens: 앞의 마지막 의미있는 텍스트를 제목으로 사용
+                // structure: "MARCH 16, 1:31 AM 173 B test123 Tokens:10.4k 229"
+ // strategy: Tokens: before last with text title use
                 let title = '';
 
-                // 날짜 추출
-                // 제목 추출: 날짜와 크기(B/kB) 뒤, Tokens: 앞
+                // Extract date
+ // title extract: (B/kB) , Tokens: before
                 const titleMatch = fullText.match(/[AP]M[\d.\s]*[kMG]?B\s*(.*?)(?:Tokens:|$)/s);
                 if (titleMatch && titleMatch[1]) {
                     title = titleMatch[1].trim();
                 }
 
-                // fallback: 첫 80자
+                // fallback: first 80 chars
                 if (!title) {
                     title = fullText.substring(0, 80);
                 }
@@ -59,7 +59,7 @@
             }
         }
 
-        // ─── 홈 화면 최근 작업 카드 ───
+ // ─── Tasks ───
         const cards = Array.from(document.querySelectorAll('div')).filter((card) => {
             const className = String(card.className || '');
             const text = (card.textContent || '').trim();

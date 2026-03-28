@@ -1,8 +1,8 @@
 /**
- * Kiro — webview_switch_session (webview iframe 내부에서 실행)
+ * Kiro — webview_switch_session (webview iframe runs inside)
  *
- * 세션 탭 클릭으로 전환.
- * 파라미터: ${ SESSION_ID } (탭 인덱스)
+ * session by clicking .
+ * Parameter: ${ SESSION_ID } ( index)
  */
 (() => {
     try {

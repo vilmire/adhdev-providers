@@ -1,11 +1,11 @@
 /**
  * Cline v1 — new_session
  *
- * 구조:
- *   1. "New Task" 버튼 또는 "+" 버튼 클릭
- *   2. data-testid 우선 → aria-label → 텍스트 매칭
+ * structure:
+ *   1. Click "New Task" button or "+" button
+ *   2. data-testid first → aria-label → text matching
  *
- * 최종 확인: 2026-03-07
+ * final Check: 2026-03-07
  */
 (() => {
     try {
@@ -16,7 +16,7 @@
         const buttons = Array.from(doc.querySelectorAll('button'))
             .filter(b => b.offsetWidth > 0 && b.offsetHeight > 0);
 
-        // ─── 1단계: data-testid 기반 ───
+        // ─── 1step: data-testid based ───
         for (const btn of buttons) {
             const testId = (btn.getAttribute('data-testid') || '').toLowerCase();
             if (testId.includes('new-task') || testId.includes('new-chat') || testId.includes('new_task')) {
@@ -25,7 +25,7 @@
             }
         }
 
-        // ─── 2단계: aria-label 기반 ───
+        // ─── 2step: Based on aria-label ───
         for (const btn of buttons) {
             const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase();
             if (ariaLabel.includes('new task') || ariaLabel.includes('new chat')
@@ -35,7 +35,7 @@
             }
         }
 
-        // ─── 3단계: 텍스트 매칭 ───
+        // ─── 3step: text matching ───
         for (const btn of buttons) {
             const text = (btn.textContent || '').trim();
             if (text === '+' || text.includes('New Task') || text.includes('New Chat')) {
@@ -44,16 +44,16 @@
             }
         }
 
-        // ─── 4단계: SVG plus 아이콘 버튼 ───
+        // ─── Step 4: SVG plus icon button ───
         for (const btn of buttons) {
             const svg = btn.querySelector('svg');
             if (!svg) continue;
             const path = svg.querySelector('path');
             if (path) {
                 const d = path.getAttribute('d') || '';
-                // SVG plus icon의 일반적인 path pattern
+                // Common SVG plus icon path pattern
                 if (d.includes('M12') && (d.includes('H5') || d.includes('h') || d.includes('v'))) {
-                    // 다른 버튼 텍스트가 없는 아이콘 전용 버튼
+                    // Icon-only button with no other button text
                     const text = (btn.textContent || '').trim();
                     if (text.length < 3) {
                         btn.click();
@@ -63,13 +63,13 @@
             }
         }
 
-        // ─── 5단계: 웰컴 화면 감지 (이미 새 세션) ───
+        // ─── Step 5: Welcome screen detect (already New session) ───
         const bodyText = (doc.body.textContent || '').toLowerCase();
         if (bodyText.includes('what can i do for you') || bodyText.includes('start a new task') || bodyText.includes('type your task')) {
             return 'clicked (already new)';
         }
 
-        // ─── 6단계: History 뷰 감지 → Done 클릭으로 웰컴 복귀 ───
+        // ─── Step 6: History view detect → return to welcome by clicking Done ───
         if (bodyText.includes('history') && bodyText.includes('done')) {
             for (const btn of buttons) {
                 const text = (btn.textContent || '').trim();
