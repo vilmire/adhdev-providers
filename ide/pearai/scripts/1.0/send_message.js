@@ -1,29 +1,104 @@
 /**
- * PearAI — send_message
- *
- * PearAI의 채팅 입력은 webview iframe 안에 있어 메인 DOM에서 직접 접근 불가.
- * auxbar 하단의 입력 필드 좌표를 계산하여 clickCoords로 반환.
- * 데몬이 CDP Input API로 해당 좌표에 클릭+타이핑+Enter를 수행.
- *
- * 파라미터: ${ MESSAGE }
+ * PearAI — webview_send_message
  */
-(() => {
+(async () => {
     try {
-        const auxbar = document.getElementById('workbench.parts.auxiliarybar');
-        if (!auxbar || auxbar.offsetWidth === 0) {
-            return JSON.stringify({ sent: false, error: 'auxbar not found' });
+        const message = ${ MESSAGE };
+        const editor = document.querySelector('textarea[placeholder*="Type your task" i]')
+            || document.querySelector('textarea')
+            || document.querySelector('[contenteditable="true"]');
+
+        if (!editor) {
+            return JSON.stringify({ sent: false, error: 'input not found' });
         }
 
-        const rect = auxbar.getBoundingClientRect();
-        const x = Math.round(rect.x + rect.width / 2);
-        const y = Math.round(rect.y + rect.height - 80);
+        editor.scrollIntoView({ block: 'center' });
+        editor.focus();
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-        return JSON.stringify({
-            sent: false,
-            needsTypeAndSend: true,
-            clickCoords: { x, y },
-        });
-    } catch (e) {
-        return JSON.stringify({ sent: false, error: e.message });
+        const isTextarea = editor.tagName === 'TEXTAREA';
+        if (isTextarea) {
+            const previousValue = editor.value;
+            const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+            if (nativeSetter) nativeSetter.call(editor, message);
+            else editor.value = message;
+            if (editor._valueTracker) {
+                editor._valueTracker.setValue(previousValue);
+            }
+            editor.dispatchEvent(new Event('input', {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+            }));
+            editor.dispatchEvent(new Event('change', { bubbles: true }));
+
+            if ((editor.value || '') !== message) {
+                editor.value = '';
+                editor.setSelectionRange?.(0, 0);
+                editor.setRangeText?.(message, 0, editor.value.length, 'end');
+                editor.dispatchEvent(new Event('input', { bubbles: true, cancelable: true, composed: true }));
+                editor.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if ((editor.value || '') !== message) {
+                editor.focus();
+                editor.select?.();
+                document.execCommand?.('insertText', false, message);
+                editor.dispatchEvent(new Event('input', { bubbles: true, cancelable: true, composed: true }));
+                editor.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand('delete', false, null);
+            document.execCommand('insertText', false, message);
+            editor.dispatchEvent(new InputEvent('input', {
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+                data: message,
+                inputType: 'insertText',
+            }));
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+
+        const sendButton = Array.from(document.querySelectorAll('button'))
+            .find((button) => /send/i.test((button.textContent || '').trim()) && !button.disabled);
+
+        if (sendButton) {
+            sendButton.scrollIntoView({ block: 'center' });
+            sendButton.focus?.();
+            for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+                sendButton.dispatchEvent(new PointerEvent(type, {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    pointerId: 1,
+                    pointerType: 'mouse',
+                }));
+            }
+        }
+
+        const enterOptions = {
+            key: 'Enter',
+            code: 'Enter',
+            keyCode: 13,
+            which: 13,
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+        };
+
+        editor.dispatchEvent(new KeyboardEvent('keydown', enterOptions));
+        editor.dispatchEvent(new KeyboardEvent('keypress', enterOptions));
+        editor.dispatchEvent(new KeyboardEvent('keyup', enterOptions));
+
+        return JSON.stringify({ sent: true });
+    } catch (error) {
+        return JSON.stringify({ sent: false, error: String(error && error.message || error) });
     }
 })()

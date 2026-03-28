@@ -37,8 +37,6 @@
       "/usr/share/pearai"
     ]
   },
-  "inputMethod": "cdp-type-and-send",
-  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
   "webviewMatchText": "chat-text-area",
   "versionCommand": "pearai --version",
   "providerVersion": "0.0.0",

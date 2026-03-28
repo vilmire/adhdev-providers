@@ -1,20 +1,16 @@
 /**
- * Cursor v1 — focus_editor
- *
- * CURSOR.md 4-5: 셀렉터 우선순위
- *   [contenteditable="true"][role="textbox"]
- *   → .chat-input textarea
- *   → .composer-input
- *   → textarea
- *
- * 최종 확인: 2026-03-06
+ * PearAI — focus_editor
  */
 (() => {
-    const editor = document.querySelector('[contenteditable="true"][role="textbox"]')
-        || document.querySelector('.chat-input textarea')
-        || document.querySelector('.composer-input')
-        || document.querySelector('textarea.native-input')
-        || document.querySelector('textarea');
-    if (editor) { editor.focus(); return 'focused'; }
-    return 'no editor found';
+    const editor = document.querySelector('textarea[placeholder*="Type your task" i]')
+        || document.querySelector('textarea')
+        || document.querySelector('.chat-text-area textarea')
+        || document.querySelector('[contenteditable="true"]');
+
+    if (!editor) return 'no editor found';
+
+    editor.scrollIntoView({ block: 'center' });
+    editor.focus();
+    editor.click?.();
+    return 'focused';
 })()
