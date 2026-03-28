@@ -60,7 +60,10 @@
   "binary": "claude",
   "spawn": {
     "command": "claude",
-    "args": [],
+    "args": [
+      "--permission-mode",
+      "acceptEdits"
+    ],
     "shell": true,
     "env": {}
   },
@@ -69,14 +72,21 @@
       { "source": "Type your message", "flags": "i" },
       { "source": "for\\s*shortcuts", "flags": "i" },
       { "source": "\\?\\s*for\\s*help", "flags": "i" },
-      { "source": "Press enter", "flags": "i" }
+      { "source": "Press enter", "flags": "i" },
+      { "source": "[›❯]\\s*$", "flags": "m" },
+      { "source": "medium\\s+·\\s+/effort", "flags": "i" }
     ],
     "generating": [
       { "source": "[\\u2800-\\u28ff]", "flags": "" },
       { "source": "esc to (cancel|interrupt|stop)", "flags": "i" },
       { "source": "generating\\.\\.\\.", "flags": "i" },
       { "source": "Claude is (?:thinking|processing|working)", "flags": "i" },
-      { "source": "Flummoxing", "flags": "i" }
+      { "source": "Flummoxing", "flags": "i" },
+      { "source": "Finagling", "flags": "i" },
+      { "source": "Scurrying", "flags": "i" },
+      { "source": "Bloviating", "flags": "i" },
+      { "source": "Whatchamacallit(?:ing)?", "flags": "i" },
+      { "source": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?", "flags": "i" }
     ],
     "approval": [
       { "source": "Allow\\s*once", "flags": "i" },

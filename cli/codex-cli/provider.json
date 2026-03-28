@@ -57,6 +57,7 @@
     }
   },
   "binary": "codex",
+  "sendDelayMs": 500,
   "spawn": {
     "command": "codex",
     "args": [],

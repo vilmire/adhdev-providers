@@ -1,38 +1,97 @@
 /**
  * Claude Code — parse_approval
- *
- * Extract approval modal info from PTY output.
- * Input:  { buffer: string, tail: string }
- * Output: { message: string, buttons: string[] } | null
  */
 
 'use strict';
 
+function splitLines(text) {
+    return String(text || '')
+        .replace(/\u0007/g, '')
+        .split(/\r\n|\n|\r/g)
+        .map(line => line.replace(/\s+$/, ''));
+}
+
+function normalize(line) {
+    return String(line || '')
+        .replace(/\u0007/g, '')
+        .replace(/^\d+;/, '')
+        .trim();
+}
+
+function isNoise(line) {
+    const trimmed = normalize(line);
+    if (!trimmed) return true;
+    if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) return true;
+    if (/^❯\s*$/.test(trimmed)) return true;
+    if (/^➜\s+\S+/.test(trimmed)) return true;
+    if (/^Update available!/i.test(trimmed)) return true;
+    if (/^Claude Code v\d/i.test(trimmed)) return true;
+    if (/^(Sonnet|Opus|Haiku)\b/i.test(trimmed)) return true;
+    return false;
+}
+
+function normalizeButtonLabel(line) {
+    return normalize(line)
+        .replace(/^[❯›>]\s*/, '')
+        .replace(/^[([{]?\d+[)\].:\]-]?\s*/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function isButtonLine(line) {
+    const raw = normalize(line);
+    const trimmed = normalizeButtonLabel(line);
+    if (/^Esc to cancel/i.test(raw)) return false;
+    return /^([❯›>]\s*)?\d+[.)]\s+/.test(raw)
+        || /^(Allow\s*once|Always\s*allow.*|Deny|Reject|Yes|No)$/i.test(trimmed);
+}
+
+function stripContextPrefix(line) {
+    return normalize(line)
+        .replace(/^[⏺•]\s+/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function findLastIndex(lines, predicate) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (predicate(lines[i])) return i;
+    }
+    return -1;
+}
+
 module.exports = function parseApproval(input) {
-    const { buffer, tail } = input;
-    const check = tail || (buffer || '').slice(-800);
-    if (!check) return null;
+    const primary = String(input?.buffer || '');
+    const fallback = String(input?.tail || '');
+    const lines = splitLines(primary || fallback);
+    if (lines.length === 0) return null;
 
-    // Claude Code approval patterns
-    const hasApproval =
-        /Allow\s*once/i.test(check) ||
-        /Always\s*allow/i.test(check) ||
-        /\(y\/n\)/i.test(check) ||
-        /\[Y\/n\]/i.test(check);
+    const buttons = [];
+    for (const line of lines.slice(-40)) {
+        if (!isButtonLine(line)) continue;
+        const label = normalizeButtonLabel(line);
+        if (label && !buttons.includes(label)) buttons.push(label);
+    }
 
+    const hasApproval = buttons.length > 0
+        || /Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(primary || fallback);
     if (!hasApproval) return null;
 
-    // Extract context message (last few meaningful lines before the approval)
-    const lines = check.split('\n')
-        .map(l => l.trim())
-        .filter(l => l && !/^[─═╭╮╰╯│]+$/.test(l));
+    const questionIndex = findLastIndex(lines, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
+    const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
+    const startIndex = Math.max(0, (actionIndex >= 0 ? actionIndex : questionIndex >= 0 ? questionIndex - 4 : lines.length - 8));
+    const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
 
-    const message = lines.slice(-5).join(' ').slice(0, 200) || 'Approval required';
+    const context = [];
+    for (const line of lines.slice(startIndex, endIndex)) {
+        if (isNoise(line) || isButtonLine(line)) continue;
+        const trimmed = stripContextPrefix(line);
+        if (!trimmed) continue;
+        if (context[context.length - 1] !== trimmed) context.push(trimmed);
+    }
 
-    // Claude Code-specific button labels
-    // These map to approvalKeys in provider.json: { "0": "1", "1": "2", "2": "3" }
     return {
-        message,
-        buttons: ['Yes (y)', 'Always allow (a)', 'Deny (Esc)'],
+        message: context.slice(-3).join(' ').slice(0, 240) || 'Claude Code approval required',
+        buttons: buttons.length > 0 ? buttons : ['Allow once', 'Always allow', 'Deny'],
     };
 };
