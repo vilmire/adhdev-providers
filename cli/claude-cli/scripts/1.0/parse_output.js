@@ -25,132 +25,134 @@
 const detectStatus  = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
 
-/**
- * Heuristic turn splitter for Claude Code terminal output.
- *
- * Claude Code uses a structured TUI with box-drawing characters.
- * User prompts appear after '❯' or '>' markers.
- * Assistant responses follow in the main content area.
- */
-function splitTurns(buffer) {
-    const messages = [];
-    if (!buffer || buffer.length < 5) return messages;
+function normalizeText(text) {
+    return String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
 
-    const lines = buffer.split('\n');
-    let currentRole = null;
-    let currentContent = [];
-    let msgIndex = 0;
+function sanitizeLine(line) {
+    return String(line || '').replace(/\s+$/, '');
+}
 
-    // Skip startup banner (everything before first prompt marker)
-    let started = false;
+function isNoiseLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return true;
+    if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) return true;
+    if (/^Type your message/i.test(trimmed)) return true;
+    if (/^for\s*shortcuts/i.test(trimmed)) return true;
+    if (/^\? for help/i.test(trimmed)) return true;
+    if (/^Press enter/i.test(trimmed)) return true;
+    if (/^[\u2800-\u28ff]+$/.test(trimmed)) return true;
+    if (/^esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
+    if (/^Allow\s*once/i.test(trimmed)) return true;
+    if (/^Always\s*allow/i.test(trimmed)) return true;
+    if (/^\[(Y\/n|y\/n)\]$/i.test(trimmed)) return true;
+    return false;
+}
 
-    for (const line of lines) {
-        const trimmed = line.trim();
-
-        // Detect user input lines (Claude Code prompt markers)
-        // Patterns: "❯ user text", "> user text", "$ user text" from prompt
-        const userMatch = trimmed.match(/^[❯›>]\s+(.+)$/);
-        if (userMatch && userMatch[1].length > 1) {
-            started = true;
-            // Flush previous
-            if (currentRole && currentContent.length > 0) {
-                const text = currentContent.join('\n').trim();
-                if (text.length > 1) {
-                    messages.push({
-                        id: `msg_${msgIndex}`,
-                        role: currentRole,
-                        content: text.length > 6000 ? text.slice(0, 6000) + '\n[... truncated]' : text,
-                        index: msgIndex,
-                        kind: 'standard',
-                    });
-                    msgIndex++;
-                }
-            }
-            // Start new user message
-            currentRole = 'user';
-            currentContent = [userMatch[1]];
-            continue;
+function extractPromptLine(lines) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+        const trimmed = lines[i].trim();
+        const match = trimmed.match(/^[❯›>]\s+(.+)$/);
+        if (match && match[1].trim().length > 0) {
+            return { index: i, text: match[1].trim() };
         }
+    }
+    return { index: -1, text: '' };
+}
 
-        if (!started) continue;
+function extractVisibleAssistant(screenText) {
+    if (!screenText) return { promptText: '', assistantText: '' };
+    const lines = screenText.split('\n').map(sanitizeLine);
+    const prompt = extractPromptLine(lines);
+    const afterPrompt = prompt.index >= 0 ? lines.slice(prompt.index + 1) : lines;
+    const contentLines = afterPrompt.filter(line => !isNoiseLine(line));
+    return {
+        promptText: prompt.text,
+        assistantText: contentLines.join('\n').trim(),
+    };
+}
 
-        // After user message, switch to assistant when we see content
-        if (currentRole === 'user' && trimmed && !userMatch) {
-            // Flush user message
-            const text = currentContent.join('\n').trim();
-            if (text.length > 1) {
-                messages.push({
-                    id: `msg_${msgIndex}`,
-                    role: 'user',
-                    content: text,
-                    index: msgIndex,
-                    kind: 'standard',
-                });
-                msgIndex++;
-            }
-            currentRole = 'assistant';
-            currentContent = [];
-        }
+function toMessageObjects(messages, status) {
+    const max = 50;
+    const slice = messages.slice(-max);
+    return slice.map((message, index) => ({
+        id: `msg_${index}`,
+        role: message.role,
+        content: typeof message.content === 'string' && message.content.length > 6000
+            ? message.content.slice(0, 6000) + '\n[... truncated]'
+            : message.content,
+        index,
+        kind: 'standard',
+        ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'
+            ? { meta: { streaming: true } }
+            : {}),
+    }));
+}
 
-        // Skip noise lines
-        if (!trimmed) continue;
-        if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) continue;  // Box drawing
-        if (/^Type your message/i.test(trimmed)) continue;        // Prompt text
-        if (/^for\s*shortcuts/i.test(trimmed)) continue;          // Help text
-        if (/^\? for help/i.test(trimmed)) continue;              // Help text
-        if (/^Press enter/i.test(trimmed)) continue;              // Dialog
-        if (/^[\u2800-\u28ff]+$/.test(trimmed)) continue;         // Spinner only
+function buildMessages(previousMessages, promptText, assistantText, status, partialResponse) {
+    const base = Array.isArray(previousMessages)
+        ? previousMessages.map(m => ({
+            role: m.role,
+            content: typeof m.content === 'string' ? m.content : String(m.content || ''),
+            timestamp: m.timestamp,
+        }))
+        : [];
 
-        if (currentRole) {
-            currentContent.push(trimmed);
+    const last = base[base.length - 1];
+    if (promptText) {
+        const normalizedPrompt = normalizeText(promptText);
+        if (!last || last.role !== 'user' || normalizeText(last.content) !== normalizedPrompt) {
+            base.push({ role: 'user', content: promptText });
         }
     }
 
-    // Flush final
-    if (currentRole && currentContent.length > 0) {
-        const text = currentContent.join('\n').trim();
-        if (text.length > 1) {
-            messages.push({
-                id: `msg_${msgIndex}`,
-                role: currentRole,
-                content: text.length > 6000 ? text.slice(0, 6000) + '\n[... truncated]' : text,
-                index: msgIndex,
-                kind: 'standard',
-            });
+    const candidateAssistant = normalizeText(partialResponse || '') || assistantText;
+    if (candidateAssistant) {
+        const normalizedAssistant = normalizeText(candidateAssistant);
+        const lastMsg = base[base.length - 1];
+        if (lastMsg && lastMsg.role === 'assistant') {
+            const existing = normalizeText(lastMsg.content);
+            if (normalizedAssistant !== existing) {
+                lastMsg.content = candidateAssistant;
+            }
+        } else {
+            base.push({ role: 'assistant', content: candidateAssistant });
         }
     }
 
-    // Keep last 50 messages
-    return messages.length > 50 ? messages.slice(-50) : messages;
+    if (status !== 'generating') {
+        const lastMsg = base[base.length - 1];
+        if (lastMsg?.role === 'assistant') {
+            const visible = normalizeText(assistantText);
+            if (visible && visible !== normalizeText(lastMsg.content)) {
+                lastMsg.content = assistantText;
+            }
+        }
+    }
+
+    return base;
 }
 
 module.exports = function parseOutput(input) {
-    const { buffer, recentBuffer, partialResponse } = input;
+    const { buffer, recentBuffer, partialResponse, screenText, messages: previousMessages } = input;
+    const transcript = screenText || buffer || '';
 
     // Status
-    const tail = (recentBuffer || (buffer || '').slice(-500));
+    const tail = (recentBuffer || (transcript || '').slice(-500));
     const status = detectStatus({ tail });
 
     // Modal
     const activeModal = status === 'waiting_approval'
-        ? parseApproval({ buffer, tail })
+        ? parseApproval({ buffer: transcript, tail })
         : null;
 
-    // Messages
-    const messages = splitTurns(buffer);
-
-    // Append partial response as in-progress assistant message if generating
-    if (status === 'generating' && partialResponse && partialResponse.trim().length > 2) {
-        const partial = partialResponse.trim();
-        messages.push({
-            id: `msg_partial`,
-            role: 'assistant',
-            content: partial.length > 6000 ? partial.slice(0, 6000) + '\n[... streaming]' : partial,
-            index: messages.length,
-            kind: 'standard',
-            meta: { streaming: true },
-        });
-    }
+    const { promptText, assistantText } = extractVisibleAssistant(transcript);
+    const messages = toMessageObjects(
+        buildMessages(previousMessages, promptText, assistantText, status, partialResponse),
+        status
+    );
 
     return {
         id: 'cli_session',
