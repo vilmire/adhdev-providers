@@ -12,7 +12,8 @@
       "type": "select",
       "default": "terminal",
       "public": true,
-      "label": "표시 모드",
+      "label": "Display Mode",
+      "description": "terminal: Native PTY view, chat: Parsed message view",
       "options": [
         "terminal",
         "chat"
@@ -22,7 +23,8 @@
       "type": "boolean",
       "default": true,
       "public": true,
-      "label": "알림"
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
     },
     "autoApprove": {
       "type": "boolean",

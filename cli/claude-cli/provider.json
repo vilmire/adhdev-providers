@@ -13,8 +13,8 @@
       "type": "select",
       "default": "terminal",
       "public": true,
-      "label": "표시 모드",
-      "description": "terminal: PTY 터미널 뷰, chat: 파싱된 대화 뷰",
+      "label": "Display Mode",
+      "description": "terminal: Native PTY view, chat: Parsed message view",
       "options": [
         "terminal",
         "chat"
@@ -24,15 +24,15 @@
       "type": "boolean",
       "default": true,
       "public": true,
-      "label": "알림",
-      "description": "상태 변경 시 알림을 표시합니다"
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
     },
     "autoApprove": {
       "type": "boolean",
       "default": false,
       "public": true,
-      "label": "자동 승인",
-      "description": "도구 실행 승인을 자동으로 허용합니다"
+      "label": "Auto Approve",
+      "description": "Automatically approve tool execution without prompt"
     },
     "approvalAlert": {
       "type": "boolean",
