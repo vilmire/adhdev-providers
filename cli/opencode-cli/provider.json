@@ -1,0 +1,36 @@
+{
+  "type": "opencode-cli",
+  "name": "OpenCode CLI",
+  "category": "cli",
+  "aliases": [
+    "opencode"
+  ],
+  "icon": "🤖",
+  "displayName": "OpenCode CLI",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "Display Mode",
+      "description": "terminal: Native PTY view, chat: Parsed message view",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    }
+  },
+  "binary": "opencode",
+  "spawn": {
+    "command": "opencode",
+    "args": [],
+    "shell": true,
+    "env": {}
+  },
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "type": "aider-cli",
+  "name": "Aider",
+  "category": "cli",
+  "aliases": [
+    "aider"
+  ],
+  "icon": "🤖",
+  "displayName": "Aider",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "Display Mode",
+      "description": "terminal: Native PTY view, chat: Parsed message view",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    }
+  },
+  "binary": "aider",
+  "spawn": {
+    "command": "aider",
+    "args": [],
+    "shell": true,
+    "env": {}
+  },
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ]
+}

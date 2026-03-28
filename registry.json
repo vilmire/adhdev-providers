@@ -191,6 +191,31 @@
       "category": "cli",
       "name": "Gemini CLI"
     },
+    "cursor-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Cursor CLI"
+    },
+    "github-copilot-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "GitHub Copilot CLI"
+    },
+    "opencode-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "OpenCode CLI"
+    },
+    "aider-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Aider"
+    },
+    "goose-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Goose"
+    },
     "cline": {
       "providerVersion": "0.0.0",
       "category": "extension",

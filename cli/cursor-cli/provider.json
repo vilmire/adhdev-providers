@@ -1,0 +1,36 @@
+{
+  "type": "cursor-cli",
+  "name": "Cursor CLI",
+  "category": "cli",
+  "aliases": [
+    "cursor"
+  ],
+  "icon": "🤖",
+  "displayName": "Cursor CLI",
+  "settings": {
+    "mode": {
+      "type": "select",
+      "default": "terminal",
+      "public": true,
+      "label": "Display Mode",
+      "description": "terminal: Native PTY view, chat: Parsed message view",
+      "options": [
+        "terminal",
+        "chat"
+      ]
+    }
+  },
+  "binary": "agent",
+  "spawn": {
+    "command": "agent",
+    "args": [],
+    "shell": true,
+    "env": {}
+  },
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ]
+}

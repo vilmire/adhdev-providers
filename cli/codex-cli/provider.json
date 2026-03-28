@@ -77,5 +77,11 @@
       { "source": "Allow command\\?", "flags": "i" }
     ],
     "ready": []
-  }
+  },
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ]
 }
