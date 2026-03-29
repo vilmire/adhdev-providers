@@ -154,6 +154,73 @@ function collectMeaningfulLines(lines) {
     return out;
 }
 
+function looksLikeStructuredDataLine(text) {
+    const line = stripAssistantPrefix(sanitizeLine(text).trim());
+    if (!line) return false;
+    return /^[{\[]/.test(line)
+        || /^[A-Z0-9_]+=/.test(line)
+        || /^\/[A-Za-z0-9._/-]+$/.test(line)
+        || /^\d+$/.test(line);
+}
+
+function extractDenseOutputBlock(text) {
+    const lines = splitLines(text);
+    const blocks = [];
+    let current = [];
+
+    for (const rawLine of lines) {
+        const promptText = parsePromptLine(rawLine);
+        const sanitized = sanitizeLine(rawLine).trim();
+        if (promptText !== null || isNoiseLine(sanitized)) {
+            if (current.length > 0) {
+                blocks.push(current);
+                current = [];
+            }
+            continue;
+        }
+
+        const cleaned = stripAssistantPrefix(sanitized);
+        if (!cleaned) {
+            if (current.length > 0) {
+                blocks.push(current);
+                current = [];
+            }
+            continue;
+        }
+        current.push(cleaned);
+    }
+
+    if (current.length > 0) blocks.push(current);
+
+    const scored = blocks
+        .map(block => ({
+            block,
+            structured: block.filter(looksLikeStructuredDataLine).length,
+        }))
+        .filter(entry => entry.block.length >= 5 && entry.structured >= Math.max(3, Math.floor(entry.block.length * 0.6)));
+
+    const mergeBlocks = (existing, next) => {
+        if (existing.length === 0) return [...next];
+        const maxOverlap = Math.min(existing.length, next.length);
+        for (let overlap = maxOverlap; overlap >= 1; overlap--) {
+            let matches = true;
+            for (let i = 0; i < overlap; i++) {
+                if (existing[existing.length - overlap + i] !== next[i]) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                return existing.concat(next.slice(overlap));
+            }
+        }
+        return existing.concat(next);
+    };
+
+    const merged = scored.reduce((acc, entry) => mergeBlocks(acc, entry.block), []);
+    return merged.join('\n').trim();
+}
+
 function collectAssistantBlocks(lines) {
     const blocks = [];
     let current = null;
@@ -307,6 +374,7 @@ function toMessageObjects(messages, status) {
 module.exports = function parseOutput(input) {
     const screenText = String(input?.screenText || '');
     const buffer = String(input?.buffer || '');
+    const terminalHistory = String(input?.terminalHistory || '');
     const tail = String(input?.recentBuffer || (screenText || buffer).slice(-500));
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
     const transcriptSource = screenText || buffer;
@@ -321,9 +389,11 @@ module.exports = function parseOutput(input) {
         ? parseApproval({ buffer: screenText || buffer, rawBuffer: input?.rawBuffer || '', tail })
         : null;
 
-    const { promptText, assistantText } = status === 'waiting_approval'
+    const { promptText, assistantText: visibleAssistantText } = status === 'waiting_approval'
         ? { promptText: '', assistantText: '' }
         : extractVisibleTurn(transcriptSource, previousMessages);
+    const denseTerminalOutput = extractDenseOutputBlock(terminalHistory || buffer);
+    const assistantText = denseTerminalOutput || visibleAssistantText;
     const rawPartialText = status === 'generating'
         ? extractPartialAssistant(input?.partialResponse || '')
         : '';

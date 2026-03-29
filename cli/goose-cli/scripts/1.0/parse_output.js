@@ -36,7 +36,7 @@ function splitTurns(buffer) {
 
 module.exports = function parseOutput(input) {
     const { buffer, recentBuffer, partialResponse, screenText } = input;
-    const transcript = screenText || buffer;
+    const transcript = buffer || screenText;
     const tail = recentBuffer || (transcript || '').slice(-500);
     const status = detectStatus({ tail });
     const activeModal = status === 'waiting_approval' ? parseApproval({ buffer: transcript, tail }) : null;

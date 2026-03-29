@@ -21,6 +21,35 @@ function normalize(line) {
         .trim();
 }
 
+function tokenizePrompt(text) {
+    return String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(/[^A-Za-z0-9_.:/-]+/)
+        .map(token => token.trim().toLowerCase())
+        .filter(token => token.length >= 4);
+}
+
+function findPromptLineIndex(lines, promptText) {
+    const tokens = tokenizePrompt(promptText);
+    if (tokens.length === 0) return -1;
+
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const line = normalize(lines[index]).toLowerCase();
+        if (!line) continue;
+        const matched = tokens.filter(token => line.includes(token)).length;
+        if (matched >= Math.min(tokens.length, 3)) return index;
+    }
+    return -1;
+}
+
+function sliceAfterLatestPrompt(text, promptText) {
+    const lines = splitLines(text);
+    const index = findPromptLineIndex(lines, promptText);
+    if (index < 0) return text;
+    return lines.slice(index + 1).join('\n');
+}
+
 function isBoxLine(line) {
     return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line);
 }
@@ -190,6 +219,18 @@ function extractAssistantText(text) {
     return collectAssistantLines(splitLines(text)).join('\n').trim();
 }
 
+function extractTrailingLeadAnswer(text) {
+    const lines = splitLines(text);
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const line = normalize(lines[index]);
+        if (!isAssistantLeadLine(line)) continue;
+        const cleaned = cleanAssistantLeadContent(stripAssistantLead(line));
+        if (!cleaned || shouldSuppressAssistantText(cleaned)) continue;
+        return cleaned;
+    }
+    return '';
+}
+
 function extractFallbackText(text) {
     return cleanFallbackLines(splitLines(text)).join('\n').trim();
 }
@@ -344,6 +385,22 @@ function shouldKeepPartialText(text) {
     return looksLikeStructuredAnswer(value) || value.split('\n').length >= 3;
 }
 
+function containsUiNoise(text) {
+    return /⏎\s+send|⌃J\s+newline|⌃T\s+transcript|⌃C\s+quit|\b\d+(?:\.\d+)?[KM]?\s+tokens used\b|\b\d+% context left\b|Working\(\d+s/i.test(String(text || ''));
+}
+
+function extractInlineLeadAnswer(text) {
+    const lines = splitLines(text);
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const rawLine = lines[index];
+        const match = rawLine.match(/>\s+(.+)$/);
+        if (!match) continue;
+        const cleaned = cleanAssistantLeadContent(`> ${match[1]}`);
+        if (cleaned && !shouldSuppressAssistantText(cleaned)) return cleaned;
+    }
+    return '';
+}
+
 function buildMessages(previousMessages, assistantText, partialText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
@@ -355,7 +412,16 @@ function buildMessages(previousMessages, assistantText, partialText) {
             }))
         : [];
 
-    const candidate = finalizeAssistantText(assistantText || partialText);
+    const lastUser = [...base].reverse().find(message => message.role === 'user')?.content || '';
+    const rawCandidate = finalizeAssistantText(assistantText || partialText);
+    const inlineLead = extractInlineLeadAnswer(rawCandidate);
+    const promptEcho = tokenizePrompt(lastUser)
+        .slice(0, 6)
+        .filter(token => normalize(rawCandidate).toLowerCase().includes(token))
+        .length >= 2;
+    const candidate = (inlineLead && (containsUiNoise(rawCandidate) || promptEcho))
+        ? inlineLead
+        : rawCandidate;
     if (!candidate || shouldSuppressAssistantText(candidate)) return base;
 
     const last = base[base.length - 1];
@@ -393,6 +459,10 @@ module.exports = function parseOutput(input) {
     const transcript = screenText || buffer;
     const tail = String(input?.recentBuffer || transcript.slice(-500));
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
+    const lastUserMessage = [...previousMessages].reverse().find(message => message && message.role === 'user');
+    const promptScope = lastUserMessage?.content || '';
+    const scopedScreenText = sliceAfterLatestPrompt(screenText, promptScope);
+    const scopedBufferText = sliceAfterLatestPrompt(buffer, promptScope);
 
     const status = detectStatus({
         tail,
@@ -414,15 +484,19 @@ module.exports = function parseOutput(input) {
         };
     }
 
-    const bufferAssistantText = finalizeAssistantText(extractAssistantText(buffer));
-    const screenAssistantText = finalizeAssistantText(extractAssistantText(screenText));
-    const visibleContentText = finalizeAssistantText(extractVisibleContent(screenText));
+    const bufferAssistantText = finalizeAssistantText(extractAssistantText(scopedBufferText || buffer));
+    const screenAssistantText = finalizeAssistantText(extractAssistantText(scopedScreenText || screenText));
+    const trailingLeadText = finalizeAssistantText(
+        extractTrailingLeadAnswer(scopedScreenText || screenText) || extractTrailingLeadAnswer(scopedBufferText || buffer),
+    );
+    const visibleContentText = finalizeAssistantText(extractVisibleContent(scopedScreenText || screenText));
     const structuredAnswerText = finalizeAssistantText(
-        extractStructuredAnswer(screenText) || extractStructuredAnswer(buffer),
+        extractStructuredAnswer(scopedScreenText || screenText) || extractStructuredAnswer(scopedBufferText || buffer),
     );
     const assistantText = structuredAnswerText
+        || trailingLeadText
         || looksLikeStructuredAnswer(screenAssistantText) || looksLikeCorruptToolText(bufferAssistantText)
-        ? structuredAnswerText || screenAssistantText || visibleContentText || bufferAssistantText
+        ? structuredAnswerText || trailingLeadText || screenAssistantText || visibleContentText || bufferAssistantText
         : finalizeAssistantText(mergeLineContent(
             mergeLineContent(
                 chooseRicherText(bufferAssistantText, screenAssistantText),
