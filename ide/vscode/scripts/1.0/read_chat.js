@@ -1,6 +1,16 @@
 (() => {
   try {
-    const root = document.querySelector('.interactive-session') || document.body;
+    const root = document.querySelector('.interactive-session');
+    if (!root) {
+      return JSON.stringify({
+        id: 'active',
+        status: 'idle',
+        title: 'Session Not Open',
+        messages: [],
+        inputContent: '',
+        activeModal: null
+      });
+    }
     const listRoot = root.querySelector('.interactive-list') || root;
     const normalize = (value) => (value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
     const isVisible = (el) => {
@@ -81,7 +91,7 @@
       .filter(isVisible)
       .map((el) => normalize(el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent))
       .filter((label) => label && label.length <= 80);
-    const approvalActions = buttonLabels.filter((label) => /^(run|skip|accept|reject|approve|deny|allow|block|continue|retry|cancel)$/i.test(label));
+    const approvalActions = buttonLabels.filter((label) => /(run|skip|accept|reject|approve|deny|allow|block|continue|retry|cancel)/i.test(label) && label.length <= 40);
 
     let status = 'idle';
     let activeModal = null;
@@ -94,11 +104,7 @@
         const label = normalize(el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent).toLowerCase();
         return /stop|cancel|interrupt|pause generation|stop generating/.test(label);
       });
-      const animated = Array.from(root.querySelectorAll('*')).some((el) => {
-        if (!isVisible(el)) return false;
-        const cls = typeof el.className === 'string' ? el.className : '';
-        return /(spin|pulse|bounce|loading|progress|codicon-loading)/i.test(cls);
-      });
+      const animated = Array.from(root.querySelectorAll('.monaco-progress-container.active, .codicon-loading, .codicon-sync.codicon-modifier-spin')).some(isVisible);
       const stateText = Array.from(root.querySelectorAll('*')).some((el) => {
         const text = normalize(el.textContent);
         return isVisible(el) && isLeaf(el) && text.length > 0 && text.length <= 80 && /^(thinking|generating|working|planning|running|responding)/i.test(text);

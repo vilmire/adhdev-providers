@@ -17,11 +17,7 @@
     "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
   },
   "processNames": {
-    "darwin": [
-      "Code",
-      "Electron",
-      "Visual Studio Code"
-    ],
+    "darwin": "Visual Studio Code",
     "win32": [
       "Code.exe"
     ]

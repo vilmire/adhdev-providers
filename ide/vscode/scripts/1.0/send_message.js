@@ -29,8 +29,8 @@ async (params) => {
       }
     }
 
-    const container = document.querySelector('.interactive-input-editor');
-    const input = document.querySelector('.interactive-input-editor .native-edit-context[role="textbox"]');
+    const container = document.querySelector('.interactive-session .interactive-input-editor') || document.querySelector('.interactive-input-editor');
+    const input = document.querySelector('.interactive-session .interactive-input-editor .native-edit-context[role="textbox"]') || document.querySelector('.interactive-input-editor .native-edit-context[role="textbox"]');
     if (!container || !input || !isVisible(input)) {
       return JSON.stringify({ sent: false, error: 'Input box not found' });
     }
@@ -43,7 +43,7 @@ async (params) => {
     return JSON.stringify({
       sent: false,
       needsTypeAndSend: true,
-      selector: '.interactive-input-editor .native-edit-context[role="textbox"]'
+      selector: '.interactive-session .interactive-input-editor .native-edit-context[role="textbox"]'
     });
   } catch (e) {
     return JSON.stringify({ sent: false, error: e.message });

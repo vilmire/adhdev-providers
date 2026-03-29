@@ -33,7 +33,15 @@
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase();
-      return /^toggle chat$/.test(label) || /toggle chat|copilot chat|chat view|open chat|chat$/.test(label);
+      return el.id?.toLowerCase().includes('copilot') || typeof el.className === 'string' && el.className.toLowerCase().includes('copilot') || /copilot chat/.test(label);
+    }) || buttons.find((el) => {
+      const label = [el.getAttribute('aria-label'), el.getAttribute('title'), el.textContent]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      return /^toggle chat$/.test(label) || /toggle chat|chat view|open chat|^chat$/.test(label);
     });
 
     if (!toggle) {
