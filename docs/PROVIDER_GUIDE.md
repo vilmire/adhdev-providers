@@ -127,7 +127,6 @@ module.exports.sendMessage = function sendMessage(params) {
 | 9335-9336 | Antigravity |
 | 9337-9338 | Windsurf |
 | 9339-9340 | VS Code |
-| 9341-9342 | VS Code Insiders |
 | 9343-9344 | VSCodium |
 | 9351-9352 | Kiro |
 | 9353-9354 | Trae |
