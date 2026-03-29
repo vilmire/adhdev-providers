@@ -29,7 +29,6 @@
 | `pearai` | PearAI | ❓ | ❓ | ❓ | | |
 | `trae` | Trae | ❓ | ❓ | ❓ | | |
 | `vscode` | Visual Studio Code | ❓ | ❓ | ❓ | | Detection only (no scripts) |
-| `vscode-insiders` | VS Code Insiders | ❓ | ❓ | ❓ | | Detection only (no scripts) |
 | `vscodium` | VSCodium | ❓ | ❓ | ❓ | | Detection only (no scripts) |
 | `windsurf` | Windsurf | ❓ | ❓ | ❓ | | |
 
@@ -43,7 +42,6 @@
 | `pearai` | webview | webview | ✅ | ✅/webview | webview¹ | ✅ | webview | webview | webview | webview | webview | ✅ |
 | `trae` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `vscode` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
-| `vscode-insiders` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
 | `vscodium` | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ |
 | `windsurf` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
@@ -61,6 +59,7 @@
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
+| `codex` | Codex | ❓ | ❓ | ❓ | | |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
 
 ### Script Methods — Extension
@@ -68,6 +67,7 @@
 | Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
 |----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
 | `cline` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `codex` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `roo-code` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
@@ -80,9 +80,14 @@
 
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
+| `aider-cli` | Aider | ❓ | ❓ | ❓ | | |
 | `claude-cli` | Claude Code | ❓ | ❓ | ❓ | | |
 | `codex-cli` | Codex CLI | ❓ | ❓ | ❓ | | |
+| `cursor-cli` | Cursor CLI | ❓ | ❓ | ❓ | | |
 | `gemini-cli` | Gemini CLI | ❓ | ❓ | ❓ | | |
+| `github-copilot-cli` | GitHub Copilot CLI | ❓ | ❓ | ❓ | | |
+| `goose-cli` | Goose | ❓ | ❓ | ❓ | | |
+| `opencode-cli` | OpenCode CLI | ❓ | ❓ | ❓ | | |
 
 ### Supported Operations — CLI
 
