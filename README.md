@@ -88,6 +88,16 @@ Auto-generated index of all providers. Contains:
 
 Updated automatically by GitHub Actions on every push.
 
+## 🛠️ Debugging & Fixing Providers (DevConsole)
+
+When an IDE updates its UI (like changing a class name for the chat box or DOM structure), the provider scripts may break. You can fix them live using the ADHDev **DevConsole**:
+
+1. Start ADHDev with the dev flag locally: `adhdev-standalone --dev`
+2. Open **http://127.0.0.1:19280** in your browser.
+3. DevConsole automatically enumerates active IDE CDP processes. Click any connected IDE to jump into its debugger screen.
+4. Use the script pad tool to modify `scripts.js` logic (e.g. testing new `querySelector` values) and execute it inside the IDE environment in real-time.
+5. Once your JS functions successfully interact with the new UI, copy them back into your local clone of this repository.
+
 ## Supporting a New IDE Version
 
 When an IDE releases a new version with DOM changes:
