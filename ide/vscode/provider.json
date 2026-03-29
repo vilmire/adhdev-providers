@@ -17,7 +17,11 @@
     "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
   },
   "processNames": {
-    "darwin": "Visual Studio Code",
+    "darwin": [
+      "Code",
+      "Electron",
+      "Visual Studio Code"
+    ],
     "win32": [
       "Code.exe"
     ]
@@ -74,7 +78,6 @@
       "max": 600
     }
   },
-  "disableUpstream": true,
   "status": "WIP",
   "details": "Infrastructure ready"
 }

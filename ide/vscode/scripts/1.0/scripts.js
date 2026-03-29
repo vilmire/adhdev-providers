@@ -22,4 +22,8 @@ module.exports = {
   // ─── Models ───
   listModels: require('./list_models.js'),
   setModel: require('./set_model.js'),
+
+  // ─── Modes ───
+  listModes: require('./list_modes.js'),
+  setMode: require('./set_mode.js'),
 };
