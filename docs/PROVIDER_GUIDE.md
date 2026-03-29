@@ -80,7 +80,7 @@ providers/_builtin/ide/
 
 > [!IMPORTANT]
 > `provider.json` contains static metadata. `scripts.js` exports CDP script functions.
-> Type definitions: [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/src/providers/contracts.ts)
+> Type definitions: see `contracts.ts` in the daemon-core source (`src/providers/contracts.ts`)
 
 **provider.json:**
 ```json
@@ -219,7 +219,7 @@ scripts: {
 ## 3️⃣ Script Output Contract
 
 All scripts **must return a JSON string**.
-See [contracts.ts](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/src/providers/contracts.ts) for reference.
+See `contracts.ts` (`src/providers/contracts.ts` in daemon-core) for reference.
 
 ### Core Scripts
 
@@ -464,7 +464,7 @@ adhdev daemon --dev
 
 ## 5️⃣ Using _helpers (Optional)
 
-[_helpers/index.js](file:///Users/vilmire/Work/remote_vs/packages/daemon-core/providers/_helpers/index.js) provides common utilities you can use.
+`_helpers/index.js` (in the providers directory) provides common utilities you can use.
 
 | Helper | Purpose |
 |--------|---------|

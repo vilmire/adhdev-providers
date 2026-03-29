@@ -1,4 +1,4 @@
-async (params) => {
+;(async () => {
   try {
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const isVisible = (el) => {
@@ -7,7 +7,7 @@ async (params) => {
       const rect = el.getBoundingClientRect();
       return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
     };
-    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
     const click = (el) => {
       if (!el) return false;
       el.scrollIntoView({ block: 'center', inline: 'center' });
@@ -16,14 +16,9 @@ async (params) => {
       el.click();
       return true;
     };
-    const want = normalize(params?.model || params?.name || params?.id || '');
-    if (!want) {
-      return JSON.stringify({ success: false, error: 'Missing model' });
-    }
-
-    const button = document.querySelector('.chat-input-toolbar [aria-label*="Pick Model"], .chat-input-toolbars [aria-label*="Pick Model"]');
+    const button = document.querySelector('.chat-mode-picker-item [role="button"]');
     if (!button || !isVisible(button)) {
-      return JSON.stringify({ success: false, error: 'Model picker not found' });
+      return JSON.stringify({ modes: [], current: '', error: 'Mode picker not found' });
     }
 
     click(button);
@@ -31,21 +26,20 @@ async (params) => {
 
     const menu = Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"]')).find(isVisible);
     const rows = menu ? Array.from(menu.querySelectorAll('.monaco-list-row[role^="menuitem"]')).filter(isVisible) : [];
-    const target = rows.find((row) => {
+    const modeRows = rows.filter((row) => !/configure/i.test(normalize(row.querySelector('.title')?.textContent || row.getAttribute('aria-label') || row.textContent)));
+    const selected = modeRows.find((row) => row.getAttribute('aria-checked') === 'true');
+    const modes = modeRows.map((row) => {
       const name = normalize(row.querySelector('.title')?.textContent || row.getAttribute('aria-label') || row.textContent);
-      return name === want || name.includes(want) || want.includes(name);
+      return { name, id: name };
     });
 
-    if (!target) {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
-      return JSON.stringify({ success: false, error: 'Model not found' });
-    }
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
 
-    click(target);
-    await wait(200);
-
-    return JSON.stringify({ success: true });
+    return JSON.stringify({
+      modes,
+      current: normalize(selected?.querySelector('.title')?.textContent || selected?.getAttribute('aria-label') || '')
+    });
   } catch (e) {
-    return JSON.stringify({ success: false, error: e.message });
+    return JSON.stringify({ modes: [], current: '', error: e.message });
   }
-}
+})()

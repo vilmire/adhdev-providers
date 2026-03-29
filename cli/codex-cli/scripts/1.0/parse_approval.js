@@ -32,12 +32,14 @@ function isFooterLine(line) {
 }
 
 function stripLeadingMarkers(s) {
+    // strip any combination of ▌, >, and spaces before the digit
     return s.replace(/^(?:[▌>]\s*)+/, '').trim();
 }
 
 function normalizeButton(line) {
     return stripLeadingMarkers(normalize(line))
         .replace(/^\d+\.\s+/, '')
+        // strip shortcut hints like "(Y)", "(A)", "(N)" and extra spacing
         .replace(/\s{2,}\([A-Za-z]\)\s.*$/, '')
         .trim();
 }

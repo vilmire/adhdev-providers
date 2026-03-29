@@ -36,15 +36,18 @@
     ]
   },
   "inputMethod": "cdp-type-and-send",
-  "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
+  "inputSelector": ".interactive-input-editor .native-edit-context[role=\"textbox\"]",
   "versionCommand": {
     "darwin": "\"/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code\" --version",
     "win32": "\"C:\\Program Files\\Microsoft VS Code\\bin\\code\" --version",
     "linux": "code --version"
   },
-  "providerVersion": "0.0.0",
+  "providerVersion": "1.0.0",
   "compatibility": [
-    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
   ],
   "defaultScriptDir": "scripts/1.0",
   "settings": {
@@ -70,5 +73,6 @@
       "min": 30,
       "max": 600
     }
-  }
+  },
+  "disableUpstream": true
 }

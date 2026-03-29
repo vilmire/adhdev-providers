@@ -32,6 +32,7 @@ function hasCommandApproval(text) {
         || (hasButtons && hasFooter)
         || /Approve and run now/i.test(text)
         || /Always approve this session/i.test(text)
+        || /Allow command\?/i.test(text)
         || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(text);
 }
 

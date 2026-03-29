@@ -16,14 +16,14 @@ async (params) => {
       el.click();
       return true;
     };
-    const want = normalize(params?.model || params?.name || params?.id || '');
+    const want = normalize(params?.mode || params?.name || params?.id || '');
     if (!want) {
-      return JSON.stringify({ success: false, error: 'Missing model' });
+      return JSON.stringify({ success: false, error: 'Missing mode' });
     }
 
-    const button = document.querySelector('.chat-input-toolbar [aria-label*="Pick Model"], .chat-input-toolbars [aria-label*="Pick Model"]');
+    const button = document.querySelector('.chat-mode-picker-item [role="button"]');
     if (!button || !isVisible(button)) {
-      return JSON.stringify({ success: false, error: 'Model picker not found' });
+      return JSON.stringify({ success: false, error: 'Mode picker not found' });
     }
 
     click(button);
@@ -33,12 +33,12 @@ async (params) => {
     const rows = menu ? Array.from(menu.querySelectorAll('.monaco-list-row[role^="menuitem"]')).filter(isVisible) : [];
     const target = rows.find((row) => {
       const name = normalize(row.querySelector('.title')?.textContent || row.getAttribute('aria-label') || row.textContent);
-      return name === want || name.includes(want) || want.includes(name);
+      return !/configure/.test(name) && (name === want || name.includes(want) || want.includes(name));
     });
 
     if (!target) {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
-      return JSON.stringify({ success: false, error: 'Model not found' });
+      return JSON.stringify({ success: false, error: 'Mode not found' });
     }
 
     click(target);
