@@ -182,7 +182,7 @@
       "name": "Aider",
       "compatibility": [
         {
-          "ideVersion": ">=0.86.0",
+          "ideVersion": ">=1.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -215,7 +215,7 @@
       "name": "Cursor CLI",
       "compatibility": [
         {
-          "ideVersion": ">=2026.0.0",
+          "ideVersion": ">=1.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -226,7 +226,7 @@
       "name": "Gemini CLI",
       "compatibility": [
         {
-          "ideVersion": ">=0.35.0",
+          "ideVersion": ">=1.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -248,7 +248,7 @@
       "name": "Goose",
       "compatibility": [
         {
-          "ideVersion": ">=3.20.0",
+          "ideVersion": ">=1.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -259,7 +259,7 @@
       "name": "OpenCode CLI",
       "compatibility": [
         {
-          "ideVersion": ">=1.3.0",
+          "ideVersion": ">=1.0.0",
           "scriptDir": "scripts/1.0"
         }
       ]
@@ -340,7 +340,7 @@
       ]
     },
     "vscode": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "ide",
       "name": "Visual Studio Code",
       "compatibility": [
