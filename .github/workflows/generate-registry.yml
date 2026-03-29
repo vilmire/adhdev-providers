@@ -58,21 +58,4 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: auto-generate registry.json"
           git push
 
-      - name: Update submodule pointer in parent repo (adhdev-cloud)
-        env:
-          PAT: ${{ secrets.PARENT_REPO_PAT }}
-        run: |
-          SUBMODULE_SHA=$(git rev-parse HEAD)
-          git clone --depth=1 https://x-access-token:${PAT}@github.com/vilmire/adhdev-cloud.git /tmp/adhdev-cloud
-          cd /tmp/adhdev-cloud
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git submodule update --init packages/daemon-core/providers/_builtin
-          cd packages/daemon-core/providers/_builtin
-          git fetch origin main
-          git checkout main
-          git reset --hard ${SUBMODULE_SHA}
-          cd /tmp/adhdev-cloud
-          git add packages/daemon-core/providers/_builtin
-          git diff --cached --quiet || git commit -m "chore: sync _builtin providers submodule [skip ci]"
-          git push
+
