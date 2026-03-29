@@ -174,10 +174,10 @@
 ### 1. Run the test
 
 ```bash
-# Start the daemon
-adhdev daemon
+# Start the installed daemon directly
+adhdev-standalone
 
-# Or standalone mode
+# Or run from source
 node packages/daemon-standalone/dist/index.js
 ```
 

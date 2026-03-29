@@ -81,7 +81,7 @@ scripts/1.0/
 
 Both approaches work. `scripts.js` takes priority if both exist.
 
-> 📖 Full guide: [PROVIDER_GUIDE.md](https://github.com/vilmire/adhdev/blob/main/docs/PROVIDER_GUIDE.md)
+> 📖 Full guide: Check the provider development section at [docs.adhf.dev](https://docs.adhf.dev)
 
 ### 4. Version Compatibility
 
@@ -131,7 +131,7 @@ mkdir -p ~/.adhdev/providers/ide/my-ide
 cp -r ide/my-ide/* ~/.adhdev/providers/ide/my-ide/
 
 # Restart daemon to pick up changes
-adhdev daemon:restart
+# Stop your running adhdev-standalone process and start it again
 
 # Test scripts via DevConsole
 # Open http://127.0.0.1:19280 → IDE tab → Scripts → Run
@@ -194,6 +194,5 @@ git push origin feat/add-my-ide
 
 ## Need Help?
 
-- Full provider guide: [PROVIDER_GUIDE.md](https://github.com/vilmire/adhdev/blob/main/docs/PROVIDER_GUIDE.md)
-- DOM exploration tips: PROVIDER_GUIDE.md §6
-- DevConsole usage: PROVIDER_GUIDE.md §4
+- Full provider guide: [docs.adhf.dev](https://docs.adhf.dev)
+- DOM exploration tips & DevConsole usage are covered in the official docs site.

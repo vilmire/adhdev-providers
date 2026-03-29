@@ -73,7 +73,7 @@ This repository is consumed by ADHDev in three ways:
 
 | Method | When | Directory |
 |--------|------|-----------|
-| **Bundled** | `npm install -g adhdev` | `_builtin/` (offline fallback) |
+| **Bundled** | `npm install -g @adhdev/daemon-standalone` | `_builtin/` (offline fallback) |
 | **Auto-updated** | Every daemon start | `~/.adhdev/providers/.upstream/` |
 | **User custom** | Manual | `~/.adhdev/providers/` (never overwritten) |
 
