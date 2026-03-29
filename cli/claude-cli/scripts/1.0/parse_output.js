@@ -39,7 +39,26 @@ function looksLikeSamePrompt(left, right) {
     if (a === b) return true;
     const minLength = Math.min(a.length, b.length);
     if (minLength < 24) return false;
-    return a.startsWith(b) || b.startsWith(a);
+    return a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a);
+}
+
+function isSpinnerOnlyText(text) {
+    const lines = splitLines(text)
+        .map(line => stripAssistantPrefix(sanitizeLine(line).trim()))
+        .filter(Boolean);
+    if (lines.length === 0) return true;
+    return lines.every(line => isStatusLine(line) || /^(?:[A-Z][a-z]+ing\u2026?|[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+)$/.test(line));
+}
+
+function looksLikePromptEchoText(candidate, promptText, previousMessages) {
+    const normalizedCandidate = normalizeText(candidate);
+    if (!normalizedCandidate) return false;
+    if (promptText && looksLikeSamePrompt(normalizedCandidate, promptText)) return true;
+
+    const lastUser = [...(Array.isArray(previousMessages) ? previousMessages : [])]
+        .reverse()
+        .find(message => message?.role === 'user' && typeof message.content === 'string');
+    return !!lastUser && looksLikeSamePrompt(normalizedCandidate, lastUser.content);
 }
 
 function parsePromptLine(line) {
@@ -58,10 +77,13 @@ function isBoxLine(trimmed) {
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
-        || /^Claude Code v\d/i.test(trimmed)
+        || /Claude Code v\d/i.test(trimmed)
         || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
-        || /^✳\s*Claude Code/i.test(trimmed);
+        || /^⏵⏵\s+accept edits on/i.test(trimmed)
+        || /^ctrl\+g to edit in VS Code/i.test(trimmed)
+        || /^✳\s*Claude Code/i.test(trimmed)
+        || /^[▗▖▘▝\s]+~\//.test(trimmed);
 }
 
 function isStatusLine(trimmed) {
@@ -69,7 +91,7 @@ function isStatusLine(trimmed) {
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/^[⠂⠐⠒⠓⠦⠴⠶⠷⠿]\s+/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
+    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
     if (/Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(trimmed)) return true;
     return false;
 }
@@ -77,6 +99,7 @@ function isStatusLine(trimmed) {
 function isNoiseLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return true;
+    if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
     if (isBoxLine(trimmed)) return true;
     if (isFooterLine(trimmed)) return true;
     if (isStatusLine(trimmed)) return true;
@@ -90,30 +113,76 @@ function isNoiseLine(line) {
 function stripAssistantPrefix(trimmed) {
     return trimmed
         .replace(/^[⏺•]\s+/, '')
+        .replace(/^⎿\s+/, '')
         .replace(/^[✻✶✳✢✽]\s+/, '')
         .trim();
 }
 
 function collectMeaningfulLines(lines) {
-    const bulletLines = [];
     const out = [];
-    for (const rawLine of lines) {
+    let captureDetails = false;
+    for (let index = 0; index < lines.length; index++) {
+        const rawLine = lines[index];
         const promptText = parsePromptLine(rawLine);
         if (promptText !== null) continue;
 
-        const trimmed = sanitizeLine(rawLine).trim();
+        const sanitized = sanitizeLine(rawLine);
+        const trimmed = sanitized.trim();
         if (isNoiseLine(trimmed)) continue;
+        const nextTrimmed = sanitizeLine(lines[index + 1] || '').trim();
+        if (/\u2026\)$/.test(trimmed) && /^⎿\s+/.test(nextTrimmed)) continue;
 
         const cleaned = stripAssistantPrefix(trimmed);
         if (!cleaned) continue;
         if (/^⏺\s+/.test(trimmed)) {
-            if (bulletLines[bulletLines.length - 1] !== cleaned) bulletLines.push(cleaned);
+            captureDetails = /^(?:Bash|Read|Task)\(/.test(cleaned)
+                || /^(?:Exact output|Output|Result):/i.test(cleaned);
+            if (out[out.length - 1] !== cleaned) out.push(cleaned);
             continue;
         }
+
+        if (/^⎿\s+/.test(trimmed)) {
+            if (!captureDetails || /^…\s+\+\d+\s+lines\b/i.test(cleaned)) continue;
+            if (out[out.length - 1] !== cleaned) out.push(cleaned);
+            continue;
+        }
+
+        if (!captureDetails && /^\d+\s+/.test(trimmed)) continue;
         if (cleaned.length === 1 && /^[A-Za-z]$/.test(cleaned)) continue;
         if (out[out.length - 1] !== cleaned) out.push(cleaned);
     }
-    return bulletLines.length > 0 ? bulletLines : out;
+    return out;
+}
+
+function collectAssistantBlocks(lines) {
+    const blocks = [];
+    let current = null;
+    for (const rawLine of lines) {
+        const sanitized = sanitizeLine(rawLine);
+        const trimmed = sanitized.trim();
+        if (!trimmed || isNoiseLine(trimmed)) continue;
+
+        if (/^⏺\s+/.test(trimmed)) {
+            const title = stripAssistantPrefix(trimmed);
+            if (!title) {
+                current = null;
+                continue;
+            }
+            current = {
+                title,
+                lines: [title],
+                isTool: /^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/.test(title),
+            };
+            blocks.push(current);
+            continue;
+        }
+
+        if (!current) continue;
+        const cleaned = stripAssistantPrefix(trimmed);
+        if (!cleaned || /^…\s+\+\d+\s+lines\b/i.test(cleaned)) continue;
+        current.lines.push(cleaned);
+    }
+    return blocks;
 }
 
 function extractVisibleTurn(text, previousMessages) {
@@ -154,7 +223,12 @@ function extractVisibleTurn(text, previousMessages) {
     }
 
     const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
-    let assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
+    const assistantWindow = lines.slice(assistantStart, end);
+    const blocks = collectAssistantBlocks(assistantWindow);
+    const lastNarrativeBlock = [...blocks].reverse().find(block => !block.isTool);
+    let assistantLines = lastNarrativeBlock
+        ? lastNarrativeBlock.lines
+        : collectMeaningfulLines(assistantWindow);
 
     if (assistantLines.length === 0 && Array.isArray(previousMessages) && previousMessages.length > 0) {
         assistantLines = collectMeaningfulLines(lines);
@@ -200,6 +274,8 @@ function buildMessages(previousMessages, promptText, assistantText, partialText)
 
     const normalizedAssistant = normalizeText(candidateAssistant);
     if (!normalizedAssistant) return base;
+    if (looksLikePromptEchoText(candidateAssistant, promptText, previousMessages)) return base;
+    if (!assistantText && isSpinnerOnlyText(candidateAssistant)) return base;
 
     const last = base[base.length - 1];
     if (last && last.role === 'assistant') {
@@ -248,9 +324,14 @@ module.exports = function parseOutput(input) {
     const { promptText, assistantText } = status === 'waiting_approval'
         ? { promptText: '', assistantText: '' }
         : extractVisibleTurn(transcriptSource, previousMessages);
-    const partialText = status === 'generating'
+    const rawPartialText = status === 'generating'
         ? extractPartialAssistant(input?.partialResponse || '')
         : '';
+    const partialText = (!rawPartialText
+        || isSpinnerOnlyText(rawPartialText)
+        || looksLikePromptEchoText(rawPartialText, promptText, previousMessages))
+        ? ''
+        : rawPartialText;
     const messages = toMessageObjects(
         buildMessages(previousMessages, promptText, assistantText, partialText),
         status

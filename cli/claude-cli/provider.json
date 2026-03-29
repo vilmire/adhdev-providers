@@ -58,6 +58,7 @@
     }
   },
   "binary": "claude",
+  "sendDelayMs": 700,
   "spawn": {
     "command": "claude",
     "args": [
@@ -105,9 +106,9 @@
     ]
   },
   "approvalKeys": {
-    "0": "1",
-    "1": "2",
-    "2": "3"
+    "0": "\r",
+    "1": "\u001b[B\r",
+    "2": "\u001b[B\u001b[B\r"
   },
   "compatibility": [
     {

@@ -90,16 +90,34 @@ function isTranscriptNoise(line) {
         || isStatusLine(line)
         || isApprovalLine(line)
         || isInputLine(line)
+        || /^…\s+\+\d+\s+lines\b/i.test(line)
         || isPlaceholderLine(line);
 }
 
 function cleanContentLine(rawLine) {
     const normalized = normalize(rawLine);
     if (!normalized || isTranscriptNoise(normalized)) return '';
-
-    return normalized
+    let cleaned = normalized
         .replace(/^✔\s+/, '')
         .replace(/^\s*│\s*/, '')
+        .replace(/▌.*$/g, '')
+        .replace(/⏎\s+send.*$/i, '')
+        .replace(/\b\d+(?:\.\d+)?[KM]?\s+tokens used\b.*$/i, '')
+        .replace(/\b\d+% context left\b.*$/i, '')
+        .replace(/\b(?:Working|Thinking|Planning|Searching|Reading|Analyzing|Inspecting|Responding)[^.!?]*$/i, '')
+        .replace(/Write tests for @filename.*$/i, '')
+        .replace(/([.!?])(?:[A-Za-z0-9]{3,}){3,}$/g, '$1')
+        .trim();
+    if (/^[{\[]/.test(cleaned)) {
+        cleaned = cleaned.replace(/([}\]])[A-Za-z0-9]+$/, '$1');
+    }
+    return cleaned;
+}
+
+function cleanAssistantLeadContent(line) {
+    return cleanContentLine(line)
+        .replace(/^>\s+/, '')
+        .replace(/^•\s+/, '')
         .trim();
 }
 
@@ -109,30 +127,35 @@ function isWelcomeScreen(text) {
 }
 
 function collectAssistantLines(lines) {
-    const result = [];
+    const blocks = [];
+    let current = null;
     let collecting = false;
-    let sawAssistantLead = false;
 
     for (const rawLine of lines) {
         const line = normalize(rawLine);
 
         if (!line) {
-            if (collecting && result.length > 0 && result[result.length - 1] !== '') {
-                result.push('');
+            if (collecting && current && current.lines.length > 0 && current.lines[current.lines.length - 1] !== '') {
+                current.lines.push('');
             }
             continue;
         }
 
         if (isInputLine(line)) {
             collecting = false;
+            current = null;
             continue;
         }
 
         if (isAssistantLeadLine(line)) {
-            const stripped = stripAssistantLead(line);
+            const stripped = cleanAssistantLeadContent(stripAssistantLead(line));
             collecting = true;
-            sawAssistantLead = true;
-            if (stripped && result[result.length - 1] !== stripped) result.push(stripped);
+            current = {
+                kind: /^>\s+/.test(line) ? 'assistant' : 'tool',
+                lines: [],
+            };
+            blocks.push(current);
+            if (stripped) current.lines.push(stripped);
             continue;
         }
 
@@ -140,13 +163,16 @@ function collectAssistantLines(lines) {
 
         const cleaned = cleanContentLine(rawLine);
         if (!cleaned) continue;
-        if (result[result.length - 1] !== cleaned) result.push(cleaned);
+        if (current && current.lines[current.lines.length - 1] !== cleaned) current.lines.push(cleaned);
     }
 
+    const preferred = [...blocks].reverse().find(block => block.kind === 'assistant' && block.lines.some(Boolean))
+        || [...blocks].reverse().find(block => block.lines.some(Boolean));
+    const result = preferred ? preferred.lines.slice() : [];
     while (result[0] === '') result.shift();
     while (result[result.length - 1] === '') result.pop();
 
-    return sawAssistantLead ? result : [];
+    return result;
 }
 
 function cleanFallbackLines(lines) {
@@ -168,6 +194,156 @@ function extractFallbackText(text) {
     return cleanFallbackLines(splitLines(text)).join('\n').trim();
 }
 
+function chooseRicherText(primary, secondary) {
+    const a = String(primary || '').trim();
+    const b = String(secondary || '').trim();
+    if (!a) return b;
+    if (!b) return a;
+    const aLines = a.split('\n').length;
+    const bLines = b.split('\n').length;
+    if (aLines > bLines + 1 || a.length > b.length + 60) return a;
+    if (bLines > aLines + 1 || b.length > a.length + 60) return b;
+    return a.length >= b.length ? a : b;
+}
+
+function extractVisibleContent(text) {
+    const blocks = [];
+    let current = [];
+    for (const rawLine of splitLines(text)) {
+        const cleaned = cleanContentLine(rawLine);
+        if (!cleaned) {
+            if (current.length > 0) {
+                blocks.push(current);
+                current = [];
+            }
+            continue;
+        }
+        current.push(cleaned);
+    }
+    if (current.length > 0) blocks.push(current);
+    const chosen = [...blocks].reverse().find(block => block.length > 1) || blocks[blocks.length - 1] || [];
+    return chosen.join('\n').trim();
+}
+
+function mergeLineContent(existing, incoming) {
+    const left = String(existing || '').trim();
+    const right = String(incoming || '').trim();
+    if (!left) return right;
+    if (!right) return left;
+    if (left === right) return right;
+
+    const leftLines = left.split('\n');
+    const rightLines = right.split('\n');
+    const leftNorm = leftLines.map(line => normalize(line));
+    const rightNorm = rightLines.map(line => normalize(line));
+    const maxOverlap = Math.min(leftLines.length, rightLines.length);
+
+    for (let overlap = maxOverlap; overlap >= 1; overlap--) {
+        const leftTail = leftNorm.slice(leftNorm.length - overlap);
+        const rightHead = rightNorm.slice(0, overlap);
+        if (leftTail.every((line, index) => line === rightHead[index])) {
+            return [...leftLines.slice(0, leftLines.length - overlap), ...rightLines].join('\n').trim();
+        }
+    }
+
+    if (left.includes(right)) return left;
+    if (right.includes(left)) return right;
+    return chooseRicherText(left, right);
+}
+
+function finalizeAssistantText(text) {
+    const value = String(text || '').trim();
+    if (!value) return '';
+    const lines = value.split('\n');
+    if (/^>\s*[{[]/.test(lines[0] || '')) {
+        lines[0] = lines[0].replace(/^>\s*/, '');
+    }
+    return lines.join('\n').trim();
+}
+
+function looksLikeStructuredAnswer(text) {
+    const value = String(text || '').trim();
+    if (!value) return false;
+    const firstLine = value.split('\n')[0] || '';
+    return /^TITLE=/.test(firstLine)
+        || /^NEWS=/.test(firstLine)
+        || /^[A-Z][A-Z0-9_]*=/.test(firstLine)
+        || /^[{\[]/.test(firstLine);
+}
+
+function isStructuredAnswerLine(line) {
+    const value = String(line || '').trim();
+    return /^TITLE=/.test(value)
+        || /^NEWS=/.test(value)
+        || /^[A-Z][A-Z0-9_]*=/.test(value)
+        || /^[{\[]/.test(value);
+}
+
+function extractStructuredAnswer(text) {
+    const lines = splitLines(text)
+        .map(cleanContentLine)
+        .filter(Boolean);
+    if (lines.length === 0) return '';
+
+    const trailing = [];
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+        const line = lines[i];
+        if (isStructuredAnswerLine(line)) {
+            trailing.unshift(line);
+            continue;
+        }
+        if (trailing.length > 0) break;
+    }
+    if (trailing.length >= 2) return trailing.join('\n').trim();
+
+    const blocks = [];
+    let current = [];
+    for (const line of lines) {
+        if (isStructuredAnswerLine(line)) {
+            current.push(line);
+        } else if (current.length > 0) {
+            blocks.push(current);
+            current = [];
+        }
+    }
+    if (current.length > 0) blocks.push(current);
+    const chosen = [...blocks].reverse().find(block => block.length >= 2) || [];
+    return chosen.join('\n').trim();
+}
+
+function looksLikeCorruptToolText(text) {
+    const value = String(text || '');
+    if (!value) return false;
+    return /Ran zsh -lc/i.test(value)
+        || /• Added /i.test(value)
+        || /… \+\d+ lines/.test(value)
+        || /└ /.test(value)
+        || /�/.test(value);
+}
+
+function shouldSuppressAssistantText(text) {
+    const value = String(text || '').trim();
+    if (!value) return true;
+    return /^>_ OpenAI Codex\b/.test(value)
+        || /^OpenAI Codex\b/.test(value)
+        || looksLikeCorruptToolText(value) && !looksLikeStructuredAnswer(value);
+}
+
+function shouldDropPartialText(text) {
+    const value = String(text || '').trim();
+    if (!value) return true;
+    return /^>_ OpenAI Codex\b/.test(value)
+        || /^OpenAI Codex\b/.test(value)
+        || /^[│\s]+$/.test(value)
+        || /(?:Working|Planning|Searching|Reading|Analyzing|Considering)/i.test(value) && !/\n/.test(value);
+}
+
+function shouldKeepPartialText(text) {
+    const value = String(text || '').trim();
+    if (!value || shouldDropPartialText(value) || looksLikeCorruptToolText(value)) return false;
+    return looksLikeStructuredAnswer(value) || value.split('\n').length >= 3;
+}
+
 function buildMessages(previousMessages, assistantText, partialText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
@@ -179,12 +355,17 @@ function buildMessages(previousMessages, assistantText, partialText) {
             }))
         : [];
 
-    const candidate = assistantText || partialText;
-    if (!candidate) return base;
+    const candidate = finalizeAssistantText(assistantText || partialText);
+    if (!candidate || shouldSuppressAssistantText(candidate)) return base;
 
     const last = base[base.length - 1];
     if (last && last.role === 'assistant') {
-        if (last.content !== candidate) last.content = candidate;
+        if (looksLikeStructuredAnswer(candidate) && !looksLikeStructuredAnswer(last.content)) {
+            last.content = candidate;
+        } else {
+            const merged = mergeLineContent(last.content, candidate);
+            if (last.content !== merged) last.content = merged;
+        }
     } else {
         base.push({ role: 'assistant', content: candidate });
     }
@@ -233,11 +414,29 @@ module.exports = function parseOutput(input) {
         };
     }
 
-    const assistantText = extractAssistantText(transcript);
+    const bufferAssistantText = finalizeAssistantText(extractAssistantText(buffer));
+    const screenAssistantText = finalizeAssistantText(extractAssistantText(screenText));
+    const visibleContentText = finalizeAssistantText(extractVisibleContent(screenText));
+    const structuredAnswerText = finalizeAssistantText(
+        extractStructuredAnswer(screenText) || extractStructuredAnswer(buffer),
+    );
+    const assistantText = structuredAnswerText
+        || looksLikeStructuredAnswer(screenAssistantText) || looksLikeCorruptToolText(bufferAssistantText)
+        ? structuredAnswerText || screenAssistantText || visibleContentText || bufferAssistantText
+        : finalizeAssistantText(mergeLineContent(
+            mergeLineContent(
+                chooseRicherText(bufferAssistantText, screenAssistantText),
+                visibleContentText,
+            ),
+            screenAssistantText,
+        ));
     const partialText = status === 'generating'
-        ? extractFallbackText(String(input?.partialResponse || ''))
+        ? finalizeAssistantText(chooseRicherText(
+            extractFallbackText(buffer),
+            extractFallbackText(String(input?.partialResponse || '')),
+        ))
         : '';
-    const messages = buildMessages(previousMessages, assistantText, partialText);
+    const messages = buildMessages(previousMessages, assistantText, shouldKeepPartialText(partialText) ? partialText : '');
 
     return {
         id: 'cli_session',
