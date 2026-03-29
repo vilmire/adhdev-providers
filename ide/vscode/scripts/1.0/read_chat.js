@@ -22,11 +22,14 @@
     const isLeaf = (el) => Array.from(el.children || []).every((child) => !isVisible(child) || !normalize(child.textContent));
     const getTitle = () => {
       const selected = document.querySelector('.agent-sessions-viewer .monaco-list-row.selected, .agent-sessions-viewer .monaco-list-row.focused, .agent-sessions-viewer .monaco-list-row[aria-selected="true"]');
+      const latestRequest = Array.from(listRoot.querySelectorAll('.monaco-list-row.request')).pop();
       return normalize(
         selected?.querySelector('.monaco-highlighted-label, .label-name, .title, .monaco-icon-label')?.textContent ||
           selected?.getAttribute('aria-label') ||
+          latestRequest?.querySelector('.chat-markdown-part, .rendered-markdown')?.textContent ||
+          latestRequest?.getAttribute('aria-label') ||
           document.querySelector('.monaco-alert')?.textContent ||
-          'Active Session'
+          'New Chat'
       );
     };
     const getInputContent = () => {
@@ -80,18 +83,19 @@
     };
     const cleanMarkdown = (node) => {
       const clone = node.cloneNode(true);
-      clone.querySelectorAll('button, .monaco-toolbar, .chat-codeblock-toolbar, script, style, svg.codicon[aria-hidden="true"]').forEach((el) => el.remove());
+      clone.querySelectorAll('button, .monaco-toolbar, .chat-codeblock-toolbar, script, style, svg.codicon[aria-hidden="true"], .header, .request-hover, .checkpoint-container, .chat-footer-toolbar, .chat-row-disabled-overlay, .chat-mcp-servers-interaction').forEach((el) => el.remove());
       return htmlToMarkdown(clone)
         .replace(/\n\s*\n\s*\n+/g, '\n\n')
         .replace(/[ \t]+\n/g, '\n')
         .trim();
     };
 
-    const buttonLabels = Array.from(root.querySelectorAll('button, [role="button"], .monaco-button, a[role="button"]'))
+    const latestResponse = Array.from(listRoot.querySelectorAll('.monaco-list-row.response, .interactive-response')).pop() || root;
+    const getButtonLabel = (el) => normalize(el.textContent || el.getAttribute('aria-label') || el.getAttribute('title'));
+    const approvalActions = Array.from(latestResponse.querySelectorAll('button, [role="button"], .monaco-button, a[role="button"]'))
       .filter(isVisible)
-      .map((el) => normalize(el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent))
-      .filter((label) => label && label.length <= 80);
-    const approvalActions = buttonLabels.filter((label) => /(run|skip|accept|reject|approve|deny|allow|block|continue|retry|cancel)/i.test(label) && label.length <= 40);
+      .map((el) => getButtonLabel(el))
+      .filter((label) => label && /(run|skip|accept|reject|approve|deny|allow|block|continue|proceed)/i.test(label) && !/finished with|more actions|toggle inline|diff editor|retry|copy|helpful|unhelpful|redo/i.test(label));
 
     let status = 'idle';
     let activeModal = null;
@@ -99,13 +103,13 @@
       status = 'waiting_approval';
       activeModal = { actions: approvalActions };
     } else {
-      const generatingButton = Array.from(root.querySelectorAll('a[role="button"], button, [role="button"]')).find((el) => {
+      const generatingButton = Array.from(latestResponse.querySelectorAll('a[role="button"], button, [role="button"]')).find((el) => {
         if (!isVisible(el)) return false;
         const label = normalize(el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent).toLowerCase();
         return /stop|cancel|interrupt|pause generation|stop generating/.test(label);
       });
-      const animated = Array.from(root.querySelectorAll('.monaco-progress-container.active, .codicon-loading, .codicon-sync.codicon-modifier-spin')).some(isVisible);
-      const stateText = Array.from(root.querySelectorAll('*')).some((el) => {
+      const animated = Array.from(latestResponse.querySelectorAll('.monaco-progress-container.active, .codicon-loading, .codicon-sync.codicon-modifier-spin, .chat-animated-ellipsis')).some(isVisible);
+      const stateText = Array.from(latestResponse.querySelectorAll('*')).some((el) => {
         const text = normalize(el.textContent);
         return isVisible(el) && isLeaf(el) && text.length > 0 && text.length <= 80 && /^(thinking|generating|working|planning|running|responding)/i.test(text);
       });
@@ -125,40 +129,47 @@
       entries.push({ role, content: text, el, kind: kind || 'standard', meta: meta || undefined });
     };
 
-    Array.from(listRoot.querySelectorAll('[class*="request"], [data-kind*="request"], .chat-request')).forEach((el) => {
-      if (!isVisible(el) || el.closest('.chat-welcome-view-container')) return;
-      pushMessage('user', cleanMarkdown(el), el, 'standard');
-    });
+    const rows = Array.from(listRoot.querySelectorAll('.monaco-list-row.request, .monaco-list-row.response')).filter((row) => isVisible(row) && !row.closest('.chat-welcome-view-container'));
 
-    Array.from(listRoot.querySelectorAll('.rendered-markdown, .chat-markdownContentPart, [class*="markdown"]')).forEach((el) => {
-      if (!isVisible(el) || el.closest('.chat-welcome-view-container')) return;
-      const container = el.closest('[class*="response"], [data-kind*="response"], .chat-response, .chat-toolInvocationPart, .chat-thinking-part') || el;
-      const cls = (container.className || '').toString();
-      let kind = 'standard';
-      let meta;
-      if (/think/i.test(cls)) kind = 'thought';
-      if (/tool/i.test(cls)) kind = 'tool';
-      if (/terminal|command/i.test(cls)) {
-        kind = 'terminal';
-        meta = { label: normalize(container.querySelector('[class*="label"], .title')?.textContent || 'Terminal') };
+    rows.forEach((row) => {
+      if (row.classList.contains('request')) {
+        const contentNode = row.querySelector('.chat-markdown-part, .rendered-markdown, .value') || row;
+        pushMessage('user', cleanMarkdown(contentNode) || normalize(row.getAttribute('aria-label') || row.textContent), row, 'standard');
+        return;
       }
-      pushMessage('assistant', cleanMarkdown(el), container, kind, meta);
-    });
 
-    Array.from(listRoot.querySelectorAll('pre')).forEach((el) => {
-      if (!isVisible(el) || el.closest('.chat-welcome-view-container')) return;
-      const container = el.closest('[class*="response"], [data-kind*="response"], .chat-response, .chat-toolInvocationPart') || el;
-      const kind = /tool/i.test((container.className || '').toString()) ? 'tool' : 'standard';
-      pushMessage('assistant', cleanMarkdown(el), container, kind);
-    });
+      const value = row.querySelector('.value') || row;
+      const parts = Array.from(value.children || []).filter((child) => {
+        if (!child) return false;
+        if (/chat-mcp-servers-interaction|chat-footer-toolbar/.test((child.className || '').toString())) return false;
+        return !!(normalize(child.textContent) || child.querySelector('pre, table, code, .rendered-markdown'));
+      });
 
-    Array.from(listRoot.querySelectorAll('[class*="tool"], [class*="terminal"], [class*="command"]')).forEach((el) => {
-      if (!isVisible(el) || el.closest('.chat-welcome-view-container')) return;
-      const text = normalize(el.textContent);
-      if (!text || text.length < 3 || text.length > 500) return;
-      if (!/tool|command|terminal|running|ran|edit|search|read|create/i.test(text)) return;
-      const isTerminal = /terminal|command|running|ran/i.test(text);
-      pushMessage('assistant', text, el, isTerminal ? 'terminal' : 'tool', isTerminal ? { label: text.split('\n')[0], isRunning: /running/i.test(text) } : undefined);
+      if (!parts.length) {
+        pushMessage('assistant', cleanMarkdown(value) || normalize(row.getAttribute('aria-label') || row.textContent), row, 'standard');
+        return;
+      }
+
+      parts.forEach((part) => {
+        const cls = (part.className || '').toString();
+        let kind = 'standard';
+        let meta;
+        if (/think/i.test(cls)) {
+          kind = 'thought';
+        } else if (/terminal|command/i.test(cls) || part.querySelector('.chat-terminal-content-part, .chat-terminal-thinking-collapsible, .chat-terminal-command-block')) {
+          kind = 'terminal';
+          const text = normalize(part.textContent);
+          meta = {
+            label: normalize(part.querySelector('[class*="label"], .title')?.textContent || text.split('\n')[0] || 'Terminal'),
+            isRunning: /running/i.test(text)
+          };
+        } else if (/tool/i.test(cls)) {
+          kind = 'tool';
+        }
+
+        const content = cleanMarkdown(part) || normalize(part.getAttribute('aria-label') || part.textContent);
+        pushMessage('assistant', content, part, kind, meta);
+      });
     });
 
     entries.sort((a, b) => {

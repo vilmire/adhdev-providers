@@ -17,6 +17,7 @@ async (params) => {
       return true;
     };
 
+    const action = normalize(params?.action || '').toLowerCase();
     const want = normalize(params?.buttonText || params?.action || params?.button || '').toLowerCase();
     const buttons = Array.from(document.querySelectorAll('.interactive-session button, .interactive-session [role="button"], .context-view button, .context-view [role="button"], .monaco-button, a[role="button"]'))
       .filter(isVisible)
@@ -26,7 +27,15 @@ async (params) => {
       }))
       .filter((item) => item.label && item.label.length <= 80);
 
-    const target = buttons.find((item) => item.label.toLowerCase() === want) || buttons.find((item) => item.label.toLowerCase().includes(want));
+    const aliases = {
+      approve: ['accept', 'approve', 'allow', 'continue', 'run'],
+      reject: ['reject', 'deny', 'block', 'skip', 'cancel']
+    };
+    const candidates = aliases[action] || [want];
+    const target =
+      buttons.find((item) => item.label.toLowerCase() === want) ||
+      buttons.find((item) => candidates.some((candidate) => item.label.toLowerCase() === candidate || item.label.toLowerCase().includes(candidate))) ||
+      buttons.find((item) => item.label.toLowerCase().includes(want));
 
     if (!target) {
       return JSON.stringify({ resolved: false, available: buttons.map((item) => item.label).slice(0, 20) });

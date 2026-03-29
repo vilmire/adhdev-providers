@@ -10,10 +10,9 @@
     const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
     const click = (el) => {
       if (!el) return false;
-      el.scrollIntoView({ block: 'center', inline: 'center' });
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-      el.click();
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
       return true;
     };
     const button = document.querySelector('.chat-input-toolbar [aria-label*="Pick Model"], .chat-input-toolbars [aria-label*="Pick Model"]');
@@ -21,25 +20,22 @@
       return JSON.stringify({ models: [], current: '', error: 'Model picker not found' });
     }
 
-    const before = Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"]'));
+    const before = Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"], .context-view .monaco-list[role="listbox"]'));
     const current = normalize(button.textContent || (button.getAttribute('aria-label') || '').replace(/^.*?,\s*/, ''));
 
     click(button);
     await wait(250);
 
-    const menu = Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"]')).find((el) => !before.includes(el) && isVisible(el)) || Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"]')).find(isVisible);
-    const rows = menu ? Array.from(menu.querySelectorAll('.monaco-list-row[role^="menuitem"]')).filter(isVisible) : [];
+    const menu = Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"], .context-view .monaco-list[role="listbox"]')).find((el) => !before.includes(el) && isVisible(el)) || Array.from(document.querySelectorAll('.context-view .monaco-list[role="menu"], .context-view .monaco-list[role="listbox"]')).find(isVisible);
+    const rows = menu ? Array.from(menu.querySelectorAll('.monaco-list-row[role^="menuitem"]')).filter((row) => normalize(row.textContent || row.getAttribute('aria-label'))) : [];
+    const selected = rows.find((row) => row.getAttribute('aria-checked') === 'true');
     const models = rows
-      .map((row) => ({
-        name: normalize(row.querySelector('.title')?.textContent || row.getAttribute('aria-label') || row.textContent),
-        checked: row.getAttribute('aria-checked') === 'true'
-      }))
-      .filter((item) => item.name && !/configure/i.test(item.name))
-      .map((item) => ({ name: item.name, id: item.name }));
+      .map((row) => normalize(row.querySelector('.title')?.textContent || row.getAttribute('aria-label') || row.textContent))
+      .filter((name) => name && !/configure|other models/i.test(name))
+      .map((name) => ({ name, id: name }));
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
 
-    const selected = rows.find((row) => row.getAttribute('aria-checked') === 'true');
     return JSON.stringify({
       models,
       current: normalize(selected?.querySelector('.title')?.textContent || selected?.getAttribute('aria-label') || current)

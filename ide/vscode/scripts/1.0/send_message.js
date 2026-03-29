@@ -7,25 +7,34 @@ async (params) => {
       const rect = el.getBoundingClientRect();
       return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
     };
+    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const click = (el) => {
       if (!el) return false;
-      el.scrollIntoView({ block: 'center', inline: 'center' });
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-      el.click();
+      try {
+        el.scrollIntoView({ block: 'center', inline: 'center' });
+      } catch (_) {}
+      el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
       return true;
     };
-    const panelOpen = () => !!document.querySelector('#workbench\\.panel\\.chat .interactive-session, .pane-body.chat-viewpane .interactive-session');
+    const panelOpen = () => {
+      const auxiliary = document.getElementById('workbench.parts.auxiliarybar');
+      const composite = document.getElementById('workbench.panel.chat');
+      const input = document.querySelector('.interactive-session .interactive-input-editor .native-edit-context[role="textbox"], .interactive-input-editor .native-edit-context[role="textbox"]');
+      return !!(auxiliary && composite && isVisible(auxiliary) && isVisible(composite) && input && isVisible(input));
+    };
 
     if (!panelOpen()) {
-      const toggle = Array.from(document.querySelectorAll('a[role="button"], button, [role="tab"]')).find((el) => {
+      const toggle = Array.from(document.querySelectorAll('a[role="button"], button, [role="tab"], [tabindex="0"]')).find((el) => {
         if (!isVisible(el)) return false;
-        const label = [el.getAttribute('aria-label'), el.getAttribute('title'), el.textContent].filter(Boolean).join(' ').toLowerCase();
-        return /toggle chat|copilot chat|open chat|chat$/.test(label);
+        const label = normalize([el.getAttribute('aria-label'), el.getAttribute('title'), el.textContent].filter(Boolean).join(' '));
+        return /toggle chat|open chat|copilot chat/.test(label);
       });
       if (toggle) {
         click(toggle);
-        await wait(350);
+        await wait(400);
       }
     }
 
@@ -36,9 +45,12 @@ async (params) => {
     }
 
     click(container);
-    input.focus();
+    click(input);
+    if (typeof input.focus === 'function') {
+      input.focus();
+    }
     input.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
-    await wait(100);
+    await wait(120);
 
     return JSON.stringify({
       sent: false,

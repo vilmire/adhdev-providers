@@ -7,30 +7,35 @@
       const rect = el.getBoundingClientRect();
       return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
     };
+    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim().toLowerCase();
     const click = (el) => {
       if (!el) return false;
-      el.scrollIntoView({ block: 'center', inline: 'center' });
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-      el.click();
+      try {
+        el.scrollIntoView({ block: 'center', inline: 'center' });
+      } catch (_) {}
+      el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, composed: true }));
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, composed: true }));
       return true;
     };
+    const before = Array.from(document.querySelectorAll('.interactive-session .monaco-list-row.request, .interactive-session .monaco-list-row.response')).length;
 
-    const button = Array.from(document.querySelectorAll('.agent-sessions-new-button-container [role="button"], .agent-sessions-new-button-container .monaco-button, a[role="button"], button'))
+    const button = Array.from(document.querySelectorAll('a[role="button"], button, [role="button"]'))
       .filter(isVisible)
-      .find((el) => {
-        const label = [el.getAttribute('aria-label'), el.getAttribute('title'), el.textContent].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim().toLowerCase();
-        return /new session|new chat/.test(label);
-      });
+      .find((el) => /new chat|new session/.test(normalize([el.getAttribute('aria-label'), el.getAttribute('title'), el.textContent].filter(Boolean).join(' '))));
 
     if (!button) {
       return JSON.stringify({ created: false, error: 'New session button not found' });
     }
 
     click(button);
-    await wait(250);
+    await wait(400);
 
-    return JSON.stringify({ created: true });
+    const after = Array.from(document.querySelectorAll('.interactive-session .monaco-list-row.request, .interactive-session .monaco-list-row.response')).length;
+    const input = document.querySelector('.interactive-session .interactive-input-editor .native-edit-context[role="textbox"]');
+
+    return JSON.stringify({ created: !!input && (after !== before || document.contains(input)) });
   } catch (e) {
     return JSON.stringify({ created: false, error: e.message });
   }

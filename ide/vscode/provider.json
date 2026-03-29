@@ -9,6 +9,14 @@
     9339,
     9340
   ],
+  "spawn": {
+    "command": "\"/Applications/Visual Studio Code.app/Contents/MacOS/Electron\"",
+    "args": [
+      "--remote-debugging-port=${PORT:-9339}",
+      "--user-data-dir=${HOME}/.adhdev/test-profiles/vscode"
+    ],
+    "shell": true
+  },
   "targetFilter": {
     "urlIncludes": "workbench.html",
     "urlExcludes": [
@@ -17,7 +25,11 @@
     "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
   },
   "processNames": {
-    "darwin": "Visual Studio Code",
+    "darwin": [
+      "Code",
+      "Electron",
+      "Visual Studio Code"
+    ],
     "win32": [
       "Code.exe"
     ]
