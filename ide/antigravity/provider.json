@@ -11,7 +11,9 @@
   ],
   "targetFilter": {
     "urlIncludes": "workbench.html",
-    "urlExcludes": ["agent"],
+    "urlExcludes": [
+      "agent"
+    ],
     "titleExcludes": "extension-output|ADHDev CDP|Debug Console|Output\\s*$|Launchpad"
   },
   "processNames": {
@@ -37,7 +39,10 @@
   "versionCommand": "antigravity --version",
   "providerVersion": "1.0.0",
   "compatibility": [
-    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
   ],
   "defaultScriptDir": "scripts/1.0",
   "settings": {
@@ -84,5 +89,7 @@
       "label": "Show Terminal",
       "description": "Display terminal command execution and output"
     }
-  }
+  },
+  "status": "Stable",
+  "details": "Full CDP support"
 }

@@ -37,6 +37,8 @@ jobs:
                       'providerVersion': d.get('providerVersion', '0.0.0'),
                       'category': d['category'],
                       'name': d.get('name', d['type']),
+                      'status': d.get('status', 'Stable'),
+                      'details': d.get('details', 'Agent Client Protocol (ACP)' if d['category'] == 'acp' else 'Community Provider')
                   }
                   if d.get('compatibility'):
                       entry['compatibility'] = d['compatibility']

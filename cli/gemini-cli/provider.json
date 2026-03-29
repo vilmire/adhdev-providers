@@ -67,31 +67,88 @@
   },
   "patterns": {
     "prompt": [
-      { "source": "\\?\\s*for\\s*shortcuts", "flags": "i" },
-      { "source": "^>\\s*$", "flags": "m" },
-      { "source": "[›❯]\\s*$", "flags": "m" },
-      { "source": "sandbox", "flags": "i" },
-      { "source": "Type your message", "flags": "i" }
+      {
+        "source": "\\?\\s*for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "^>\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "[›❯]\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "sandbox",
+        "flags": "i"
+      },
+      {
+        "source": "Type your message",
+        "flags": "i"
+      }
     ],
     "generating": [
-      { "source": "[\\u2800-\\u28ff]", "flags": "" },
-      { "source": "[▀▄▌▐░▒▓█]", "flags": "" },
-      { "source": "Thinking", "flags": "i" },
-      { "source": "Generating", "flags": "i" },
-      { "source": "esc to (cancel|interrupt|stop)", "flags": "i" }
+      {
+        "source": "[\\u2800-\\u28ff]",
+        "flags": ""
+      },
+      {
+        "source": "[▀▄▌▐░▒▓█]",
+        "flags": ""
+      },
+      {
+        "source": "Thinking",
+        "flags": "i"
+      },
+      {
+        "source": "Generating",
+        "flags": "i"
+      },
+      {
+        "source": "esc to (cancel|interrupt|stop)",
+        "flags": "i"
+      }
     ],
     "approval": [
-      { "source": "Allow\\s*once", "flags": "i" },
-      { "source": "Always\\s*allow", "flags": "i" },
-      { "source": "\\(y/n\\)", "flags": "i" },
-      { "source": "\\[Y/n\\]", "flags": "i" },
-      { "source": "Run\\s*this\\s*command", "flags": "i" },
-      { "source": "Deny", "flags": "i" },
-      { "source": "auto-?approve", "flags": "i" }
+      {
+        "source": "Allow\\s*once",
+        "flags": "i"
+      },
+      {
+        "source": "Always\\s*allow",
+        "flags": "i"
+      },
+      {
+        "source": "\\(y/n\\)",
+        "flags": "i"
+      },
+      {
+        "source": "\\[Y/n\\]",
+        "flags": "i"
+      },
+      {
+        "source": "Run\\s*this\\s*command",
+        "flags": "i"
+      },
+      {
+        "source": "Deny",
+        "flags": "i"
+      },
+      {
+        "source": "auto-?approve",
+        "flags": "i"
+      }
     ],
     "ready": [
-      { "source": "\\?\\s*for\\s*shortcuts", "flags": "i" },
-      { "source": "sandbox", "flags": "i" }
+      {
+        "source": "\\?\\s*for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "sandbox",
+        "flags": "i"
+      }
     ]
   },
   "approvalKeys": {
@@ -104,5 +161,7 @@
       "ideVersion": ">=1.0.0",
       "scriptDir": "scripts/1.0"
     }
-  ]
+  ],
+  "status": "Beta",
+  "details": "Terminal only (Chat Mode WIP)"
 }

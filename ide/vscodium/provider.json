@@ -39,7 +39,10 @@
   "versionCommand": "codium --version",
   "providerVersion": "0.0.0",
   "compatibility": [
-    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
   ],
   "defaultScriptDir": "scripts/1.0",
   "settings": {
@@ -65,5 +68,7 @@
       "min": 30,
       "max": 600
     }
-  }
+  },
+  "status": "WIP",
+  "details": "Infrastructure ready"
 }

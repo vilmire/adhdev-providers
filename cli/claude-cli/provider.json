@@ -71,39 +71,114 @@
   },
   "patterns": {
     "prompt": [
-      { "source": "Type your message", "flags": "i" },
-      { "source": "for\\s*shortcuts", "flags": "i" },
-      { "source": "\\?\\s*for\\s*help", "flags": "i" },
-      { "source": "Press enter", "flags": "i" },
-      { "source": "[›❯]\\s*$", "flags": "m" },
-      { "source": "medium\\s+·\\s+/effort", "flags": "i" }
+      {
+        "source": "Type your message",
+        "flags": "i"
+      },
+      {
+        "source": "for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "\\?\\s*for\\s*help",
+        "flags": "i"
+      },
+      {
+        "source": "Press enter",
+        "flags": "i"
+      },
+      {
+        "source": "[›❯]\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "medium\\s+·\\s+/effort",
+        "flags": "i"
+      }
     ],
     "generating": [
-      { "source": "[\\u2800-\\u28ff]", "flags": "" },
-      { "source": "esc to (cancel|interrupt|stop)", "flags": "i" },
-      { "source": "generating\\.\\.\\.", "flags": "i" },
-      { "source": "Claude is (?:thinking|processing|working)", "flags": "i" },
-      { "source": "Flummoxing", "flags": "i" },
-      { "source": "Finagling", "flags": "i" },
-      { "source": "Scurrying", "flags": "i" },
-      { "source": "Bloviating", "flags": "i" },
-      { "source": "Whatchamacallit(?:ing)?", "flags": "i" },
-      { "source": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?", "flags": "i" }
+      {
+        "source": "[\\u2800-\\u28ff]",
+        "flags": ""
+      },
+      {
+        "source": "esc to (cancel|interrupt|stop)",
+        "flags": "i"
+      },
+      {
+        "source": "generating\\.\\.\\.",
+        "flags": "i"
+      },
+      {
+        "source": "Claude is (?:thinking|processing|working)",
+        "flags": "i"
+      },
+      {
+        "source": "Flummoxing",
+        "flags": "i"
+      },
+      {
+        "source": "Finagling",
+        "flags": "i"
+      },
+      {
+        "source": "Scurrying",
+        "flags": "i"
+      },
+      {
+        "source": "Bloviating",
+        "flags": "i"
+      },
+      {
+        "source": "Whatchamacallit(?:ing)?",
+        "flags": "i"
+      },
+      {
+        "source": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?",
+        "flags": "i"
+      }
     ],
     "approval": [
-      { "source": "Allow\\s*once", "flags": "i" },
-      { "source": "Always\\s*allow", "flags": "i" },
-      { "source": "\\(y/n\\)", "flags": "i" },
-      { "source": "\\[Y/n\\]", "flags": "i" }
+      {
+        "source": "Allow\\s*once",
+        "flags": "i"
+      },
+      {
+        "source": "Always\\s*allow",
+        "flags": "i"
+      },
+      {
+        "source": "\\(y/n\\)",
+        "flags": "i"
+      },
+      {
+        "source": "\\[Y/n\\]",
+        "flags": "i"
+      }
     ],
     "ready": [
-      { "source": "for\\s*shortcuts", "flags": "i" },
-      { "source": "[›❯]\\s*$", "flags": "m" }
+      {
+        "source": "for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "[›❯]\\s*$",
+        "flags": "m"
+      }
     ],
     "dialog": [
-      { "source": "Quick safety check", "flags": "i" },
-      { "source": "Is this a project", "flags": "i" },
-      { "source": "Enter to confirm", "flags": "i" }
+      {
+        "source": "Quick safety check",
+        "flags": "i"
+      },
+      {
+        "source": "Is this a project",
+        "flags": "i"
+      },
+      {
+        "source": "Enter to confirm",
+        "flags": "i"
+      }
     ]
   },
   "approvalKeys": {
@@ -117,5 +192,7 @@
       "scriptDir": "scripts/1.0"
     }
   ],
-  "defaultScriptDir": "scripts/1.0"
+  "defaultScriptDir": "scripts/1.0",
+  "status": "Stable",
+  "details": "Terminal + Chat Mode"
 }

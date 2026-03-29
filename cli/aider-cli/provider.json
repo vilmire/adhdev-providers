@@ -32,5 +32,7 @@
       "ideVersion": ">=1.0.0",
       "scriptDir": "scripts/1.0"
     }
-  ]
+  ],
+  "status": "Beta",
+  "details": "Terminal only (Chat Mode WIP)"
 }

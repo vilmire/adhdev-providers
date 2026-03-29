@@ -34,5 +34,7 @@
     }
   },
   "defaultScriptDir": "scripts/1.0",
-  "compatibility": []
+  "compatibility": [],
+  "status": "Stable",
+  "details": "Independent Stream"
 }
