@@ -21,9 +21,7 @@ function splitLines(text) {
 
 function sanitizeLine(line) {
     return String(line || '')
-        .replace(/\u0007/g, '')
-        .replace(/^\d+;/, '')
-        .replace(/\s+$/, '');
+        .replace(/\u0007/g, '');
 }
 
 function normalizeText(text) {
@@ -98,9 +96,8 @@ function isStatusLine(trimmed) {
 
 function isNoiseLine(line) {
     const trimmed = sanitizeLine(line).trim();
-    if (!trimmed) return true;
+    if (!trimmed) return false; // Blank lines are ok
     if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
-    if (isBoxLine(trimmed)) return true;
     if (isFooterLine(trimmed)) return true;
     if (isStatusLine(trimmed)) return true;
     if (/^Type your message/i.test(trimmed)) return true;
@@ -110,12 +107,11 @@ function isNoiseLine(line) {
     return false;
 }
 
-function stripAssistantPrefix(trimmed) {
-    return trimmed
-        .replace(/^[⏺•]\s+/, '')
-        .replace(/^⎿\s+/, '')
-        .replace(/^[✻✶✳✢✽]\s+/, '')
-        .trim();
+function stripAssistantPrefix(lineStr) {
+    return lineStr
+        .replace(/^\s*[⏺]\s+/, '')
+        .replace(/^\s*⎿\s+/, '')
+        .replace(/^\s*[✻✶✳✢✽]\s+/, '');
 }
 
 function collectMeaningfulLines(lines) {
@@ -132,23 +128,25 @@ function collectMeaningfulLines(lines) {
         const nextTrimmed = sanitizeLine(lines[index + 1] || '').trim();
         if (/\u2026\)$/.test(trimmed) && /^⎿\s+/.test(nextTrimmed)) continue;
 
-        const cleaned = stripAssistantPrefix(trimmed);
-        if (!cleaned) continue;
-        if (/^⏺\s+/.test(trimmed)) {
-            captureDetails = /^(?:Bash|Read|Task)\(/.test(cleaned)
-                || /^(?:Exact output|Output|Result):/i.test(cleaned);
+        const cleaned = stripAssistantPrefix(sanitized);
+        if (!cleaned.trim()) {
+            if (out.length > 0 && out[out.length - 1] !== '') out.push('');
+            continue;
+        }
+        
+        if (/^\s*⏺\s+/.test(sanitized)) {
+            captureDetails = /^\s*(?:Bash|Read|Task)\(/.test(cleaned)
+                || /^\s*(?:Exact output|Output|Result):/i.test(cleaned);
             if (out[out.length - 1] !== cleaned) out.push(cleaned);
             continue;
         }
 
-        if (/^⎿\s+/.test(trimmed)) {
-            if (!captureDetails || /^…\s+\+\d+\s+lines\b/i.test(cleaned)) continue;
+        if (/^\s*⎿\s+/.test(sanitized)) {
+            if (!captureDetails || /^…\s+\+\d+\s+lines\b/i.test(cleaned.trim())) continue;
             if (out[out.length - 1] !== cleaned) out.push(cleaned);
             continue;
         }
 
-        if (!captureDetails && /^\d+\s+/.test(trimmed)) continue;
-        if (cleaned.length === 1 && /^[A-Za-z]$/.test(cleaned)) continue;
         if (out[out.length - 1] !== cleaned) out.push(cleaned);
     }
     return out;
@@ -224,29 +222,39 @@ function extractDenseOutputBlock(text) {
 function collectAssistantBlocks(lines) {
     const blocks = [];
     let current = null;
+    let foundAnyBlock = false;
+    
     for (const rawLine of lines) {
         const sanitized = sanitizeLine(rawLine);
         const trimmed = sanitized.trim();
-        if (!trimmed || isNoiseLine(trimmed)) continue;
+        if (isNoiseLine(trimmed)) continue;
 
-        if (/^⏺\s+/.test(trimmed)) {
-            const title = stripAssistantPrefix(trimmed);
-            if (!title) {
+        if (/^\s*⏺\s+/.test(sanitized)) {
+            const title = stripAssistantPrefix(sanitized);
+            if (!title.trim()) {
                 current = null;
                 continue;
             }
             current = {
                 title,
                 lines: [title],
-                isTool: /^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/.test(title),
+                isTool: /^\s*(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/.test(title),
             };
             blocks.push(current);
+            foundAnyBlock = true;
             continue;
         }
 
+        // If we scrolled past the start of the block, just make a generic block
+        if (!current && !foundAnyBlock && sanitized.trim()) {
+             current = { title: "Response", lines: [], isTool: false };
+             blocks.push(current);
+             foundAnyBlock = true;
+        }
+
         if (!current) continue;
-        const cleaned = stripAssistantPrefix(trimmed);
-        if (!cleaned || /^…\s+\+\d+\s+lines\b/i.test(cleaned)) continue;
+        const cleaned = stripAssistantPrefix(sanitized);
+        if (/^…\s+\+\d+\s+lines\b/i.test(cleaned.trim())) continue;
         current.lines.push(cleaned);
     }
     return blocks;
