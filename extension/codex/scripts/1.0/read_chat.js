@@ -51,12 +51,8 @@
 
     const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = (headerEl?.textContent || '').trim();
-    const isTaskList = headerText === 'Tasks' || headerText === 'Tasks';
-    
-    // If we accidentally evaluated inside the Tasks webview instead of Chat, tell Daemon to try the next matching webview
-    if (isTaskList) {
-      return JSON.stringify({ __adhdev_skip_iframe: true, error: 'Found Tasks webview instead of Chat' });
-    }
+    const isTaskList = headerText === 'Tasks';
+    const hasComposer = !!doc.querySelector('.ProseMirror');
 
     // ─── Rich content extractor ───
     const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'HR', 'SECTION', 'ARTICLE']);
@@ -259,12 +255,30 @@
         if (!content || content.length < 1) continue;
         const trimmed = content;
 
-        messages.push({
+        const kind = (() => {
+          if (unitEl.querySelector('[class*="reason" i], [class*="think" i], [data-testid*="thought" i]')) {
+            return 'thought';
+          }
+          if (unitEl.querySelector('[class*="tool" i], [data-testid*="tool" i], [aria-label*="tool" i]')) {
+            return 'tool';
+          }
+          if (
+            unitEl.querySelector('[class*="terminal" i], [data-testid*="terminal" i]') ||
+            /^```(?:bash|sh|zsh|shell|console)/i.test(trimmed)
+          ) {
+            return 'terminal';
+          }
+          return undefined;
+        })();
+
+        const message = {
           role: role === 'user' ? 'user' : 'assistant',
           content: trimmed,
           timestamp: Date.now() - (turnEls.length - messages.length) * 1000,
           _turnKey: turnKey,
-        });
+        };
+        if (kind) message.kind = kind;
+        messages.push(message);
       }
     }
 
@@ -447,8 +461,16 @@
     // Mode: non-model aria-haspopup="menu" button in composer area (language-agnostic).
     let model = '';
     let mode = '';
+    const knownModes = new Set(['low', 'medium', 'high', 'extra high']);
+    const workspaceLabels = new Set(['local', 'remote', 'workspace']);
+    const modeWords = ['permission', 'permissions', 'access', 'read', 'write', 'approval', 'sandbox'];
+    const getButtonText = (btn) => {
+      return ((btn.textContent || '').trim() || (btn.getAttribute('aria-label') || '').trim()).replace(/\s+/g, ' ');
+    };
+    const normalizeText = (text) => (text || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    const candidateModes = [];
+
     for (const d of [doc, document]) {
-      // Search in composer area, or common footer containers
       const searchRoots = [
         d.querySelector('[class*="thread-composer-max-width"]'),
         d.querySelector('[class*="thread-composer"]'),
@@ -457,26 +479,33 @@
       ].filter(Boolean);
 
       for (const searchRoot of searchRoots) {
-        if (model && mode) break;
+        const menuBtns = Array.from(searchRoot.querySelectorAll('button[aria-haspopup="menu"]'))
+          .filter((btn) => btn.offsetWidth > 0 && !btn.closest('[inert]'));
 
-        // aria-haspopup="menu" buttons — dropdown triggers for model/mode
-        if (!model || !mode) {
-          const menuBtns = Array.from(searchRoot.querySelectorAll('button[aria-haspopup="menu"]'))
-            .filter(b => b.offsetWidth > 0);
-          for (const btn of menuBtns) {
-            const text = (btn.textContent || '').trim();
-            if (!model && /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
-              model = text;
-            } else if (!mode && text.length > 0 && text.length < 30) {
-              mode = text;
-            }
+        for (const btn of menuBtns) {
+          const text = getButtonText(btn);
+          const lower = normalizeText(text);
+          const aria = normalizeText(btn.getAttribute('aria-label') || '');
+
+          if (!model && /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
+            model = text;
+            continue;
           }
+
+          if (aria.includes('add files')) continue;
+          if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) continue;
+          if (workspaceLabels.has(lower)) continue;
+
+          let score = 0;
+          if (text) score += 2;
+          if (knownModes.has(lower)) score += 8;
+          if (modeWords.some((word) => lower.includes(word))) score += 10;
+          candidateModes.push({ text, score });
         }
 
-        // Fallback: any visible button with model-like text
         if (!model) {
           const allBtns = Array.from(searchRoot.querySelectorAll('button'))
-            .filter(b => b.offsetWidth > 0);
+            .filter((btn) => btn.offsetWidth > 0);
           for (const btn of allBtns) {
             const text = (btn.textContent || '').trim();
             if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
@@ -485,11 +514,14 @@
             }
           }
         }
-
-        if (model) break; // found model, no need to keep searching this scope
       }
-      if (model) break; // found in this frame
+      if (model && candidateModes.length > 0) break;
     }
+
+    if (candidateModes.length > 0) {
+      mode = candidateModes.sort((a, b) => b.score - a.score)[0].text;
+    }
+    if (mode && model && mode === model) mode = '';
 
     // ─── 6. Task info ───
     const taskBtn = doc.querySelector('[aria-label*="Tasks"], [aria-label*="task" i]');
@@ -502,7 +534,7 @@
       status,
       isVisible,
       isTaskList,
-      title: headerText || 'Codex',
+      title: (isTaskList && hasComposer ? 'Codex' : headerText) || 'Codex',
       messages: messages.slice(-30),
       inputContent,
       model,

@@ -28,8 +28,14 @@
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        // Read menu items
-        const menu = document.querySelector('[role="menu"][data-state="open"]');
+        const visibleMenus = Array.from(document.querySelectorAll('[role="menu"]')).filter(
+          (menu) => menu.offsetWidth > 0 && menu.offsetHeight > 0,
+        );
+        const menu =
+          visibleMenus.find((el) => el.getAttribute('data-state') === 'open') ||
+          visibleMenus[0] ||
+          null;
+
         const models = [];
         if (menu) {
           const items = menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"], div[class*="cursor-interaction"]');
@@ -44,7 +50,6 @@
           }
         }
 
-        // Close dropdown
         document.dispatchEvent(new KeyboardEvent('keydown', {
           key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true
         }));
@@ -55,7 +60,7 @@
           models,
           count: models.length,
         }));
-      }, 500);
+      }, 400);
     });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e) });

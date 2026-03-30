@@ -4,16 +4,27 @@
  */
 (() => {
   try {
-    const root = document.getElementById('root');
+    const resolveDoc = () => {
+      if (document.getElementById('root')) return document;
+      for (const iframe of document.querySelectorAll('iframe')) {
+        try {
+          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (innerDoc?.getElementById('root')) return innerDoc;
+        } catch (e) {}
+      }
+      return document;
+    };
+    const doc = resolveDoc();
+    const root = doc.getElementById('root');
     if (!root) return JSON.stringify({ error: 'no root' });
 
     // Header info
-    const headerEl = document.querySelector('[style*="view-transition-name: header-title"]');
+    const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = headerEl?.textContent?.trim() || '';
 
     // Find thread/message area (look for common React patterns)
     // Codex uses React + ProseMirror
-    const allDivs = document.querySelectorAll('div');
+    const allDivs = doc.querySelectorAll('div');
     
     // Find message containers by looking for role/class patterns
     const messageAreas = [];
@@ -35,7 +46,7 @@
     }
 
     // Look for the actual message list/scroll container
-    const scrollContainers = document.querySelectorAll('[class*="overflow-y-auto"], [class*="scroll"]');
+    const scrollContainers = doc.querySelectorAll('[class*="overflow-y-auto"], [class*="scroll"]');
     const scrollInfo = Array.from(scrollContainers).slice(0, 10).map(el => ({
       tag: el.tagName?.toLowerCase(),
       class: (el.className && typeof el.className === 'string') ? el.className.substring(0, 300) : null,
@@ -47,7 +58,7 @@
 
     // Find React Fiber data
     let fiberInfo = null;
-    const rootEl = document.getElementById('root');
+    const rootEl = doc.getElementById('root');
     if (rootEl) {
       const fiberKey = Object.keys(rootEl).find(k => 
         k.startsWith('__reactFiber') || k.startsWith('__reactInternalInstance')

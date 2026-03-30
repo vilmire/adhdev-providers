@@ -4,29 +4,39 @@
  */
 (() => {
   try {
-    // The thread content area
-    const threadContent = document.querySelector('[class*="thread-content"]') 
-      || document.querySelector('[class*="overflow-y-auto"][class*="px-panel"]');
+    const threadContent =
+      document.querySelector('[data-thread-find-target="conversation"]') ||
+      document.querySelector('[data-content-search-turn-key]')?.closest('[class*="overflow-y-auto"]') ||
+      document.querySelector('[class*="thread-content"]') ||
+      document.querySelector('[class*="overflow-y-auto"][class*="px-panel"]');
     if (!threadContent) return JSON.stringify({ error: 'no thread content area' });
 
-    // Get ALL elements with data attributes
-    const dataAttrs = [];
-    threadContent.querySelectorAll('*').forEach(el => {
-      const attrs = el.attributes;
-      for (let i = 0; i < attrs.length; i++) {
-        if (attrs[i].name.startsWith('data-')) {
-          dataAttrs.push({
-            tag: el.tagName?.toLowerCase(),
-            attr: attrs[i].name,
-            value: attrs[i].value?.substring(0, 100),
-            class: (el.className && typeof el.className === 'string') ? el.className.substring(0, 150) : null,
-            text: (el.textContent || '').trim().substring(0, 100),
-          });
-        }
-      }
+    const turns = Array.from(threadContent.querySelectorAll('[data-content-search-turn-key]')).map((turnEl) => {
+      const turnKey = turnEl.getAttribute('data-content-search-turn-key');
+      const units = Array.from(turnEl.querySelectorAll('[data-content-search-unit-key]')).map((unitEl) => ({
+        unitKey: unitEl.getAttribute('data-content-search-unit-key'),
+        class: typeof unitEl.className === 'string' ? unitEl.className.substring(0, 200) : '',
+        text: (unitEl.textContent || '').trim().substring(0, 200),
+        hasCode: !!unitEl.querySelector('pre, code, [class*="code" i]'),
+        hasTable: !!unitEl.querySelector('table'),
+        hasList: !!unitEl.querySelector('ul, ol'),
+        directChildren: Array.from(unitEl.children).slice(0, 8).map((child) => ({
+          tag: child.tagName?.toLowerCase(),
+          class: typeof child.className === 'string' ? child.className.substring(0, 160) : '',
+          text: child.children.length === 0 ? (child.textContent || '').trim().substring(0, 120) : '',
+          childCount: child.children.length,
+        })),
+      }));
+
+      return {
+        turnKey,
+        class: typeof turnEl.className === 'string' ? turnEl.className.substring(0, 200) : '',
+        unitCount: units.length,
+        text: (turnEl.textContent || '').trim().substring(0, 240),
+        units,
+      };
     });
 
-    // Dump full tree of message area (limited depth)
     const tree = [];
     const walk = (el, depth) => {
       if (depth > 6 || tree.length > 80) return;
@@ -68,7 +78,8 @@
 
     return JSON.stringify({
       threadContentClass: (threadContent.className && typeof threadContent.className === 'string') ? threadContent.className.substring(0, 300) : null,
-      dataAttrs: dataAttrs.slice(0, 30),
+      turnCount: turns.length,
+      turns: turns.slice(-10),
       tree: tree.slice(0, 80),
       composerInfo,
       footerButtons,

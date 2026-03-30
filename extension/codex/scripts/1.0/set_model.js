@@ -2,12 +2,29 @@
  * Codex Extension — set_model
  *
  * Opens the model dropdown via pointer events, clicks the target model.
- *
- * Placeholder: ${MODEL}
  */
-(() => {
+(args = {}) => {
   try {
-    const targetModel = ${MODEL};
+    const findValue = (source, keys) => {
+      if (typeof source === 'string') return source;
+      const queue = [source];
+      const seen = new Set();
+      while (queue.length > 0) {
+        const item = queue.shift();
+        if (!item || typeof item !== 'object' || seen.has(item)) continue;
+        seen.add(item);
+        for (const key of keys) {
+          if (item[key] != null) return item[key];
+        }
+        for (const value of Object.values(item)) {
+          if (value && typeof value === 'object') queue.push(value);
+        }
+      }
+      return undefined;
+    };
+
+    const modelValue = findValue(args, ['model', 'MODEL']);
+    const targetModel = modelValue != null ? String(modelValue) : '';
 
     const buttons = Array.from(document.querySelectorAll('button')).filter(b => b.offsetWidth > 0);
     const modelBtn = buttons.find(b => {
@@ -18,6 +35,7 @@
     if (!modelBtn) return JSON.stringify({ error: 'Model selector button not found' });
 
     const currentModel = (modelBtn.textContent || '').trim();
+    const desiredModel = targetModel.trim();
 
     // Open dropdown with PointerEvent sequence
     const rect = modelBtn.getBoundingClientRect();
@@ -31,20 +49,36 @@
 
     return new Promise((resolve) => {
       setTimeout(() => {
-        const menu = document.querySelector('[role="menu"][data-state="open"]');
+        const visibleMenus = Array.from(document.querySelectorAll('[role="menu"]')).filter(
+          (menu) => menu.offsetWidth > 0 && menu.offsetHeight > 0,
+        );
+        let menu =
+          visibleMenus.find((el) => el.getAttribute('data-state') === 'open') ||
+          visibleMenus[0] ||
+          null;
+
         if (!menu) {
-          resolve(JSON.stringify({ success: false, error: 'Menu did not open' }));
-          return;
+          modelBtn.click();
+          const retryMenus = Array.from(document.querySelectorAll('[role="menu"]')).filter(
+            (el) => el.offsetWidth > 0 && el.offsetHeight > 0,
+          );
+          menu = retryMenus.find((el) => el.getAttribute('data-state') === 'open') || retryMenus[0] || null;
         }
 
-        // Find all clickable items in the menu
+        if (!menu) {
+          return resolve(JSON.stringify({ success: false, error: 'Menu did not open' }));
+        }
+
         const items = menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"], div[class*="cursor-interaction"]');
-        
+        let autoCandidate = null;
+
         for (const item of items) {
           const text = (item.textContent || '').trim();
-          if (text.toLowerCase() === targetModel.toLowerCase() ||
-              text.toLowerCase().includes(targetModel.toLowerCase())) {
-            // Click with pointer events
+          if (!autoCandidate && text && text !== currentModel) {
+            autoCandidate = item;
+          }
+          if (desiredModel && (text.toLowerCase() === desiredModel.toLowerCase() ||
+              text.toLowerCase().includes(desiredModel.toLowerCase()))) {
             const ir = item.getBoundingClientRect();
             const ix = ir.left + ir.width / 2;
             const iy = ir.top + ir.height / 2;
@@ -53,17 +87,34 @@
             item.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: ix, clientY: iy }));
             item.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: ix, clientY: iy }));
             item.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: ix, clientY: iy }));
-            
-            resolve(JSON.stringify({
+
+            return resolve(JSON.stringify({
               success: true,
               previousModel: currentModel,
               selectedModel: text,
             }));
-            return;
           }
         }
 
-        // Not found — close and report
+        if (!desiredModel && autoCandidate) {
+          const text = (autoCandidate.textContent || '').trim();
+          const ir = autoCandidate.getBoundingClientRect();
+          const ix = ir.left + ir.width / 2;
+          const iy = ir.top + ir.height / 2;
+          autoCandidate.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: ix, clientY: iy }));
+          autoCandidate.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: ix, clientY: iy }));
+          autoCandidate.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: ix, clientY: iy }));
+          autoCandidate.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: ix, clientY: iy }));
+          autoCandidate.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: ix, clientY: iy }));
+
+          return resolve(JSON.stringify({
+            success: true,
+            previousModel: currentModel,
+            selectedModel: text,
+            fallback: true,
+          }));
+        }
+
         document.dispatchEvent(new KeyboardEvent('keydown', {
           key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true
         }));
@@ -74,13 +125,13 @@
 
         resolve(JSON.stringify({
           success: false,
-          error: `Model '${targetModel}' not found`,
+          error: desiredModel ? `Model '${desiredModel}' not found` : 'no alternate model found',
           currentModel,
           available,
         }));
-      }, 500);
+      }, 350);
     });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e) });
   }
-})()
+}
