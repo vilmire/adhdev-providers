@@ -66,6 +66,10 @@ module.exports = function parseApproval(input) {
     const lines = splitLines(primary || fallback);
     if (lines.length === 0) return null;
 
+    // If the idle prompt ❯ is visible near the bottom, there is no approval dialog
+    const lastNonEmpty = [...lines].reverse().find(l => normalize(l));
+    if (lastNonEmpty && /^❯\s*$/.test(normalize(lastNonEmpty))) return null;
+
     const buttons = [];
     for (const line of lines.slice(-40)) {
         if (!isButtonLine(line)) continue;
