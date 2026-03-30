@@ -257,7 +257,7 @@
         const content = extractRichContent(unitEl);
 
         if (!content || content.length < 1) continue;
-        const trimmed = content.length > 3000 ? content.substring(0, 3000) + '…' : content;
+        const trimmed = content;
 
         messages.push({
           role: role === 'user' ? 'user' : 'assistant',
@@ -276,7 +276,7 @@
         if (text.length > 0) {
           messages.push({
             role: 'assistant',
-            content: text.substring(0, 3000),
+            content: text,
             timestamp: Date.now(),
           });
         }

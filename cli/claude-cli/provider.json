@@ -59,6 +59,7 @@
   },
   "binary": "claude",
   "sendDelayMs": 700,
+  "submitStrategy": "immediate",
   "spawn": {
     "command": "claude",
     "args": [
