@@ -59,6 +59,7 @@
   },
   "binary": "claude",
   "sendDelayMs": 700,
+  "submitStrategy": "immediate",
   "spawn": {
     "command": "claude",
     "args": [
@@ -181,9 +182,10 @@
     ]
   },
   "approvalKeys": {
-    "0": "\r",
-    "1": "\u001b[B\r",
-    "2": "\u001b[B\u001b[B\r"
+    "0": "1\r",
+    "1": "2\r",
+    "2": "3\r",
+    "3": "4\r"
   },
   "compatibility": [
     {
@@ -193,6 +195,5 @@
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Stable",
-  "details": "Terminal + Chat Mode",
-  "disableUpstream": true
+  "details": "Terminal + Chat Mode"
 }
