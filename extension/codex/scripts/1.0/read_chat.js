@@ -20,7 +20,7 @@
  *
  * Runs inside webview frame via evaluateInWebviewFrame.
  */
-(() => {
+;(async () => {
   try {
     // When executed via evaluateInSession, we're in the outer vscode-webview
     // iframe. The Codex React app lives in a child iframe. Try to access it.
@@ -53,6 +53,8 @@
     const headerText = (headerEl?.textContent || '').trim();
     const isTaskList = headerText === 'Tasks';
     const hasComposer = !!doc.querySelector('.ProseMirror');
+    const globalCache = globalThis.__adhdevCodexReadChatCache || (globalThis.__adhdevCodexReadChatCache = {});
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     // ─── Rich content extractor ───
     const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BLOCKQUOTE', 'HR', 'SECTION', 'ARTICLE']);
@@ -237,51 +239,146 @@
         .trim();
     }
 
-    // ─── 1. Messages ───
-    const messages = [];
-    const turnEls = doc.querySelectorAll('[data-content-search-turn-key]');
+    function parseUnitIndex(unitKey) {
+      const parts = String(unitKey || '').split(':');
+      const raw = parts.length >= 2 ? parts[parts.length - 2] : '0';
+      const parsed = Number(raw);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
 
-    for (const turnEl of turnEls) {
-      const turnKey = turnEl.getAttribute('data-content-search-turn-key');
-      const unitEls = turnEl.querySelectorAll('[data-content-search-unit-key]');
+    function buildMessage(turnKey, unitEl) {
+      const unitKey = unitEl.getAttribute('data-content-search-unit-key') || '';
+      const parts = unitKey.split(':');
+      const role = parts.length >= 3 ? parts[parts.length - 1] : 'assistant';
+      const content = extractRichContent(unitEl);
+      if (!content || content.length < 1) return null;
 
-      for (const unitEl of unitEls) {
-        const unitKey = unitEl.getAttribute('data-content-search-unit-key') || '';
-        const parts = unitKey.split(':');
-        const role = parts.length >= 3 ? parts[parts.length - 1] : 'assistant';
+      const kind = (() => {
+        if (unitEl.querySelector('[class*="reason" i], [class*="think" i], [data-testid*="thought" i]')) {
+          return 'thought';
+        }
+        if (unitEl.querySelector('[class*="tool" i], [data-testid*="tool" i], [aria-label*="tool" i]')) {
+          return 'tool';
+        }
+        if (
+          unitEl.querySelector('[class*="terminal" i], [data-testid*="terminal" i]') ||
+          /^```(?:bash|sh|zsh|shell|console)/i.test(content)
+        ) {
+          return 'terminal';
+        }
+        return undefined;
+      })();
 
-        const content = extractRichContent(unitEl);
+      const message = {
+        role: role === 'user' ? 'user' : 'assistant',
+        content,
+        index: 0,
+        timestamp: Date.now(),
+        _turnKey: turnKey || '',
+        _unitKey: unitKey,
+        _unitIndex: parseUnitIndex(unitKey),
+      };
+      if (kind) message.kind = kind;
+      return message;
+    }
 
-        if (!content || content.length < 1) continue;
-        const trimmed = content;
+    function collectVisibleMessages() {
+      const collected = [];
+      const turnEls = Array.from(doc.querySelectorAll('[data-content-search-turn-key]'));
+      for (const turnEl of turnEls) {
+        const turnKey = turnEl.getAttribute('data-content-search-turn-key') || '';
+        const unitEls = turnEl.querySelectorAll('[data-content-search-unit-key]');
+        for (const unitEl of unitEls) {
+          const message = buildMessage(turnKey, unitEl);
+          if (message) collected.push(message);
+        }
+      }
+      return collected;
+    }
 
-        const kind = (() => {
-          if (unitEl.querySelector('[class*="reason" i], [class*="think" i], [data-testid*="thought" i]')) {
-            return 'thought';
-          }
-          if (unitEl.querySelector('[class*="tool" i], [data-testid*="tool" i], [aria-label*="tool" i]')) {
-            return 'tool';
-          }
-          if (
-            unitEl.querySelector('[class*="terminal" i], [data-testid*="terminal" i]') ||
-            /^```(?:bash|sh|zsh|shell|console)/i.test(trimmed)
-          ) {
-            return 'terminal';
-          }
-          return undefined;
-        })();
-
-        const message = {
-          role: role === 'user' ? 'user' : 'assistant',
-          content: trimmed,
-          index: messages.length,
-          timestamp: Date.now() - (turnEls.length - messages.length) * 1000,
-          _turnKey: turnKey,
-        };
-        if (kind) message.kind = kind;
-        messages.push(message);
+    function upsertMessages(cache, nextMessages) {
+      for (const message of nextMessages) {
+        const key = message._unitKey || `${message._turnKey}:${message._unitIndex}:${message.role}`;
+        const existing = cache.byUnit[key];
+        if (!existing || existing.content !== message.content || existing.kind !== message.kind) {
+          cache.byUnit[key] = message;
+        }
       }
     }
+
+    function getOrderedMessages(cache) {
+      const ordered = Object.values(cache.byUnit);
+      ordered.sort((a, b) => {
+        if (a._turnKey !== b._turnKey) return a._turnKey.localeCompare(b._turnKey);
+        return (a._unitIndex || 0) - (b._unitIndex || 0);
+      });
+      return ordered.map((message, index) => ({
+        role: message.role,
+        content: message.content,
+        index,
+        timestamp: Date.now() - (ordered.length - index) * 1000,
+        _turnKey: message._turnKey,
+        ...(message.kind ? { kind: message.kind } : {}),
+      }));
+    }
+
+    function findThreadScroller() {
+      const firstTurn = doc.querySelector('[data-content-search-turn-key]');
+      if (firstTurn) {
+        const byTurn = firstTurn.closest('[class*="vertical-scroll-fade-mask-top"][class*="overflow-y-auto"]');
+        if (byTurn) return byTurn;
+      }
+      const byConversation = doc.querySelector('[data-thread-find-target="conversation"]')?.closest('[class*="overflow-y-auto"]');
+      if (byConversation) return byConversation;
+      return doc.querySelector('[class*="vertical-scroll-fade-mask-top"][class*="overflow-y-auto"]');
+    }
+
+    async function harvestVirtualizedMessages(cache) {
+      const scroller = findThreadScroller();
+      if (!scroller) return;
+      if (scroller.scrollHeight <= scroller.clientHeight + 32) return;
+
+      const originalTop = scroller.scrollTop;
+      let stableCount = 0;
+      let lastTop = scroller.scrollTop;
+
+      for (let step = 0; step < 24; step++) {
+        upsertMessages(cache, collectVisibleMessages());
+        if (scroller.scrollTop <= 0) break;
+
+        const delta = Math.max(Math.floor(scroller.clientHeight * 0.9), 320);
+        const nextTop = Math.max(0, scroller.scrollTop - delta);
+        if (nextTop === scroller.scrollTop || scroller.scrollTop === lastTop) {
+          stableCount += 1;
+          if (stableCount >= 2) break;
+        } else {
+          stableCount = 0;
+        }
+        lastTop = scroller.scrollTop;
+        scroller.scrollTop = nextTop;
+        scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
+        await sleep(120);
+      }
+
+      upsertMessages(cache, collectVisibleMessages());
+
+      scroller.scrollTop = originalTop;
+      scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
+      await sleep(30);
+    }
+
+    // ─── 1. Messages ───
+    const initialVisibleMessages = collectVisibleMessages();
+    const conversationKey = `codex:${doc.location?.href || ''}:${headerText || 'conversation'}`;
+    const cache = globalCache[conversationKey] || (globalCache[conversationKey] = { byUnit: {}, harvested: false });
+    upsertMessages(cache, initialVisibleMessages);
+
+    if (!cache.harvested && initialVisibleMessages.length > 0) {
+      await harvestVirtualizedMessages(cache);
+      cache.harvested = true;
+    }
+
+    const messages = getOrderedMessages(cache);
 
     // Fallback
     if (messages.length === 0 && !isTaskList) {
@@ -497,7 +594,7 @@
       isVisible,
       isTaskList,
       title,
-      messages: messages.slice(-30),
+      messages: messages.slice(-200),
       inputContent,
       model,
       mode,
