@@ -274,6 +274,7 @@
         const message = {
           role: role === 'user' ? 'user' : 'assistant',
           content: trimmed,
+          index: messages.length,
           timestamp: Date.now() - (turnEls.length - messages.length) * 1000,
           _turnKey: turnKey,
         };
@@ -291,6 +292,7 @@
           messages.push({
             role: 'assistant',
             content: text,
+            index: 0,
             timestamp: Date.now(),
           });
         }
@@ -328,8 +330,17 @@
     
     const buttonLabels = buttons.map(getBtnLabel).map(t => t.toLowerCase());
 
-    if (buttonLabels.some(l => l.includes('cancel') || l.includes('cancel') || l.includes('stop') || l.includes('stop'))) {
-      status = 'generating';
+    // Language-agnostic generation detection via composer submit button icon.
+    // Confirmed via live DOM capture:
+    //   - Idle:       SVG fill="none"           (↑ send arrow icon)
+    //   - Generating: SVG fill="currentColor"   (■ stop square icon)
+    // The button has class containing "size-token-button-composer".
+    const composerBtn = doc.querySelector('button[class*="size-token-button-composer"]');
+    if (composerBtn) {
+      const svg = composerBtn.querySelector('svg');
+      if (svg && svg.getAttribute('fill') === 'currentColor') {
+        status = 'generating';
+      }
     }
 
     // ─── 5. Universal Approval Modal Detection (Language-Agnostic) ───
@@ -445,7 +456,8 @@
         status = 'waiting_approval';
         activeModal = {
           message: messageText,
-          buttons: uniqueActions
+          buttons: uniqueActions,
+          actions: uniqueActions
         };
       }
     } // end if (approvalArea)
@@ -456,84 +468,35 @@
     if (!isVisible && messages.length === 0) status = 'panel_hidden';
 
     // ─── 4. Model / Mode ───
-    // Language-agnostic detection via DOM structure.
-    // Model: button text matching model name patterns (GPT-*, o1-*, claude-* — always English).
-    // Mode: non-model aria-haspopup="menu" button in composer area (language-agnostic).
+    // Model: found from haspopup=menu button whose text matches model name patterns (GPT-*, o1-*, etc.)
+    // Mode: Codex uses a brain icon button (no text) that requires clicking to read the dropdown.
+    //       readChat cannot click dropdowns (it's a polling script), so mode is left empty here
+    //       and provided by the separate listModes script.
     let model = '';
     let mode = '';
-    const knownModes = new Set(['low', 'medium', 'high', 'extra high']);
-    const workspaceLabels = new Set(['local', 'remote', 'workspace']);
-    const modeWords = ['permission', 'permissions', 'access', 'read', 'write', 'approval', 'sandbox'];
-    const getButtonText = (btn) => {
-      return ((btn.textContent || '').trim() || (btn.getAttribute('aria-label') || '').trim()).replace(/\s+/g, ' ');
-    };
-    const normalizeText = (text) => (text || '').trim().replace(/\s+/g, ' ').toLowerCase();
-    const candidateModes = [];
-
-    for (const d of [doc, document]) {
-      const searchRoots = [
-        d.querySelector('[class*="thread-composer-max-width"]'),
-        d.querySelector('[class*="thread-composer"]'),
-        d.querySelector('[class*="pb-2"]'),
-        d.body,
-      ].filter(Boolean);
-
-      for (const searchRoot of searchRoots) {
-        const menuBtns = Array.from(searchRoot.querySelectorAll('button[aria-haspopup="menu"]'))
-          .filter((btn) => btn.offsetWidth > 0 && !btn.closest('[inert]'));
-
-        for (const btn of menuBtns) {
-          const text = getButtonText(btn);
-          const lower = normalizeText(text);
-          const aria = normalizeText(btn.getAttribute('aria-label') || '');
-
-          if (!model && /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
-            model = text;
-            continue;
-          }
-
-          if (aria.includes('add files')) continue;
-          if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) continue;
-          if (workspaceLabels.has(lower)) continue;
-
-          let score = 0;
-          if (text) score += 2;
-          if (knownModes.has(lower)) score += 8;
-          if (modeWords.some((word) => lower.includes(word))) score += 10;
-          candidateModes.push({ text, score });
-        }
-
-        if (!model) {
-          const allBtns = Array.from(searchRoot.querySelectorAll('button'))
-            .filter((btn) => btn.offsetWidth > 0);
-          for (const btn of allBtns) {
-            const text = (btn.textContent || '').trim();
-            if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
-              model = text;
-              break;
-            }
-          }
-        }
+    const allMenuBtns = Array.from(doc.querySelectorAll('button[aria-haspopup="menu"]'))
+      .filter(btn => btn.offsetWidth > 0 && !btn.closest('[inert]'));
+    for (const btn of allMenuBtns) {
+      const text = ((btn.textContent || '').trim() || (btn.getAttribute('aria-label') || '').trim()).replace(/\s+/g, ' ');
+      if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
+        model = text;
+        break;
       }
-      if (model && candidateModes.length > 0) break;
     }
-
-    if (candidateModes.length > 0) {
-      mode = candidateModes.sort((a, b) => b.score - a.score)[0].text;
-    }
-    if (mode && model && mode === model) mode = '';
 
     // ─── 6. Task info ───
     const taskBtn = doc.querySelector('[aria-label*="Tasks"], [aria-label*="task" i]');
     const taskInfo = taskBtn ? (taskBtn.textContent || '').trim() : '';
+    const title = (isTaskList && hasComposer ? 'Codex' : headerText) || 'Codex';
     return JSON.stringify({
+      id: 'codex',
       agentType: 'codex',
       agentName: 'Codex',
       extensionId: 'openai.chatgpt',
       status,
       isVisible,
       isTaskList,
-      title: (isTaskList && hasComposer ? 'Codex' : headerText) || 'Codex',
+      title,
       messages: messages.slice(-30),
       inputContent,
       model,
