@@ -306,6 +306,26 @@
       }
     }
 
+    function getTurnKeys(messages) {
+      return [...new Set(messages.map((message) => message._turnKey).filter(Boolean))];
+    }
+
+    function cacheOverlapsVisibleTurns(cache, visibleTurnKeys) {
+      if (visibleTurnKeys.length === 0) return true;
+      const cachedTurnKeys = new Set(
+        Object.values(cache.byUnit)
+          .map((message) => message._turnKey)
+          .filter(Boolean)
+      );
+      if (cachedTurnKeys.size === 0) return true;
+      return visibleTurnKeys.some((turnKey) => cachedTurnKeys.has(turnKey));
+    }
+
+    function resetCache(cache) {
+      cache.byUnit = {};
+      cache.harvested = false;
+    }
+
     function getOrderedMessages(cache) {
       const ordered = Object.values(cache.byUnit);
       ordered.sort((a, b) => {
@@ -369,9 +389,15 @@
 
     // ─── 1. Messages ───
     const initialVisibleMessages = collectVisibleMessages();
+    const initialVisibleTurnKeys = getTurnKeys(initialVisibleMessages);
     const conversationKey = `codex:${doc.location?.href || ''}:${headerText || 'conversation'}`;
-    const cache = globalCache[conversationKey] || (globalCache[conversationKey] = { byUnit: {}, harvested: false });
+    const cache = globalCache[conversationKey] || (globalCache[conversationKey] = { byUnit: {}, harvested: false, visibleTurnKeys: [] });
+    const hasLegacyCacheShape = cache.harvested && !Array.isArray(cache.visibleTurnKeys);
+    if (hasLegacyCacheShape || !cacheOverlapsVisibleTurns(cache, initialVisibleTurnKeys)) {
+      resetCache(cache);
+    }
     upsertMessages(cache, initialVisibleMessages);
+    cache.visibleTurnKeys = initialVisibleTurnKeys;
 
     if (!cache.harvested && initialVisibleMessages.length > 0) {
       await harvestVirtualizedMessages(cache);
