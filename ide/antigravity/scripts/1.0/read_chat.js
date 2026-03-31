@@ -140,26 +140,26 @@
             return md;
         }
 
-        // 2. Collect messages (scroll No manipulation — current DOMonly those in)
+        // 2. Collect messages (user bubbles first — match Antigravity's actual DOM)
         const collected = [];
         const seenHashes = new Set();
-
- // use (bg-gray-500/15 + select-text + p-2)
-        const allDivs = scroll.querySelectorAll('div');
-        for (const el of allDivs) {
-            const cls = (el.className || '');
-            if (typeof cls !== 'string') continue;
-            if (cls.includes('bg-gray-500/15') && cls.includes('select-text') && cls.includes('p-2')) {
-                const textEl = el.querySelector('[class*="whitespace-pre-wrap"]') || el;
-                const text = (textEl.innerText || '').trim();
-                if (!text || text.length < 1) continue;
-                const hash = 'user:' + text.slice(0, 200);
-                if (seenHashes.has(hash)) continue;
-                seenHashes.add(hash);
-                collected.push({ role: 'user', text, el, kind: 'standard' });
-            }
+        const normalizeText = (value) => (value || '')
+            .replace(/[\u200b\u00a0]+/g, ' ')
+            .replace(/\r/g, '')
+            .replace(/[ \t]+\n/g, '\n')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        const userBubbles = scroll.querySelectorAll('div[class*="bg-gray-500/10"].select-text, div[class*="bg-gray-500/15"].select-text');
+        for (const bubble of userBubbles) {
+            if (!bubble || bubble.offsetWidth <= 0 || bubble.offsetHeight <= 0) continue;
+            const textEl = bubble.querySelector('[class*="whitespace-pre-wrap"]') || bubble.querySelector('p') || bubble;
+            const userText = normalizeText(textEl.innerText || textEl.textContent || '');
+            if (!userText || userText.length > 6000) continue;
+            const hash = 'user:' + userText.slice(0, 200);
+            if (seenHashes.has(hash)) continue;
+            seenHashes.add(hash);
+            collected.push({ role: 'user', text: userText, el: bubble, kind: 'standard' });
         }
-
  // (leading-relaxed.select-text) — HTML→Markdown conversion
         const assistantBlocks = scroll.querySelectorAll('.leading-relaxed.select-text');
         for (const ab of assistantBlocks) {
