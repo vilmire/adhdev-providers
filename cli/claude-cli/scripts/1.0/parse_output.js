@@ -72,6 +72,13 @@ function isBoxLine(trimmed) {
     return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
 }
 
+function isTableLikeLine(trimmed) {
+    return isBoxLine(trimmed)
+        || /^[┌┬┐├┼┤└┴┘│]/.test(trimmed)
+        || /^\s*[│├└┌]/.test(trimmed)
+        || /[┌┬┐├┼┤└┴┘│]/.test(trimmed);
+}
+
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
@@ -84,13 +91,20 @@ function isFooterLine(trimmed) {
         || /^[▗▖▘▝\s]+~\//.test(trimmed);
 }
 
+function isApprovalLine(trimmed) {
+    return /This command requires approval/i.test(trimmed)
+        || /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
+        || /^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
+        || /Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(trimmed);
+}
+
 function isStatusLine(trimmed) {
     if (!trimmed) return true;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/^[⠂⠐⠒⠓⠦⠴⠶⠷⠿]\s+/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
     if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
-    if (/Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(trimmed)) return true;
+    if (isApprovalLine(trimmed)) return true;
     return false;
 }
 
@@ -105,6 +119,38 @@ function isNoiseLine(line) {
     if (/^\? for help/i.test(trimmed)) return true;
     if (/^Press enter/i.test(trimmed)) return true;
     return false;
+}
+
+function trimTrailingNoise(lines) {
+    const out = [...lines];
+    while (out.length > 0) {
+        const trimmed = sanitizeLine(out[out.length - 1]).trim();
+        if (!trimmed || isFooterLine(trimmed) || isApprovalLine(trimmed) || isStatusLine(trimmed)) {
+            out.pop();
+            continue;
+        }
+        break;
+    }
+    return out;
+}
+
+function chooseRicherText(primary, secondary) {
+    const a = String(primary || '').trim();
+    const b = String(secondary || '').trim();
+    if (!a) return b;
+    if (!b) return a;
+    const aLines = a.split('\n');
+    const bLines = b.split('\n');
+    const first = aLines[0]?.trim() || '';
+    const clippedTableLikeStart = /^[├┤┬┴┼│]/.test(first) || /^│\s/.test(first);
+    const clippedListLikeStart = /^[-*•]\s/.test(first) && b.length > a.length + 200;
+    const tableDensityA = aLines.filter(line => isTableLikeLine(line.trim())).length;
+    const tableDensityB = bLines.filter(line => isTableLikeLine(line.trim())).length;
+    const appearsClipped = clippedTableLikeStart || clippedListLikeStart;
+    if (appearsClipped && bLines.length > aLines.length + 3) return b;
+    if (appearsClipped && b.includes(a.slice(0, Math.min(a.length, 120)).trim())) return b;
+    if (tableDensityB >= Math.max(6, tableDensityA + 3) && b.length > a.length + 120) return b;
+    return a;
 }
 
 function stripAssistantPrefix(lineStr) {
@@ -169,7 +215,7 @@ function extractDenseOutputBlock(text) {
     for (const rawLine of lines) {
         const promptText = parsePromptLine(rawLine);
         const sanitized = sanitizeLine(rawLine).trim();
-        if (promptText !== null || isNoiseLine(sanitized)) {
+        if (promptText !== null || (isNoiseLine(sanitized) && !isTableLikeLine(sanitized))) {
             if (current.length > 0) {
                 blocks.push(current);
                 current = [];
@@ -191,32 +237,28 @@ function extractDenseOutputBlock(text) {
     if (current.length > 0) blocks.push(current);
 
     const scored = blocks
-        .map(block => ({
-            block,
-            structured: block.filter(looksLikeStructuredDataLine).length,
-        }))
-        .filter(entry => entry.block.length >= 5 && entry.structured >= Math.max(3, Math.floor(entry.block.length * 0.6)));
+        .map((block, index) => {
+            const structured = block.filter(looksLikeStructuredDataLine).length;
+            const tableLike = block.filter(line => isTableLikeLine(line.trim())).length;
+            const nonEmpty = block.filter(line => line.trim()).length;
+            const score = (tableLike * 5) + (structured * 4) + nonEmpty;
+            return { block, index, structured, tableLike, nonEmpty, score };
+        })
+        .filter(entry =>
+            (entry.nonEmpty >= 5 && entry.structured >= Math.max(3, Math.floor(entry.nonEmpty * 0.6)))
+            || (entry.nonEmpty >= 8 && entry.tableLike >= Math.max(4, Math.floor(entry.nonEmpty * 0.35)))
+        );
 
-    const mergeBlocks = (existing, next) => {
-        if (existing.length === 0) return [...next];
-        const maxOverlap = Math.min(existing.length, next.length);
-        for (let overlap = maxOverlap; overlap >= 1; overlap--) {
-            let matches = true;
-            for (let i = 0; i < overlap; i++) {
-                if (existing[existing.length - overlap + i] !== next[i]) {
-                    matches = false;
-                    break;
-                }
-            }
-            if (matches) {
-                return existing.concat(next.slice(overlap));
-            }
-        }
-        return existing.concat(next);
-    };
+    if (scored.length === 0) return '';
 
-    const merged = scored.reduce((acc, entry) => mergeBlocks(acc, entry.block), []);
-    return merged.join('\n').trim();
+    const best = scored.reduce((chosen, entry) => {
+        if (!chosen) return entry;
+        if (entry.score > chosen.score) return entry;
+        if (entry.score === chosen.score && entry.index > chosen.index) return entry;
+        return chosen;
+    }, null);
+
+    return (best?.block || []).join('\n').trim();
 }
 
 function collectAssistantBlocks(lines) {
@@ -299,15 +341,12 @@ function extractVisibleTurn(text, previousMessages) {
 
     const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
     const assistantWindow = lines.slice(assistantStart, end);
-    const blocks = collectAssistantBlocks(assistantWindow);
-    const lastNarrativeBlock = [...blocks].reverse().find(block => !block.isTool);
-    let assistantLines = lastNarrativeBlock
-        ? lastNarrativeBlock.lines
-        : collectMeaningfulLines(assistantWindow);
+    let assistantLines = collectMeaningfulLines(assistantWindow);
 
     if (assistantLines.length === 0 && Array.isArray(previousMessages) && previousMessages.length > 0) {
         assistantLines = collectMeaningfulLines(lines);
     }
+    assistantLines = trimTrailingNoise(assistantLines);
 
     return {
         promptText: promptLines.join(' ').trim(),
@@ -400,8 +439,10 @@ module.exports = function parseOutput(input) {
     const { promptText, assistantText: visibleAssistantText } = status === 'waiting_approval'
         ? { promptText: '', assistantText: '' }
         : extractVisibleTurn(transcriptSource, previousMessages);
-    const denseTerminalOutput = extractDenseOutputBlock(terminalHistory || buffer);
-    const assistantText = denseTerminalOutput || visibleAssistantText;
+    const fallbackAssistantText = visibleAssistantText
+        ? ''
+        : extractPartialAssistant(terminalHistory || buffer);
+    const assistantText = visibleAssistantText || fallbackAssistantText;
     const rawPartialText = status === 'generating'
         ? extractPartialAssistant(input?.partialResponse || '')
         : '';

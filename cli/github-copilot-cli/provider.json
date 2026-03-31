@@ -7,19 +7,6 @@
   ],
   "icon": "🤖",
   "displayName": "GitHub Copilot CLI",
-  "settings": {
-    "mode": {
-      "type": "select",
-      "default": "terminal",
-      "public": true,
-      "label": "Display Mode",
-      "description": "terminal: Native PTY view, chat: Parsed message view",
-      "options": [
-        "terminal",
-        "chat"
-      ]
-    }
-  },
   "binary": "gh",
   "spawn": {
     "command": "gh",
@@ -35,6 +22,12 @@
       "scriptDir": "scripts/1.0"
     }
   ],
+  "defaultScriptDir": "scripts/1.0",
+  "approvalKeys": {
+    "0": "1",
+    "1": "2",
+    "2": "3"
+  },
   "status": "Beta",
-  "details": "Terminal only (Chat Mode WIP)"
+  "details": "Terminal only"
 }

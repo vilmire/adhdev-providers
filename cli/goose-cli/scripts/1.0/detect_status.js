@@ -7,6 +7,8 @@
 module.exports = function detectStatus(input) {
     const { tail } = input;
     if (!tail) return 'idle';
+    if (/Share anonymous usage data to help improve goose\?/i.test(tail)) return 'waiting_approval';
+    if (/●\s*Yes\s*\/\s*○\s*No/i.test(tail) || /○\s*Yes\s*\/\s*●\s*No/i.test(tail)) return 'waiting_approval';
     // Goose approval
     if (/approve|confirm/i.test(tail) && /deny|cancel/i.test(tail)) return 'waiting_approval';
     if (/\(y\/n\)/i.test(tail)) return 'waiting_approval';

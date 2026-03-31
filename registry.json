@@ -251,7 +251,7 @@
       "category": "cli",
       "name": "Aider",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
@@ -264,7 +264,7 @@
       "category": "cli",
       "name": "Claude Code",
       "status": "Stable",
-      "details": "Terminal + Chat Mode",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=2.1.0",
@@ -277,7 +277,7 @@
       "category": "cli",
       "name": "Codex CLI",
       "status": "Stable",
-      "details": "Terminal + Chat Mode",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=0.42.0",
@@ -290,7 +290,7 @@
       "category": "cli",
       "name": "Cursor CLI",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
@@ -303,7 +303,7 @@
       "category": "cli",
       "name": "Gemini CLI",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
@@ -316,7 +316,7 @@
       "category": "cli",
       "name": "GitHub Copilot CLI",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
@@ -329,7 +329,7 @@
       "category": "cli",
       "name": "Goose",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
@@ -342,7 +342,7 @@
       "category": "cli",
       "name": "OpenCode CLI",
       "status": "Beta",
-      "details": "Terminal only (Chat Mode WIP)",
+      "details": "Terminal only",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",

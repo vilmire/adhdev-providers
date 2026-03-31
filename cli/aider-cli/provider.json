@@ -7,19 +7,6 @@
   ],
   "icon": "🤖",
   "displayName": "Aider",
-  "settings": {
-    "mode": {
-      "type": "select",
-      "default": "terminal",
-      "public": true,
-      "label": "Display Mode",
-      "description": "terminal: Native PTY view, chat: Parsed message view",
-      "options": [
-        "terminal",
-        "chat"
-      ]
-    }
-  },
   "binary": "aider",
   "spawn": {
     "command": "aider",
@@ -29,10 +16,11 @@
   },
   "compatibility": [
     {
-      "ideVersion": ">=1.0.0",
+      "ideVersion": ">=0.0.0",
       "scriptDir": "scripts/1.0"
     }
   ],
+  "defaultScriptDir": "scripts/1.0",
   "status": "Beta",
-  "details": "Terminal only (Chat Mode WIP)"
+  "details": "Terminal only"
 }

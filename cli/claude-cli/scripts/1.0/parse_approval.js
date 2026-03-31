@@ -24,6 +24,8 @@ function isNoise(line) {
     if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) return true;
     if (/^❯\s*$/.test(trimmed)) return true;
     if (/^➜\s+\S+/.test(trimmed)) return true;
+    if (/^⏵⏵\s+accept edits on/i.test(trimmed)) return true;
+    if (/^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)) return true;
     if (/^Update available!/i.test(trimmed)) return true;
     if (/^Claude Code v\d/i.test(trimmed)) return true;
     if (/^(Sonnet|Opus|Haiku)\b/i.test(trimmed)) return true;
@@ -66,24 +68,33 @@ module.exports = function parseApproval(input) {
     const lines = splitLines(primary || fallback);
     if (lines.length === 0) return null;
 
-    // If the idle prompt ❯ is visible near the bottom, there is no approval dialog
-    const lastNonEmpty = [...lines].reverse().find(l => normalize(l));
-    if (lastNonEmpty && /^❯\s*$/.test(normalize(lastNonEmpty))) return null;
+    const recent = lines.slice(-30);
+    const normalizedRecent = recent.map(normalize).filter(Boolean);
+    const lastPromptIndex = normalizedRecent.map((line, idx) => ({ line, idx }))
+        .reverse()
+        .find(({ line }) => /^❯\s*$/.test(line))?.idx ?? -1;
+    if (lastPromptIndex >= 0) {
+        const afterPrompt = normalizedRecent.slice(lastPromptIndex + 1);
+        const trailingApproval = afterPrompt.some(line => /requires approval|Do you want to proceed|Allow\s*once|Always\s*allow/i.test(line))
+            || afterPrompt.some(isButtonLine);
+        if (!trailingApproval) return null;
+    }
 
     const buttons = [];
-    for (const line of lines.slice(-40)) {
+    for (const line of recent) {
         if (!isButtonLine(line)) continue;
         const label = normalizeButtonLabel(line);
         if (label && !buttons.includes(label)) buttons.push(label);
     }
 
     const hasApproval = buttons.length > 0
-        || /Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(primary || fallback);
+        || /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(primary || fallback);
     if (!hasApproval) return null;
 
     const questionIndex = findLastIndex(lines, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
+    const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
-    const startIndex = Math.max(0, (actionIndex >= 0 ? actionIndex : questionIndex >= 0 ? questionIndex - 4 : lines.length - 8));
+    const startIndex = Math.max(0, (actionIndex >= 0 ? actionIndex : approvalIndex >= 0 ? approvalIndex - 2 : questionIndex >= 0 ? questionIndex - 4 : lines.length - 8));
     const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
 
     const context = [];

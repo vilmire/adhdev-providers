@@ -155,6 +155,18 @@ function isWelcomeScreen(text) {
         && /To get started, describe a task/i.test(text);
 }
 
+function isStartupScreen(text) {
+    const value = String(text || '');
+    return /You are running Codex in/i.test(value)
+        || isWelcomeScreen(value)
+        || /Since this folder is version controlled/i.test(value)
+        || /\/init - create an AGENTS\.md file with instructions for Codex/i.test(value)
+        || /\/status - show current session configuration/i.test(value)
+        || /\/approvals - choose what Codex can do without approval/i.test(value)
+        || /\/model - choose what model and reasoning effort to use/i.test(value)
+        || /▌\s*(?:Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value);
+}
+
 function collectAssistantLines(lines) {
     const blocks = [];
     let current = null;
@@ -414,6 +426,7 @@ function buildMessages(previousMessages, assistantText, partialText) {
 
     const lastUser = [...base].reverse().find(message => message.role === 'user')?.content || '';
     const rawCandidate = finalizeAssistantText(assistantText || partialText);
+    if (!lastUser && isStartupScreen(rawCandidate)) return base;
     const inlineLead = extractInlineLeadAnswer(rawCandidate);
     const promptEcho = tokenizePrompt(lastUser)
         .slice(0, 6)
@@ -463,6 +476,7 @@ module.exports = function parseOutput(input) {
     const promptScope = lastUserMessage?.content || '';
     const scopedScreenText = sliceAfterLatestPrompt(screenText, promptScope);
     const scopedBufferText = sliceAfterLatestPrompt(buffer, promptScope);
+    const hasUserPrompt = !!promptScope;
 
     const status = detectStatus({
         tail,
@@ -474,7 +488,7 @@ module.exports = function parseOutput(input) {
         ? parseApproval({ buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
         : null;
 
-    if (status === 'waiting_approval' || (status === 'idle' && isWelcomeScreen(transcript))) {
+    if (status === 'waiting_approval' || (!hasUserPrompt && isStartupScreen(transcript))) {
         return {
             id: 'cli_session',
             status,
@@ -510,6 +524,23 @@ module.exports = function parseOutput(input) {
             extractFallbackText(String(input?.partialResponse || '')),
         ))
         : '';
+    const startupLike = !hasUserPrompt && (
+        isStartupScreen(transcript)
+        || isStartupScreen(screenText)
+        || isStartupScreen(buffer)
+        || isStartupScreen(terminalHistory)
+        || isStartupScreen(assistantText)
+        || isStartupScreen(partialText)
+    );
+    if (startupLike) {
+        return {
+            id: 'cli_session',
+            status,
+            title: 'Codex CLI',
+            messages: toMessageObjects(previousMessages, status),
+            activeModal,
+        };
+    }
     const messages = buildMessages(previousMessages, assistantText, shouldKeepPartialText(partialText) ? partialText : '');
 
     return {

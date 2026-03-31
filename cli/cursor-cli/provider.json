@@ -7,19 +7,6 @@
   ],
   "icon": "🤖",
   "displayName": "Cursor CLI",
-  "settings": {
-    "mode": {
-      "type": "select",
-      "default": "terminal",
-      "public": true,
-      "label": "Display Mode",
-      "description": "terminal: Native PTY view, chat: Parsed message view",
-      "options": [
-        "terminal",
-        "chat"
-      ]
-    }
-  },
   "binary": "agent",
   "spawn": {
     "command": "agent",
@@ -34,5 +21,5 @@
     }
   ],
   "status": "Beta",
-  "details": "Terminal only (Chat Mode WIP)"
+  "details": "Terminal only"
 }

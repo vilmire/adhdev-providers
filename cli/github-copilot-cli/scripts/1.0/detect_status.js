@@ -6,14 +6,18 @@
 module.exports = function detectStatus(input) {
     const { tail } = input;
     if (!tail) return 'idle';
+    const text = String(tail);
+    const trimmed = text.trim();
     // waiting_approval
-    if (/execute\s*command/i.test(tail) && /\[Y\/n\]/i.test(tail)) return 'waiting_approval';
-    if (/approve|confirm/i.test(tail) && /\(y\/n\)/i.test(tail)) return 'waiting_approval';
-    if (/Run\s*this/i.test(tail) && /deny|cancel|no/i.test(tail)) return 'waiting_approval';
+    if (/Confirm folder trust/i.test(text)) return 'waiting_approval';
+    if (/Do you trust the files in this folder\?/i.test(text)) return 'waiting_approval';
+    if (/^\s*❯?\s*1\.\s*Yes\b/m.test(text) && /^\s*2\.\s*Yes, and remember this folder/m.test(text)) return 'waiting_approval';
+    if (/execute\s*command/i.test(text) && /\[Y\/n\]/i.test(text)) return 'waiting_approval';
+    if (/approve|confirm/i.test(text) && /\(y\/n\)/i.test(text)) return 'waiting_approval';
+    if (/Run\s*this/i.test(text) && /deny|cancel|no/i.test(text)) return 'waiting_approval';
     // generating
-    if (/[\u2800-\u28ff]/.test(tail)) return 'generating';
-    if (/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(tail)) return 'generating';
-    if (/thinking|generating|processing/i.test(tail)) return 'generating';
-    if (/\.{3,}$/.test(tail.trim())) return 'generating';
+    if (/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(text)) return 'generating';
+    if (/thinking|generating|processing/i.test(text)) return 'generating';
+    if (/\.{3,}$/.test(trimmed)) return 'generating';
     return 'idle';
 };

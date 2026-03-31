@@ -2,6 +2,12 @@
 module.exports = function parseApproval(input) {
     const { tail } = input;
     if (!tail) return null;
+    if (/Share anonymous usage data to help improve goose\?/i.test(tail)) {
+        return {
+            message: 'Share anonymous usage data to help improve goose?',
+            buttons: ['Yes', 'No']
+        };
+    }
     const hasApproval = (/approve|confirm/i.test(tail) && /deny|cancel/i.test(tail)) ||
         /\(y\/n\)/i.test(tail) || /Allow.*tool/i.test(tail);
     if (!hasApproval) return null;

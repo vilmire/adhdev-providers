@@ -1,8 +1,8 @@
 /**
  * Claude Code — detect_status
  *
- * Uses the current visible PTY screen when available.
- * `tail` is still used as a fallback for older runtimes.
+ * Status detection must prefer the active bottom-of-screen region rather than
+ * stale tool blocks that remain visible after a response completes.
  */
 
 'use strict';
@@ -21,17 +21,38 @@ function normalize(line) {
         .trim();
 }
 
-function isVisiblePrompt(line) {
-    return /^❯\s*$/.test(normalize(line));
+function nonEmptyLines(text) {
+    return splitLines(text)
+        .map(normalize)
+        .filter(Boolean);
+}
+
+function takeLast(lines, count) {
+    return lines.slice(Math.max(0, lines.length - count));
+}
+
+function isIdlePrompt(line) {
+    return /^[❯›>]\s*$/.test(normalize(line));
+}
+
+function isShellChrome(line) {
+    const trimmed = normalize(line);
+    return /^➜\s+\S+/.test(trimmed)
+        || /^Update available!/i.test(trimmed)
+        || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
+        || /^⏵⏵\s+accept edits on/i.test(trimmed)
+        || /^ctrl\+g to edit in VS Code/i.test(trimmed)
+        || /Claude Code v\d/i.test(trimmed)
+        || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed);
 }
 
 function isApprovalCue(line) {
     const trimmed = normalize(line);
-    return /Allow\s*once/i.test(trimmed)
-        || /Always\s*allow/i.test(trimmed)
-        || /This command requires approval/i.test(trimmed)
+    return /This command requires approval/i.test(trimmed)
         || /requires approval/i.test(trimmed)
-        || /Do you want to (?:proceed|allow|run)/i.test(trimmed)
+        || /Do you want to (?:proceed|allow|run|make this edit)/i.test(trimmed)
+        || /Allow\s*once/i.test(trimmed)
+        || /Always\s*allow/i.test(trimmed)
         || /\(y\/n\)/i.test(trimmed)
         || /\[Y\/n\]/i.test(trimmed);
 }
@@ -46,61 +67,52 @@ function isApprovalButton(line) {
         && /^(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(label);
 }
 
-function hasVisibleApproval(lines) {
-    const cues = lines.filter(isApprovalCue).length;
-    const buttons = lines.filter(isApprovalButton).length;
-    if (cues > 0 && buttons > 0) return true;
-    return cues > 1;
-}
-
-function isVisibleSpinner(line) {
+function isSpinnerLine(line) {
     const trimmed = normalize(line);
-    if (!trimmed) return false;
+    if (!trimmed || isShellChrome(trimmed)) return false;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/Running(?:\u2026|\.{3})?$/i.test(trimmed)) return true;
-    if (/Percolating(?:\u2026|\.{3})?$/i.test(trimmed)) return true;
-    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering|Canoodling|Whirring|Infusing|Accomplishing|Deliberating)\u2026?$/i.test(trimmed)) return true;
-    if (/^[A-Z][a-z]+ing\u2026?$/.test(trimmed)) return true;
-    return false;
+    if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/i.test(trimmed)) return true;
+    return /^[A-Z][a-z]+ing\u2026?$/.test(trimmed);
 }
 
-function isVisibleToolActivity(line) {
+function isToolLine(line) {
     const trimmed = normalize(line);
-    return /^(?:[⏺•]\s+)?(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/.test(trimmed)
-        || /^⎿\s+(?:Running|Wrote|Read|Updated|Edited|Created)/i.test(trimmed);
+    return /^(?:[⏺•]\s+)?(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit|Exact output)(?:\(|:)/.test(trimmed)
+        || /^⎿\s+(?:Running|Wrote|Read|Updated|Edited|Created|\/)/i.test(trimmed);
+}
+
+function hasActiveApproval(lines) {
+    const window = takeLast(lines, 18);
+    const cues = window.filter(isApprovalCue).length;
+    const buttons = window.filter(isApprovalButton).length;
+    return buttons > 0 && cues > 0;
+}
+
+function hasActiveGenerating(lines) {
+    const window = takeLast(lines, 12);
+    const spinner = window.some(isSpinnerLine);
+    const activeTool = takeLast(lines, 8).some(isToolLine);
+    return spinner || (activeTool && window.some(line => /\u2026|\.{3}|Running\b/i.test(normalize(line))));
 }
 
 module.exports = function detectStatus(input) {
-    const tail = String(input?.tail || '');
-    const screenText = String(input?.screenText || '');
-    const visibleLines = splitLines(screenText);
-    const visibleText = visibleLines.map(normalize).filter(Boolean).join('\n');
-    if (visibleText) {
-        const hasSpinner = visibleLines.some(isVisibleSpinner) || visibleLines.some(isVisibleToolActivity);
-        if (hasSpinner) return 'generating';
+    const screenLines = nonEmptyLines(input?.screenText || '');
+    const tailLines = nonEmptyLines(input?.tail || '');
+    const activeLines = screenLines.length > 0 ? screenLines : tailLines;
 
-        // Check idle prompt BEFORE approval — if ❯ prompt is visible without spinner,
-        // the CLI is idle regardless of stale approval text that may linger on screen
-        const hasPrompt = visibleLines.some(isVisiblePrompt);
-        if (hasPrompt) return 'idle';
-
-        if (hasVisibleApproval(visibleLines)) return 'waiting_approval';
-    } else if (tail) {
-        const tailLines = splitLines(tail);
-        const hasApproval = hasVisibleApproval(tailLines)
-            || (/This command requires approval/i.test(tail)
-                && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail));
-        if (hasApproval) return 'waiting_approval';
+    if (activeLines.length > 0) {
+        if (hasActiveApproval(activeLines)) return 'waiting_approval';
+        if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
+        if (hasActiveGenerating(activeLines)) return 'generating';
+        if (takeLast(activeLines, 8).some(isShellChrome)) return 'idle';
     }
 
-    if (/[\u2800-\u28ff]/.test(tail)) return 'generating';
+    const tail = String(input?.tail || '');
+    if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
     if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
-    if (/Running(?:\u2026|\.{3})?$/im.test(tail)) return 'generating';
-    if (/Percolating(?:\u2026|\.{3})?$/im.test(tail)) return 'generating';
-    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering|Canoodling|Whirring|Infusing|Accomplishing|Deliberating)\u2026?$/i.test(tail)) return 'generating';
-    if (/^[A-Z][a-z]+ing\u2026?$/m.test(tail)) return 'generating';
-    if (/(?:^|\n)\s*(?:[⏺•]\s+)?(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/m.test(tail)) return 'generating';
+    if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/im.test(tail)) return 'generating';
+    if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
 
     return 'idle';
 };

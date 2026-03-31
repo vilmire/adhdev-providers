@@ -1,8 +1,3 @@
-/**
- * Codex Extension — resolve_action
- *
- * Clicks approval / denial controls in the Codex UI.
- */
 (args = {}) => {
   try {
     const findValue = (source, keys) => {
@@ -23,212 +18,116 @@
       return undefined;
     };
 
-    const actionValue = findValue(args, ['action']);
-    const buttonValue = findValue(args, ['button', 'buttonText']);
-    const action = actionValue != null ? String(actionValue) : 'approve';
-    const buttonText = buttonValue != null ? String(buttonValue) : '';
+    const action = findValue(args, ['action', 'ACTION']) || 'approve';
+    const buttonText = findValue(args, ['buttonText', 'button', 'BUTTON_TEXT', 'BUTTON']) || '';
 
-    const getLabel = (el) => {
-      const text = (el.textContent || '').trim();
-      return text || (el.getAttribute('aria-label') || '').trim();
-    };
-    const normalize = (text) => (text || '').trim().replace(/\s+/g, ' ').toLowerCase();
-    const isVisible = (el) => !!el && el.offsetWidth > 0 && el.offsetHeight > 0 && !el.closest('[inert]');
-    const clickElement = (el) => {
-      const rect = el.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
-      el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
-    };
+    const approvePatterns = ['proceed', 'approve', 'allow', 'accept', 'save', 'run', 'yes', 'confirm', 'resume', 'submit'];
+    const rejectPatterns = ['reject', 'deny', 'cancel', 'no', 'skip'];
 
-    const findApprovalArea = () => {
-      const requestPanel = document.querySelector('[class*="request-input-panel"]');
-      if (!requestPanel) return document.body;
-      let node = requestPanel;
-      for (let depth = 0; depth < 10 && node; depth += 1) {
-        const interactiveCount = node.querySelectorAll('button, [role="radio"], [role="button"], [role="option"]').length;
-        if (interactiveCount >= 2) return node;
-        node = node.parentElement;
-      }
-      return requestPanel.parentElement || document.body;
-    };
+    // ─── Locate the approval area (same strategy as read_chat.js) ───
+    const searchDocs = [document];
+    // Try inner iframe too
+    const iframes = document.querySelectorAll('iframe');
+    for (const iframe of iframes) {
+      try {
+        const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (innerDoc) searchDocs.push(innerDoc);
+      } catch (e) {}
+    }
 
-    const findRequestInput = (root) => {
-      return root.querySelector('[class*="request-input-panel"]')
-        || document.querySelector('[class*="request-input-panel"]')
-        || root.querySelector('textarea')
-        || document.querySelector('textarea')
-        || root.querySelector('input[type="text"]')
-        || document.querySelector('input[type="text"]')
-        || null;
-    };
-
-    const setInputValue = (input, value) => {
-      if (!input) return false;
-      input.focus();
-      const setter = Object.getOwnPropertyDescriptor(input.__proto__, 'value')?.set;
-      if (setter) {
-        setter.call(input, value);
-      } else {
-        input.value = value;
-      }
-      input.dispatchEvent(new InputEvent('input', {
-        bubbles: true,
-        inputType: 'insertText',
-        data: value,
-      }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    };
-
-    const parseNumberedOptions = (root) => {
-      const text = (root.innerText || root.textContent || '').trim();
-      const buttonTexts = Array.from(root.querySelectorAll('button'))
-        .filter((el) => isVisible(el) && !el.disabled)
-        .map((el) => getLabel(el));
-
-      const matches = text.match(/\d+\.\s*(?:\n\s*)?[^\n]+(?:\n(?!\s*(?:\d+\.|Skip\b|Submit\b))[^\n]+)*/g) || [];
-      return matches
-        .map((entry) => entry.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim())
-        .map((entry) => {
-          let cleaned = entry;
-          for (const btnText of buttonTexts) {
-            if (btnText && cleaned.endsWith(btnText)) {
-              cleaned = cleaned.slice(0, -btnText.length).trim();
-            }
+    let approvalArea = null;
+    for (const d of searchDocs) {
+      // Find request-input-panel
+      let requestPanel = d.querySelector('[class*="request-input-panel"]');
+      if (!requestPanel) {
+        const tas = d.querySelectorAll('textarea');
+        for (const ta of tas) {
+          if (ta.className && ta.className.includes('request-input-panel')) {
+            requestPanel = ta;
+            break;
           }
-          const number = cleaned.match(/^(\d+)\./)?.[1] || '';
-          return { text: cleaned, number };
-        })
-        .filter(({ text, number }) => text && number);
-    };
-
-    const findOptionElements = (root) => {
-      const nodes = Array.from(root.querySelectorAll('*')).filter((el) => {
-        if (!isVisible(el)) return false;
-        if (/^(button|textarea|input)$/i.test(el.tagName)) return false;
-        const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-        if (!/^\d+\./.test(text) || text.length > 160) return false;
-        return !Array.from(el.children).some((child) => {
-          const childText = (child.textContent || '').replace(/\s+/g, ' ').trim();
-          return /^\d+\./.test(childText);
-        });
-      });
-      return nodes.map((el) => {
-        const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-        const number = text.match(/^(\d+)\./)?.[1] || '';
-        return { el, text, number };
-      });
-    };
-
-    const resolveTypedChoice = (options, actionName, explicitLabel) => {
-      const desired = normalize(explicitLabel || actionName || '');
-      if (explicitLabel) {
-        const direct = options.find(({ text }) => normalize(text) === desired)
-          || options.find(({ text }) => normalize(text).includes(desired) || desired.includes(normalize(text)));
-        if (direct) return direct;
+        }
       }
-
-      if (actionName.toLowerCase() === 'approve') {
-        return options.find(({ text }) => /^(1\.|1\s)/.test(text) || /\byes\b|\ballow\b|\bapprove\b|\bcontinue\b/i.test(text)) || null;
+      if (requestPanel) {
+        let p = requestPanel;
+        for (let i = 0; i < 12 && p && p.parentElement; i++) {
+          p = p.parentElement;
+          const btns = p.querySelectorAll('button').length;
+          if (btns >= 4) {
+            approvalArea = p;
+            break;
+          }
+        }
       }
-      if (actionName.toLowerCase() === 'deny') {
-        return options.find(({ text }) => /\bno\b|\breject\b|\bdeny\b|\bdecline\b/i.test(text)) || null;
-      }
-      if (actionName.toLowerCase() === 'cancel') {
-        return options.find(({ text }) => /\bskip\b|\bcancel\b|\babort\b/i.test(text)) || null;
-      }
+      if (approvalArea) break;
+    }
 
-      return options.find(({ text }) => normalize(text) === desired)
-        || options.find(({ text }) => normalize(text).includes(desired) || desired.includes(normalize(text)))
-        || null;
-    };
+    if (!approvalArea) {
+      return JSON.stringify({ resolved: false, error: 'no approval area found' });
+    }
 
-    const approvalArea = findApprovalArea();
-    const buttons = Array.from(
-      approvalArea.querySelectorAll('button, [role="radio"], [role="button"], [role="option"], input[type="radio"] + label'),
-    ).filter((el) => isVisible(el) && !el.disabled);
+    const allBtns = Array.from(approvalArea.querySelectorAll('button'))
+      .filter(b => b.offsetWidth > 0 && !b.disabled);
 
-    const wanted = (buttonText || action || '').trim();
-    const wantedLower = wanted.toLowerCase();
-    const actionLower = action.toLowerCase();
-    const patterns = {
-      approve: /^(approve|accept|allow|confirm|run|proceed|yes|execute|check|continue)/i,
-      deny: /^(deny|reject|decline|no)/i,
-      cancel: /^(cancel|stop|abort|dismiss|skip)/i,
-    };
+    if (allBtns.length === 0) {
+      return JSON.stringify({ resolved: false, error: 'no buttons in approval area' });
+    }
 
-    let target = null;
+    const normalize = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+    // ─── 1. Match by exact buttonText ───
     if (buttonText) {
-      target = buttons.find((el) => getLabel(el) === buttonText)
-        || buttons.find((el) => getLabel(el).startsWith(buttonText))
-        || buttons.find((el) => getLabel(el).toLowerCase().includes(buttonText.toLowerCase()));
-    }
-
-    if (!target && patterns[actionLower]) {
-      target = buttons.find((el) => patterns[actionLower].test(getLabel(el)));
-    }
-
-    if (!target && wantedLower) {
-      target = buttons.find((el) => getLabel(el).toLowerCase() === wantedLower)
-        || buttons.find((el) => getLabel(el).toLowerCase().includes(wantedLower));
-    }
-
-    if (!target) {
-      const requestInput = findRequestInput(approvalArea);
-      const options = parseNumberedOptions(approvalArea);
-      const optionElements = findOptionElements(approvalArea);
-      const typedChoice = resolveTypedChoice(options, action, buttonText || wanted);
-      const clickedChoice = resolveTypedChoice(optionElements, action, buttonText || wanted);
-      const submitButton = buttons.find((el) => /^(submit|apply|continue)/i.test(getLabel(el)));
-
-      if (clickedChoice) {
-        clickElement(clickedChoice.el);
-        if (submitButton) clickElement(submitButton);
-        return JSON.stringify({
-          resolved: true,
-          action,
-          clicked: clickedChoice.text,
-          submitted: !!submitButton,
-        });
+      const wantN = normalize(buttonText);
+      const exact = allBtns.find(b => normalize(b.textContent) === wantN);
+      if (exact) {
+        exact.click();
+        return JSON.stringify({ resolved: true, clicked: (exact.textContent || '').trim() });
       }
-
-      if (requestInput && typedChoice && submitButton) {
-        setInputValue(requestInput, typedChoice.number);
-        clickElement(submitButton);
-        return JSON.stringify({
-          resolved: true,
-          action,
-          clicked: typedChoice.text,
-          submitted: true,
-        });
+      // Partial match
+      const partial = allBtns.find(b => normalize(b.textContent).includes(wantN) || wantN.includes(normalize(b.textContent)));
+      if (partial) {
+        partial.click();
+        return JSON.stringify({ resolved: true, clicked: (partial.textContent || '').trim() });
       }
     }
 
-    if (!target) {
-      return JSON.stringify({
-        resolved: false,
-        error: `No button matching '${wanted}' found`,
-        available: [
-          ...buttons.map((el) => getLabel(el)).filter((text) => text && text.length < 100),
-          ...parseNumberedOptions(approvalArea).map(({ text }) => text),
-        ],
+    // ─── 2. Match by action using pattern lists ───
+    const patterns = action === 'approve' ? approvePatterns : action === 'reject' ? rejectPatterns : [];
+    if (patterns.length > 0) {
+      for (const btn of allBtns) {
+        const text = normalize(btn.textContent);
+        if (text.length === 0 || text.length > 60) continue;
+        if (patterns.some(p => text === p || text.startsWith(p) || text.includes(p))) {
+          btn.click();
+          return JSON.stringify({ resolved: true, clicked: (btn.textContent || '').trim() });
+        }
+      }
+      // aria-label fallback
+      for (const btn of allBtns) {
+        const label = normalize(btn.getAttribute('aria-label') || '');
+        if (patterns.some(p => label.includes(p))) {
+          btn.click();
+          return JSON.stringify({ resolved: true, clicked: label });
+        }
+      }
+    }
+
+    // ─── 3. Numeric option matching (e.g. action='1' or action='2') ───
+    const numMatch = String(action).match(/^(\d+)\.?$/);
+    if (numMatch) {
+      const num = numMatch[1];
+      const numBtn = allBtns.find(b => {
+        const t = normalize(b.textContent);
+        return t.startsWith(num + '.') || t === num;
       });
+      if (numBtn) {
+        numBtn.click();
+        return JSON.stringify({ resolved: true, clicked: (numBtn.textContent || '').trim() });
+      }
     }
 
-    const clicked = getLabel(target);
-    clickElement(target);
-
-    if (/^\d+\./.test(clicked)) {
-      const submit = buttons.find((el) => /^(submit|apply|continue)/i.test(getLabel(el)));
-      if (submit && submit !== target) clickElement(submit);
-    }
-
-    return JSON.stringify({ resolved: true, action, clicked });
+    const available = allBtns.map(b => (b.textContent || '').trim()).filter(Boolean);
+    return JSON.stringify({ resolved: false, error: 'button not found', available });
   } catch (e) {
     return JSON.stringify({ resolved: false, error: e.message || String(e) });
   }

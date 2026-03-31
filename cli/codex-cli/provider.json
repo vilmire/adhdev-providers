@@ -8,17 +8,6 @@
   "icon": "🧠",
   "displayName": "Codex CLI",
   "settings": {
-    "mode": {
-      "type": "select",
-      "default": "chat",
-      "public": true,
-      "label": "Display Mode",
-      "description": "terminal: Native PTY view, chat: Parsed message view",
-      "options": [
-        "terminal",
-        "chat"
-      ]
-    },
     "notifications": {
       "type": "boolean",
       "default": true,
@@ -106,5 +95,5 @@
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Stable",
-  "details": "Terminal + Chat Mode"
+  "details": "Terminal only"
 }

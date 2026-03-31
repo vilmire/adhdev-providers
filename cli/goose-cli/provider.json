@@ -7,19 +7,6 @@
   ],
   "icon": "🤖",
   "displayName": "Goose",
-  "settings": {
-    "mode": {
-      "type": "select",
-      "default": "terminal",
-      "public": true,
-      "label": "Display Mode",
-      "description": "terminal: Native PTY view, chat: Parsed message view",
-      "options": [
-        "terminal",
-        "chat"
-      ]
-    }
-  },
   "binary": "goose",
   "spawn": {
     "command": "goose",
@@ -33,6 +20,11 @@
       "scriptDir": "scripts/1.0"
     }
   ],
+  "defaultScriptDir": "scripts/1.0",
+  "approvalKeys": {
+    "0": "\r",
+    "1": "\u001b[C\r"
+  },
   "status": "Beta",
-  "details": "Terminal only (Chat Mode WIP)"
+  "details": "Terminal only"
 }

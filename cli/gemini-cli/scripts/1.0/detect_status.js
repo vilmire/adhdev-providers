@@ -7,20 +7,33 @@
 module.exports = function detectStatus(input) {
     const { tail } = input;
     if (!tail) return 'idle';
+    const text = String(tail);
+    const trimmed = text.trim();
 
     // waiting_approval
-    if (/Allow\s*once/i.test(tail) || /Always\s*allow/i.test(tail)) return 'waiting_approval';
-    if (/\(y\/n\)/i.test(tail) || /\[Y\/n\]/i.test(tail)) return 'waiting_approval';
-    if (/Run\s*this\s*command/i.test(tail)) return 'waiting_approval';
-    if (/Deny/i.test(tail) && /Allow/i.test(tail)) return 'waiting_approval';
-    if (/auto-?approve/i.test(tail) && /Deny/i.test(tail)) return 'waiting_approval';
+    if (/Allow\s*once/i.test(text) || /Always\s*allow/i.test(text)) return 'waiting_approval';
+    if (/\(y\/n\)/i.test(text) || /\[Y\/n\]/i.test(text)) return 'waiting_approval';
+    if (/Run\s*this\s*command/i.test(text)) return 'waiting_approval';
+    if (/Deny/i.test(text) && /Allow/i.test(text)) return 'waiting_approval';
+    if (/auto-?approve/i.test(text) && /Deny/i.test(text)) return 'waiting_approval';
 
-    // generating
-    if (/[\u2800-\u28ff]/.test(tail)) return 'generating';
-    if (/[▀▄▌▐░▒▓█]/.test(tail)) return 'generating';
-    if (/Thinking/i.test(tail)) return 'generating';
-    if (/Generating/i.test(tail)) return 'generating';
-    if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
+    // Gemini renders braille/logo/box glyphs in its idle prompt, so prefer prompt cues
+    // over glyph-based heuristics and only treat explicit progress text as generating.
+    const looksIdle =
+        /\?\s*for\s*shortcuts/i.test(text) ||
+        /Type your message(?:\s+or\s+@path\/to\/file)?/i.test(text) ||
+        /workspace\s*\(\/directory\)/i.test(text) ||
+        /\/model/i.test(text) ||
+        /^>\s*$/m.test(text) ||
+        /[›❯]\s*$/.test(trimmed);
+    const explicitProgress =
+        /Waiting for authentication/i.test(text) ||
+        /Thinking/i.test(text) ||
+        /Generating/i.test(text) ||
+        /esc to (cancel|interrupt|stop)/i.test(text);
+
+    if (looksIdle && !explicitProgress) return 'idle';
+    if (explicitProgress) return 'generating';
 
     return 'idle';
 };

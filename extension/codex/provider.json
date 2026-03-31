@@ -36,5 +36,6 @@
   "defaultScriptDir": "scripts/1.0",
   "compatibility": [],
   "status": "Stable",
-  "details": "Independent Stream"
+  "details": "Independent Stream",
+  "disableUpstream": true
 }
