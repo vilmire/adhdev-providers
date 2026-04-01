@@ -469,6 +469,7 @@ function toMessageObjects(messages, status) {
 module.exports = function parseOutput(input) {
     const screenText = String(input?.screenText || '');
     const buffer = String(input?.buffer || '');
+    const terminalHistory = String(input?.terminalHistory || '');
     const transcript = screenText || buffer;
     const tail = String(input?.recentBuffer || transcript.slice(-500));
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];

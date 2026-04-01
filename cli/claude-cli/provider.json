@@ -176,6 +176,15 @@
     "2": "3",
     "3": "4"
   },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
   "compatibility": [
     {
       "ideVersion": ">=2.1.0",

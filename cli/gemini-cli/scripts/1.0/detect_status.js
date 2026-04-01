@@ -5,9 +5,10 @@
  */
 'use strict';
 module.exports = function detectStatus(input) {
-    const { tail } = input;
-    if (!tail) return 'idle';
-    const text = String(tail);
+    const screenText = String(input?.screenText || '');
+    const tailText = String(input?.tail || '');
+    const text = screenText.trim() ? screenText : tailText;
+    if (!text) return 'idle';
     const trimmed = text.trim();
 
     // waiting_approval
@@ -32,8 +33,30 @@ module.exports = function detectStatus(input) {
         /Generating/i.test(text) ||
         /esc to (cancel|interrupt|stop)/i.test(text);
 
+    if (looksIdle && !explicitProgress) {
+        const lines = text.split(/\r\n|\n|\r/g).map(line => line.trim()).filter(Boolean);
+        let lastPromptIndex = -1;
+        for (let index = lines.length - 1; index >= 0; index -= 1) {
+            if (/^>\s*$/.test(lines[index]) || /[›❯]\s*$/.test(lines[index]) || /Type your message/i.test(lines[index])) {
+                lastPromptIndex = index;
+                break;
+            }
+        }
+        if (lastPromptIndex >= 0) {
+            const afterPrompt = lines.slice(lastPromptIndex + 1).join('\n');
+            if (!/Allow\s*once/i.test(afterPrompt)
+                && !/Always\s*allow/i.test(afterPrompt)
+                && !/Run\s*this\s*command/i.test(afterPrompt)
+                && !/\(y\/n\)/i.test(afterPrompt)
+                && !/\[Y\/n\]/i.test(afterPrompt)) {
+                return 'idle';
+            }
+        }
+    }
     if (looksIdle && !explicitProgress) return 'idle';
     if (explicitProgress) return 'generating';
+
+    if (screenText.trim()) return 'idle';
 
     return 'idle';
 };

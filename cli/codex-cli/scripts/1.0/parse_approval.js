@@ -48,14 +48,39 @@ function isButtonLine(line) {
     return /^\d+\.\s+/.test(stripLeadingMarkers(normalize(line)));
 }
 
+function takeLast(lines, count) {
+    return lines.slice(Math.max(0, lines.length - count));
+}
+
+function findLastPromptIndex(lines) {
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const line = normalize(lines[index]);
+        if (/^[>›❯]\s*$/.test(line) || /⏎\s+send/i.test(line)) return index;
+    }
+    return -1;
+}
+
 module.exports = function parseApproval(input) {
-    const text = String(input?.buffer || input?.tail || '');
+    const screenText = String(input?.screenText || '');
+    const text = String(screenText || input?.buffer || input?.tail || '');
     const lines = splitLines(text);
     if (lines.length === 0) return null;
 
+    const normalizedLines = lines.map(normalize).filter(Boolean);
+    const lastPromptIndex = findLastPromptIndex(normalizedLines);
+    if (lastPromptIndex >= 0) {
+        const afterPrompt = normalizedLines.slice(lastPromptIndex + 1).join('\n');
+        if (!/You are running Codex in/i.test(afterPrompt)
+            && !/Allow Codex to (?:run|apply)/i.test(afterPrompt)
+            && !/Allow command\?/i.test(afterPrompt)
+            && !/(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(afterPrompt)) {
+            return null;
+        }
+    }
+
     const buttons = [];
     let currentButton = '';
-    const recentLines = lines.slice(-60);
+    const recentLines = takeLast(lines, 24);
     for (const rawLine of recentLines) {
         const line = normalize(rawLine);
         if (!line) continue;
@@ -85,6 +110,16 @@ module.exports = function parseApproval(input) {
         || /Allow command\?/i.test(text)
         || buttons.length > 0;
     if (!hasApproval) return null;
+
+    const bottomWindow = takeLast(lines.map(normalize).filter(Boolean), 18).join('\n');
+    const hasActivePrompt = /You are running Codex in/i.test(bottomWindow)
+        || /Allow Codex to (?:run|apply)/i.test(bottomWindow)
+        || /Allow command\?/i.test(bottomWindow);
+    const hasActiveButtons = buttons.length > 0
+        || /Approve and run now/i.test(bottomWindow)
+        || /Always approve this session/i.test(bottomWindow)
+        || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(bottomWindow);
+    if (!hasActivePrompt && !hasActiveButtons) return null;
 
     return {
         message: approvalText.slice(-3).join(' ').slice(0, 240) || 'Codex approval required',

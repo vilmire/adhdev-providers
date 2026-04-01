@@ -59,9 +59,13 @@ function splitTurns(buffer) {
 
 module.exports = function parseOutput(input) {
     const { buffer, recentBuffer, partialResponse } = input;
-    const tail = recentBuffer || (buffer || '').slice(-500);
-    const status = detectStatus({ tail });
-    const activeModal = status === 'waiting_approval' ? parseApproval({ buffer, tail }) : null;
+    const screenText = String(input?.screenText || '');
+    const transcript = screenText || String(buffer || '');
+    const tail = recentBuffer || transcript.slice(-500);
+    const status = detectStatus({ tail, screenText, rawBuffer: input?.rawBuffer || '' });
+    const activeModal = status === 'waiting_approval'
+        ? parseApproval({ buffer: transcript, screenText, tail, rawBuffer: input?.rawBuffer || '' })
+        : null;
     const messages = splitTurns(buffer);
     if (status === 'generating' && partialResponse && partialResponse.trim().length > 2) {
         messages.push({ id: 'msg_partial', role: 'assistant', content: partialResponse.trim().slice(0, 6000), index: messages.length, kind: 'standard', meta: { streaming: true } });

@@ -87,6 +87,16 @@
     ],
     "ready": []
   },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "resumeArgs": [
+      "resume",
+      "--last"
+    ]
+  },
   "compatibility": [
     {
       "ideVersion": ">=0.42.0",
