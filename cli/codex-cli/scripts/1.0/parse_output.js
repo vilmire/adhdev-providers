@@ -33,12 +33,27 @@ function tokenizePrompt(text) {
 function findPromptLineIndex(lines, promptText) {
     const tokens = tokenizePrompt(promptText);
     if (tokens.length === 0) return -1;
+    const normalizedPrompt = normalize(promptText).toLowerCase();
+
+    const matchesPrompt = (line) => {
+        const normalizedLine = normalize(line).toLowerCase();
+        if (!normalizedLine) return false;
+        if (normalizedPrompt && normalizedLine === normalizedPrompt) return true;
+        const matched = tokens.filter(token => normalizedLine.includes(token)).length;
+        return matched >= Math.min(tokens.length, 3);
+    };
+
+    // Prefer the visible input line for the user's prompt.
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const line = lines[index];
+        if (!isInputLine(normalize(line))) continue;
+        if (matchesPrompt(line)) return index;
+    }
 
     for (let index = lines.length - 1; index >= 0; index -= 1) {
-        const line = normalize(lines[index]).toLowerCase();
-        if (!line) continue;
-        const matched = tokens.filter(token => line.includes(token)).length;
-        if (matched >= Math.min(tokens.length, 3)) return index;
+        const line = normalize(lines[index]);
+        if (!line || isAssistantLeadLine(line)) continue;
+        if (matchesPrompt(line)) return index;
     }
     return -1;
 }

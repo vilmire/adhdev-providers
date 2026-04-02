@@ -72,13 +72,6 @@ function isBoxLine(trimmed) {
     return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
 }
 
-function isTableLikeLine(trimmed) {
-    return isBoxLine(trimmed)
-        || /^[┌┬┐├┼┤└┴┘│]/.test(trimmed)
-        || /^\s*[│├└┌]/.test(trimmed)
-        || /[┌┬┐├┼┤└┴┘│]/.test(trimmed);
-}
-
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
@@ -134,25 +127,6 @@ function trimTrailingNoise(lines) {
     return out;
 }
 
-function chooseRicherText(primary, secondary) {
-    const a = String(primary || '').trim();
-    const b = String(secondary || '').trim();
-    if (!a) return b;
-    if (!b) return a;
-    const aLines = a.split('\n');
-    const bLines = b.split('\n');
-    const first = aLines[0]?.trim() || '';
-    const clippedTableLikeStart = /^[├┤┬┴┼│]/.test(first) || /^│\s/.test(first);
-    const clippedListLikeStart = /^[-*•]\s/.test(first) && b.length > a.length + 200;
-    const tableDensityA = aLines.filter(line => isTableLikeLine(line.trim())).length;
-    const tableDensityB = bLines.filter(line => isTableLikeLine(line.trim())).length;
-    const appearsClipped = clippedTableLikeStart || clippedListLikeStart;
-    if (appearsClipped && bLines.length > aLines.length + 3) return b;
-    if (appearsClipped && b.includes(a.slice(0, Math.min(a.length, 120)).trim())) return b;
-    if (tableDensityB >= Math.max(6, tableDensityA + 3) && b.length > a.length + 120) return b;
-    return a;
-}
-
 function stripAssistantPrefix(lineStr) {
     return lineStr
         .replace(/^\s*[⏺]\s+/, '')
@@ -198,109 +172,6 @@ function collectMeaningfulLines(lines) {
     return out;
 }
 
-function looksLikeStructuredDataLine(text) {
-    const line = stripAssistantPrefix(sanitizeLine(text).trim());
-    if (!line) return false;
-    return /^[{\[]/.test(line)
-        || /^[A-Z0-9_]+=/.test(line)
-        || /^\/[A-Za-z0-9._/-]+$/.test(line)
-        || /^\d+$/.test(line);
-}
-
-function extractDenseOutputBlock(text) {
-    const lines = splitLines(text);
-    const blocks = [];
-    let current = [];
-
-    for (const rawLine of lines) {
-        const promptText = parsePromptLine(rawLine);
-        const sanitized = sanitizeLine(rawLine).trim();
-        if (promptText !== null || (isNoiseLine(sanitized) && !isTableLikeLine(sanitized))) {
-            if (current.length > 0) {
-                blocks.push(current);
-                current = [];
-            }
-            continue;
-        }
-
-        const cleaned = stripAssistantPrefix(sanitized);
-        if (!cleaned) {
-            if (current.length > 0) {
-                blocks.push(current);
-                current = [];
-            }
-            continue;
-        }
-        current.push(cleaned);
-    }
-
-    if (current.length > 0) blocks.push(current);
-
-    const scored = blocks
-        .map((block, index) => {
-            const structured = block.filter(looksLikeStructuredDataLine).length;
-            const tableLike = block.filter(line => isTableLikeLine(line.trim())).length;
-            const nonEmpty = block.filter(line => line.trim()).length;
-            const score = (tableLike * 5) + (structured * 4) + nonEmpty;
-            return { block, index, structured, tableLike, nonEmpty, score };
-        })
-        .filter(entry =>
-            (entry.nonEmpty >= 5 && entry.structured >= Math.max(3, Math.floor(entry.nonEmpty * 0.6)))
-            || (entry.nonEmpty >= 8 && entry.tableLike >= Math.max(4, Math.floor(entry.nonEmpty * 0.35)))
-        );
-
-    if (scored.length === 0) return '';
-
-    const best = scored.reduce((chosen, entry) => {
-        if (!chosen) return entry;
-        if (entry.score > chosen.score) return entry;
-        if (entry.score === chosen.score && entry.index > chosen.index) return entry;
-        return chosen;
-    }, null);
-
-    return (best?.block || []).join('\n').trim();
-}
-
-function collectAssistantBlocks(lines) {
-    const blocks = [];
-    let current = null;
-    let foundAnyBlock = false;
-    
-    for (const rawLine of lines) {
-        const sanitized = sanitizeLine(rawLine);
-        const trimmed = sanitized.trim();
-        if (isNoiseLine(trimmed)) continue;
-
-        if (/^\s*⏺\s+/.test(sanitized)) {
-            const title = stripAssistantPrefix(sanitized);
-            if (!title.trim()) {
-                current = null;
-                continue;
-            }
-            current = {
-                title,
-                lines: [title],
-                isTool: /^\s*(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)\(/.test(title),
-            };
-            blocks.push(current);
-            foundAnyBlock = true;
-            continue;
-        }
-
-        // If we scrolled past the start of the block, just make a generic block
-        if (!current && !foundAnyBlock && sanitized.trim()) {
-             current = { title: "Response", lines: [], isTool: false };
-             blocks.push(current);
-             foundAnyBlock = true;
-        }
-
-        if (!current) continue;
-        const cleaned = stripAssistantPrefix(sanitized);
-        if (/^…\s+\+\d+\s+lines\b/i.test(cleaned.trim())) continue;
-        current.lines.push(cleaned);
-    }
-    return blocks;
-}
 
 function extractVisibleTurn(text, previousMessages) {
     const lines = splitLines(text);
