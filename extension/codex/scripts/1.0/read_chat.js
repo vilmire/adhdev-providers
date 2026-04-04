@@ -310,6 +310,33 @@
       return [...new Set(messages.map((message) => message._turnKey).filter(Boolean))];
     }
 
+    function isSyntheticTurnKey(turnKey) {
+      return typeof turnKey === 'string' && /^turn-index-\d+$/i.test(turnKey);
+    }
+
+    function isUuidLikeTurnKey(turnKey) {
+      return typeof turnKey === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{8,}$/i.test(turnKey);
+    }
+
+    function shouldResetForVisibleTurnShift(cache, visibleTurnKeys) {
+      if (!Array.isArray(cache.visibleTurnKeys) || cache.visibleTurnKeys.length === 0) return false;
+      if (visibleTurnKeys.length === 0) return false;
+      const prevVisible = new Set(cache.visibleTurnKeys.filter((turnKey) => !isSyntheticTurnKey(turnKey)));
+      const nextVisible = visibleTurnKeys.filter((turnKey) => !isSyntheticTurnKey(turnKey));
+      if (prevVisible.size === 0 || nextVisible.length === 0) return false;
+      return !nextVisible.some((turnKey) => prevVisible.has(turnKey));
+    }
+
+    function purgeSyntheticFallbackTurns(cache, visibleTurnKeys) {
+      const hasVisibleRealTurns = visibleTurnKeys.some((turnKey) => !isSyntheticTurnKey(turnKey));
+      if (!hasVisibleRealTurns) return;
+      for (const [key, message] of Object.entries(cache.byUnit)) {
+        if (isSyntheticTurnKey(message?._turnKey)) {
+          delete cache.byUnit[key];
+        }
+      }
+    }
+
     function cacheOverlapsVisibleTurns(cache, visibleTurnKeys) {
       if (visibleTurnKeys.length === 0) return true;
       const cachedTurnKeys = new Set(
@@ -329,7 +356,17 @@
     function getOrderedMessages(cache) {
       const ordered = Object.values(cache.byUnit);
       ordered.sort((a, b) => {
-        if (a._turnKey !== b._turnKey) return a._turnKey.localeCompare(b._turnKey);
+        if (a._turnKey !== b._turnKey) {
+          const aSynthetic = isSyntheticTurnKey(a._turnKey);
+          const bSynthetic = isSyntheticTurnKey(b._turnKey);
+          if (aSynthetic !== bSynthetic) return aSynthetic ? -1 : 1;
+
+          const aUuid = isUuidLikeTurnKey(a._turnKey);
+          const bUuid = isUuidLikeTurnKey(b._turnKey);
+          if (aUuid !== bUuid) return aUuid ? 1 : -1;
+
+          return String(a._turnKey || '').localeCompare(String(b._turnKey || ''));
+        }
         return (a._unitIndex || 0) - (b._unitIndex || 0);
       });
       return ordered.map((message, index) => ({
@@ -393,10 +430,15 @@
     const conversationKey = `codex:${doc.location?.href || ''}:${headerText || 'conversation'}`;
     const cache = globalCache[conversationKey] || (globalCache[conversationKey] = { byUnit: {}, harvested: false, visibleTurnKeys: [] });
     const hasLegacyCacheShape = cache.harvested && !Array.isArray(cache.visibleTurnKeys);
-    if (hasLegacyCacheShape || !cacheOverlapsVisibleTurns(cache, initialVisibleTurnKeys)) {
+    if (
+      hasLegacyCacheShape
+      || shouldResetForVisibleTurnShift(cache, initialVisibleTurnKeys)
+      || !cacheOverlapsVisibleTurns(cache, initialVisibleTurnKeys)
+    ) {
       resetCache(cache);
     }
     upsertMessages(cache, initialVisibleMessages);
+    purgeSyntheticFallbackTurns(cache, initialVisibleTurnKeys);
     cache.visibleTurnKeys = initialVisibleTurnKeys;
 
     if (!cache.harvested && initialVisibleMessages.length > 0) {
