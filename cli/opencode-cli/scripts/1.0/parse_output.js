@@ -70,6 +70,16 @@ function collectMeaningfulLines(lines) {
     return out;
 }
 
+function extractProviderSessionId(rawBuffer, buffer, screenText) {
+    const source = [rawBuffer, buffer, screenText]
+        .map(value => String(value || ''))
+        .join('\n');
+    const jsonMatch = source.match(/"sessionID"\s*:\s*"([^"]+)"/);
+    if (jsonMatch) return jsonMatch[1];
+    const textMatch = source.match(/\b(ses_[A-Za-z0-9]+)\b/);
+    return textMatch ? textMatch[1] : '';
+}
+
 function extractVisibleTurn(text, previousMessages) {
     const lines = splitLines(text);
     let emptyPromptIndex = -1;
@@ -191,5 +201,6 @@ module.exports = function parseOutput(input) {
         title: 'OpenCode CLI',
         messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText, partialText), status),
         activeModal,
+        providerSessionId: extractProviderSessionId(input?.rawBuffer, transcript, screenText) || undefined,
     };
 };

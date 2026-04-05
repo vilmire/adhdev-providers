@@ -14,6 +14,20 @@
     "shell": true,
     "env": {}
   },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeSessionArgs": [
+      "--session",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",

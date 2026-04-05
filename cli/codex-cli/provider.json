@@ -92,6 +92,11 @@
     "stopStrategy": "command",
     "stopCommand": "exit",
     "shutdownGraceMs": 4000,
+    "sessionIdFormat": "uuid",
+    "resumeSessionArgs": [
+      "resume",
+      "{{id}}"
+    ],
     "resumeArgs": [
       "resume",
       "--last"

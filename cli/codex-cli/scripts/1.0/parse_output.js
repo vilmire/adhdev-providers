@@ -182,6 +182,14 @@ function isStartupScreen(text) {
         || /▌\s*(?:Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value);
 }
 
+function extractProviderSessionId(rawBuffer, buffer, screenText) {
+    const source = [rawBuffer, buffer, screenText]
+        .map(value => String(value || ''))
+        .join('\n');
+    const match = source.match(/session id:\s*([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i);
+    return match ? match[1] : '';
+}
+
 function collectAssistantLines(lines) {
     const blocks = [];
     let current = null;
@@ -511,6 +519,7 @@ module.exports = function parseOutput(input) {
             title: 'Codex CLI',
             messages: toMessageObjects(previousMessages, status),
             activeModal,
+            providerSessionId: extractProviderSessionId(input?.rawBuffer, transcript, screenText) || undefined,
         };
     }
 
@@ -565,5 +574,6 @@ module.exports = function parseOutput(input) {
         title: 'Codex CLI',
         messages: toMessageObjects(messages, status),
         activeModal,
+        providerSessionId: extractProviderSessionId(input?.rawBuffer, transcript, screenText) || undefined,
     };
 };

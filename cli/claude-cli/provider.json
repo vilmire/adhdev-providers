@@ -181,6 +181,15 @@
     "stopStrategy": "command",
     "stopCommand": "exit",
     "shutdownGraceMs": 4000,
+    "sessionIdFormat": "uuid",
+    "newSessionArgs": [
+      "--session-id",
+      "{{id}}"
+    ],
+    "resumeSessionArgs": [
+      "--resume",
+      "{{id}}"
+    ],
     "resumeArgs": [
       "--continue"
     ]

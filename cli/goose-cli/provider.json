@@ -25,6 +25,23 @@
     "0": "\r",
     "1": "\u001b[C\r"
   },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeSessionArgs": [
+      "session",
+      "--resume",
+      "--session-id",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "session",
+      "--resume"
+    ]
+  },
   "status": "Beta",
   "details": "Terminal only"
 }

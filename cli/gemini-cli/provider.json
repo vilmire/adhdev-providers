@@ -150,6 +150,7 @@
     "stopStrategy": "command",
     "stopCommand": "exit",
     "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
     "resumeArgs": [
       "--resume",
       "latest"

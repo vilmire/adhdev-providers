@@ -70,6 +70,14 @@ function collectMeaningfulLines(lines) {
     return out;
 }
 
+function extractProviderSessionId(rawBuffer, buffer, screenText) {
+    const source = [rawBuffer, buffer, screenText]
+        .map(value => String(value || ''))
+        .join('\n');
+    const match = source.match(/\b(\d{8}_\d+)\s+·\s+\/[^\s]+/);
+    return match ? match[1] : '';
+}
+
 function extractVisibleTurn(text, previousMessages) {
     const lines = splitLines(text);
     let emptyPromptIndex = -1;
@@ -191,5 +199,6 @@ module.exports = function parseOutput(input) {
         title: 'Goose',
         messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText, partialText), status),
         activeModal,
+        providerSessionId: extractProviderSessionId(input?.rawBuffer, transcript, screenText) || undefined,
     };
 };

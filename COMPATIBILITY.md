@@ -1,6 +1,6 @@
 # ADHDev Provider Compatibility Matrix
 
-> **Last updated:** 2026-03-22  
+> **Last updated:** 2026-04-05  
 > **How to contribute:** Submit a PR updating the status for your OS/version. See [Status Legend](#status-legend) below.
 
 ## Status Legend
@@ -99,6 +99,25 @@
 | `resize` | Resize terminal (cols/rows) | ✅ |
 | `kill` | Terminate process | ✅ |
 
+### Saved Session / Resume Support — CLI
+
+> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history.
+
+| Provider | CLI resume by explicit session ID | New session ID strategy | When session ID becomes available | ADHDev extraction status | Tested On | Notes |
+|----------|-----------------------------------|--------------------------|-----------------------------------|--------------------------|-----------|-------|
+| `claude-cli` | ✅ | CLI accepts caller-supplied ID via `--session-id <uuid>` | Immediately at launch | ✅ Full | macOS, Claude Code `v2.1.84` | Best-case path: start with explicit ID, resume with `--resume <uuid>` |
+| `goose-cli` | ✅ | CLI generates ID internally | Immediately after TUI startup | ✅ Full | macOS, Goose `v1.28.0` | `--session-id` is valid only with `--resume`; ADHDev extracts generated ID from Goose UI / local session DB |
+| `codex-cli` | ✅ | CLI generates ID internally | After first user turn creates thread | ✅ Partial-immediate | macOS, Codex CLI `v0.118.0` | TUI launch alone may not create a saved thread; ADHDev promotes ID after first message via `~/.codex/state_5.sqlite` |
+| `opencode-cli` | ✅ | CLI generates ID internally | After first user turn creates session | ✅ Partial-immediate | macOS, OpenCode `v1.3.14` | TUI launch alone does not create `ses_...`; ADHDev promotes ID after first message via `~/.local/share/opencode/opencode.db` |
+| `gemini-cli` | ⚠️ Limited | No explicit saved-session ID flow verified | Unverified | ❌ Not supported | macOS, Gemini CLI `v0.35.3` | `--resume latest|index` exists, but specific saved-session resume was not verified and testing was blocked by `429 Too Many Requests` |
+| `aider-cli` | ❌ | N/A | N/A | ❌ Not supported | macOS, Aider `v0.86.2` | History-file continuation exists, but not CLI-native saved-session resume by provider session ID |
+
+#### Notes
+
+- `Full` means ADHDev can preserve one provider conversation across restarts and re-open it from saved-session history without waiting for a first turn.
+- `Partial-immediate` means the provider session ID is not available at bare TUI startup, but ADHDev promotes it automatically as soon as the provider creates a real saved conversation.
+- On macOS, some CLIs normalize `/tmp/...` to `/private/tmp/...`; ADHDev now resolves both paths when probing provider-local session stores.
+
 ---
 
 ## ACP Providers
@@ -113,13 +132,17 @@
 | `amp` | Amp (Sourcegraph) | ❓ | ❓ | ❓ | | |
 | `auggie` | Auggie (Augment Code) | ❓ | ❓ | ❓ | | |
 | `autodev` | AutoDev | ❓ | ❓ | ❓ | | |
+| `autohand` | Autohand Code | ❓ | ❓ | ❓ | | |
 | `blackbox-ai` | Blackbox AI | ❓ | ❓ | ❓ | | |
 | `claude-agent` | Claude Code (ACP) | ❓ | ❓ | ❓ | | |
 | `cline-acp` | Cline (ACP) | ❓ | ❓ | ❓ | | |
+| `codebuddy` | Codebuddy Code | ❓ | ❓ | ❓ | | |
 | `codex-cli` | Codex CLI (ACP) | ❓ | ❓ | ❓ | | |
 | `corust-agent` | Corust Agent | ❓ | ❓ | ❓ | | |
+| `crow-cli` | crow-cli | ❓ | ❓ | ❓ | | |
 | `cursor-acp` | Cursor (ACP) | ❓ | ❓ | ❓ | | |
 | `deepagents` | Deep Agents | ❓ | ❓ | ❓ | | |
+| `dimcode` | DimCode | ❓ | ❓ | ❓ | | |
 | `docker-cagent` | Docker cagent | ❓ | ❓ | ❓ | | |
 | `factory-droid` | Factory AI Droids | ❓ | ❓ | ❓ | | |
 | `fast-agent` | fast-agent | ❓ | ❓ | ❓ | | |
@@ -129,7 +152,9 @@
 | `junie` | Junie (JetBrains) | ❓ | ❓ | ❓ | | |
 | `kilo` | Kilo Code | ❓ | ❓ | ❓ | | |
 | `kimi-cli` | Kimi Code CLI | ❓ | ❓ | ❓ | | |
+| `minion-code` | Minion Code | ❓ | ❓ | ❓ | | |
 | `mistral-vibe` | Mistral Vibe CLI | ❓ | ❓ | ❓ | | |
+| `nova` | Nova | ❓ | ❓ | ❓ | | |
 | `openclaw` | OpenClaw | ❓ | ❓ | ❓ | | Requires running Gateway |
 | `opencode` | OpenCode | ❓ | ❓ | ❓ | | |
 | `openhands` | OpenHands | ❓ | ❓ | ❓ | | |
