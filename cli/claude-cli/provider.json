@@ -202,5 +202,6 @@
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Stable",
-  "details": "Terminal only"
+  "details": "Terminal only",
+  "disableUpstream": true
 }

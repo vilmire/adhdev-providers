@@ -33,11 +33,16 @@ function isNoise(line) {
 }
 
 function normalizeButtonLabel(line) {
-    return normalize(line)
+    const trimmed = normalize(line)
         .replace(/^[❯›>]\s*/, '')
         .replace(/^[([{]?\d+[)\].:\]-]?\s*/, '')
         .replace(/\s+/g, ' ')
         .trim();
+
+    if (/^Yes,\s+and\s+don['’]t\s+ask\s+again\b/i.test(trimmed)) return 'Always allow';
+    if (/^Allow\s*once\b/i.test(trimmed)) return 'Yes';
+    if (/^(?:Deny|Reject)\b/i.test(trimmed)) return 'No';
+    return trimmed;
 }
 
 function isButtonLine(line) {
@@ -80,8 +85,11 @@ module.exports = function parseApproval(input) {
         if (!trailingApproval) return null;
     }
 
+    const questionIndexInRecent = findLastIndex(recent, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
+    const buttonWindow = questionIndexInRecent >= 0 ? recent.slice(questionIndexInRecent) : recent;
+
     const buttons = [];
-    for (const line of recent) {
+    for (const line of buttonWindow) {
         if (!isButtonLine(line)) continue;
         const label = normalizeButtonLabel(line);
         if (label && !buttons.includes(label)) buttons.push(label);

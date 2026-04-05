@@ -82,6 +82,22 @@ function isToolLine(line) {
         || /^⎿\s+(?:Running|Wrote|Read|Updated|Edited|Created|\/)/i.test(trimmed);
 }
 
+function isAssistantReplyLine(line) {
+    const trimmed = normalize(line);
+    if (!trimmed) return false;
+    if (isShellChrome(trimmed) || isApprovalCue(trimmed) || isApprovalButton(trimmed) || isToolLine(trimmed)) return false;
+    if (isSpinnerLine(trimmed)) return false;
+    return /^(?:[⏺•]\s+)?\S/.test(trimmed);
+}
+
+function isTransientPostReplyLine(line) {
+    const trimmed = normalize(line);
+    if (!trimmed) return true;
+    if (isSpinnerLine(trimmed)) return true;
+    if (isShellChrome(trimmed)) return true;
+    return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
+}
+
 function hasActiveApproval(lines) {
     const window = takeLast(lines, 18);
     const cues = window.filter(isApprovalCue).length;
@@ -96,6 +112,34 @@ function hasActiveGenerating(lines) {
     return spinner || (activeTool && window.some(line => /\u2026|\.{3}|Running\b/i.test(normalize(line))));
 }
 
+function hasVisibleCompletedReply(lines) {
+    const recent = takeLast(lines, 20);
+    let promptIndex = -1;
+    for (let i = recent.length - 1; i >= 0; i--) {
+        if (isIdlePrompt(recent[i])) {
+            promptIndex = i;
+            break;
+        }
+    }
+    if (promptIndex < 0) return false;
+
+    const beforePrompt = recent.slice(0, promptIndex);
+    let lastAssistantIndex = -1;
+    for (let i = beforePrompt.length - 1; i >= 0; i--) {
+        if (isAssistantReplyLine(beforePrompt[i])) {
+            lastAssistantIndex = i;
+            break;
+        }
+    }
+    if (lastAssistantIndex < 0) return false;
+
+    const trailingSegment = beforePrompt.slice(lastAssistantIndex + 1);
+    const hasRunningTool = trailingSegment.some(line => /^⎿\s+Running\b/i.test(normalize(line)));
+    if (hasRunningTool) return false;
+
+    return trailingSegment.every(isTransientPostReplyLine);
+}
+
 module.exports = function detectStatus(input) {
     const screenLines = nonEmptyLines(input?.screenText || '');
     const tailLines = nonEmptyLines(input?.tail || '');
@@ -103,8 +147,9 @@ module.exports = function detectStatus(input) {
 
     if (activeLines.length > 0) {
         if (hasActiveApproval(activeLines)) return 'waiting_approval';
-        if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
+        if (hasVisibleCompletedReply(activeLines)) return 'idle';
         if (hasActiveGenerating(activeLines)) return 'generating';
+        if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
         if (takeLast(activeLines, 8).some(isShellChrome)) return 'idle';
     }
 

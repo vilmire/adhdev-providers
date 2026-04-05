@@ -1,0 +1,1735 @@
+{
+  "version": 1,
+  "kind": "cli-exercise-fixture",
+  "name": "claude-cli-version-clean",
+  "type": "claude-cli",
+  "createdAt": "2026-04-05T09:25:52.154Z",
+  "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+  "providerResolution": {
+    "type": "claude-cli",
+    "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+    "scriptDir": "scripts/1.0",
+    "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+    "scriptsSource": "compatibility:>=2.1.0",
+    "resolvedVersion": "2.1.84",
+    "resolvedOs": null,
+    "versionWarning": null
+  },
+  "request": {
+    "type": "claude-cli",
+    "workingDir": "/Users/vilmire/Work/remote_vs",
+    "freshSession": true,
+    "autoLaunch": true,
+    "autoResolveApprovals": true,
+    "approvalButtonIndex": 0,
+    "timeoutMs": 45000,
+    "traceLimit": 250,
+    "text": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string."
+  },
+  "result": {
+    "exercised": true,
+    "instanceId": "2c019d88-0f58-475d-ba8d-94112efa41eb",
+    "providerState": {
+      "type": "claude-cli",
+      "name": "Claude Code",
+      "status": "idle",
+      "mode": "chat"
+    },
+    "providerResolution": {
+      "type": "claude-cli",
+      "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+      "scriptDir": "scripts/1.0",
+      "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+      "scriptsSource": "compatibility:>=2.1.0",
+      "resolvedVersion": "2.1.84",
+      "resolvedOs": null,
+      "versionWarning": null
+    },
+    "initialDebug": {
+      "type": "claude-cli",
+      "name": "Claude Code",
+      "providerResolution": {
+        "type": "claude-cli",
+        "name": "Claude Code",
+        "resolvedVersion": "2.1.84",
+        "resolvedOs": null,
+        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "scriptDir": "scripts/1.0",
+        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsSource": "compatibility:>=2.1.0",
+        "versionWarning": null
+      },
+      "status": "idle",
+      "ready": true,
+      "startupParseGate": false,
+      "spawnAt": 1775381124085,
+      "workingDir": "/Users/vilmire/Work/remote_vs",
+      "messages": [],
+      "committedMessages": [],
+      "structuredMessages": [],
+      "messageCount": 0,
+      "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to",
+      "currentTurnScope": null,
+      "startupBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n \n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n \n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n \n Update available! Run: brew upgrade cla…\n\n ",
+      "recentOutputBuffer": "aude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n \n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n \n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n \n Update available! Run: brew upgrade cla…\n\n ",
+      "settledBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n \n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n \n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+      "accumulatedBufferLength": 506,
+      "accumulatedRawBufferLength": 1258,
+      "rawBufferPreview": "    \u001b[3C\u001b[49m\u001b[38;5;246mSonnet\u001b[1C4.6\u001b[1C·\u001b[1CClaude\u001b[1CPro\u001b[39m\r\r\n\u001b[2C\u001b[38;5;174m▘▘\u001b[1C▝▝\u001b[4C\u001b[38;5;246m~/Work/remote_vs\u001b[39m\r\r\n\r\r\n\u001b[38;5;244m────────────────────────────────────────────────────────────────────────────────\u001b[39m\r\r\n❯ \u001b[7m \u001b[27m\r\r\n\u001b[38;5;244m────────────────────────────────────────────────────────────────────────────────\u001b[39m\r\r\n\u001b[2C\u001b[38;5;147m⏵⏵\u001b[1Caccept\u001b[1Cedits\u001b[1Con\u001b[38;5;246m (shift+tab\u001b[1Cto\u001b[1Ccycle)\u001b[19C◐\u001b[1Cmedium\u001b[1C·\u001b[1C/effort\u001b[39m\r\r\n\u001b[2C\u001b[3A\u001b[?2026l\u001b[>0q\u001b[c\u001b[?2026h\u001b[2D\u001b[3B\r\u001b[2C\u001b[1A\u001b[32m➜ \u001b[36mremote_vs git:\u001b[31m(main) ✗\u001b[39m               \r\r\n\u001b[2C\u001b[38;5;147m⏵⏵\u001b[1Caccept\u001b[1Cedits\u001b[1Con\u001b[38;5;246m (shift+tab\u001b[1Cto\u001b[1Ccycle)\u001b[39m\r\r\n\u001b[2C\u001b[4A\u001b[?2026l\u001b[?2026h\u001b[2D\u001b[4B\r\u001b[59C\u001b[2A\u001b[38;5;246m◐ medium · /ef\u001b[1Cort\u001b[39m \r\u001b[35C\u001b[1B  \u001b[38;5;220mUpdate available! Run: \u001b[1mbrew upgrade cla…\u001b[22m\u001b[39m\r\r\n\u001b[2C\u001b[4A\u001b[?2026l\u001b[?2026h\u001b[2D\u001b[4B\r\u001b[37C\u001b[2A\u001b[38;5;220mUpdate available! Run: \u001b[1mbrew upgrade cla…\r\u001b[37C\u001b[1B\u001b[22m\u001b[39m                                        \r\r\n\u001b[2C\u001b[4A\u001b[?2026l",
+      "sanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n ",
+      "responseBuffer": "",
+      "lastOutputAt": 1775381138447,
+      "lastNonEmptyOutputAt": 1775381138447,
+      "lastScreenChangeAt": 1775381138447,
+      "lastScreenSnapshot": "▗ ▗ ▖ ▖ Claude Code v2.1.84 Sonnet 4.6 · Claude Pro ▘▘ ▝▝ ~/Work/remote_vs ──────────────────────────────────────────────────────────────────────────────── ❯ ──────────────────────────────────────────────────────────────────────────────── ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla… ⏵⏵ accept edits on (shift+tab to",
+      "isWaitingForResponse": false,
+      "activeModal": null,
+      "lastApprovalResolvedAt": 0,
+      "sendDelayMs": 700,
+      "sendKey": "\r",
+      "submitStrategy": "immediate",
+      "submitPendingUntil": 0,
+      "responseSettleIgnoreUntil": 0,
+      "resizeSuppressUntil": 0,
+      "hasCliScripts": true,
+      "scriptNames": [
+        "parseOutput",
+        "detectStatus",
+        "parseApproval"
+      ],
+      "traceSessionId": "mnlk2ynp-kt5b4k",
+      "traceEntryCount": 12,
+      "statusHistory": [
+        {
+          "status": "idle",
+          "at": 1775381124294,
+          "trigger": "pty_ready"
+        }
+      ],
+      "timeouts": {
+        "ptyFlush": 50,
+        "dialogAccept": 300,
+        "approvalCooldown": 3000,
+        "generatingIdle": 6000,
+        "idleFinish": 5000,
+        "maxResponse": 300000,
+        "shutdownGrace": 1000,
+        "outputSettle": 300
+      },
+      "pendingOutputParseBufferLength": 0,
+      "pendingOutputParseScheduled": false,
+      "ptyAlive": true
+    },
+    "initialTrace": {
+      "sessionId": "mnlk2ynp-kt5b4k",
+      "providerResolution": {
+        "type": "claude-cli",
+        "name": "Claude Code",
+        "resolvedVersion": "2.1.84",
+        "resolvedOs": null,
+        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "scriptDir": "scripts/1.0",
+        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsSource": "compatibility:>=2.1.0",
+        "versionWarning": null
+      },
+      "entryCount": 12,
+      "entries": [
+        {
+          "id": 1,
+          "at": 1775381124085,
+          "type": "session_start",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "providerType": "claude-cli",
+            "workingDir": "/Users/vilmire/Work/remote_vs"
+          }
+        },
+        {
+          "id": 2,
+          "at": 1775381124085,
+          "type": "spawn",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "shellCommand": "/bin/zsh",
+            "shellArgs": [
+              "-l",
+              "-c",
+              "/opt/homebrew/bin/claude --permission-mode acceptEdits --session-id 03e9e286-fe77-4d71-b7bb-c93f9273e67e"
+            ],
+            "cwd": "/Users/vilmire/Work/remote_vs",
+            "cols": 80,
+            "rows": 24,
+            "providerResolution": {
+              "type": "claude-cli",
+              "name": "Claude Code",
+              "resolvedVersion": "2.1.84",
+              "resolvedOs": null,
+              "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+              "scriptDir": "scripts/1.0",
+              "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+              "scriptsSource": "compatibility:>=2.1.0",
+              "versionWarning": null
+            }
+          }
+        },
+        {
+          "id": 3,
+          "at": 1775381124294,
+          "type": "ready",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "runtimeMeta": {
+              "runtimeId": "2c019d88-0f58-475d-ba8d-94112efa41eb",
+              "runtimeKey": "claude-cli-remote-vs-19",
+              "displayName": "claude-cli @ remote_vs",
+              "workspaceLabel": "remote_vs",
+              "writeOwner": {
+                "clientId": "daemon-31335",
+                "ownerType": "agent"
+              },
+              "attachedClients": [
+                {
+                  "clientId": "daemon-31335",
+                  "type": "daemon",
+                  "readOnly": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": 4,
+          "at": 1775381124294,
+          "type": "status",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "previousStatus": "starting",
+            "trigger": "pty_ready"
+          }
+        },
+        {
+          "id": 5,
+          "at": 1775381125719,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 42,
+            "cleanLength": 0,
+            "rawPreview": "",
+            "cleanPreview": "",
+            "screenText": ""
+          }
+        },
+        {
+          "id": 6,
+          "at": 1775381126021,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "",
+            "screenText": "",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "",
+            "turnRawPreview": "",
+            "turnSanitizedRawPreview": ""
+          }
+        },
+        {
+          "id": 7,
+          "at": 1775381126436,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 705,
+            "cleanLength": 325,
+            "rawPreview": "…aude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ",
+            "cleanPreview": "…aude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort"
+          }
+        },
+        {
+          "id": 8,
+          "at": 1775381126568,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 191,
+            "cleanLength": 71,
+            "rawPreview": "\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "cleanPreview": "\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to cycle)"
+          }
+        },
+        {
+          "id": 9,
+          "at": 1775381126870,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to cycle)",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "turnRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "turnSanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n "
+          }
+        },
+        {
+          "id": 10,
+          "at": 1775381127233,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 160,
+            "cleanLength": 65,
+            "rawPreview": "\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "cleanPreview": "\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to Update available! Run: brew upgrade cla…"
+          }
+        },
+        {
+          "id": 11,
+          "at": 1775381127535,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to Update available! Run: brew upgrade cla…",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnSanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n "
+          }
+        },
+        {
+          "id": 12,
+          "at": 1775381138447,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 160,
+            "cleanLength": 45,
+            "rawPreview": "\n Update available! Run: brew upgrade cla…\n\n ",
+            "cleanPreview": "\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        }
+      ],
+      "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to",
+      "recentOutputBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n ",
+      "responseBuffer": "",
+      "status": "idle",
+      "activeModal": null,
+      "currentTurnScope": null,
+      "messages": []
+    },
+    "debug": {
+      "type": "claude-cli",
+      "name": "Claude Code",
+      "providerResolution": {
+        "type": "claude-cli",
+        "name": "Claude Code",
+        "resolvedVersion": "2.1.84",
+        "resolvedOs": null,
+        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "scriptDir": "scripts/1.0",
+        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsSource": "compatibility:>=2.1.0",
+        "versionWarning": null
+      },
+      "status": "idle",
+      "ready": true,
+      "startupParseGate": false,
+      "spawnAt": 1775381124085,
+      "workingDir": "/Users/vilmire/Work/remote_vs",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+          "timestamp": 1775381150804
+        },
+        {
+          "role": "assistant",
+          "content": "found\")\n     codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+          "timestamp": 1775381150804
+        }
+      ],
+      "committedMessages": [
+        {
+          "role": "user",
+          "content": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+          "timestamp": 1775381150804
+        },
+        {
+          "role": "assistant",
+          "content": "found\")\n     codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+          "timestamp": 1775381150804
+        }
+      ],
+      "structuredMessages": [
+        {
+          "role": "user",
+          "content": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+          "timestamp": 1775381150804
+        },
+        {
+          "role": "assistant",
+          "content": "found\")\n     codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+          "timestamp": 1775381150804
+        }
+      ],
+      "messageCount": 2,
+      "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n⏺ codex-cli 0.118.0\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n",
+      "currentTurnScope": null,
+      "startupBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n \n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n \n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n \n Update available! Run: brew upgrade cla…\n\n ",
+      "recentOutputBuffer": "ex binary version\n …\n\n \n ✻\n\n \n ✽\n\n \n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+      "settledBuffer": "ex binary version\n …\n\n \n ✻\n\n \n ✽\n\n \n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+      "accumulatedBufferLength": 2804,
+      "accumulatedRawBufferLength": 10224,
+      "rawBufferPreview": "  \u001b[11C                                        \r\u001b[1B\u001b[38;5;244m────────────────────────────────────────────────────────────────────────────────\u001b[39m\r\r\n\u001b[2C\u001b[32m➜\u001b[1C\u001b[36mremote_vs\u001b[1Cgit:\u001b[31m(main)\u001b[1C✗\u001b[11C\u001b[38;5;220mUpdate\u001b[1Cavailable!\u001b[1CRun:\u001b[1C\u001b[1mbrew\u001b[1Cupgrade\u001b[1Ccla…\u001b[22m\u001b[39m\r\r\n\u001b[2C\u001b[38;5;147m⏵⏵\u001b[1Caccept\u001b[1Cedits\u001b[1Con\u001b[38;5;246m (shift+tab\u001b[1Cto\u001b[39m\r\r\n\u001b[2C\u001b[4A\u001b[?2026l\u001b]0;✳ Check installed codex binary version\u0007\u001b[?2026h\u001b[2D\u001b[4B\u001b[2K\u001b[1A\u001b[2K\u001b[G\u001b[1A\r\u001b[5A\u001b[38;5;244m────────────────────────────────────────────────────────────────────────────────\r\u001b[1B\u001b[39m❯ \u001b[7m \r\u001b[2B\u001b[27m  \u001b[32m➜ \u001b[36mremote_vs git:\u001b[31m(main) ✗\u001b[11C\u001b[38;5;220mUpdate available! Run: \u001b[1mbrew upgrade cla…\r\u001b[1B\u001b[22m\u001b[39m  \u001b[38;5;147m⏵⏵ accept edits on\u001b[38;5;246m (shift+tab to \u001b[39m                                             \r\u001b[1B                                                                                \r\u001b[1B                                                                                \r\u001b[1A\u001b[2C\u001b[4A\u001b[?2026l",
+      "sanitizedRawPreview": "sion\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+      "responseBuffer": "",
+      "lastOutputAt": 1775381144499,
+      "lastNonEmptyOutputAt": 1775381144499,
+      "lastScreenChangeAt": 1775381144499,
+      "lastScreenSnapshot": "binary is installed and report only the codex version string. ⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not found\") ⎿ /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex codex-cli 0.118.0 ⏺ codex-cli 0.118.0 ──────────────────────────────────────────────────────────────────────────────── ❯ ──────────────────────────────────────────────────────────────────────────────── ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla… ⏵⏵ accept edits on (shift+tab to",
+      "isWaitingForResponse": false,
+      "activeModal": null,
+      "lastApprovalResolvedAt": 0,
+      "sendDelayMs": 700,
+      "sendKey": "\r",
+      "submitStrategy": "immediate",
+      "submitPendingUntil": 0,
+      "responseSettleIgnoreUntil": 0,
+      "resizeSuppressUntil": 0,
+      "hasCliScripts": true,
+      "scriptNames": [
+        "parseOutput",
+        "detectStatus",
+        "parseApproval"
+      ],
+      "traceSessionId": "mnlk2ynp-kt5b4k",
+      "traceEntryCount": 73,
+      "statusHistory": [
+        {
+          "status": "idle",
+          "at": 1775381124294,
+          "trigger": "pty_ready"
+        },
+        {
+          "status": "generating",
+          "at": 1775381139162,
+          "trigger": "sendMessage"
+        },
+        {
+          "status": "idle",
+          "at": 1775381150805,
+          "trigger": "response_finished"
+        }
+      ],
+      "timeouts": {
+        "ptyFlush": 50,
+        "dialogAccept": 300,
+        "approvalCooldown": 3000,
+        "generatingIdle": 6000,
+        "idleFinish": 5000,
+        "maxResponse": 300000,
+        "shutdownGrace": 1000,
+        "outputSettle": 300
+      },
+      "pendingOutputParseBufferLength": 0,
+      "pendingOutputParseScheduled": false,
+      "ptyAlive": true
+    },
+    "trace": {
+      "sessionId": "mnlk2ynp-kt5b4k",
+      "providerResolution": {
+        "type": "claude-cli",
+        "name": "Claude Code",
+        "resolvedVersion": "2.1.84",
+        "resolvedOs": null,
+        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "scriptDir": "scripts/1.0",
+        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsSource": "compatibility:>=2.1.0",
+        "versionWarning": null
+      },
+      "entryCount": 73,
+      "entries": [
+        {
+          "id": 1,
+          "at": 1775381124085,
+          "type": "session_start",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "providerType": "claude-cli",
+            "workingDir": "/Users/vilmire/Work/remote_vs"
+          }
+        },
+        {
+          "id": 2,
+          "at": 1775381124085,
+          "type": "spawn",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "shellCommand": "/bin/zsh",
+            "shellArgs": [
+              "-l",
+              "-c",
+              "/opt/homebrew/bin/claude --permission-mode acceptEdits --session-id 03e9e286-fe77-4d71-b7bb-c93f9273e67e"
+            ],
+            "cwd": "/Users/vilmire/Work/remote_vs",
+            "cols": 80,
+            "rows": 24,
+            "providerResolution": {
+              "type": "claude-cli",
+              "name": "Claude Code",
+              "resolvedVersion": "2.1.84",
+              "resolvedOs": null,
+              "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+              "scriptDir": "scripts/1.0",
+              "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+              "scriptsSource": "compatibility:>=2.1.0",
+              "versionWarning": null
+            }
+          }
+        },
+        {
+          "id": 3,
+          "at": 1775381124294,
+          "type": "ready",
+          "status": "starting",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "runtimeMeta": {
+              "runtimeId": "2c019d88-0f58-475d-ba8d-94112efa41eb",
+              "runtimeKey": "claude-cli-remote-vs-19",
+              "displayName": "claude-cli @ remote_vs",
+              "workspaceLabel": "remote_vs",
+              "writeOwner": {
+                "clientId": "daemon-31335",
+                "ownerType": "agent"
+              },
+              "attachedClients": [
+                {
+                  "clientId": "daemon-31335",
+                  "type": "daemon",
+                  "readOnly": false
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": 4,
+          "at": 1775381124294,
+          "type": "status",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "previousStatus": "starting",
+            "trigger": "pty_ready"
+          }
+        },
+        {
+          "id": 5,
+          "at": 1775381125719,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 42,
+            "cleanLength": 0,
+            "rawPreview": "",
+            "cleanPreview": "",
+            "screenText": ""
+          }
+        },
+        {
+          "id": 6,
+          "at": 1775381126021,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "",
+            "screenText": "",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "",
+            "turnRawPreview": "",
+            "turnSanitizedRawPreview": ""
+          }
+        },
+        {
+          "id": 7,
+          "at": 1775381126436,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 705,
+            "cleanLength": 325,
+            "rawPreview": "…aude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ",
+            "cleanPreview": "…aude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort"
+          }
+        },
+        {
+          "id": 8,
+          "at": 1775381126568,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 191,
+            "cleanLength": 71,
+            "rawPreview": "\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "cleanPreview": "\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to cycle)"
+          }
+        },
+        {
+          "id": 9,
+          "at": 1775381126870,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to cycle)",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "turnRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ",
+            "turnSanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n "
+          }
+        },
+        {
+          "id": 10,
+          "at": 1775381127233,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 160,
+            "cleanLength": 65,
+            "rawPreview": "\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "cleanPreview": "\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to Update available! Run: brew upgrade cla…"
+          }
+        },
+        {
+          "id": 11,
+          "at": 1775381127535,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ ◐ medium · /effort\n ⏵⏵ accept edits on (shift+tab to Update available! Run: brew upgrade cla…",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnSanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n "
+          }
+        },
+        {
+          "id": 12,
+          "at": 1775381138447,
+          "type": "output",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 160,
+            "cleanLength": 45,
+            "rawPreview": "\n Update available! Run: brew upgrade cla…\n\n ",
+            "cleanPreview": "\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 13,
+          "at": 1775381138749,
+          "type": "settled",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "tail": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to",
+            "detectStatus": "idle",
+            "parsedStatus": "idle",
+            "parsedMessageCount": 0,
+            "parsedLastAssistant": "",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": null,
+            "responseBuffer": "",
+            "partialResponse": "",
+            "turnBuffer": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n ",
+            "turnSanitizedRawPreview": "0;✳ Claude Code▗ ▗ ▖ ▖ Claude Code v2.1.84\n\n Sonnet 4.6 · Claude Pro\n\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ⏵⏵ accept edits on (shift+tab to cycle) ◐ medium · /effort\n\n ➜ remote_vs git:(main) ✗\n\n ⏵⏵ accept edits on (shift+tab to cycle)\n\n ◐ medium · /ef ort\n Update available! Run: brew upgrade cla…\n\n Update available! Run: brew upgrade cla…\n\n "
+          }
+        },
+        {
+          "id": 14,
+          "at": 1775381139162,
+          "type": "send_message",
+          "status": "idle",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "text": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+            "estimatedLines": 2,
+            "turnScope": {
+              "prompt": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+              "startedAt": 1775381139162,
+              "bufferStart": 506,
+              "rawBufferStart": 1258
+            }
+          }
+        },
+        {
+          "id": 15,
+          "at": 1775381139162,
+          "type": "status",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "previousStatus": "idle",
+            "trigger": "sendMessage"
+          }
+        },
+        {
+          "id": 16,
+          "at": 1775381139162,
+          "type": "submit_write",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "mode": "immediate",
+            "text": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+            "sendKey": "\r",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 17,
+          "at": 1775381139214,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 963,
+            "cleanLength": 420,
+            "rawPreview": "… string.\n\n · Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "cleanPreview": "… string.\n\n · Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 18,
+          "at": 1775381139471,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✢\n\n ",
+            "cleanPreview": "\n ✢\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 19,
+          "at": 1775381139590,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✳\n\n ",
+            "cleanPreview": "\n ✳\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 20,
+          "at": 1775381139688,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✶\n\n ",
+            "cleanPreview": "\n ✶\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 21,
+          "at": 1775381139850,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✻\n\n ",
+            "cleanPreview": "\n ✻\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 22,
+          "at": 1775381139954,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✽\n\n ",
+            "cleanPreview": "\n ✽\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✽ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 23,
+          "at": 1775381140062,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 73,
+            "cleanLength": 6,
+            "rawPreview": "\n R\n\n ",
+            "cleanPreview": "\n R\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✽ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 24,
+          "at": 1775381140126,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 164,
+            "cleanLength": 15,
+            "rawPreview": "\n et\n\n ✻ R i\n\n ",
+            "cleanPreview": "\n et\n\n ✻ R i\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 25,
+          "at": 1775381140214,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 107,
+            "cleanLength": 23,
+            "rawPreview": "0;⠐ Claude Code\n e c\n\n ",
+            "cleanPreview": "0;⠐ Claude Code\n e c\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 26,
+          "at": 1775381140267,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 133,
+            "cleanLength": 50,
+            "rawPreview": "0;⠐ Check installed codex binary version\n ✶ t u\n\n ",
+            "cleanPreview": "0;⠐ Check installed codex binary version\n ✶ t u\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 27,
+          "at": 1775381140337,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n i l\n\n ",
+            "cleanPreview": "\n i l\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 28,
+          "at": 1775381140396,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n c a\n\n ",
+            "cleanPreview": "\n c a\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 29,
+          "at": 1775381140449,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 90,
+            "cleanLength": 10,
+            "rawPreview": "\n ✳ u t\n\n ",
+            "cleanPreview": "\n ✳ u t\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 30,
+          "at": 1775381140503,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n l i\n\n ",
+            "cleanPreview": "\n l i\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 31,
+          "at": 1775381140566,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 90,
+            "cleanLength": 10,
+            "rawPreview": "\n ✢ a n\n\n ",
+            "cleanPreview": "\n ✢ a n\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 32,
+          "at": 1775381140625,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 167,
+            "cleanLength": 16,
+            "rawPreview": "\n ti g…\n\n · n\n\n ",
+            "cleanPreview": "\n ti g…\n\n · n\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 33,
+          "at": 1775381140725,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 74,
+            "cleanLength": 6,
+            "rawPreview": "\n g\n\n ",
+            "cleanPreview": "\n g\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 34,
+          "at": 1775381140779,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 74,
+            "cleanLength": 6,
+            "rawPreview": "\n …\n\n ",
+            "cleanPreview": "\n …\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 35,
+          "at": 1775381140886,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✢\n\n ",
+            "cleanPreview": "\n ✢\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 36,
+          "at": 1775381141051,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✳\n\n ",
+            "cleanPreview": "\n ✳\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 37,
+          "at": 1775381141174,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 112,
+            "cleanLength": 46,
+            "rawPreview": "\n ✶\n\n 0;⠂ Check installed codex binary version",
+            "cleanPreview": "\n ✶\n\n 0;⠂ Check installed codex binary version",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 38,
+          "at": 1775381141279,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✻\n\n ",
+            "cleanPreview": "\n ✻\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 39,
+          "at": 1775381141387,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✽\n\n ",
+            "cleanPreview": "\n ✽\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✽ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 40,
+          "at": 1775381141607,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 143,
+            "cleanLength": 10,
+            "rawPreview": "\n ✻\n\n …\n\n ",
+            "cleanPreview": "\n ✻\n\n …\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 41,
+          "at": 1775381141776,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 86,
+            "cleanLength": 8,
+            "rawPreview": "\n ✶ g\n\n ",
+            "cleanPreview": "\n ✶ g\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 42,
+          "at": 1775381141875,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 1026,
+            "cleanLength": 393,
+            "rawPreview": "…unning…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "cleanPreview": "…unning…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 43,
+          "at": 1775381141935,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 75,
+            "cleanLength": 7,
+            "rawPreview": "\n g…\n\n ",
+            "cleanPreview": "\n g…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 44,
+          "at": 1775381142005,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✢\n\n ",
+            "cleanPreview": "\n ✢\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 45,
+          "at": 1775381142106,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 112,
+            "cleanLength": 46,
+            "rawPreview": "\n ·\n\n 0;⠐ Check installed codex binary version",
+            "cleanPreview": "\n ·\n\n 0;⠐ Check installed codex binary version",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 46,
+          "at": 1775381142327,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✢\n\n ",
+            "cleanPreview": "\n ✢\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 47,
+          "at": 1775381142379,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 85,
+            "cleanLength": 18,
+            "rawPreview": "\n Reticulating…\n\n ",
+            "cleanPreview": "\n Reticulating…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 48,
+          "at": 1775381142485,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 147,
+            "cleanLength": 10,
+            "rawPreview": "\n ✳\n\n ⏺\n\n ",
+            "cleanPreview": "\n ✳\n\n ⏺\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 49,
+          "at": 1775381142597,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 154,
+            "cleanLength": 22,
+            "rawPreview": "\n ✶\n\n Reticulating…\n\n ",
+            "cleanPreview": "\n ✶\n\n Reticulating…\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 50,
+          "at": 1775381142698,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✻\n\n ",
+            "cleanPreview": "\n ✻\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 51,
+          "at": 1775381142854,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✽\n\n ",
+            "cleanPreview": "\n ✽\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✽ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 52,
+          "at": 1775381143066,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 112,
+            "cleanLength": 46,
+            "rawPreview": "\n ✻\n\n 0;⠂ Check installed codex binary version",
+            "cleanPreview": "\n ✻\n\n 0;⠂ Check installed codex binary version",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 53,
+          "at": 1775381143123,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 910,
+            "cleanLength": 385,
+            "rawPreview": "… 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "cleanPreview": "… 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 54,
+          "at": 1775381143187,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✶\n\n ",
+            "cleanPreview": "\n ✶\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 55,
+          "at": 1775381143296,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✳\n\n ",
+            "cleanPreview": "\n ✳\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 56,
+          "at": 1775381143348,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 73,
+            "cleanLength": 6,
+            "rawPreview": "\n R\n\n ",
+            "cleanPreview": "\n R\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 57,
+          "at": 1775381143403,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 158,
+            "cleanLength": 12,
+            "rawPreview": "\n e\n\n ✢ t\n\n ",
+            "cleanPreview": "\n e\n\n ✢ t\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 58,
+          "at": 1775381143508,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n R i\n\n ",
+            "cleanPreview": "\n R i\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 59,
+          "at": 1775381143560,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 90,
+            "cleanLength": 10,
+            "rawPreview": "\n · e c\n\n ",
+            "cleanPreview": "\n · e c\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 60,
+          "at": 1775381143612,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n t u\n\n ",
+            "cleanPreview": "\n t u\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 61,
+          "at": 1775381143664,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n i l\n\n ",
+            "cleanPreview": "\n i l\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n· Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 62,
+          "at": 1775381143716,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 181,
+            "cleanLength": 18,
+            "rawPreview": "\n cu at\n\n ✢ l i\n\n ",
+            "cleanPreview": "\n cu at\n\n ✢ l i\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 63,
+          "at": 1775381143817,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 89,
+            "cleanLength": 8,
+            "rawPreview": "\n a n\n\n ",
+            "cleanPreview": "\n a n\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✢ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 64,
+          "at": 1775381143873,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 181,
+            "cleanLength": 16,
+            "rawPreview": "\n t g\n\n ✳ i …\n\n ",
+            "cleanPreview": "\n t g\n\n ✳ i …\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 65,
+          "at": 1775381143978,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 74,
+            "cleanLength": 6,
+            "rawPreview": "\n n\n\n ",
+            "cleanPreview": "\n n\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✳ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 66,
+          "at": 1775381144038,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 192,
+            "cleanLength": 54,
+            "rawPreview": "\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ",
+            "cleanPreview": "\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✶ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 67,
+          "at": 1775381144132,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✻\n\n ",
+            "cleanPreview": "\n ✻\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✻ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 68,
+          "at": 1775381144290,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 69,
+            "cleanLength": 6,
+            "rawPreview": "\n ✽\n\n ",
+            "cleanPreview": "\n ✽\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n✽ Reticulating…\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to"
+          }
+        },
+        {
+          "id": 69,
+          "at": 1775381144499,
+          "type": "output",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "rawLength": 1324,
+            "cleanLength": 465,
+            "rawPreview": "…vailable! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "cleanPreview": "…vailable! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n⏺ codex-cli 0.118.0\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n"
+          }
+        },
+        {
+          "id": 70,
+          "at": 1775381144802,
+          "type": "settled",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "tail": "…ed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n⏺ codex-cli 0.118.0\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n",
+            "detectStatus": "generating",
+            "parsedStatus": "generating",
+            "parsedMessageCount": 2,
+            "parsedLastAssistant": "found\")\n codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+            "parsedActiveModal": null,
+            "approval": null,
+            "currentTurnScope": {
+              "prompt": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+              "startedAt": 1775381139162,
+              "bufferStart": 506,
+              "rawBufferStart": 1258
+            },
+            "responseBuffer": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "partialResponse": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnBuffer": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnSanitizedRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n "
+          }
+        },
+        {
+          "id": 71,
+          "at": 1775381150804,
+          "type": "finish_response",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "currentTurnScope": {
+              "prompt": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+              "startedAt": 1775381139162,
+              "bufferStart": 506,
+              "rawBufferStart": 1258
+            },
+            "responseBuffer": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "partialResponse": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnBuffer": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnSanitizedRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n "
+          }
+        },
+        {
+          "id": 72,
+          "at": 1775381150805,
+          "type": "commit_transcript",
+          "status": "generating",
+          "isWaitingForResponse": true,
+          "activeModal": null,
+          "payload": {
+            "parsedStatus": "generating",
+            "messageCount": 2,
+            "lastAssistant": "found\")\n codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+            "messages": [
+              {
+                "role": "user",
+                "content": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+                "timestamp": 1775381150804
+              },
+              {
+                "role": "assistant",
+                "content": "found\")\n codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+                "timestamp": 1775381150804
+              }
+            ],
+            "currentTurnScope": {
+              "prompt": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+              "startedAt": 1775381139162,
+              "bufferStart": 506,
+              "rawBufferStart": 1258
+            },
+            "responseBuffer": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "partialResponse": "…pgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnBuffer": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+            "turnSanitizedRawPreview": "…eck installed codex binary version\n ✻\n\n ✽\n\n ✻\n\n …\n\n ✶ g\n\n ✳\n\n Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  Running…\n\n ✳ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n\n❯ \n\n────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n g…\n\n ✢\n\n ·\n\n 0;⠐ Check installed codex binary version\n ✢\n\n Reticulating…\n\n ✳\n\n ⏺\n\n ✶\n\n Reticulating…\n\n ✻\n\n ✽\n\n ✻\n\n 0;⠂ Check installed codex binary version\n\n Reticulating…\n\n ⏺\n /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n "
+          }
+        },
+        {
+          "id": 73,
+          "at": 1775381150805,
+          "type": "status",
+          "status": "idle",
+          "isWaitingForResponse": false,
+          "activeModal": null,
+          "payload": {
+            "previousStatus": "generating",
+            "trigger": "response_finished"
+          }
+        }
+      ],
+      "screenText": "▗ ▗ ▖ ▖ Claude Code v2.1.84\n Sonnet 4.6 · Claude Pro\n ▘▘ ▝▝ ~/Work/remote_vs\n\n❯ Use Read and Bash if needed. Check which codex binary is installed and report\n only the codex version string.\n\n⏺ Bash(which codex 2>/dev/null && codex --version 2>/dev/null || echo \"not\n found\")\n ⎿  /Users/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n⏺ codex-cli 0.118.0\n\n────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n",
+      "recentOutputBuffer": "/vilmire/.nvm/versions/node/v22.17.0/bin/codex\n codex-cli 0.118.0\n\n ✻ Reticulating…\n\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n ✶\n\n ✳\n\n R\n\n e\n\n ✢ t\n\n R i\n\n · e c\n\n t u\n\n i l\n\n cu at\n\n ✢ l i\n\n a n\n\n t g\n\n ✳ i …\n\n n\n\n ✶ g\n\n 0;⠐ Check installed codex binary version\n …\n\n ✻\n\n ✽\n\n ✻\n\n ⏺ codex-cli 0.118.0\n ✻ Reticulating…\n\n ❯ \n ────────────────────────────────────────────────────────────────────────────────\n\n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n\n ⏵⏵ accept edits on (shift+tab to\n\n 0;✳ Check installed codex binary version\n ────────────────────────────────────────────────────────────────────────────────\n ❯ \n ➜ remote_vs git:(main) ✗ Update available! Run: brew upgrade cla…\n ⏵⏵ accept edits on (shift+tab to\n\n ",
+      "responseBuffer": "",
+      "status": "idle",
+      "activeModal": null,
+      "currentTurnScope": null,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Use Read and Bash if needed. Check which codex binary is installed and report only the codex version string.",
+          "timestamp": 1775381150804
+        },
+        {
+          "role": "assistant",
+          "content": "found\")\n codex-cli 0.118.0\n\ncodex-cli 0.118.0",
+          "timestamp": 1775381150804
+        }
+      ]
+    },
+    "statusesSeen": [
+      "idle",
+      "generating",
+      "idle"
+    ],
+    "approvalsResolved": [],
+    "elapsedMs": 13706,
+    "timedOut": false
+  },
+  "assertions": {
+    "mustContainAny": [
+      "codex-cli 0.118.0"
+    ],
+    "mustNotContainAny": [
+      "found\")"
+    ],
+    "requireNotTimedOut": true
+  }
+}
