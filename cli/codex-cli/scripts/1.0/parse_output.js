@@ -76,13 +76,20 @@ function isHeaderLine(line) {
         || /(?:^|[│\s])directory:\s+/i.test(line);
 }
 
+function isShellChromeLine(line) {
+    return /^>\s+You are in\b/i.test(line)
+        || /^>_\s+OpenAI Codex\b/i.test(line)
+        || /^OpenAI Codex\b/i.test(line);
+}
+
 function isFooterLine(line) {
     return /⏎\s+send/i.test(line)
         || /⌃J\s+newline/i.test(line)
         || /⌃T\s+transcript/i.test(line)
         || /⌃C\s+quit/i.test(line)
         || /\b\d+(?:\.\d+)?[KM]?\s+tokens used\b/i.test(line)
-        || /\b\d+% context left\b/i.test(line);
+        || /\b\d+% context left\b/i.test(line)
+        || /\b\d+% left\b/i.test(line);
 }
 
 function isWelcomeLine(line) {
@@ -93,7 +100,11 @@ function isWelcomeLine(line) {
         || /choose what Codex can do without approval/i.test(line)
         || /choose what model and reasoning effort to use/i.test(line)
         || /Update available!/i.test(line)
-        || /npm install -g @openai\/codex@latest/i.test(line);
+        || /npm install -g @openai\/codex@latest/i.test(line)
+        || /Tip:\s+New Try the Codex App/i.test(line)
+        || /chatgpt\.com\/codex\?app-landing-page=true/i.test(line)
+        || /Tip:\s+Use \/skills to list available skills/i.test(line)
+        || /ask Codex to use one/i.test(line);
 }
 
 function isStatusLine(line) {
@@ -102,11 +113,24 @@ function isStatusLine(line) {
         || /^[⠁-⣿]+$/.test(line);
 }
 
-function isApprovalLine(line) {
-    return /You are running Codex in/i.test(line)
+function isApprovalCueLine(line) {
+    return /Do you trust the contents of this directory\?/i.test(line)
+        || /Working with untrusted contents/i.test(line)
+        || /You are running Codex in/i.test(line)
         || /Allow Codex to (?:run|apply)/i.test(line)
-        || /Press Enter to continue/i.test(line)
-        || /^(?:[>▌]\s*)?\d+\.\s+/.test(line);
+        || /Allow command\?/i.test(line)
+        || /Press Enter to (?:continue|confirm)/i.test(line)
+        || /Esc to cancel/i.test(line);
+}
+
+function isApprovalButtonLine(line) {
+    return /^(?:[>▌›❯]\s*)?\d+\.\s+\S/.test(line)
+        || /Approve and run now/i.test(line)
+        || /Always approve this session/i.test(line);
+}
+
+function isApprovalLine(line) {
+    return isApprovalCueLine(line) || isApprovalButtonLine(line);
 }
 
 function isInputLine(line) {
@@ -114,11 +138,13 @@ function isInputLine(line) {
 }
 
 function isPlaceholderLine(line) {
-    return /^(?:Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})$/i.test(line);
+    return /^(?:[›❯]\s*)?(?:Use \/skills to list available skills|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})$/i.test(line);
 }
 
 function isAssistantLeadLine(line) {
-    return /^>\s+/.test(line) || /^•\s+/.test(line);
+    return (/^>\s+/.test(line) || /^•\s+/.test(line))
+        && !isShellChromeLine(line)
+        && !isApprovalLine(line);
 }
 
 function stripAssistantLead(line) {
@@ -129,6 +155,7 @@ function isTranscriptNoise(line) {
     return !line
         || isBoxLine(line)
         || isHeaderLine(line)
+        || isShellChromeLine(line)
         || isFooterLine(line)
         || isWelcomeLine(line)
         || isStatusLine(line)
@@ -173,13 +200,16 @@ function isWelcomeScreen(text) {
 function isStartupScreen(text) {
     const value = String(text || '');
     return /You are running Codex in/i.test(value)
+        || /Do you trust the contents of this directory\?/i.test(value)
         || isWelcomeScreen(value)
         || /Since this folder is version controlled/i.test(value)
         || /\/init - create an AGENTS\.md file with instructions for Codex/i.test(value)
         || /\/status - show current session configuration/i.test(value)
         || /\/approvals - choose what Codex can do without approval/i.test(value)
         || /\/model - choose what model and reasoning effort to use/i.test(value)
-        || /▌\s*(?:Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value);
+        || /(?:[▌›❯]\s*)?(?:Use \/skills to list available skills|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value)
+        || /Tip:\s+New Try the Codex App/i.test(value)
+        || /Tip:\s+Use \/skills to list available skills/i.test(value);
 }
 
 function extractProviderSessionId(rawBuffer, buffer, screenText) {
@@ -337,6 +367,17 @@ function finalizeAssistantText(text) {
     return lines.join('\n').trim();
 }
 
+function extractLabeledAnswer(text) {
+    const lines = String(text || '').split('\n');
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const label = normalize(lines[index]);
+        if (!/^(?:Exact\s+)?(?:output|result|answer|response):$/i.test(label)) continue;
+        const remainder = lines.slice(index + 1).some(line => normalize(line));
+        if (remainder) return lines.slice(index).join('\n').trim();
+    }
+    return '';
+}
+
 function looksLikeStructuredAnswer(text) {
     const value = String(text || '').trim();
     if (!value) return false;
@@ -402,6 +443,8 @@ function shouldSuppressAssistantText(text) {
     if (!value) return true;
     return /^>_ OpenAI Codex\b/.test(value)
         || /^OpenAI Codex\b/.test(value)
+        || isShellChromeLine(value)
+        || isApprovalLine(value)
         || looksLikeCorruptToolText(value) && !looksLikeStructuredAnswer(value);
 }
 
@@ -509,7 +552,7 @@ module.exports = function parseOutput(input) {
     });
 
     const activeModal = status === 'waiting_approval'
-        ? parseApproval({ buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
+        ? parseApproval({ screenText, buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
         : null;
 
     if (status === 'waiting_approval' || (!hasUserPrompt && isStartupScreen(transcript))) {
@@ -529,20 +572,23 @@ module.exports = function parseOutput(input) {
         extractTrailingLeadAnswer(scopedScreenText || screenText) || extractTrailingLeadAnswer(scopedBufferText || buffer),
     );
     const visibleContentText = finalizeAssistantText(extractVisibleContent(scopedScreenText || screenText));
+    const screenCandidateText = finalizeAssistantText(chooseRicherText(screenAssistantText, visibleContentText));
     const structuredAnswerText = finalizeAssistantText(
         extractStructuredAnswer(scopedScreenText || screenText) || extractStructuredAnswer(scopedBufferText || buffer),
     );
+    const mergedAssistantText = finalizeAssistantText(mergeLineContent(
+        mergeLineContent(
+            chooseRicherText(bufferAssistantText, screenCandidateText),
+            trailingLeadText,
+        ),
+        screenAssistantText,
+    ));
     const assistantText = structuredAnswerText
-        || trailingLeadText
-        || looksLikeStructuredAnswer(screenAssistantText) || looksLikeCorruptToolText(bufferAssistantText)
-        ? structuredAnswerText || trailingLeadText || screenAssistantText || visibleContentText || bufferAssistantText
-        : finalizeAssistantText(mergeLineContent(
-            mergeLineContent(
-                chooseRicherText(bufferAssistantText, screenAssistantText),
-                visibleContentText,
-            ),
-            screenAssistantText,
-        ));
+        || (looksLikeCorruptToolText(bufferAssistantText)
+            ? chooseRicherText(screenCandidateText, trailingLeadText)
+            : chooseRicherText(mergedAssistantText, screenCandidateText))
+        || trailingLeadText;
+    const finalizedAssistantText = extractLabeledAnswer(assistantText) || assistantText;
     const partialText = status === 'generating'
         ? finalizeAssistantText(chooseRicherText(
             extractFallbackText(buffer),
@@ -566,7 +612,7 @@ module.exports = function parseOutput(input) {
             activeModal,
         };
     }
-    const messages = buildMessages(previousMessages, assistantText, shouldKeepPartialText(partialText) ? partialText : '');
+    const messages = buildMessages(previousMessages, finalizedAssistantText, shouldKeepPartialText(partialText) ? partialText : '');
 
     return {
         id: 'cli_session',

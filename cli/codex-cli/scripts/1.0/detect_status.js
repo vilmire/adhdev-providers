@@ -28,15 +28,6 @@ function takeLast(lines, count) {
     return lines.slice(Math.max(0, lines.length - count));
 }
 
-function findLastPromptIndex(lines) {
-    for (let index = lines.length - 1; index >= 0; index -= 1) {
-        const line = normalize(lines[index]);
-        if (/^[>›❯]\s*$/.test(line)) return index;
-        if (/⏎\s+send/i.test(line)) return index;
-    }
-    return -1;
-}
-
 function hasIdlePrompt(text) {
     const trimmed = String(text || '').trim();
     return /⏎\s+send/i.test(text) || /^>\s*$/m.test(text) || /[›❯]\s*$/.test(trimmed);
@@ -47,41 +38,38 @@ function hasWelcomeScreen(text) {
         && /To get started, describe a task/i.test(text);
 }
 
-function hasStartupApproval(text) {
-    return /You are running Codex in/i.test(text)
-        && /Press Enter to continue/i.test(text)
-        && /(?:^|\n)[▌> \t]*1\.\s+/m.test(text)
-        && /(?:^|\n)[▌> \t]*2\.\s+/m.test(text);
+function hasStartupIdleScreen(text) {
+    const value = String(text || '');
+    return hasWelcomeScreen(value)
+        || (/OpenAI Codex/i.test(value)
+            && /model:\s+/i.test(value)
+            && /directory:\s+/i.test(value)
+            && /(?:Use \/skills to list available skills|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value))
+        || /Tip:\s+New Try the Codex App/i.test(value)
+        || /Tip:\s+Use \/skills to list available skills/i.test(value);
 }
 
-function hasCommandApproval(text) {
-    const hasAllowPrompt = /Allow Codex to (?:run|apply)/i.test(text)
-        || /Allow command\?/i.test(text);
-    const hasButtons = /Approve and run now/i.test(text)
-        || /Always approve this session/i.test(text)
-        || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(text)
-        || /(?:^|\n)[▌> \t]*2\.\s+.*(?:always|session)/im.test(text);
-    const hasFooter = /Press Enter to confirm/i.test(text)
-        || /Esc to cancel/i.test(text);
-    return hasAllowPrompt
-        || (hasButtons && hasFooter)
-        || /Approve and run now/i.test(text)
-        || /Always approve this session/i.test(text)
-        || /Allow command\?/i.test(text)
-        || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(text);
+function isApprovalCue(line) {
+    return /Do you trust the contents of this directory\?/i.test(line)
+        || /Working with untrusted contents/i.test(line)
+        || /You are running Codex in/i.test(line)
+        || /Allow Codex to (?:run|apply)/i.test(line)
+        || /Allow command\?/i.test(line)
+        || /Press Enter to (?:continue|confirm)/i.test(line)
+        || /Esc to cancel/i.test(line);
+}
+
+function isApprovalButton(line) {
+    return /^(?:[▌>›❯]\s*)?\d+\.\s+\S/.test(line)
+        || /Approve and run now/i.test(line)
+        || /Always approve this session/i.test(line);
 }
 
 function hasVisibleApproval(lines) {
     const window = takeLast(lines, 18);
-    const block = window.join('\n');
-    const hasPrompt = /You are running Codex in/i.test(block)
-        || /Allow Codex to (?:run|apply)/i.test(block)
-        || /Allow command\?/i.test(block);
-    const hasButtons = /Approve and run now/i.test(block)
-        || /Always approve this session/i.test(block)
-        || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(block)
-        || /(?:^|\n)[▌> \t]*2\.\s+.*(?:always|session|deny|cancel)/im.test(block);
-    return hasPrompt && hasButtons;
+    const cueCount = window.filter(isApprovalCue).length;
+    const buttonCount = window.filter(isApprovalButton).length;
+    return cueCount > 0 && buttonCount > 0;
 }
 
 function hasVisibleGenerating(lines) {
@@ -100,17 +88,12 @@ module.exports = function detectStatus(input) {
     if (!visibleText.trim()) return 'idle';
 
     if (screenLines.length > 0) {
-        const lastPromptIndex = findLastPromptIndex(screenLines);
-        if (lastPromptIndex >= 0) {
-            const afterPrompt = screenLines.slice(lastPromptIndex + 1).join('\n');
-            if (!hasStartupApproval(afterPrompt) && !hasCommandApproval(afterPrompt)) return 'idle';
-        }
         if (hasVisibleApproval(screenLines)) return 'waiting_approval';
         if (hasVisibleGenerating(screenLines)) return 'generating';
-        if (hasWelcomeScreen(screenText) || hasIdlePrompt(screenText)) return 'idle';
+        if (hasStartupIdleScreen(screenText) || hasIdlePrompt(screenText)) return 'idle';
     }
 
-    if (hasStartupApproval(tailText) || hasCommandApproval(tailText)) return 'waiting_approval';
+    if (hasVisibleApproval(splitLines(tailText).map(normalize).filter(Boolean))) return 'waiting_approval';
     if (/Esc to interrupt/i.test(tailText)) return 'generating';
     if (/(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i.test(tailText)) {
         return 'generating';

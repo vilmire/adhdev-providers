@@ -22,6 +22,11 @@ function isBoxLine(line) {
     return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line);
 }
 
+function isShellChromeLine(line) {
+    return /^>\s+You are in\b/i.test(line)
+        || /^(?:model|directory):/i.test(line);
+}
+
 function isFooterLine(line) {
     return /⏎\s+send/i.test(line)
         || /⌃J\s+newline/i.test(line)
@@ -32,8 +37,7 @@ function isFooterLine(line) {
 }
 
 function stripLeadingMarkers(s) {
-    // strip any combination of ▌, >, and spaces before the digit
-    return s.replace(/^(?:[▌>]\s*)+/, '').trim();
+    return String(s || '').replace(/^(?:[▌>›❯]\s*)+/, '').trim();
 }
 
 function normalizeButton(line) {
@@ -52,12 +56,20 @@ function takeLast(lines, count) {
     return lines.slice(Math.max(0, lines.length - count));
 }
 
-function findLastPromptIndex(lines) {
-    for (let index = lines.length - 1; index >= 0; index -= 1) {
-        const line = normalize(lines[index]);
-        if (/^[>›❯]\s*$/.test(line) || /⏎\s+send/i.test(line)) return index;
-    }
-    return -1;
+function isApprovalCue(line) {
+    return /Do you trust the contents of this directory\?/i.test(line)
+        || /Working with untrusted contents/i.test(line)
+        || /You are running Codex in/i.test(line)
+        || /Allow Codex to (?:run|apply)/i.test(line)
+        || /Allow command\?/i.test(line);
+}
+
+function hasActiveApproval(lines) {
+    const window = takeLast(lines.map(normalize).filter(Boolean), 24);
+    const cueCount = window.filter(isApprovalCue).length;
+    const buttonCount = window.filter(isButtonLine).length;
+    const hasFooter = window.some(isFooterLine);
+    return cueCount > 0 && buttonCount > 0 && (hasFooter || cueCount >= 2);
 }
 
 module.exports = function parseApproval(input) {
@@ -65,18 +77,7 @@ module.exports = function parseApproval(input) {
     const text = String(screenText || input?.buffer || input?.tail || '');
     const lines = splitLines(text);
     if (lines.length === 0) return null;
-
-    const normalizedLines = lines.map(normalize).filter(Boolean);
-    const lastPromptIndex = findLastPromptIndex(normalizedLines);
-    if (lastPromptIndex >= 0) {
-        const afterPrompt = normalizedLines.slice(lastPromptIndex + 1).join('\n');
-        if (!/You are running Codex in/i.test(afterPrompt)
-            && !/Allow Codex to (?:run|apply)/i.test(afterPrompt)
-            && !/Allow command\?/i.test(afterPrompt)
-            && !/(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(afterPrompt)) {
-            return null;
-        }
-    }
+    if (!hasActiveApproval(lines)) return null;
 
     const buttons = [];
     let currentButton = '';
@@ -90,8 +91,7 @@ module.exports = function parseApproval(input) {
             continue;
         }
         if (!currentButton) continue;
-        if (isFooterLine(line) || isBoxLine(line)) continue;
-        if (/^(?:model|directory):/i.test(line)) continue;
+        if (isFooterLine(line) || isBoxLine(line) || isShellChromeLine(line) || isApprovalCue(line)) continue;
         const continuation = stripLeadingMarkers(line);
         if (!continuation) continue;
         currentButton = `${currentButton} ${continuation}`.replace(/\s+/g, ' ').trim();
@@ -102,24 +102,7 @@ module.exports = function parseApproval(input) {
         .map(normalize)
         .filter(line => line && !isBoxLine(line) && !isButtonLine(line) && !isFooterLine(line))
         .filter(line => !/^OpenAI Codex\b/i.test(line))
-        .filter(line => !/^model:/i.test(line))
-        .filter(line => !/^directory:/i.test(line));
-
-    const hasApproval = /You are running Codex in/i.test(text)
-        || /Allow Codex to (?:run|apply)/i.test(text)
-        || /Allow command\?/i.test(text)
-        || buttons.length > 0;
-    if (!hasApproval) return null;
-
-    const bottomWindow = takeLast(lines.map(normalize).filter(Boolean), 18).join('\n');
-    const hasActivePrompt = /You are running Codex in/i.test(bottomWindow)
-        || /Allow Codex to (?:run|apply)/i.test(bottomWindow)
-        || /Allow command\?/i.test(bottomWindow);
-    const hasActiveButtons = buttons.length > 0
-        || /Approve and run now/i.test(bottomWindow)
-        || /Always approve this session/i.test(bottomWindow)
-        || /(?:^|\n)[▌> \t]*1\.\s+.*(?:approve|allow|run)/im.test(bottomWindow);
-    if (!hasActivePrompt && !hasActiveButtons) return null;
+        .filter(line => !isShellChromeLine(line));
 
     return {
         message: approvalText.slice(-3).join(' ').slice(0, 240) || 'Codex approval required',
