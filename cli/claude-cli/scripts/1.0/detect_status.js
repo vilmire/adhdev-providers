@@ -51,6 +51,11 @@ function isApprovalCue(line) {
     return /This command requires approval/i.test(trimmed)
         || /requires approval/i.test(trimmed)
         || /Do you want to (?:proceed|allow|run|make this edit)/i.test(trimmed)
+        || /Quick safety check/i.test(trimmed)
+        || /Is this a project you trust/i.test(trimmed)
+        || /Security guide/i.test(trimmed)
+        || /Enter to confirm/i.test(trimmed)
+        || /Claude Code'?ll be able to read, edit, and execute files here/i.test(trimmed)
         || /Allow\s*once/i.test(trimmed)
         || /Always\s*allow/i.test(trimmed)
         || /\(y\/n\)/i.test(trimmed)
@@ -65,6 +70,26 @@ function isApprovalButton(line) {
         .trim();
     return /^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
         && /^(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(label);
+}
+
+function isStartupTrustButton(line) {
+    const trimmed = normalize(line)
+        .replace(/^[❯›>]\s*/, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .trim();
+    return /^(?:Yes,\s*I trust this folder|No,\s*exit)$/i.test(trimmed);
+}
+
+function hasStartupTrustPrompt(lines) {
+    const window = takeLast(lines, 16);
+    const joined = window.join('\n');
+    const hasCue = window.some(isApprovalCue)
+        || /Quick safety check/i.test(joined)
+        || /Is this a project you trust/i.test(joined)
+        || /Claude Code'?ll be able to read, edit, and execute files here/i.test(joined);
+    const hasButtons = window.some(isApprovalButton) || window.some(isStartupTrustButton);
+    const hasEnterConfirm = /Enter to confirm/i.test(joined);
+    return hasCue && (hasButtons || hasEnterConfirm);
 }
 
 function isSpinnerLine(line) {
@@ -100,8 +125,9 @@ function isTransientPostReplyLine(line) {
 
 function hasActiveApproval(lines) {
     const window = takeLast(lines, 18);
+    if (hasStartupTrustPrompt(window)) return true;
     const cues = window.filter(isApprovalCue).length;
-    const buttons = window.filter(isApprovalButton).length;
+    const buttons = window.filter(line => isApprovalButton(line) || isStartupTrustButton(line)).length;
     return buttons > 0 && cues > 0;
 }
 
@@ -155,6 +181,7 @@ module.exports = function detectStatus(input) {
 
     const tail = String(input?.tail || '');
     if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
+    if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
     if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
     if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/im.test(tail)) return 'generating';
     if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
