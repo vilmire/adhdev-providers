@@ -1,13 +1,18 @@
 /**
  * Codex CLI — parse_approval
+ *
+ * Extract approval modal info (message + buttons) from screen/buffer text.
+ * Returns { message, buttons } or null.
  */
 'use strict';
+
+// ─── Helpers ─────────────────────────────────────
 
 function splitLines(text) {
     return String(text || '')
         .replace(/\u0007/g, '')
-        .split(/\r\n|\n|\r/g)
-        .map(line => line.replace(/\s+$/, ''));
+        .split(/\r?\n/)
+        .map(l => l.replace(/\s+$/, ''));
 }
 
 function normalize(line) {
@@ -18,94 +23,71 @@ function normalize(line) {
         .trim();
 }
 
-function isBoxLine(line) {
-    return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line);
-}
-
-function isShellChromeLine(line) {
-    return /^>\s+You are in\b/i.test(line)
-        || /^(?:model|directory):/i.test(line);
-}
-
-function isFooterLine(line) {
-    return /⏎\s+send/i.test(line)
-        || /⌃J\s+newline/i.test(line)
-        || /⌃T\s+transcript/i.test(line)
-        || /⌃C\s+quit/i.test(line)
-        || /Press Enter to (?:continue|confirm)/i.test(line)
-        || /Esc to cancel/i.test(line);
-}
-
-function stripLeadingMarkers(s) {
+function stripLeadMarker(s) {
     return String(s || '').replace(/^(?:[▌>›❯]\s*)+/, '').trim();
 }
 
+// ─── Line classifiers ───────────────────────────
+
+const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?/i;
+const BUTTON_RE = /^\d+\.\s+/;
+const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press Enter to (?:continue|confirm)|Esc to cancel/i;
+const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
+const CHROME_RE = /^>?\s*(?:You are in|model:|directory:|OpenAI Codex)\b/i;
+
+function isButton(line) {
+    return BUTTON_RE.test(stripLeadMarker(normalize(line)));
+}
+
 function normalizeButton(line) {
-    return stripLeadingMarkers(normalize(line))
+    return stripLeadMarker(normalize(line))
         .replace(/^\d+\.\s+/, '')
-        // strip shortcut hints like "(Y)", "(A)", "(N)" and extra spacing
         .replace(/\s{2,}\([A-Za-z]\)\s.*$/, '')
         .trim();
 }
 
-function isButtonLine(line) {
-    return /^\d+\.\s+/.test(stripLeadingMarkers(normalize(line)));
-}
-
-function takeLast(lines, count) {
-    return lines.slice(Math.max(0, lines.length - count));
-}
-
-function isApprovalCue(line) {
-    return /Do you trust the contents of this directory\?/i.test(line)
-        || /Working with untrusted contents/i.test(line)
-        || /You are running Codex in/i.test(line)
-        || /Allow Codex to (?:run|apply)/i.test(line)
-        || /Allow command\?/i.test(line);
-}
-
-function hasActiveApproval(lines) {
-    const window = takeLast(lines.map(normalize).filter(Boolean), 24);
-    const cueCount = window.filter(isApprovalCue).length;
-    const buttonCount = window.filter(isButtonLine).length;
-    const hasFooter = window.some(isFooterLine);
-    return cueCount > 0 && buttonCount > 0 && (hasFooter || cueCount >= 2);
-}
+// ─── Export ──────────────────────────────────────
 
 module.exports = function parseApproval(input) {
-    const screenText = String(input?.screenText || '');
-    const text = String(screenText || input?.buffer || input?.tail || '');
+    const screen = String(input?.screenText || '');
+    const text = screen || String(input?.buffer || input?.tail || '');
     const lines = splitLines(text);
     if (lines.length === 0) return null;
-    if (!hasActiveApproval(lines)) return null;
 
+    // Check if there's actually an approval screen visible
+    const window = lines.slice(-24).map(normalize).filter(Boolean);
+    const hasCue = window.some(l => CUE_RE.test(l));
+    const hasButton = window.some(isButton);
+    if (!hasCue || !hasButton) return null;
+
+    // Collect buttons
     const buttons = [];
     let currentButton = '';
-    const recentLines = takeLast(lines, 24);
-    for (const rawLine of recentLines) {
+    for (const rawLine of lines.slice(-24)) {
         const line = normalize(rawLine);
         if (!line) continue;
-        if (isButtonLine(rawLine)) {
+        if (isButton(rawLine)) {
             if (currentButton && !buttons.includes(currentButton)) buttons.push(currentButton);
             currentButton = normalizeButton(rawLine);
             continue;
         }
         if (!currentButton) continue;
-        if (isFooterLine(line) || isBoxLine(line) || isShellChromeLine(line) || isApprovalCue(line)) continue;
-        const continuation = stripLeadingMarkers(line);
-        if (!continuation) continue;
-        currentButton = `${currentButton} ${continuation}`.replace(/\s+/g, ' ').trim();
+        if (FOOTER_RE.test(line) || BOX_RE.test(line) || CHROME_RE.test(line) || CUE_RE.test(line)) continue;
+        const continuation = stripLeadMarker(line);
+        if (continuation) currentButton = `${currentButton} ${continuation}`.replace(/\s+/g, ' ').trim();
     }
     if (currentButton && !buttons.includes(currentButton)) buttons.push(currentButton);
 
-    const approvalText = lines
+    // Build message from non-button, non-chrome lines
+    const message = lines
         .map(normalize)
-        .filter(line => line && !isBoxLine(line) && !isButtonLine(line) && !isFooterLine(line))
-        .filter(line => !/^OpenAI Codex\b/i.test(line))
-        .filter(line => !isShellChromeLine(line));
+        .filter(l => l && !BOX_RE.test(l) && !isButton(l) && !FOOTER_RE.test(l) && !CHROME_RE.test(l) && !/^OpenAI Codex\b/i.test(l))
+        .slice(-3)
+        .join(' ')
+        .slice(0, 240) || 'Codex approval required';
 
     return {
-        message: approvalText.slice(-3).join(' ').slice(0, 240) || 'Codex approval required',
+        message,
         buttons: buttons.length > 0 ? buttons : ['Approve', 'Deny'],
     };
 };

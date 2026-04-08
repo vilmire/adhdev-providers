@@ -1,106 +1,75 @@
 /**
  * Codex CLI — detect_status
+ *
+ * Lightweight status detection from screen/tail text.
+ * Returns: 'idle' | 'generating' | 'waiting_approval'
  */
 'use strict';
 
-function getScreenText(input) {
-    return String(input?.screenText || '');
+// ─── Helpers ─────────────────────────────────────
+
+function text(input, key) {
+    return String((input && input[key]) || '');
 }
 
-function getTailText(input) {
-    return String(input?.tail || '');
+function tailLines(input, count) {
+    const raw = text(input, 'screenText') || text(input, 'tail');
+    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    return lines.slice(-count);
 }
 
-function splitLines(text) {
-    return String(text || '')
-        .split(/\r\n|\n|\r/g)
-        .map(line => line.replace(/\s+$/, ''));
+// ─── Matchers ────────────────────────────────────
+
+const APPROVAL_CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Press Enter to (?:continue|confirm)|Esc to cancel/i;
+const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s+\S|Approve and run now|Always approve this session/i;
+
+const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i;
+const GENERATING_ESC_RE = /Esc to interrupt/i;
+const GENERATING_BRAILLE_RE = /[⠁-⣿]/;
+
+const IDLE_PROMPT_RE = /⏎\s+send|^>\s*$|[›❯]\s*$/im;
+const WELCOME_RE = /OpenAI Codex/i;
+const STARTUP_RE = /To get started, describe a task|model:\s+.*directory:\s+|Tip:\s+(?:New Try the Codex App|Use \/skills)/is;
+
+// ─── Detection ───────────────────────────────────
+
+function hasApproval(lines) {
+    const window = lines.slice(-18);
+    return window.some(l => APPROVAL_CUE_RE.test(l))
+        && window.some(l => APPROVAL_BUTTON_RE.test(l));
 }
 
-function normalize(line) {
-    return String(line || '')
-        .replace(/\u0007/g, '')
-        .replace(/^\d+;/, '')
-        .trim();
+function hasGenerating(lines) {
+    const block = lines.slice(-12).join('\n');
+    if (GENERATING_ESC_RE.test(block)) return true;
+    if (GENERATING_SPINNER_RE.test(block)) return true;
+    if (GENERATING_BRAILLE_RE.test(block) && /(?:Working|Thinking|Esc to interrupt)/i.test(block)) return true;
+    return false;
 }
 
-function takeLast(lines, count) {
-    return lines.slice(Math.max(0, lines.length - count));
+function hasIdle(raw) {
+    if (IDLE_PROMPT_RE.test(raw)) return true;
+    if (WELCOME_RE.test(raw) && STARTUP_RE.test(raw)) return true;
+    return false;
 }
 
-function hasIdlePrompt(text) {
-    const trimmed = String(text || '').trim();
-    return /⏎\s+send/i.test(text) || /^>\s*$/m.test(text) || /[›❯]\s*$/.test(trimmed);
-}
-
-function hasWelcomeScreen(text) {
-    return /OpenAI Codex/i.test(text)
-        && /To get started, describe a task/i.test(text);
-}
-
-function hasStartupIdleScreen(text) {
-    const value = String(text || '');
-    return hasWelcomeScreen(value)
-        || (/OpenAI Codex/i.test(value)
-            && /model:\s+/i.test(value)
-            && /directory:\s+/i.test(value)
-            && /(?:Use \/skills to list available skills|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})/i.test(value))
-        || /Tip:\s+New Try the Codex App/i.test(value)
-        || /Tip:\s+Use \/skills to list available skills/i.test(value);
-}
-
-function isApprovalCue(line) {
-    return /Do you trust the contents of this directory\?/i.test(line)
-        || /Working with untrusted contents/i.test(line)
-        || /You are running Codex in/i.test(line)
-        || /Allow Codex to (?:run|apply)/i.test(line)
-        || /Allow command\?/i.test(line)
-        || /Press Enter to (?:continue|confirm)/i.test(line)
-        || /Esc to cancel/i.test(line);
-}
-
-function isApprovalButton(line) {
-    return /^(?:[▌>›❯]\s*)?\d+\.\s+\S/.test(line)
-        || /Approve and run now/i.test(line)
-        || /Always approve this session/i.test(line);
-}
-
-function hasVisibleApproval(lines) {
-    const window = takeLast(lines, 18);
-    const cueCount = window.filter(isApprovalCue).length;
-    const buttonCount = window.filter(isApprovalButton).length;
-    return cueCount > 0 && buttonCount > 0;
-}
-
-function hasVisibleGenerating(lines) {
-    const window = takeLast(lines, 12);
-    const block = window.join('\n');
-    return /Esc to interrupt/i.test(block)
-        || /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i.test(block)
-        || (/[⠁-⣿]/.test(block) && /(?:Working|Thinking|Esc to interrupt)/i.test(block));
-}
+// ─── Export ──────────────────────────────────────
 
 module.exports = function detectStatus(input) {
-    const screenText = getScreenText(input);
-    const tailText = getTailText(input);
-    const screenLines = splitLines(screenText).map(normalize).filter(Boolean);
-    const visibleText = screenText.trim() ? screenText : tailText;
-    if (!visibleText.trim()) return 'idle';
+    const screen = text(input, 'screenText');
+    const tail = text(input, 'tail');
+    const visible = screen.trim() || tail.trim();
+    if (!visible) return 'idle';
 
-    if (screenLines.length > 0) {
-        if (hasVisibleApproval(screenLines)) return 'waiting_approval';
-        if (hasVisibleGenerating(screenLines)) return 'generating';
-        if (hasStartupIdleScreen(screenText) || hasIdlePrompt(screenText)) return 'idle';
-    }
+    const lines = (screen || tail).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    if (hasVisibleApproval(splitLines(tailText).map(normalize).filter(Boolean))) return 'waiting_approval';
-    if (/Esc to interrupt/i.test(tailText)) return 'generating';
-    if (/(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i.test(tailText)) {
-        return 'generating';
-    }
-    if (/[⠁-⣿]/.test(tailText) && /(?:Working|Thinking|Esc to interrupt)/i.test(tailText)) return 'generating';
+    if (hasApproval(lines)) return 'waiting_approval';
+    if (hasGenerating(lines)) return 'generating';
+    if (hasIdle(screen || tail)) return 'idle';
 
-    if (hasWelcomeScreen(tailText) || hasIdlePrompt(tailText)) return 'idle';
+    // Tail-only fallbacks
+    if (GENERATING_ESC_RE.test(tail)) return 'generating';
+    if (GENERATING_SPINNER_RE.test(tail)) return 'generating';
 
     return 'idle';
 };
