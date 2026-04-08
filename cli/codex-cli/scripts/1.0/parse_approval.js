@@ -29,9 +29,9 @@ function stripLeadMarker(s) {
 
 // ─── Line classifiers ───────────────────────────
 
-const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?/i;
+const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!/i;
 const BUTTON_RE = /^\d+\.\s+/;
-const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press Enter to (?:continue|confirm)|Esc to cancel/i;
+const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
 const CHROME_RE = /^>?\s*(?:You are in|model:|directory:|OpenAI Codex)\b/i;
 
@@ -58,7 +58,9 @@ module.exports = function parseApproval(input) {
     const window = lines.slice(-24).map(normalize).filter(Boolean);
     const hasCue = window.some(l => CUE_RE.test(l));
     const hasButton = window.some(isButton);
-    if (!hasCue || !hasButton) return null;
+    const hasFooter = window.some(l => FOOTER_RE.test(l));
+    // Same logic as detect_status: cue+button or button+footer
+    if (!hasButton || (!hasCue && !hasFooter)) return null;
 
     // Collect buttons
     const buttons = [];

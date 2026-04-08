@@ -20,8 +20,12 @@ function tailLines(input, count) {
 
 // ─── Matchers ────────────────────────────────────
 
-const APPROVAL_CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Press Enter to (?:continue|confirm)|Esc to cancel/i;
+// Approval cue: the actual question/prompt text (not buttons, not footer)
+const APPROVAL_CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!/i;
+// Approval buttons: numbered choice lines
 const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s+\S|Approve and run now|Always approve this session/i;
+// Footer lines that accompany interactive prompts
+const APPROVAL_FOOTER_RE = /Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 
 const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i;
 const GENERATING_ESC_RE = /Esc to interrupt/i;
@@ -35,8 +39,12 @@ const STARTUP_RE = /To get started, describe a task|model:\s+.*directory:\s+|Tip
 
 function hasApproval(lines) {
     const window = lines.slice(-18);
-    return window.some(l => APPROVAL_CUE_RE.test(l))
-        && window.some(l => APPROVAL_BUTTON_RE.test(l));
+    const hasCue = window.some(l => APPROVAL_CUE_RE.test(l));
+    const hasButton = window.some(l => APPROVAL_BUTTON_RE.test(l));
+    const hasFooter = window.some(l => APPROVAL_FOOTER_RE.test(l));
+    // Cue + buttons = definite approval
+    // Buttons + footer (without cue) = likely interactive prompt (e.g. new dialog formats)
+    return hasButton && (hasCue || hasFooter);
 }
 
 function hasGenerating(lines) {
