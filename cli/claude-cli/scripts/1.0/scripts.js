@@ -6,7 +6,14 @@
  *   - CLI scripts are Node.js functions that receive PTY buffer and return structured data
  *
  * Each export receives an `input` object:
- *   { buffer: string, rawBuffer: string, recentBuffer: string, messages: Array }
+ *   {
+ *     buffer: string,
+ *     rawBuffer: string,
+ *     recentBuffer: string,
+ *     screenText: string,
+ *     screen: { lines, promptLineIndex, linesAbovePrompt, linesBelowPrompt, ... },
+ *     messages: Array
+ *   }
  * and returns a result conforming to the output contract.
  */
 
@@ -38,5 +45,11 @@ module.exports.detectStatus = (input) => {
 /** Parse approval modal from PTY output → ModalInfo | null */
 module.exports.parseApproval = (input) => {
     const mod = loadModule('parse_approval.js');
+    return mod ? mod(input) : null;
+};
+
+/** Quick action menu → dispatch slash command through daemon runtime */
+module.exports.runSlashCommand = (input) => {
+    const mod = loadModule('run_slash_command.js');
     return mod ? mod(input) : null;
 };

@@ -7,28 +7,17 @@
 
 'use strict';
 
-function splitLines(text) {
-    return String(text || '')
-        .replace(/\u0007/g, '')
-        .split(/\r\n|\n|\r/g)
-        .map(line => line.replace(/\s+$/, ''));
-}
+const {
+    getScreen,
+    getTailScreen,
+    normalizeLineText,
+    takeLast,
+    nonEmpty,
+    sliceAroundPrompt,
+} = require('./screen_helpers.js');
 
 function normalize(line) {
-    return String(line || '')
-        .replace(/\u0007/g, '')
-        .replace(/^\d+;/, '')
-        .trim();
-}
-
-function nonEmptyLines(text) {
-    return splitLines(text)
-        .map(normalize)
-        .filter(Boolean);
-}
-
-function takeLast(lines, count) {
-    return lines.slice(Math.max(0, lines.length - count));
+    return normalizeLineText(line);
 }
 
 function isIdlePrompt(line) {
@@ -97,6 +86,7 @@ function isSpinnerLine(line) {
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
+    if (/^[✻✶✳✢✽]\s+[A-Z][A-Za-z-]{3,}ing\b.*(?:…|\.{3})/u.test(trimmed)) return true;
     if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/i.test(trimmed)) return true;
     return /^[A-Z][a-z]+ing\u2026?$/.test(trimmed);
 }
@@ -138,6 +128,12 @@ function hasActiveGenerating(lines) {
     return spinner || (activeTool && window.some(line => /\u2026|\.{3}|Running\b/i.test(normalize(line))));
 }
 
+function hasPromptAdjacentGenerating(screen) {
+    if (!screen || screen.promptLineIndex < 0) return false;
+    const justAbovePrompt = sliceAroundPrompt(screen, { before: 2, after: 0, includePrompt: false });
+    return justAbovePrompt.some(line => isSpinnerLine(line) || /^\([^)]+\)$/.test(normalize(line)));
+}
+
 function hasVisibleCompletedReply(lines) {
     const recent = takeLast(lines, 20);
     let promptIndex = -1;
@@ -167,12 +163,14 @@ function hasVisibleCompletedReply(lines) {
 }
 
 module.exports = function detectStatus(input) {
-    const screenLines = nonEmptyLines(input?.screenText || '');
-    const tailLines = nonEmptyLines(input?.tail || '');
+    const screen = getScreen(input);
+    const screenLines = nonEmpty(screen.lines);
+    const tailLines = nonEmpty(getTailScreen(input).lines);
     const activeLines = screenLines.length > 0 ? screenLines : tailLines;
 
     if (activeLines.length > 0) {
         if (hasActiveApproval(activeLines)) return 'waiting_approval';
+        if (hasPromptAdjacentGenerating(screen)) return 'generating';
         if (hasVisibleCompletedReply(activeLines)) return 'idle';
         if (hasActiveGenerating(activeLines)) return 'generating';
         if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';

@@ -46,6 +46,28 @@
       "max": 600
     }
   },
+  "controls": [
+    {
+      "id": "quick_action",
+      "type": "select",
+      "label": "➕",
+      "placement": "bar",
+      "order": 90,
+      "options": [
+        {
+          "value": "/init",
+          "label": "/init",
+          "description": "Initialize Claude Code in the current repo"
+        },
+        {
+          "value": "/help",
+          "label": "/help",
+          "description": "Show Claude Code command help"
+        }
+      ],
+      "setScript": "runSlashCommand"
+    }
+  ],
   "binary": "claude",
   "sendDelayMs": 700,
   "submitStrategy": "immediate",

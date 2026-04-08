@@ -4,18 +4,15 @@
 
 'use strict';
 
-function splitLines(text) {
-    return String(text || '')
-        .replace(/\u0007/g, '')
-        .split(/\r\n|\n|\r/g)
-        .map(line => line.replace(/\s+$/, ''));
-}
+const {
+    getBufferScreen,
+    getTailScreen,
+    normalizeLineText,
+    takeLast,
+} = require('./screen_helpers.js');
 
 function normalize(line) {
-    return String(line || '')
-        .replace(/\u0007/g, '')
-        .replace(/^\d+;/, '')
-        .trim();
+    return normalizeLineText(line);
 }
 
 function isNoise(line) {
@@ -68,12 +65,15 @@ function findLastIndex(lines, predicate) {
 }
 
 module.exports = function parseApproval(input) {
+    const primaryScreen = getBufferScreen(input);
+    const fallbackScreen = getTailScreen(input);
     const primary = String(input?.buffer || '');
     const fallback = String(input?.tail || '');
-    const lines = splitLines(primary || fallback);
+    const lines = (primaryScreen.lineCount > 0 ? primaryScreen.lines : fallbackScreen.lines)
+        .map(line => line.text);
     if (lines.length === 0) return null;
 
-    const recent = lines.slice(-30);
+    const recent = takeLast(lines, 30);
     const normalizedRecent = recent.map(normalize).filter(Boolean);
     const lastPromptIndex = normalizedRecent.map((line, idx) => ({ line, idx }))
         .reverse()

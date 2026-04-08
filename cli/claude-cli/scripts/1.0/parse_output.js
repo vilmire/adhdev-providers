@@ -11,12 +11,15 @@
 
 const detectStatus = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
+const {
+    buildScreenSnapshot,
+    getScreen,
+    linesBelowPrompt,
+    trimBottom,
+} = require('./screen_helpers.js');
 
 function splitLines(text) {
-    return String(text || '')
-        .replace(/\u0007/g, '')
-        .split(/\r\n|\n|\r/g)
-        .map(line => line.replace(/\s+$/, ''));
+    return buildScreenSnapshot(text).lines.map(line => line.text);
 }
 
 function sanitizeLine(line) {
@@ -79,11 +82,21 @@ function stripAssistantPrefix(line) {
         .replace(/^\s*[✻✶✳✢✽]\s+/, '');
 }
 
+function normalizeAssistantBlockLine(line) {
+    const sanitized = sanitizeLine(line).replace(/\s+$/, '');
+    const withoutPrefix = stripAssistantPrefix(sanitized);
+    if (isBoxLine(withoutPrefix.trim())) return withoutPrefix.trim();
+    return withoutPrefix.trimEnd();
+}
+
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
         || /Claude Code v\d/i.test(trimmed)
         || /Claude Code has switched from npm to native/i.test(trimmed)
+        || /^●\s+How is Claude doing this session\?/i.test(trimmed)
+        || /^How is Claude doing this session\?/i.test(trimmed)
+        || /^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)
         || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
         || /^⏵⏵\s+accept edits on/i.test(trimmed)
@@ -99,6 +112,10 @@ function isApprovalLine(trimmed) {
         || /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
         || /^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
         || /Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(trimmed);
+}
+
+function isHorizontalSeparatorLine(trimmed) {
+    return /^[-─═]{20,}$/.test(trimmed);
 }
 
 function isOscResidueLine(trimmed) {
@@ -147,7 +164,7 @@ function trimTrailingNoise(lines) {
     const out = [...lines];
     while (out.length > 0) {
         const trimmed = sanitizeLine(out[out.length - 1]).trim();
-        if (!trimmed || isNoiseLine(trimmed) || isBoxLine(trimmed)) {
+        if (!trimmed || isNoiseLine(trimmed) || isHorizontalSeparatorLine(trimmed)) {
             out.pop();
             continue;
         }
@@ -193,6 +210,7 @@ function collectAssistantLines(lines) {
         const sanitized = sanitizeLine(rawLine);
         const trimmed = sanitized.trim();
         if (isNoiseLine(trimmed)) continue;
+        if (isFooterLine(trimmed)) break;
 
         const cleaned = stripAssistantPrefix(sanitized).trim();
         if (!cleaned) {
@@ -222,11 +240,70 @@ function collectAssistantLines(lines) {
     return trimTrailingNoise(out);
 }
 
+function extractAssistantBlocks(lines) {
+    const blocks = [];
+    let current = null;
+
+    const flush = () => {
+        if (!current) return;
+        const finalized = trimTrailingNoise(current)
+            .map(line => normalizeAssistantBlockLine(line))
+            .filter(line => line.trim().length > 0)
+            .join('\n')
+            .trim();
+        if (finalized) blocks.push(finalized);
+        current = null;
+    };
+
+    for (const rawLine of lines) {
+        const promptText = parsePromptLine(rawLine);
+        if (promptText !== null) continue;
+
+        const sanitized = sanitizeLine(rawLine);
+        const trimmed = sanitized.trim();
+        if (isFooterLine(trimmed)) {
+            flush();
+            break;
+        }
+
+        if (!trimmed) {
+            if (current && current[current.length - 1] !== '') current.push('');
+            continue;
+        }
+
+        if (isNoiseLine(trimmed)) continue;
+
+        if (isBoxLine(trimmed)) {
+            if (current) current.push(sanitized);
+            continue;
+        }
+
+        const cleaned = stripAssistantPrefix(sanitized).trim();
+        if (!cleaned) continue;
+
+        if (/^\s*⏺\s+/.test(sanitized)) {
+            flush();
+            current = [cleaned];
+            continue;
+        }
+
+        if (/^\s*⎿\s+/.test(sanitized)) {
+            if (current && !/^…\s+\+\d+\s+lines\b/i.test(cleaned)) current.push(cleaned);
+            continue;
+        }
+
+        if (current) current.push(cleaned);
+    }
+
+    flush();
+    return blocks;
+}
+
 function cleanupAssistantText(text) {
     return trimTrailingNoise(splitLines(text))
-        .map(line => stripAssistantPrefix(sanitizeLine(line)).trim())
-        .filter(Boolean)
-        .filter(line => !isFooterLine(line) && !isToolSummaryLine(line) && !isBoxLine(line))
+        .map(line => normalizeAssistantBlockLine(line))
+        .filter(line => line.trim().length > 0)
+        .filter(line => !isFooterLine(line) && !isToolSummaryLine(line))
         .join('\n')
         .trim();
 }
@@ -244,7 +321,8 @@ function extractLastAssistantHeader(text) {
 }
 
 function extractVisibleTurn(text) {
-    const lines = splitLines(text);
+    const screen = typeof text === 'string' ? buildScreenSnapshot(text) : text;
+    const lines = screen.lines.map(line => line.text);
     const emptyPromptIndex = (() => {
         for (let i = lines.length - 1; i >= 0; i -= 1) {
             if (parsePromptLine(lines[i]) === '') return i;
@@ -261,17 +339,46 @@ function extractVisibleTurn(text) {
         return { index: -1, text: '' };
     })();
 
-    const assistantStart = lastVisiblePrompt.index >= 0 ? lastVisiblePrompt.index + 1 : 0;
-    const assistantEnd = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
-    const assistantLines = collectAssistantLines(lines.slice(assistantStart, assistantEnd));
+    const linesAfterVisiblePrompt = lastVisiblePrompt.index >= 0
+        ? linesBelowPrompt({
+            ...screen,
+            promptLineIndex: lastVisiblePrompt.index,
+            linesBelowPrompt: screen.lines.slice(lastVisiblePrompt.index + 1),
+        }).map(line => line.text)
+        : lines;
+    const assistantSliceLength = emptyPromptIndex >= 0 && lastVisiblePrompt.index >= 0
+        ? Math.max(0, emptyPromptIndex - lastVisiblePrompt.index - 1)
+        : linesAfterVisiblePrompt.length;
+    const assistantRegion = trimBottom(
+        linesAfterVisiblePrompt,
+        Math.max(0, linesAfterVisiblePrompt.length - assistantSliceLength),
+    );
+    const assistantBlocks = extractAssistantBlocks(assistantRegion);
+    const assistantLines = assistantBlocks.length > 0
+        ? assistantBlocks.join('\n\n').split('\n')
+        : collectAssistantLines(assistantRegion);
 
     return {
         promptText: lastVisiblePrompt.text,
+        assistantBlocks,
         assistantText: assistantLines.join('\n').trim(),
     };
 }
 
-function buildMessages(previousMessages, promptText, assistantText) {
+function needsPreformattedRender(text) {
+    const value = String(text || '');
+    return /[┌┐└┘├┤┬┴┼│─═╭╮╰╯]/.test(value) || (/^\s*\+[-+]+\+\s*$/m.test(value) && /^\s*\|.*\|\s*$/m.test(value));
+}
+
+function createAssistantMessage(content) {
+    const message = { role: 'assistant', content };
+    if (needsPreformattedRender(content)) {
+        message.meta = { renderMode: 'preformatted' };
+    }
+    return message;
+}
+
+function buildMessages(previousMessages, promptText, assistantBlocks, assistantText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
             .filter(message => message && (message.role === 'user' || message.role === 'assistant'))
@@ -279,27 +386,49 @@ function buildMessages(previousMessages, promptText, assistantText) {
                 role: message.role,
                 content: typeof message.content === 'string' ? message.content : String(message.content || ''),
                 timestamp: message.timestamp,
+                meta: message.meta && typeof message.meta === 'object' ? { ...message.meta } : undefined,
             }))
         : [];
+    let sameTurnAsTail = false;
 
     if (promptText) {
         const last = base[base.length - 1];
         const previousUser = last?.role === 'assistant' ? base[base.length - 2] : last;
         if (!previousUser || previousUser.role !== 'user' || !looksLikeSamePrompt(previousUser.content, promptText)) {
             base.push({ role: 'user', content: promptText });
+        } else {
+            sameTurnAsTail = true;
         }
     }
 
-    if (!assistantText) return base;
-    if (looksLikePromptEchoText(assistantText, promptText, previousMessages)) return base;
+    if (sameTurnAsTail) {
+        while (base.length > 0 && base[base.length - 1]?.role === 'assistant') {
+            base.pop();
+        }
+    }
+
+    const normalizedBlocks = Array.isArray(assistantBlocks)
+        ? assistantBlocks.map(block => trimPromptEchoPrefix(block, promptText)).filter(Boolean)
+        : [];
+    const effectiveBlocks = normalizedBlocks.length > 0
+        ? normalizedBlocks
+        : (assistantText ? [assistantText] : []);
+
+    if (effectiveBlocks.length === 0) return base;
+    if (effectiveBlocks.length === 1 && looksLikePromptEchoText(effectiveBlocks[0], promptText, previousMessages)) return base;
 
     const last = base[base.length - 1];
-    if (last?.role === 'assistant') {
-        if (normalizeText(last.content) !== normalizeText(assistantText)) {
-            last.content = assistantText;
+    if (!sameTurnAsTail && effectiveBlocks.length === 1 && last?.role === 'assistant') {
+        if (normalizeText(last.content) !== normalizeText(effectiveBlocks[0])) {
+            const nextAssistant = createAssistantMessage(effectiveBlocks[0]);
+            last.content = nextAssistant.content;
+            last.meta = nextAssistant.meta;
         }
-    } else {
-        base.push({ role: 'assistant', content: assistantText });
+        return base;
+    }
+
+    for (const block of effectiveBlocks) {
+        base.push(createAssistantMessage(block));
     }
 
     return base;
@@ -314,32 +443,44 @@ function toMessageObjects(messages, status) {
             : message.content,
         index,
         kind: 'standard',
+        ...(message.meta ? { meta: { ...message.meta } } : {}),
         ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'
-            ? { meta: { streaming: true } }
+            ? { meta: { ...(message.meta || {}), streaming: true } }
             : {}),
     }));
 }
 
 module.exports = function parseOutput(input) {
-    const screenText = String(input?.screenText || '');
+    const screen = getScreen(input);
+    const screenText = String(screen.text || input?.screenText || '');
     const buffer = String(input?.buffer || '');
     const tail = String(input?.recentBuffer || (screenText || buffer).slice(-500));
-    const transcriptSource = screenText || buffer;
+    const transcriptScreen = screen.lineCount > 0 ? screen : buildScreenSnapshot(buffer);
+    const transcriptSource = transcriptScreen.text || screenText || buffer;
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
 
     const status = detectStatus({
         tail,
         screenText,
+        screen: transcriptScreen,
+        tailScreen: buildScreenSnapshot(tail),
         rawBuffer: input?.rawBuffer || '',
     });
 
     const activeModal = status === 'waiting_approval'
-        ? parseApproval({ buffer: screenText || buffer, screenText, rawBuffer: input?.rawBuffer || '', tail })
+        ? parseApproval({
+            buffer: screenText || buffer,
+            screenText,
+            screen: transcriptScreen,
+            bufferScreen: transcriptScreen,
+            rawBuffer: input?.rawBuffer || '',
+            tail,
+        })
         : null;
 
-    const { promptText, assistantText: visibleAssistantText } = status === 'waiting_approval'
-        ? { promptText: '', assistantText: '' }
-        : extractVisibleTurn(transcriptSource);
+    const { promptText, assistantBlocks, assistantText: visibleAssistantText } = status === 'waiting_approval'
+        ? { promptText: '', assistantBlocks: [], assistantText: '' }
+        : extractVisibleTurn(transcriptScreen);
     const effectivePromptText = String(input?.promptText || '').trim() || promptText || getLastUserPrompt(previousMessages);
     const assistantText = trimPromptEchoPrefix(
         cleanupAssistantText(visibleAssistantText) || extractLastAssistantHeader(transcriptSource),
@@ -350,7 +491,7 @@ module.exports = function parseOutput(input) {
         id: 'cli_session',
         status,
         title: 'Claude Code',
-        messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText), status),
+        messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantBlocks, assistantText), status),
         activeModal,
     };
 };
