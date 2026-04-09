@@ -39,6 +39,7 @@ function normalizeForCompare(text) {
 // ─── Line classifiers ───────────────────────────
 
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
+const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
 
 function isHeaderLine(l) {
     return /^(?:>_ )?OpenAI Codex\b/i.test(l)
@@ -63,7 +64,8 @@ function isWelcomeLine(l) {
         || /npm install -g @openai\/codex@latest/i.test(l)
         || /Tip:\s+(?:New Try the Codex App|Use \/skills)/i.test(l)
         || /chatgpt\.com\/codex/i.test(l)
-        || /ask Codex to use one/i.test(l);
+        || /ask Codex to use one/i.test(l)
+        || STARTER_PROMPT_RE.test(l);
 }
 
 function isStatusLine(l) {
@@ -83,7 +85,7 @@ function isInputLine(l) {
 }
 
 function isPlaceholderLine(l) {
-    return /^(?:[›❯]\s*)?(?:Use \/skills|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\})$/i.test(l);
+    return STARTER_PROMPT_RE.test(l);
 }
 
 function isNoise(l) {
@@ -130,7 +132,8 @@ function isStartupScreen(text) {
         || (/OpenAI Codex/i.test(v) && /To get started, describe a task/i.test(v))
         || /Since this folder is version controlled/i.test(v)
         || /\/init - create an AGENTS\.md file/i.test(v)
-        || /Tip:\s+(?:New Try the Codex App|Use \/skills)/i.test(v);
+        || /Tip:\s+(?:New Try the Codex App|Use \/skills)/i.test(v)
+        || STARTER_PROMPT_RE.test(v);
 }
 
 // ─── Session ID extraction ──────────────────────
@@ -200,6 +203,12 @@ function collectAssistantText(text) {
             if (collecting && current && current.lines.length > 0 && current.lines[current.lines.length - 1] !== '') {
                 current.lines.push('');
             }
+            continue;
+        }
+
+        if (isWelcomeLine(line) || isPlaceholderLine(line)) {
+            collecting = false;
+            current = null;
             continue;
         }
 

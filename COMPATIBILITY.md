@@ -161,7 +161,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `aider-cli` | Aider | ❓ | ❓ | ❓ | | |
 | `claude-cli` | Claude Code | ⚠️ | ❓ | ❓ | Claude Code `2.1.84` | macOS partial: launch, saved-session listing, resume launch, daemon-restart reconnect, stop, and live readback validated; short exact-answer prompt-echo trimming was fixed during validation |
-| `codex-cli` | Codex CLI | ❓ | ❓ | ❓ | Codex CLI `0.118.0` | macOS unverified: launch, send/read, resume, and stop exercised locally, but reconnect is still unproven and fresh launches can remain in onboarding prompt state |
+| `codex-cli` | Codex CLI | ⚠️ | ❓ | ❓ | Codex CLI `0.118.0` | macOS partial: fresh launch, live send/read, saved-session resume, daemon-restart reconnect, and stop validated after tightening onboarding-screen parsing, provider-session recovery, and history replay dedupe; older polluted transcripts may need one-time compaction |
 | `cursor-cli` | Cursor CLI | ❓ | ❓ | ❓ | | |
 | `gemini-cli` | Gemini CLI | ❓ | ❓ | ❓ | | |
 | `github-copilot-cli` | GitHub Copilot CLI | ❓ | ❓ | ❓ | | |
