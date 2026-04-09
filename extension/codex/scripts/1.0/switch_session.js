@@ -22,6 +22,36 @@
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const getHeaderText = () => normalize(getDoc().querySelector('[style*="view-transition-name: header-title"]')?.textContent || '');
+    const timeSelectors = '.tabular-nums, [class*="tabular-nums"], [class*="text-right"]';
+    const getRowTime = (el) => {
+      const direct = Array.from(el.querySelectorAll(timeSelectors))
+        .filter((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.width > 8 && rect.height > 8;
+        })
+        .map((node) => normalize(node.textContent || ''))
+        .find(Boolean);
+      if (direct) return direct;
+      const sibling = Array.from(el.parentElement?.querySelectorAll?.(timeSelectors) || [])
+        .filter((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.width > 8 && rect.height > 8;
+        })
+        .map((node) => normalize(node.textContent || ''))
+        .find(Boolean);
+      if (sibling) return sibling;
+      const raw = normalize(el.textContent || '');
+      const fallback = raw.match(/(\d+\s?[smhdw]|today|yesterday|just now|\d{1,2}:\d{2}\s?(?:am|pm))$/i);
+      return normalize(fallback?.[1] || '');
+    };
+    const stripTrailingTime = (raw, timeText) => {
+      const source = normalize(raw);
+      const time = normalize(timeText);
+      if (!source) return '';
+      if (!time) return source;
+      if (source.endsWith(time)) return normalize(source.slice(0, -time.length));
+      return source;
+    };
     const isVisible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
@@ -30,12 +60,9 @@
     };
     const isHistoryPopover = (el) => {
       if (!isVisible(el)) return false;
-      const text = normalize(el.textContent || '').toLowerCase();
-      if (!text) return false;
-      if (text.includes('search recent tasks') || text.includes('all tasks')) return true;
       return Array.from(el.querySelectorAll('[role="button"], [role="menuitem"], [role="menuitemradio"], button, div, li, a'))
         .filter(isVisible)
-        .some((node) => /(\d+\s?[smhdw]|today|yesterday|just now|\d{1,2}:\d{2}\s?(?:am|pm))$/i.test(normalize(node.textContent || '')));
+        .some((node) => !!getRowTime(node));
     };
     const getVisibleHistoryPopovers = () => Array.from(getDoc().querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]'))
       .filter(isHistoryPopover);
@@ -65,10 +92,20 @@
       if (useNativeClick && typeof target.click === 'function') target.click();
     };
     const allButtons = () => Array.from(getDoc().querySelectorAll('button, [role="button"]')).filter(isVisible);
-    const findButton = (predicate) => allButtons().find((button) => predicate(normalize(`${button.getAttribute('aria-label') || ''} ${button.textContent || ''}`).toLowerCase(), button));
-    const findBackButton = () => findButton((label) => /\bback\b|go back/.test(label));
-    const findRecentTasksButton = () => findButton((label) => /recent tasks|task in progress|tasks?/.test(label) && !/new chat/.test(label));
-    const inTasksView = () => /^tasks$/i.test(getHeaderText());
+    const findRecentTasksButton = () => allButtons()
+      .filter((button) => {
+        const rect = button.getBoundingClientRect();
+        return rect.top <= 40 && rect.height <= 28 && rect.width <= 40;
+      })
+      .find((button) => button.getAttribute('aria-haspopup') === 'menu') || null;
+    const hasInlineSessionRows = () => Array.from(getDoc().querySelectorAll('div[role="button"], [role="button"], div, li, a'))
+      .filter(isVisible)
+      .some((node) => {
+        const rect = node.getBoundingClientRect();
+        if (rect.top < 32 || rect.top > 180 || rect.height < 20 || rect.height > 40) return false;
+        return !!getRowTime(node);
+      });
+    const inTasksView = () => !getDoc().querySelector('[data-content-search-turn-key]') && hasInlineSessionRows();
     const hasVisibleHistoryPopover = () => getVisibleHistoryPopovers().length > 0;
 
     const openTasksView = async () => {
@@ -80,17 +117,10 @@
         if (inTasksView()) return true;
         if (hasVisibleHistoryPopover()) return true;
       }
-      const backButton = findBackButton();
-      if (backButton) {
-        clickElement(backButton);
-        await sleep(550);
-        if (inTasksView()) return true;
-        if (hasVisibleHistoryPopover()) return true;
-      }
       return false;
     };
 
-    const selector = 'button, [role="button"], div, li, a';
+    const selector = '[role="button"], [role="menuitem"], [role="menuitemradio"], button';
     const rawTitle = typeof args === 'string' ? args : args?.title;
     const targetTitle = normalize(rawTitle || '');
     const targetIndex = Number.isFinite(Number(args?.index)) ? Number(args.index) : null;
@@ -108,8 +138,7 @@
     const parseTitle = (raw) => {
       const value = normalize(raw || '');
       if (!value) return null;
-      const match = value.match(/^(.*?)(\d+\s?[smhdw]|today|yesterday|just now|\d{1,2}:\d{2}\s?(?:am|pm))$/i);
-      return normalize(match?.[1] || value) || null;
+      return value || null;
     };
 
     const buildCandidates = (root, bounds) => Array.from(root.querySelectorAll(selector))
@@ -124,14 +153,13 @@
         const area = Math.round(rect.width * rect.height);
         return { el, rect, text, role, className, interactive, area };
       })
-      .filter(({ rect, text }) => {
+      .filter(({ el, rect, text }) => {
         if (!text || text.length < 3 || text.length > 140) return false;
         if (rect.height < 20 || rect.height > 42) return false;
         if (bounds && (rect.top < bounds.top || rect.bottom > bounds.bottom + 4)) return false;
         if (!bounds && (rect.top < 40 || rect.top > 240)) return false;
         const lowered = text.toLowerCase();
-        if (/^(back|new chat|tasks?|recent tasks?)$/.test(lowered)) return false;
-        if (/^\d+\s+task(s)?\s+in\s+progress$/.test(lowered)) return false;
+        if (!getRowTime(el)) return false;
         if (/^view all\b/.test(lowered)) return false;
         if (/archive chat/.test(lowered)) return false;
         if (/approve|reject|load older messages|processing/.test(lowered)) return false;
@@ -151,7 +179,7 @@
     const dedup = [];
     const seen = new Set();
     for (const candidate of candidates) {
-      const title = parseTitle(candidate.text);
+      const title = parseTitle(stripTrailingTime(candidate.text, getRowTime(candidate.el)));
       const key = title.toLowerCase();
       if (!title || seen.has(key)) continue;
       seen.add(key);
@@ -168,8 +196,6 @@
 
     if (!target) {
       const available = dedup.map((candidate) => candidate.title);
-      const backButton = findBackButton();
-      if (backButton) clickElement(backButton);
       return JSON.stringify({ switched: false, error: 'Session not found', available });
     }
 

@@ -138,7 +138,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
-| `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: fresh new session plus send/read validated inside Antigravity; recent-task list/switch scripts now work, but active generating tasks can still collapse history access back to the current chat |
+| `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: Cursor-hosted Codex now has locale-agnostic read/list/switch handling, approve-path resolve_action, and transcript cleanup for localized timestamps plus stale replay turns; recent-task history can still collapse to the current chat and some send attempts still fail to materialize as a real turn |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
 
 ### Script Methods — Extension
@@ -146,7 +146,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
 |----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
 | `cline` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `codex` | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ |
+| `codex` | ✅ | ✅ | ➖ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ |
 | `roo-code` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---

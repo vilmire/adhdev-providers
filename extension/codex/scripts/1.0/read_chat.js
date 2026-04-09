@@ -51,7 +51,14 @@
 
     const headerEl = doc.querySelector('[style*="view-transition-name: header-title"]');
     const headerText = (headerEl?.textContent || '').trim();
-    const isTaskList = headerText === 'Tasks';
+    const hasVisibleSessionRows = () => Array.from(doc.querySelectorAll('div[role="button"], [role="button"], div, li, a'))
+      .filter((el) => el.offsetWidth > 0 && el.offsetHeight > 0 && !el.closest('[inert]'))
+      .some((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < 32 || rect.top > 180 || rect.height < 20 || rect.height > 40) return false;
+        return !!el.querySelector('.tabular-nums, [class*="tabular-nums"], [class*="text-right"]');
+      });
+    const isTaskList = !doc.querySelector('[data-content-search-turn-key]') && hasVisibleSessionRows();
     const hasComposer = !!doc.querySelector('.ProseMirror');
     const globalCache = globalThis.__adhdevCodexReadChatCache || (globalThis.__adhdevCodexReadChatCache = {});
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -240,9 +247,13 @@
     }
 
     function sanitizeMessageContent(raw) {
+      const stripTrailingTimestamp = (value) => String(value || '')
+        .replace(/\s+(?:오전|오후)\s?\d{1,2}:\d{2}$/u, '')
+        .replace(/\s+\d{1,2}:\d{2}\s?(?:AM|PM)$/i, '')
+        .trimEnd();
       const lines = String(raw || '')
         .split('\n')
-        .map((line) => line.trimEnd());
+        .map((line) => stripTrailingTimestamp(line));
       const filtered = [];
 
       for (const line of lines) {
@@ -253,6 +264,7 @@
         }
 
         if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(trimmed)) continue;
+        if (/^(?:오전|오후)\s?\d{1,2}:\d{2}$/u.test(trimmed)) continue;
         if (/^Worked for \d+/i.test(trimmed)) continue;
         if (/^Working for \d+/i.test(trimmed)) continue;
         if (/^Ran \d+ command(s)?$/i.test(trimmed)) continue;
@@ -380,6 +392,15 @@
     function resetCache(cache) {
       cache.byUnit = {};
       cache.harvested = false;
+      cache.lastGeneratingMarker = '';
+      cache.generatingStableCount = 0;
+    }
+
+    function normalizeForReplayCompare(value) {
+      return sanitizeMessageContent(value)
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
     }
 
     function getOrderedMessages(cache) {
@@ -398,7 +419,47 @@
         }
         return (a._unitIndex || 0) - (b._unitIndex || 0);
       });
-      return ordered.map((message, index) => ({
+
+      const compacted = [];
+      for (const message of ordered) {
+        const previous = compacted[compacted.length - 1];
+        if (
+          previous
+          && previous.role === message.role
+          && normalizeForReplayCompare(previous.content) === normalizeForReplayCompare(message.content)
+        ) {
+          continue;
+        }
+        compacted.push(message);
+      }
+
+      const trimmed = [];
+      for (let i = 0; i < compacted.length; i += 1) {
+        const message = compacted[i];
+        if (message?.role === 'user') {
+          const content = normalizeForReplayCompare(message.content);
+          if (content) {
+            let shouldSkipReplay = false;
+            for (let j = i - 1; j >= 0; j -= 1) {
+              const previousUser = compacted[j];
+              if (previousUser?.role !== 'user') continue;
+              if (normalizeForReplayCompare(previousUser.content) !== content) continue;
+              const betweenPreviousAndCurrent = compacted.slice(j + 1, i);
+              const hasAssistantBetween = betweenPreviousAndCurrent.some((entry) => entry.role === 'assistant' && normalizeForReplayCompare(entry.content));
+              if (!hasAssistantBetween) break;
+              const nextUserIndex = compacted.findIndex((entry, index) => index > i && entry?.role === 'user');
+              const betweenCurrentAndNextUser = compacted.slice(i + 1, nextUserIndex === -1 ? compacted.length : nextUserIndex);
+              const hasAssistantAfterReplay = betweenCurrentAndNextUser.some((entry) => entry.role === 'assistant' && normalizeForReplayCompare(entry.content));
+              if (!hasAssistantAfterReplay) shouldSkipReplay = true;
+              break;
+            }
+            if (shouldSkipReplay) continue;
+          }
+        }
+        trimmed.push(message);
+      }
+
+      return trimmed.map((message, index) => ({
         role: message.role,
         content: message.content,
         index,
@@ -654,6 +715,26 @@
       }
     } // end if (approvalArea)
 
+    if (status === 'generating' && !activeModal) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'assistant') {
+        const marker = `${lastMessage._turnKey || ''}:${normalizeForReplayCompare(lastMessage.content)}`;
+        if (cache.lastGeneratingMarker === marker) {
+          cache.generatingStableCount = Number(cache.generatingStableCount || 0) + 1;
+        } else {
+          cache.lastGeneratingMarker = marker;
+          cache.generatingStableCount = 0;
+        }
+        if ((cache.generatingStableCount || 0) >= 2 && !inputContent) status = 'idle';
+      } else {
+        cache.lastGeneratingMarker = '';
+        cache.generatingStableCount = 0;
+      }
+    } else if (cache) {
+      cache.lastGeneratingMarker = '';
+      cache.generatingStableCount = 0;
+    }
+
     if (isTaskList) {
       status = messages.length === 0 ? 'idle' : status;
     }
@@ -677,7 +758,7 @@
     }
 
     // ─── 6. Task info ───
-    const taskBtn = doc.querySelector('[aria-label*="Tasks"], [aria-label*="task" i]');
+    const taskBtn = doc.querySelector('[aria-haspopup="menu"]');
     const taskInfo = taskBtn ? (taskBtn.textContent || '').trim() : '';
     const title = (isTaskList && hasComposer ? 'Codex' : headerText) || 'Codex';
     return JSON.stringify({
