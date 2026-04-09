@@ -18,13 +18,17 @@ function load(name) {
     catch { return null; }
 }
 
+function getMessageText(params) {
+    return typeof params === 'string' ? params : params?.message || '';
+}
+
 function withParams(name, params) {
     let script = load(name);
     if (!script) return null;
     
     // For legacy scripts checking MESSAGE, interpolate them manually
     if (script.includes('${ MESSAGE }')) {
-        const msg = params?.MESSAGE || params?.text || '';
+        const msg = getMessageText(params);
         script = script.replace(/\$\{ MESSAGE \}/g, JSON.stringify(msg));
     }
     if (script.includes('${ BUTTON_TEXT }')) {
@@ -62,7 +66,7 @@ module.exports.sendMessage    = (params) => {
     let s = load('send_message.js');
     if (!s) return null;
     if (s.includes('${ MESSAGE }')) {
-        const msg = params?.MESSAGE || params?.text || params || '';
+        const msg = getMessageText(params);
         return s.replace(/\$\{ MESSAGE \}/g, JSON.stringify(msg));
     }
     return withParams('send_message.js', params);

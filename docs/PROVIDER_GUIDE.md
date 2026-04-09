@@ -111,7 +111,7 @@ module.exports.readChat = function readChat(params) {
 };
 
 module.exports.sendMessage = function sendMessage(params) {
-  const text = typeof params === 'string' ? params : params?.text;
+  const text = typeof params === 'string' ? params : params?.message;
   return `(() => {
     return JSON.stringify({ sent: false, needsTypeAndSend: true, selector: '[contenteditable]' });
   })()`;
@@ -200,7 +200,7 @@ function loadScript(name) {
 scripts: {
   readChat() { return loadScript('read_chat.js'); },
   sendMessage(params) {
-    const text = typeof params === 'string' ? params : params?.text;
+    const text = typeof params === 'string' ? params : params?.message;
     const s = loadScript('send_message.js');
     return s ? s.replace(/\$\{\s*MESSAGE\s*\}/g, JSON.stringify(text)) : null;
   },

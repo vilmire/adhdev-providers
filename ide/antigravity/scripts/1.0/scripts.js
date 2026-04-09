@@ -31,7 +31,10 @@ module.exports.newSession  = () => load('new_session.js');
 module.exports.listModels  = () => load('list_models.js');
 module.exports.listModes   = () => load('list_modes.js');
 
-module.exports.sendMessage = (text) => {
+module.exports.sendMessage = (params) => {
+    const text = typeof params === 'string'
+        ? params
+        : params?.message || '';
     const script = load('send_message.js');
     if (!script) return null;
     return script.replace(/\$\{\s*MESSAGE\s*\}/g, JSON.stringify(text));
