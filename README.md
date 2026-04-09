@@ -9,7 +9,7 @@
 ├── cli/            — CLI agent providers (Gemini CLI, Claude Code, Codex CLI)
 ├── extension/      — VS Code extension providers (Cline, Roo Code)
 ├── acp/            — ACP agent providers (35 agents)
-├── registry.json   — Auto-generated provider index (used by daemon)
+├── registry.json   — Auto-generated provider index (inventory/lifecycle metadata)
 ├── validate.js     — Provider schema validator
 ├── CONTRIBUTING.md — How to add a new provider
 └── COMPATIBILITY.md — OS/version compatibility matrix
@@ -65,6 +65,12 @@ When the daemon starts:
 3. Validate: `node validate.js ide/my-ide/provider.json`
 4. Submit a PR
 
+Important:
+
+- Adding a provider makes it part of the built-in inventory.
+- It does **not** automatically make it a supported or verified provider.
+- Support promotion should happen only after explicit testing is recorded in `COMPATIBILITY.md` and the docs/support catalog are updated.
+
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full workflow.
 
 ## How It Works
@@ -81,10 +87,7 @@ Loading priority: **User custom > Auto-updated > Bundled**
 
 ### registry.json
 
-Auto-generated index of all providers. Contains:
-- Provider type, name, category
-- `providerVersion` (for incremental update checks)
-- `compatibility` matrix (which IDE versions → which scripts)
+Auto-generated index of all providers. It is useful for inventory and lifecycle metadata, but it is **not** the source of truth for public support guarantees.
 
 Updated automatically by GitHub Actions on every push.
 

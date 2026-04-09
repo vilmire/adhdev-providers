@@ -186,9 +186,7 @@ function trimPromptEchoPrefix(text, promptText) {
             continue;
         }
         const normalizedFragment = normalizeText(fragment);
-        const fragmentWordCount = normalizedFragment ? normalizedFragment.split(/\s+/).length : 0;
-        const canBePromptEcho = normalizedFragment.length >= 16 || fragmentWordCount >= 4;
-        if (canBePromptEcho && normalizedFragment && normalizedPrompt.includes(normalizedFragment)) {
+        if (normalizedFragment && looksLikeSamePrompt(normalizedFragment, normalizedPrompt)) {
             dropCount = index + 1;
             continue;
         }

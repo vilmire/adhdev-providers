@@ -1,7 +1,86 @@
 # ADHDev Provider Compatibility Matrix
 
-> **Last updated:** 2026-04-05  
+> **Last updated:** 2026-04-09  
 > **How to contribute:** Submit a PR updating the status for your OS/version. See [Status Legend](#status-legend) below.
+
+This file is the evidence layer. Built-in registry presence alone is not enough to claim support.
+
+- Default assumption: every provider is `unverified`
+- Promotion to `partial` or `verified` requires explicit evidence here
+- When in doubt, stay conservative and record caveats rather than upgrading a provider prematurely
+
+## Promotion Record Checklist
+
+Every promotion should include the same evidence fields:
+
+- tested OS
+- tested provider version
+- validated flows
+- last validation date
+- caveats or setup requirements
+- evidence source such as a PR, issue, or test log
+
+Promote to `⚠️ Partial` first when only a narrower slice is verified.
+
+## Suggested First Promotion Queue
+
+If you want to help widen support methodically, start here:
+
+1. `cursor`
+2. `codex-cli`
+3. `cursor-acp`
+
+These three cover the main runtime shapes that ADHDev needs to prove out first.
+
+### Candidate Checklist: `cursor`
+
+- OS tested
+- Cursor app version
+- `detect`
+- `launch`
+- `read_chat`
+- `send_chat`
+- `list_sessions`
+- `switch_session`
+- `new_session`
+- `list_models`
+- `set_model`
+- `list_modes`
+- `set_mode`
+- `resolve_action`
+- caveats recorded
+- evidence source linked
+
+### Candidate Checklist: `codex-cli`
+
+- OS tested
+- Codex CLI version
+- `launch`
+- `send_chat`
+- `read_chat`
+- `resume`
+- `reconnect`
+- `stop`
+- saved-session behavior recorded
+- caveats recorded
+- evidence source linked
+
+### Candidate Checklist: `cursor-acp`
+
+- OS tested
+- Cursor ACP version
+- `launch`
+- `send_chat`
+- `read_chat`
+- `resolve_action`
+- `list_models`
+- `set_model`
+- `list_modes`
+- `set_mode`
+- `stop`
+- approval behavior recorded
+- caveats recorded
+- evidence source linked
 
 ## Status Legend
 
@@ -23,8 +102,8 @@
 
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
-| `antigravity` | Antigravity | ❓ | ❓ | ❓ | | |
-| `cursor` | Cursor | ❓ | ❓ | ❓ | | |
+| `antigravity` | Antigravity | ❓ | ❓ | ❓ | Antigravity `1.22.2` | Local smoke check validated read/list only; fresh new-session send/read still inconclusive |
+| `cursor` | Cursor | ⚠️ | ❓ | ❓ | Cursor `3.0.13` | macOS partial: detect, launch, fresh new-session send/read, list/switch session, model listing, and mode listing validated; the tested build currently exposes only Auto and approvals remain unverified |
 | `kiro` | Kiro | ❓ | ❓ | ❓ | | |
 | `pearai` | PearAI | ❓ | ❓ | ❓ | | |
 | `trae` | Trae | ❓ | ❓ | ❓ | | |
@@ -59,7 +138,7 @@
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
-| `codex` | Codex | ❓ | ❓ | ❓ | | |
+| `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: fresh new session plus send/read validated inside Antigravity; current provider surface still lacks first-class list/switch session support |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
 
 ### Script Methods — Extension
@@ -67,7 +146,7 @@
 | Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
 |----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
 | `cline` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `codex` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `codex` | ✅ | ✅ | ➖ | ➖ | ➖ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ |
 | `roo-code` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ---
@@ -81,8 +160,8 @@
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `aider-cli` | Aider | ❓ | ❓ | ❓ | | |
-| `claude-cli` | Claude Code | ❓ | ❓ | ❓ | | |
-| `codex-cli` | Codex CLI | ❓ | ❓ | ❓ | | |
+| `claude-cli` | Claude Code | ⚠️ | ❓ | ❓ | Claude Code `2.1.84` | macOS partial: launch, saved-session listing, resume launch, daemon-restart reconnect, stop, and live readback validated; short exact-answer prompt-echo trimming was fixed during validation |
+| `codex-cli` | Codex CLI | ❓ | ❓ | ❓ | Codex CLI `0.118.0` | macOS unverified: launch, send/read, resume, and stop exercised locally, but reconnect is still unproven and fresh launches can remain in onboarding prompt state |
 | `cursor-cli` | Cursor CLI | ❓ | ❓ | ❓ | | |
 | `gemini-cli` | Gemini CLI | ❓ | ❓ | ❓ | | |
 | `github-copilot-cli` | GitHub Copilot CLI | ❓ | ❓ | ❓ | | |
@@ -140,7 +219,7 @@
 | `codex-cli` | Codex CLI (ACP) | ❓ | ❓ | ❓ | | |
 | `corust-agent` | Corust Agent | ❓ | ❓ | ❓ | | |
 | `crow-cli` | crow-cli | ❓ | ❓ | ❓ | | |
-| `cursor-acp` | Cursor (ACP) | ❓ | ❓ | ❓ | | |
+| `cursor-acp` | Cursor (ACP) | ⚠️ | ❓ | ❓ | cursor-agent `2026.03.25-933d5a6` | macOS partial: launch, send/read chat, approval, model/mode changes, and stop validated; reconnect and resume still unverified |
 | `deepagents` | Deep Agents | ❓ | ❓ | ❓ | | |
 | `dimcode` | DimCode | ❓ | ❓ | ❓ | | |
 | `docker-cagent` | Docker cagent | ❓ | ❓ | ❓ | | |
@@ -221,6 +300,20 @@ OS: <macOS 15.x / Windows 11 / Ubuntu 24.04 / etc>
 Provider Version: <e.g. Cursor 0.48>
 Status: ✅ / ⚠️ / ❌
 Notes: <any issues encountered>
+```
+
+Also include the exact flows you validated, for example:
+
+```
+Flows tested:
+- launch
+- send/read chat
+- approval handling
+- model switch
+- mode switch
+- reconnect
+Known gaps:
+- set_mode fails after layout change in v1.2.x
 ```
 
 ### PR Title Format

@@ -1,11 +1,27 @@
 # ADHDev Provider Creation Guide
 
 > Complete guide for adding new IDE, Extension, CLI, and ACP providers to ADHDev.
-> **Just create `provider.json` + `scripts.js` — no TypeScript modifications needed.**
+> In most cases you can create `provider.json` + scripts without TypeScript changes, but that only adds inventory. It does not automatically make the provider verified support.
+> For promotion work, follow the evidence-first workflow in `CONTRIBUTING.md` and update `COMPATIBILITY.md` conservatively.
 
 ---
 
 ## 🏗️ Provider Architecture
+
+## Verification Policy
+
+There are two separate goals when working in this repository:
+
+1. Make a provider loadable
+2. Make a provider trustworthy enough to promote as supported
+
+This guide mainly covers the first goal. The second requires explicit compatibility evidence, conservative caveats, and updates to user-facing support docs.
+
+Use this default:
+
+- new provider: `unverified`
+- some flows tested with gaps: `partial`
+- repeatedly validated with documented caveats: `verified`
 
 ```
 provider.js created (ide/cli/extension/acp)
@@ -370,8 +386,9 @@ module.exports = {
   inputSelector: '[contenteditable="true"][role="textbox"]',
   scripts: {
     readChat() { return `(() => { ... })()`; },
-    sendMessage(text) {
+    sendMessage(params) {
       // needsTypeAndSend: true → daemon types via CDP into inputSelector
+      const text = typeof params === 'string' ? params : params?.message;
       return `(() => JSON.stringify({ sent: false, needsTypeAndSend: true }))()`;
     },
   },

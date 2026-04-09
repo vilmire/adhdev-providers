@@ -1,81 +1,104 @@
 /**
  * Cursor — set_model
  *
- * Select target model from model dropdown:
- *   1. Open dropdown
- *   2. Turn off Auto toggle (if needed)
- *   3. Filter via search input
- *   4. Click matching item
- *   5. Restore original Auto state
- *
- * params.model: string — Model name (🧠 may have suffix)
- * → { success: true/false, model? }
+ * Works with both legacy composer menus and the newer ui-model-picker menu.
+ * If the UI only exposes Auto, report that clearly instead of pretending the
+ * target model was selectable.
  */
 async (params) => {
   try {
-    const target = params.model;
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const isVisible = (el) => !!el && el.offsetWidth > 0 && el.offsetHeight > 0;
+    const normalize = (value) => (value || '').replace(/\s+/g, ' ').trim();
+    const target = normalize(params?.model || '');
+    if (!target) return JSON.stringify({ success: false, error: 'model is required' });
 
-    const modelBtn = document.querySelector('.composer-unified-dropdown-model');
-    if (!modelBtn) return JSON.stringify({ success: false, error: 'Model button not found' });
-
-    modelBtn.click();
-    await new Promise(r => setTimeout(r, 500));
-
-    const menu = document.querySelector('[data-testid="model-picker-menu"]');
-    if (!menu) return JSON.stringify({ success: false, error: 'Model picker menu not found' });
-
-    // 🧠 Handle suffix
-    const wantBrain = target.includes('🧠');
-    const searchName = target.replace(/\s*🧠\s*$/, '').trim();
-
-    // Auto toggle turn off
-    const autoItem = menu.querySelector('.composer-unified-context-menu-item[data-is-selected="true"]');
-    const autoToggle = autoItem ? [...autoItem.querySelectorAll('[class*="rounded-full"]')].find(el => el.offsetWidth === 24 && el.offsetHeight === 14) : null;
-    let wasAutoOn = false;
-    if (autoToggle) {
-      const bgStyle = autoToggle.getAttribute('style') || '';
-      wasAutoOn = bgStyle.includes('green');
-      if (wasAutoOn) {
-        autoToggle.click();
-        await new Promise(r => setTimeout(r, 500));
+    const activate = (el) => {
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const clientX = rect.left + rect.width / 2;
+      const clientY = rect.top + rect.height / 2;
+      for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+        const Ctor = type.startsWith('pointer') ? PointerEvent : MouseEvent;
+        el.dispatchEvent(new Ctor(type, { bubbles: true, clientX, clientY, pointerId: 1 }));
       }
+    };
+
+    const currentButton = document.querySelector('.ui-model-picker__trigger')
+      || document.querySelector('.composer-unified-dropdown-model');
+    if (!isVisible(currentButton)) {
+      return JSON.stringify({ success: false, error: 'Model button not found' });
     }
 
- // Filter via search input
-    const refreshedMenu = document.querySelector('[data-testid="model-picker-menu"]');
-    const searchInput = refreshedMenu?.querySelector('input[placeholder="Search models"]');
-    if (searchInput) {
-      searchInput.focus();
-      searchInput.value = searchName;
-      searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-      await new Promise(r => setTimeout(r, 300));
+    const current = normalize(currentButton.textContent || currentButton.getAttribute('aria-label') || '');
+    if (current && current.toLowerCase() === target.toLowerCase()) {
+      return JSON.stringify({ success: true, model: current });
     }
 
- // from search
-    const items = (refreshedMenu || menu).querySelectorAll('.composer-unified-context-menu-item');
-    for (const item of items) {
-      const nameEl = item.querySelector('.monaco-highlighted-label');
-      const name = nameEl?.textContent?.trim() || '';
-      if (!name || name === 'Add Models') continue;
-      const hasBrain = !!item.querySelector('[class*="codicon-br"]');
+    activate(currentButton);
+    await sleep(500);
 
-      if (name.toLowerCase().includes(searchName.toLowerCase()) && hasBrain === wantBrain) {
-        item.click();
-        await new Promise(r => setTimeout(r, 200));
-        const displayName = hasBrain ? name + ' 🧠' : name;
-        return JSON.stringify({ success: true, model: displayName });
+    const menu = document.querySelector('[data-testid="model-picker-menu"]')
+      || document.querySelector('.ui-model-picker__menu')
+      || document.querySelector('.typeahead-popover');
+    if (!isVisible(menu)) {
+      return JSON.stringify({ success: false, error: 'Model picker menu not found' });
+    }
+
+    const rows = [...menu.querySelectorAll('[role="menuitemcheckbox"], [role="menuitem"], .composer-unified-context-menu-item')]
+      .filter(isVisible);
+
+    const trySelect = (matchText) => {
+      for (const row of rows) {
+        const testid = row.getAttribute('data-testid') || '';
+        const uiTitle = normalize(row.querySelector('.ui-menu__title')?.textContent || '');
+        const legacyTitle = normalize(row.querySelector('.monaco-highlighted-label')?.textContent || '');
+        const title = uiTitle || legacyTitle || normalize(row.textContent || '');
+        if (!title) continue;
+
+        if (testid === 'auto-mode-toggle') {
+          if (matchText.toLowerCase() === 'auto') {
+            const switchBtn = row.querySelector('button.ui-toggle[role="switch"]');
+            if (switchBtn && switchBtn.getAttribute('aria-checked') !== 'true') {
+              activate(switchBtn);
+            } else {
+              activate(row);
+            }
+            return { success: true, model: 'Auto' };
+          }
+          continue;
+        }
+
+        const hasBrain = !!row.querySelector('[class*="codicon-br"]');
+        const displayName = hasBrain ? `${title} 🧠` : title;
+        if (displayName.toLowerCase() === matchText.toLowerCase() || title.toLowerCase() === matchText.toLowerCase()) {
+          activate(row);
+          return { success: true, model: displayName };
+        }
       }
+      return null;
+    };
+
+    const selected = trySelect(target);
+    if (selected) {
+      await sleep(250);
+      return JSON.stringify(selected);
     }
 
- // Auto + close
-    if (wasAutoOn) {
-      const nm = document.querySelector('[data-testid="model-picker-menu"]');
-      const nai = nm?.querySelector('.composer-unified-context-menu-item');
-      const nt = nai ? [...nai.querySelectorAll('[class*="rounded-full"]')].find(el => el.offsetWidth === 24) : null;
-      if (nt) nt.click();
-      await new Promise(r => setTimeout(r, 200));
-    }
+    const visibleChoices = rows
+      .map((row) => {
+        const testid = row.getAttribute('data-testid') || '';
+        if (testid === 'auto-mode-toggle') return 'Auto';
+        return normalize(row.querySelector('.ui-menu__title')?.textContent || row.querySelector('.monaco-highlighted-label')?.textContent || row.textContent || '');
+      })
+      .filter(Boolean);
+
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    return JSON.stringify({ success: false, error: 'model not found: ' + target });
-  } catch(e) { return JSON.stringify({ success: false, error: e.message }); }
+    if (visibleChoices.length === 1 && visibleChoices[0] === 'Auto') {
+      return JSON.stringify({ success: false, error: 'Only Auto is exposed in the current Cursor model picker' });
+    }
+    return JSON.stringify({ success: false, error: `model not found: ${target}` });
+  } catch (e) {
+    return JSON.stringify({ success: false, error: e.message });
+  }
 }
