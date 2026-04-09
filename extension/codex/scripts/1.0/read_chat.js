@@ -715,22 +715,10 @@
       }
     } // end if (approvalArea)
 
-    if (status === 'generating' && !activeModal) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage?.role === 'assistant') {
-        const marker = `${lastMessage._turnKey || ''}:${normalizeForReplayCompare(lastMessage.content)}`;
-        if (cache.lastGeneratingMarker === marker) {
-          cache.generatingStableCount = Number(cache.generatingStableCount || 0) + 1;
-        } else {
-          cache.lastGeneratingMarker = marker;
-          cache.generatingStableCount = 0;
-        }
-        if ((cache.generatingStableCount || 0) >= 2 && !inputContent) status = 'idle';
-      } else {
-        cache.lastGeneratingMarker = '';
-        cache.generatingStableCount = 0;
-      }
-    } else if (cache) {
+    // Codex generation state is owned by the composer submit button icon.
+    // Keep that signal authoritative instead of downgrading to idle when the
+    // visible transcript temporarily stabilizes between streamed chunks.
+    if (status !== 'generating' && cache) {
       cache.lastGeneratingMarker = '';
       cache.generatingStableCount = 0;
     }
