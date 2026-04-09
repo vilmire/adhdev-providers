@@ -138,7 +138,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
-| `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: fresh new session plus send/read validated inside Antigravity; current provider surface still lacks first-class list/switch session support |
+| `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: fresh new session plus send/read validated inside Antigravity; recent-task list/switch scripts now work, but active generating tasks can still collapse history access back to the current chat |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
 
 ### Script Methods — Extension
