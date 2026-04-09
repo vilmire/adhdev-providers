@@ -450,6 +450,29 @@ function toMessageObjects(messages, status) {
     }));
 }
 
+function extractControlValues(screenText) {
+    const values = {};
+    const lines = splitLines(screenText);
+
+    for (const rawLine of lines) {
+        const trimmed = sanitizeLine(rawLine).trim();
+
+        // Model: footer shows "Sonnet" / "Opus" / "Haiku" at line start
+        const modelMatch = trimmed.match(/^(Sonnet|Opus|Haiku)\b/i);
+        if (modelMatch) {
+            values.model = modelMatch[1].toLowerCase();
+        }
+
+        // Effort: footer shows "[spinner] medium · /effort" or similar
+        const effortMatch = trimmed.match(/\b(low|medium|high|max)\s+[·•]\s+\/effort\b/i);
+        if (effortMatch) {
+            values.effort = effortMatch[1].toLowerCase();
+        }
+    }
+
+    return Object.keys(values).length > 0 ? values : undefined;
+}
+
 module.exports = function parseOutput(input) {
     const screen = getScreen(input);
     const screenText = String(screen.text || input?.screenText || '');
@@ -487,11 +510,14 @@ module.exports = function parseOutput(input) {
         effectivePromptText,
     );
 
+    const controlValues = extractControlValues(screenText || buffer);
+
     return {
         id: 'cli_session',
         status,
         title: 'Claude Code',
         messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantBlocks, assistantText), status),
         activeModal,
+        ...(controlValues ? { controlValues } : {}),
     };
 };

@@ -48,24 +48,54 @@
   },
   "controls": [
     {
-      "id": "quick_action",
+      "id": "model",
       "type": "select",
-      "label": "➕",
+      "label": "Model",
+      "icon": "🤖",
       "placement": "bar",
-      "order": 90,
+      "order": 10,
       "options": [
-        {
-          "value": "/init",
-          "label": "/init",
-          "description": "Initialize Claude Code in the current repo"
-        },
-        {
-          "value": "/help",
-          "label": "/help",
-          "description": "Show Claude Code command help"
-        }
+        { "value": "sonnet", "label": "Sonnet" },
+        { "value": "opus", "label": "Opus" },
+        { "value": "haiku", "label": "Haiku" }
       ],
-      "setScript": "runSlashCommand"
+      "setScript": "setModel",
+      "readFrom": "model"
+    },
+    {
+      "id": "effort",
+      "type": "cycle",
+      "label": "Effort",
+      "icon": "⚡",
+      "placement": "bar",
+      "order": 20,
+      "options": [
+        { "value": "low", "label": "Low" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "high", "label": "High" },
+        { "value": "max", "label": "Max" }
+      ],
+      "setScript": "setEffort",
+      "readFrom": "effort"
+    },
+    {
+      "id": "compact",
+      "type": "toggle",
+      "label": "Compact",
+      "icon": "📐",
+      "placement": "bar",
+      "order": 70,
+      "setScript": "setCompact",
+      "readFrom": "compact"
+    },
+    {
+      "id": "new_session",
+      "type": "action",
+      "label": "New",
+      "icon": "➕",
+      "placement": "bar",
+      "order": 80,
+      "invokeScript": "newSession"
     }
   ],
   "binary": "claude",

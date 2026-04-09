@@ -48,8 +48,28 @@ module.exports.parseApproval = (input) => {
     return mod ? mod(input) : null;
 };
 
-/** Quick action menu → dispatch slash command through daemon runtime */
-module.exports.runSlashCommand = (input) => {
-    const mod = loadModule('run_slash_command.js');
+// ─── Controls ───
+
+/** Set the active model via /model command */
+module.exports.setModel = (input) => {
+    const mod = loadModule('set_model.js');
+    return mod ? mod(input) : null;
+};
+
+/** Set effort level via /effort command */
+module.exports.setEffort = (input) => {
+    const mod = loadModule('set_effort.js');
+    return mod ? mod(input) : null;
+};
+
+/** Start a new session via /clear command */
+module.exports.newSession = (input) => {
+    const mod = loadModule('new_session.js');
+    return mod ? mod(input) : null;
+};
+
+/** Toggle compact output mode via /compact command */
+module.exports.setCompact = (input) => {
+    const mod = loadModule('set_compact.js');
     return mod ? mod(input) : null;
 };

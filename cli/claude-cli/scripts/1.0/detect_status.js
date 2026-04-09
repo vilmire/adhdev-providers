@@ -123,9 +123,19 @@ function hasActiveApproval(lines) {
 
 function hasActiveGenerating(lines) {
     const window = takeLast(lines, 12);
-    const spinner = window.some(isSpinnerLine);
-    const activeTool = takeLast(lines, 8).some(isToolLine);
-    return spinner || (activeTool && window.some(line => /\u2026|\.{3}|Running\b/i.test(normalize(line))));
+    // Explicit spinner/status text = definitely generating
+    if (window.some(isSpinnerLine)) return true;
+
+    // Active tool execution = generating (even without spinner)
+    const recentTools = takeLast(lines, 8);
+    if (recentTools.some(isToolLine)) {
+        // But only if there's no idle prompt AFTER the tool
+        const lastToolIdx = findLastIndex(lines, isToolLine);
+        const lastPromptIdx = findLastIndex(lines, isIdlePrompt);
+        if (lastPromptIdx < 0 || lastToolIdx > lastPromptIdx) return true;
+    }
+
+    return false;
 }
 
 function hasPromptAdjacentGenerating(screen) {
@@ -162,6 +172,26 @@ function hasVisibleCompletedReply(lines) {
     return trailingSegment.every(isTransientPostReplyLine);
 }
 
+function findLastIndex(lines, predicate) {
+    for (let i = lines.length - 1; i >= 0; i--) {
+        if (predicate(lines[i])) return i;
+    }
+    return -1;
+}
+
+// If there's visible content but no idle prompt at the bottom,
+// Claude is likely still generating (streaming text or executing tools).
+function looksLikeActiveOutput(lines) {
+    if (lines.length === 0) return false;
+    const recent = takeLast(lines, 6);
+    // If there's an idle prompt in recent lines, it's idle
+    if (recent.some(isIdlePrompt)) return false;
+    if (recent.some(isShellChrome)) return false;
+    // If there's assistant text or tool output without a prompt, still active
+    const hasContent = recent.some(l => isAssistantReplyLine(l) || isToolLine(l));
+    return hasContent;
+}
+
 module.exports = function detectStatus(input) {
     const screen = getScreen(input);
     const screenLines = nonEmpty(screen.lines);
@@ -175,6 +205,8 @@ module.exports = function detectStatus(input) {
         if (hasActiveGenerating(activeLines)) return 'generating';
         if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
         if (takeLast(activeLines, 8).some(isShellChrome)) return 'idle';
+        // No prompt visible + active content = still generating
+        if (looksLikeActiveOutput(activeLines)) return 'generating';
     }
 
     const tail = String(input?.tail || '');
