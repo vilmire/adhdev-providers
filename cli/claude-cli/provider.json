@@ -54,11 +54,8 @@
       "icon": "🤖",
       "placement": "bar",
       "order": 10,
-      "options": [
-        { "value": "sonnet", "label": "Sonnet" },
-        { "value": "opus", "label": "Opus" },
-        { "value": "haiku", "label": "Haiku" }
-      ],
+      "dynamic": true,
+      "listScript": "listModels",
       "setScript": "setModel",
       "readFrom": "model"
     },

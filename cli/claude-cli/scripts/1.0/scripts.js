@@ -50,6 +50,12 @@ module.exports.parseApproval = (input) => {
 
 // ─── Controls ───
 
+/** List available models for the model selector */
+module.exports.listModels = (input) => {
+    const mod = loadModule('list_models.js');
+    return mod ? mod(input) : null;
+};
+
 /** Set the active model via /model command */
 module.exports.setModel = (input) => {
     const mod = loadModule('set_model.js');
