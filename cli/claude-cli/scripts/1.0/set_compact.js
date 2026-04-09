@@ -3,26 +3,14 @@
 /**
  * Claude Code — setCompact
  *
- * Sends `/compact` to the PTY to toggle compact output mode.
+ * Sends `/compact` via raw PTY write (no response tracking).
  */
 module.exports = function setCompact(input) {
     return {
         success: true,
-        sent: true,
         command: {
-            type: 'send_message',
+            type: 'pty_write',
             text: '/compact',
         },
-        effects: [
-            {
-                type: 'toast',
-                id: `claude-cli:compact:${Date.now()}`,
-                persist: false,
-                toast: {
-                    level: 'info',
-                    message: 'Toggled compact mode',
-                },
-            },
-        ],
     };
 };

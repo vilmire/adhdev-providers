@@ -3,26 +3,14 @@
 /**
  * Claude Code — newSession
  *
- * Sends `/clear` to the PTY to start a fresh conversation.
+ * Sends `/clear` via raw PTY write (no response tracking).
  */
 module.exports = function newSession(input) {
     return {
         success: true,
-        sent: true,
         command: {
-            type: 'send_message',
+            type: 'pty_write',
             text: '/clear',
         },
-        effects: [
-            {
-                type: 'toast',
-                id: `claude-cli:new-session:${Date.now()}`,
-                persist: false,
-                toast: {
-                    level: 'info',
-                    message: 'Starting new session',
-                },
-            },
-        ],
     };
 };

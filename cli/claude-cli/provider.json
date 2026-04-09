@@ -61,7 +61,7 @@
     },
     {
       "id": "effort",
-      "type": "cycle",
+      "type": "select",
       "label": "Effort",
       "icon": "⚡",
       "placement": "bar",

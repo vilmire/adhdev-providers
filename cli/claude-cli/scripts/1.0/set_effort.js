@@ -3,8 +3,7 @@
 /**
  * Claude Code — setEffort
  *
- * Sends `/effort <level>` to the PTY to change effort level.
- * Valid levels: low, medium, high, max
+ * Sends `/effort <level>` via raw PTY write (no response tracking).
  */
 module.exports = function setEffort(input) {
     const value = input?.args?.value || input?.args?.VALUE;
@@ -20,24 +19,12 @@ module.exports = function setEffort(input) {
 
     return {
         success: true,
-        sent: true,
         command: {
-            type: 'send_message',
+            type: 'pty_write',
             text: `/effort ${level}`,
         },
         controlValues: {
             effort: level,
         },
-        effects: [
-            {
-                type: 'toast',
-                id: `claude-cli:set-effort:${Date.now()}`,
-                persist: false,
-                toast: {
-                    level: 'info',
-                    message: `Effort → ${level}`,
-                },
-            },
-        ],
     };
 };
