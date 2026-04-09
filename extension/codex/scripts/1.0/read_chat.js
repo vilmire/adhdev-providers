@@ -239,6 +239,36 @@
         .trim();
     }
 
+    function sanitizeMessageContent(raw) {
+      const lines = String(raw || '')
+        .split('\n')
+        .map((line) => line.trimEnd());
+      const filtered = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          if (filtered.length > 0 && filtered[filtered.length - 1] !== '') filtered.push('');
+          continue;
+        }
+
+        if (/^\d{1,2}:\d{2}\s?(AM|PM)$/i.test(trimmed)) continue;
+        if (/^Worked for \d+/i.test(trimmed)) continue;
+        if (/^Working for \d+/i.test(trimmed)) continue;
+        if (/^Ran \d+ command(s)?$/i.test(trimmed)) continue;
+        if (/^Approved by user$/i.test(trimmed)) continue;
+        if (/^Using tool:/i.test(trimmed)) continue;
+        if (/^Applied patch$/i.test(trimmed)) continue;
+
+        filtered.push(line);
+      }
+
+      return filtered
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+    }
+
     function parseUnitIndex(unitKey) {
       const parts = String(unitKey || '').split(':');
       const raw = parts.length >= 2 ? parts[parts.length - 2] : '0';
@@ -250,7 +280,7 @@
       const unitKey = unitEl.getAttribute('data-content-search-unit-key') || '';
       const parts = unitKey.split(':');
       const role = parts.length >= 3 ? parts[parts.length - 1] : 'assistant';
-      const content = extractRichContent(unitEl);
+      const content = sanitizeMessageContent(extractRichContent(unitEl));
       if (!content || content.length < 1) return null;
 
       const kind = (() => {
@@ -273,7 +303,6 @@
         role: role === 'user' ? 'user' : 'assistant',
         content,
         index: 0,
-        timestamp: Date.now(),
         _turnKey: turnKey || '',
         _unitKey: unitKey,
         _unitIndex: parseUnitIndex(unitKey),
@@ -373,7 +402,6 @@
         role: message.role,
         content: message.content,
         index,
-        timestamp: Date.now() - (ordered.length - index) * 1000,
         _turnKey: message._turnKey,
         ...(message.kind ? { kind: message.kind } : {}),
       }));
@@ -452,13 +480,12 @@
     if (messages.length === 0 && !isTaskList) {
       const threadArea = doc.querySelector('[data-thread-find-target="conversation"]');
       if (threadArea) {
-        const text = extractRichContent(threadArea);
+        const text = sanitizeMessageContent(extractRichContent(threadArea));
         if (text.length > 0) {
           messages.push({
             role: 'assistant',
             content: text,
             index: 0,
-            timestamp: Date.now(),
           });
         }
       }
@@ -469,7 +496,7 @@
     const proseMirror = doc.querySelector('.ProseMirror');
     if (proseMirror) {
       const placeholder = proseMirror.querySelector('.placeholder');
-      const text = (proseMirror.textContent || '').trim();
+      const text = sanitizeMessageContent((proseMirror.textContent || '').trim());
       if (text && (!placeholder || text !== (placeholder.textContent || '').trim())) {
         inputContent = text;
       }

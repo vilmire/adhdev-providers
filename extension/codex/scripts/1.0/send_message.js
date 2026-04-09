@@ -16,28 +16,15 @@
       return document;
     };
     const doc = resolveDoc();
-    const findValue = (source, keys) => {
-      if (typeof source === 'string') return source;
-      const queue = [source];
-      const seen = new Set();
-      while (queue.length > 0) {
-        const item = queue.shift();
-        if (!item || typeof item !== 'object' || seen.has(item)) continue;
-        seen.add(item);
-        for (const key of keys) {
-          if (item[key] != null) return item[key];
-        }
-        for (const value of Object.values(item)) {
-          if (value && typeof value === 'object') queue.push(value);
-        }
-      }
-      return undefined;
-    };
-
-    const rawMessage = findValue(args, ['message', 'MESSAGE', 'text']);
-    const message = rawMessage == null || !String(rawMessage).trim()
-      ? 'Write a tiny python script, include a markdown table, run `pwd` using a tool, and answer clearly.'
-      : String(rawMessage);
+    const rawMessage =
+      typeof args?.message === 'string' ? args.message :
+      typeof args?.MESSAGE === 'string' ? args.MESSAGE :
+      typeof args?.text === 'string' ? args.text :
+      '';
+    const message = String(rawMessage || '');
+    if (!message.trim()) {
+      return JSON.stringify({ sent: false, error: 'message required' });
+    }
 
     const editor =
       doc.querySelector('.ProseMirror[contenteditable="true"]') ||
@@ -135,9 +122,33 @@
       );
     };
 
+    const normalizeText = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const getTurnCount = () => doc.querySelectorAll('[data-content-search-turn-key]').length;
+    const getMatchingUserTurnCount = () => {
+      const target = normalizeText(message);
+      if (!target) return 0;
+      return Array.from(doc.querySelectorAll('[data-content-search-unit-key]')).filter((unit) => {
+        const unitKey = unit.getAttribute('data-content-search-unit-key') || '';
+        const role = unitKey.split(':').pop()?.toLowerCase() || '';
+        if (role !== 'user' && role !== 'human') return false;
+        return normalizeText(unit.textContent || '').includes(target);
+      }).length;
+    };
+    const isComposerBusy = () => {
+      const button = findSendButton();
+      if (!button) return false;
+      const aria = (button.getAttribute('aria-label') || '').trim().toLowerCase();
+      const svg = button.querySelector('svg');
+      return button.disabled || aria.includes('stop') || svg?.getAttribute('fill') === 'currentColor';
+    };
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     placeCaret();
     clearEditor();
     placeCaret();
+
+    const initialTurnCount = getTurnCount();
+    const initialUserTurnMatches = getMatchingUserTurnCount();
 
     editor.dispatchEvent(new InputEvent('beforeinput', {
       bubbles: true,
@@ -160,7 +171,7 @@
         }
 
         setTimeout(() => {
-          const remainingAfterClick = (editor.textContent || '').trim();
+          const remainingAfterClick = normalizeText(editor.textContent || '');
           if (remainingAfterClick) {
             editor.focus();
             for (const type of ['keydown', 'keypress', 'keyup']) {
@@ -175,15 +186,39 @@
             }
           }
 
-          setTimeout(() => {
-            const remaining = (editor.textContent || '').trim();
+          (async () => {
+            let evidence = null;
+            for (let i = 0; i < 15; i += 1) {
+              await wait(100);
+              const remaining = normalizeText(editor.textContent || '');
+              const turnCount = getTurnCount();
+              const matchingUserTurns = getMatchingUserTurnCount();
+              const busy = isComposerBusy();
+              if (busy || turnCount > initialTurnCount || matchingUserTurns > initialUserTurnMatches) {
+                evidence = {
+                  remaining,
+                  busy,
+                  turnCount,
+                  matchingUserTurns,
+                };
+                break;
+              }
+            }
+
+            const finalRemaining = normalizeText(editor.textContent || '');
             resolve(JSON.stringify({
-              sent: remaining !== message,
+              sent: !!evidence,
               method: sendButton ? 'button+enter' : 'enter',
               message: message.slice(0, 100),
-              remaining,
+              remaining: finalRemaining,
+              busy: evidence?.busy || false,
+              turnCount: evidence?.turnCount ?? getTurnCount(),
+              matchingUserTurns: evidence?.matchingUserTurns ?? getMatchingUserTurnCount(),
+              initialTurnCount,
+              initialUserTurnMatches,
+              error: evidence ? undefined : 'submit not confirmed',
             }));
-          }, 250);
+          })();
         }, 120);
       }, 120);
     });

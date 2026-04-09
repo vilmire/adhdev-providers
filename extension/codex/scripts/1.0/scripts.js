@@ -31,7 +31,13 @@ module.exports.readChat = () => load('read_chat.js');
 
 module.exports.resolveAction = (params) => withParams('resolve_action.js', params);
 
-module.exports.sendMessage = (params) => withParams('send_message.js', params);
+module.exports.sendMessage = (params) => {
+  const normalized =
+    typeof params === 'string'
+      ? { message: params, MESSAGE: params, text: params }
+      : params;
+  return withParams('send_message.js', normalized);
+};
 
 module.exports.setMode = (params) => withParams('set_mode.js', params);
 
