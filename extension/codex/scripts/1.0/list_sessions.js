@@ -43,20 +43,23 @@
     const findBackButton = () => findButton((label) => /\bback\b|go back/.test(label));
     const findRecentTasksButton = () => findButton((label) => /recent tasks|task in progress|tasks?/.test(label) && !/new chat/.test(label));
     const inTasksView = () => /^tasks$/i.test(getHeaderText());
+    const hasVisibleHistoryPopover = () => Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]')).some(isVisible);
 
     const openTasksView = async () => {
-      if (inTasksView()) return { opened: false };
-      const backButton = findBackButton();
-      if (backButton) {
-        clickElement(backButton);
-        await sleep(550);
-        if (inTasksView()) return { opened: true, restore: 'back' };
-      }
+      if (inTasksView() || hasVisibleHistoryPopover()) return { opened: false };
       const recentTasks = findRecentTasksButton();
       if (recentTasks) {
         clickElement(recentTasks);
         await sleep(550);
         if (inTasksView()) return { opened: true, restore: 'back' };
+        if (hasVisibleHistoryPopover()) return { opened: true, restore: 'none' };
+      }
+      const backButton = findBackButton();
+      if (backButton) {
+        clickElement(backButton);
+        await sleep(550);
+        if (inTasksView()) return { opened: true, restore: 'back' };
+        if (hasVisibleHistoryPopover()) return { opened: true, restore: 'none' };
       }
       return { opened: false };
     };
@@ -98,8 +101,45 @@
       };
     };
 
+    const collectMenuSessions = (currentTitle) => {
+      const popovers = Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]'))
+        .filter(isVisible);
+      if (popovers.length === 0) return [];
+
+      const entries = [];
+      for (const popover of popovers) {
+        const bounds = popover.getBoundingClientRect();
+        const nodes = Array.from(popover.querySelectorAll('button, [role="button"], [role="menuitem"], [role="menuitemradio"], div, li, a'))
+          .filter(isVisible);
+        for (const node of nodes) {
+          const rect = node.getBoundingClientRect();
+          if (rect.top < bounds.top || rect.bottom > bounds.bottom + 4) continue;
+          const parsed = parseEntry(node, currentTitle);
+          if (!parsed) continue;
+          entries.push(parsed);
+        }
+      }
+
+      const dedup = new Map();
+      for (const entry of entries) {
+        const key = entry.title.toLowerCase();
+        const existing = dedup.get(key);
+        if (!existing || entry._sortTop < existing._sortTop) dedup.set(key, entry);
+      }
+
+      return Array.from(dedup.values())
+        .sort((a, b) => a._sortTop - b._sortTop)
+        .map((entry, index) => ({
+          id: entry.id,
+          title: entry.title,
+          time: entry.time || undefined,
+          active: entry.active,
+          index,
+        }));
+    };
+
     const collectSessions = (currentTitle) => {
-      if (!inTasksView()) return [];
+      if (!inTasksView()) return collectMenuSessions(currentTitle);
       const selector = 'button, [role="button"], div, li, a';
       const candidates = Array.from(doc.querySelectorAll(selector)).filter(isVisible);
 

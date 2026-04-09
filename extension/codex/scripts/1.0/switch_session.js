@@ -43,20 +43,23 @@
     const findBackButton = () => findButton((label) => /\bback\b|go back/.test(label));
     const findRecentTasksButton = () => findButton((label) => /recent tasks|task in progress|tasks?/.test(label) && !/new chat/.test(label));
     const inTasksView = () => /^tasks$/i.test(getHeaderText());
+    const hasVisibleHistoryPopover = () => Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]')).some(isVisible);
 
     const openTasksView = async () => {
-      if (inTasksView()) return true;
-      const backButton = findBackButton();
-      if (backButton) {
-        clickElement(backButton);
-        await sleep(550);
-        if (inTasksView()) return true;
-      }
+      if (inTasksView() || hasVisibleHistoryPopover()) return true;
       const recentTasks = findRecentTasksButton();
       if (recentTasks) {
         clickElement(recentTasks);
         await sleep(550);
         if (inTasksView()) return true;
+        if (hasVisibleHistoryPopover()) return true;
+      }
+      const backButton = findBackButton();
+      if (backButton) {
+        clickElement(backButton);
+        await sleep(550);
+        if (inTasksView()) return true;
+        if (hasVisibleHistoryPopover()) return true;
       }
       return false;
     };
@@ -83,7 +86,7 @@
       return normalize(match?.[1] || value) || null;
     };
 
-    const candidates = Array.from(doc.querySelectorAll(selector))
+    const buildCandidates = (root, bounds) => Array.from(root.querySelectorAll(selector))
       .filter(isVisible)
       .map((el) => {
         const rect = el.getBoundingClientRect();
@@ -92,9 +95,11 @@
         const className = typeof el.className === 'string' ? el.className : '';
         return { el, rect, text, role, className };
       })
-      .filter(({ rect, text, role, className }) => {
+      .filter(({ rect, text }) => {
         if (!text || text.length < 3 || text.length > 140) return false;
-        if (rect.top < 40 || rect.top > 240 || rect.height < 20 || rect.height > 42) return false;
+        if (rect.height < 20 || rect.height > 42) return false;
+        if (bounds && (rect.top < bounds.top || rect.bottom > bounds.bottom + 4)) return false;
+        if (!bounds && (rect.top < 40 || rect.top > 240)) return false;
         const lowered = text.toLowerCase();
         if (/^(back|new chat|tasks?|recent tasks?)$/.test(lowered)) return false;
         if (/^\d+\s+task(s)?\s+in\s+progress$/.test(lowered)) return false;
@@ -104,6 +109,12 @@
         return true;
       })
       .sort((a, b) => a.rect.top - b.rect.top);
+
+    const popovers = Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]'))
+      .filter(isVisible);
+    const candidates = popovers.length > 0
+      ? popovers.flatMap((popover) => buildCandidates(popover, popover.getBoundingClientRect()))
+      : buildCandidates(doc, null);
 
     const dedup = [];
     const seen = new Set();

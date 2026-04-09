@@ -95,6 +95,19 @@
           .map((el) => describe(el))
           .slice(0, 200);
 
+        const popovers = Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side], [cmdk-root]'))
+          .filter(isVisible)
+          .map((el) => ({
+            ...describe(el),
+            childText: normalize(el.textContent || ''),
+            items: Array.from(el.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="option"], button, div, li'))
+              .filter(isVisible)
+              .map((item) => describe(item))
+              .filter((item) => item.text || item.ariaLabel)
+              .slice(0, 40),
+          }))
+          .slice(0, 20);
+
         const header = normalize(doc.querySelector('[style*="view-transition-name: header-title"]')?.textContent || '');
 
         return JSON.stringify({
@@ -104,6 +117,7 @@
           sessionButtons,
           visibleButtons,
           clickableRows,
+          popovers,
         });
       });
   } catch (e) {
