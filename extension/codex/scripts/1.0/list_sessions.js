@@ -17,17 +17,28 @@
       return document;
     };
 
-    const doc = resolveDoc();
-    const viewportHeight = () => doc.defaultView?.innerHeight || window.innerHeight || 900;
+    const getDoc = () => resolveDoc();
+    const viewportHeight = () => getDoc().defaultView?.innerHeight || window.innerHeight || 900;
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const getHeaderText = () => normalize(doc.querySelector('[style*="view-transition-name: header-title"]')?.textContent || '');
+    const getHeaderText = () => normalize(getDoc().querySelector('[style*="view-transition-name: header-title"]')?.textContent || '');
     const isVisible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
       if (rect.width < 8 || rect.height < 8) return false;
       return rect.bottom >= 36 && rect.top <= viewportHeight() - 12;
     };
+    const isHistoryPopover = (el) => {
+      if (!isVisible(el)) return false;
+      const text = normalize(el.textContent || '').toLowerCase();
+      if (!text) return false;
+      if (text.includes('search recent tasks') || text.includes('all tasks')) return true;
+      return Array.from(el.querySelectorAll('[role="button"], [role="menuitem"], [role="menuitemradio"], button, div, li, a'))
+        .filter(isVisible)
+        .some((node) => /(\d+\s?[smhdw]|today|yesterday|just now|\d{1,2}:\d{2}\s?(?:am|pm))$/i.test(normalize(node.textContent || '')));
+    };
+    const getVisibleHistoryPopovers = () => Array.from(getDoc().querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]'))
+      .filter(isHistoryPopover);
     const clickElement = (el) => {
       const rect = el.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
@@ -38,12 +49,12 @@
       el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
       el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
     };
-    const allButtons = () => Array.from(doc.querySelectorAll('button, [role="button"]')).filter(isVisible);
+    const allButtons = () => Array.from(getDoc().querySelectorAll('button, [role="button"]')).filter(isVisible);
     const findButton = (predicate) => allButtons().find((button) => predicate(normalize(`${button.getAttribute('aria-label') || ''} ${button.textContent || ''}`).toLowerCase(), button));
     const findBackButton = () => findButton((label) => /\bback\b|go back/.test(label));
     const findRecentTasksButton = () => findButton((label) => /recent tasks|task in progress|tasks?/.test(label) && !/new chat/.test(label));
     const inTasksView = () => /^tasks$/i.test(getHeaderText());
-    const hasVisibleHistoryPopover = () => Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]')).some(isVisible);
+    const hasVisibleHistoryPopover = () => getVisibleHistoryPopovers().length > 0;
 
     const openTasksView = async () => {
       if (inTasksView() || hasVisibleHistoryPopover()) return { opened: false };
@@ -81,6 +92,7 @@
 
       const lowered = raw.toLowerCase();
       if (/^(back|new chat|tasks?|recent tasks?)$/.test(lowered)) return null;
+      if (/^all tasks$/i.test(raw)) return null;
       if (/^\d+\s+task(s)?\s+in\s+progress$/.test(lowered)) return null;
       if (/^view all\b/.test(lowered)) return null;
       if (/archive chat/.test(lowered)) return null;
@@ -102,8 +114,7 @@
     };
 
     const collectMenuSessions = (currentTitle) => {
-      const popovers = Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"], [data-radix-popper-content-wrapper], [data-side]'))
-        .filter(isVisible);
+      const popovers = getVisibleHistoryPopovers();
       if (popovers.length === 0) return [];
 
       const entries = [];
@@ -141,7 +152,7 @@
     const collectSessions = (currentTitle) => {
       if (!inTasksView()) return collectMenuSessions(currentTitle);
       const selector = 'button, [role="button"], div, li, a';
-      const candidates = Array.from(doc.querySelectorAll(selector)).filter(isVisible);
+      const candidates = Array.from(getDoc().querySelectorAll(selector)).filter(isVisible);
 
       const dedup = new Map();
       for (const candidate of candidates) {
