@@ -109,15 +109,6 @@
     const inTasksView = () => !getDoc().querySelector('[data-content-search-turn-key]') && hasInlineSessionRows();
     const hasVisibleHistoryPopover = () => getVisibleHistoryPopovers().length > 0;
 
-    const openTasksView = async () => {
-      if (inTasksView() || hasVisibleHistoryPopover()) return true;
-      const recentTasks = findRecentTasksButton();
-      if (!recentTasks) return false;
-      clickElement(recentTasks, { useNativeClick: true });
-      await sleep(550);
-      return inTasksView() || hasVisibleHistoryPopover();
-    };
-
     const isIgnorableText = (lowered) => {
       if (!lowered) return true;
       if (/^view all\b/.test(lowered)) return true;
@@ -172,6 +163,28 @@
       return dedupeEntries(buildEntries(getDoc(), null, currentTitle));
     };
 
+    const hasMeaningfulSessionList = (currentTitle) => {
+      const sessions = collectSessions(currentTitle);
+      if (sessions.length > 1) return true;
+      if (hasVisibleHistoryPopover() && sessions.length > 0) return true;
+      if (sessions.length === 1 && normalize(currentTitle)) {
+        return sessions[0].title.toLowerCase() !== normalize(currentTitle).toLowerCase();
+      }
+      return false;
+    };
+
+    const openTasksView = async (currentTitle) => {
+      if (hasMeaningfulSessionList(currentTitle)) return true;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const recentTasks = findRecentTasksButton();
+        if (!recentTasks) return false;
+        clickElement(recentTasks, { useNativeClick: true });
+        await sleep(350 + attempt * 250);
+        if (hasMeaningfulSessionList(currentTitle)) return true;
+      }
+      return false;
+    };
+
     const collectDrillCandidates = (currentTitle) => {
       const popovers = getVisibleHistoryPopovers();
       const roots = popovers.length > 0 ? popovers : [getDoc()];
@@ -205,7 +218,7 @@
           return true;
         })
         .sort((a, b) => {
-          if (a.active !== b.active) return a.active ? -1 : 1;
+          if (a.active !== b.active) return a.active ? 1 : -1;
           return a._sortTop - b._sortTop;
         });
     };
@@ -222,7 +235,7 @@
         if (after.length > initial.length) return after;
         if (after.length > 1) return after;
         if (!inTasksView() && !hasVisibleHistoryPopover()) {
-          const reopened = await openTasksView();
+          const reopened = await openTasksView(currentTitle);
           if (!reopened) break;
         }
       }
@@ -230,7 +243,7 @@
     };
 
     const currentTitle = getHeaderText();
-    const opened = await openTasksView();
+    const opened = await openTasksView(currentTitle);
     const sessions = opened ? await drillIntoNestedListIfNeeded(currentTitle) : [];
 
     const finalSessions = sessions.length > 0
@@ -241,14 +254,13 @@
         active: entry.active,
         index,
       }))
-      : currentTitle
-        ? [{ id: currentTitle, title: currentTitle, active: true, index: 0 }]
-        : [];
+      : [];
 
     return JSON.stringify({
       sessions: finalSessions,
-      source: opened ? 'recent_tasks' : 'current_view',
+      source: opened ? 'recent_tasks' : 'unavailable',
       header: getHeaderText() || currentTitle || null,
+      opened,
     });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e), sessions: [] });

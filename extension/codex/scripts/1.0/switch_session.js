@@ -109,15 +109,6 @@
     const inTasksView = () => !getDoc().querySelector('[data-content-search-turn-key]') && hasInlineSessionRows();
     const hasVisibleHistoryPopover = () => getVisibleHistoryPopovers().length > 0;
 
-    const openTasksView = async () => {
-      if (inTasksView() || hasVisibleHistoryPopover()) return true;
-      const recentTasks = findRecentTasksButton();
-      if (!recentTasks) return false;
-      clickElement(recentTasks, { useNativeClick: true });
-      await sleep(550);
-      return inTasksView() || hasVisibleHistoryPopover();
-    };
-
     const isIgnorableText = (lowered) => {
       if (!lowered) return true;
       if (/^view all\b/.test(lowered)) return true;
@@ -170,6 +161,28 @@
       return dedupeEntries(buildEntries(getDoc(), null, currentTitle));
     };
 
+    const hasMeaningfulSessionList = (currentTitle) => {
+      const sessions = collectSessions(currentTitle);
+      if (sessions.length > 1) return true;
+      if (hasVisibleHistoryPopover() && sessions.length > 0) return true;
+      if (sessions.length === 1 && normalize(currentTitle)) {
+        return sessions[0].title.toLowerCase() !== normalize(currentTitle).toLowerCase();
+      }
+      return false;
+    };
+
+    const openTasksView = async (currentTitle) => {
+      if (hasMeaningfulSessionList(currentTitle)) return true;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const recentTasks = findRecentTasksButton();
+        if (!recentTasks) return false;
+        clickElement(recentTasks, { useNativeClick: true });
+        await sleep(350 + attempt * 250);
+        if (hasMeaningfulSessionList(currentTitle)) return true;
+      }
+      return false;
+    };
+
     const collectDrillCandidates = (currentTitle) => {
       const popovers = getVisibleHistoryPopovers();
       const roots = popovers.length > 0 ? popovers : [getDoc()];
@@ -203,7 +216,7 @@
           return true;
         })
         .sort((a, b) => {
-          if (a.active !== b.active) return a.active ? -1 : 1;
+          if (a.active !== b.active) return a.active ? 1 : -1;
           return a._sortTop - b._sortTop;
         });
     };
@@ -217,9 +230,9 @@
       return JSON.stringify({ switched: false, error: 'title or index is required' });
     }
 
-    const opened = await openTasksView();
+    const opened = await openTasksView(currentHeader);
     if (!opened) {
-      return JSON.stringify({ switched: false, error: 'Recent tasks view not available' });
+      return JSON.stringify({ switched: false, error: 'Recent tasks dialog not visible' });
     }
 
     let candidates = collectSessions(currentHeader);
@@ -249,7 +262,7 @@
           if (target) break;
         }
         if (!inTasksView() && !hasVisibleHistoryPopover()) {
-          const reopened = await openTasksView();
+          const reopened = await openTasksView(currentHeader);
           if (!reopened) break;
           candidates = collectSessions(currentHeader);
           target = findTarget();
@@ -263,6 +276,7 @@
         switched: false,
         error: 'Session not found',
         available: candidates.map((candidate) => candidate.title),
+        opened,
       });
     }
 
