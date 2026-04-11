@@ -3,7 +3,7 @@
   "name": "Claude Code (VS Code)",
   "category": "extension",
   "extensionId": "anthropic.claude-code",
-  "extensionIdPattern": "extensionId=anthropic(\\.|%2e)claude-code",
+  "extensionIdPattern": "extensionId=anthropic(\\.|%2[eE])claude-code",
   "extensionIdPattern_flags": "i",
   "vscodeCommands": {
     "focusPanel": "claude-vscode.sidebar.open"

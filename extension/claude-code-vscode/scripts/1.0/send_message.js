@@ -11,20 +11,30 @@
     function resolveDoc() {
       let doc = document;
       if (doc.getElementById('root')) {
-        for (const iframe of document.querySelectorAll('iframe')) {
+        const inner = doc.querySelector('iframe');
+        if (inner) {
           try {
-            const d = iframe.contentDocument || iframe.contentWindow?.document;
+            const d = inner.contentDocument || inner.contentWindow?.document;
             if (d?.getElementById('root')) return d;
           } catch (e) {}
         }
+        return doc;
       }
-      for (const iframe of document.querySelectorAll('iframe')) {
+      for (const iframe of doc.querySelectorAll('iframe')) {
         try {
-          const d = iframe.contentDocument || iframe.contentWindow?.document;
-          if (d?.querySelector('.ProseMirror, [contenteditable="true"], textarea')) return d;
+          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!innerDoc) continue;
+          if (innerDoc.getElementById('root')) return innerDoc;
+          for (const inner2 of innerDoc.querySelectorAll('iframe')) {
+            try {
+              const d2 = inner2.contentDocument || inner2.contentWindow?.document;
+              if (d2?.getElementById('root')) return d2;
+            } catch (e2) {}
+          }
+          if (innerDoc.querySelector('.ProseMirror, [contenteditable="true"], textarea')) return innerDoc;
         } catch (e) {}
       }
-      return document;
+      return doc;
     }
 
     const doc = resolveDoc();

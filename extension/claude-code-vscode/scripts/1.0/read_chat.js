@@ -12,23 +12,38 @@
   try {
     function resolveDoc() {
       let doc = document;
-      if (doc.getElementById('root') || doc.querySelector('[data-vscode-webview-root]')) {
+      let root = doc.getElementById('root');
+      if (root) {
         const inner = doc.querySelector('iframe');
         if (inner) {
           try {
             const d = inner.contentDocument || inner.contentWindow?.document;
-            if (d && (d.getElementById('root') || d.body?.innerText?.length > 50)) return d;
+            if (d?.getElementById('root')) return d;
           } catch (e) { /* cross-origin */ }
         }
+        return doc;
       }
-      for (const iframe of document.querySelectorAll('iframe')) {
+      for (const iframe of doc.querySelectorAll('iframe')) {
         try {
-          const d = iframe.contentDocument || iframe.contentWindow?.document;
-          if (!d) continue;
-          if (d.getElementById('root') || d.querySelector('.ProseMirror, [role="log"], main')) return d;
+          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (!innerDoc) continue;
+          if (innerDoc.getElementById('root')) return innerDoc;
+          for (const inner2 of innerDoc.querySelectorAll('iframe')) {
+            try {
+              const d2 = inner2.contentDocument || inner2.contentWindow?.document;
+              if (d2?.getElementById('root')) return d2;
+            } catch (e2) { /* skip */ }
+          }
+          if (innerDoc.querySelector('.ProseMirror, [role="log"], main')) return innerDoc;
         } catch (e) { /* skip */ }
       }
-      return document;
+      for (const iframe of doc.querySelectorAll('iframe')) {
+        try {
+          const d = iframe.contentDocument || iframe.contentWindow?.document;
+          if (d?.body && (d.body.innerText || '').length > 50) return d;
+        } catch (e) { /* skip */ }
+      }
+      return doc;
     }
 
     const doc = resolveDoc();
