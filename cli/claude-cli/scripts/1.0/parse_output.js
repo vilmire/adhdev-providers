@@ -238,62 +238,67 @@ function collectAssistantLines(lines) {
     return trimTrailingNoise(out);
 }
 
+// Split assistant output into text-only segments at ⏺ boundaries.
+// Each segment is the prose Claude wrote before/after a tool call.
+// Tool headers and indented tool output are stripped — only Claude's text is kept.
 function extractAssistantBlocks(lines) {
     const blocks = [];
-    let current = null;
+    let currentText = [];   // prose lines for the current segment
+    let inToolContent = false; // inside indented tool-call output
 
-    const flush = () => {
-        if (!current) return;
-        const finalized = trimTrailingNoise(current)
+    const flushText = () => {
+        const text = trimTrailingNoise(currentText)
             .map(line => normalizeAssistantBlockLine(line))
             .filter(line => line.trim().length > 0)
             .join('\n')
             .trim();
-        if (finalized) blocks.push(finalized);
-        current = null;
+        if (text) blocks.push(text);
+        currentText = [];
     };
 
     for (const rawLine of lines) {
-        const promptText = parsePromptLine(rawLine);
-        if (promptText !== null) continue;
+        if (parsePromptLine(rawLine) !== null) continue;
 
         const sanitized = sanitizeLine(rawLine);
         const trimmed = sanitized.trim();
-        if (isFooterLine(trimmed)) {
-            flush();
-            break;
-        }
+
+        if (isFooterLine(trimmed)) { flushText(); break; }
 
         if (!trimmed) {
-            if (current && current[current.length - 1] !== '') current.push('');
+            inToolContent = false;
+            if (currentText.length > 0 && currentText[currentText.length - 1] !== '') {
+                currentText.push('');
+            }
             continue;
         }
 
         if (isNoiseLine(trimmed)) continue;
 
+        // ⏺ line: flush current prose, start a new segment; skip the tool header itself
+        if (/^\s*⏺\s+/.test(sanitized)) {
+            flushText();
+            inToolContent = true;
+            continue;
+        }
+
+        // ⎿ line: tool output continuation — skip
+        if (/^\s*⎿\s+/.test(sanitized)) continue;
+
+        // Indented content immediately after ⏺ (tool output body) — skip
+        if (inToolContent && /^\s{2,}/.test(rawLine)) continue;
+
+        inToolContent = false;
+
         if (isBoxLine(trimmed)) {
-            if (current) current.push(sanitized);
+            currentText.push(sanitized);
             continue;
         }
 
         const cleaned = stripAssistantPrefix(sanitized).trim();
-        if (!cleaned) continue;
-
-        if (/^\s*⏺\s+/.test(sanitized)) {
-            flush();
-            current = [cleaned];
-            continue;
-        }
-
-        if (/^\s*⎿\s+/.test(sanitized)) {
-            if (current && !/^…\s+\+\d+\s+lines\b/i.test(cleaned)) current.push(cleaned);
-            continue;
-        }
-
-        if (current) current.push(cleaned);
+        if (cleaned) currentText.push(cleaned);
     }
 
-    flush();
+    flushText();
     return blocks;
 }
 
@@ -352,14 +357,14 @@ function extractVisibleTurn(text) {
         Math.max(0, linesAfterVisiblePrompt.length - assistantSliceLength),
     );
     const assistantBlocks = extractAssistantBlocks(assistantRegion);
-    const assistantLines = assistantBlocks.length > 0
-        ? assistantBlocks.join('\n\n').split('\n')
-        : collectAssistantLines(assistantRegion);
+    const assistantText = assistantBlocks.length > 0
+        ? assistantBlocks.join('\n\n').trim()
+        : collectAssistantLines(assistantRegion).join('\n').trim();
 
     return {
         promptText: lastVisiblePrompt.text,
         assistantBlocks,
-        assistantText: assistantLines.join('\n').trim(),
+        assistantText,
     };
 }
 
