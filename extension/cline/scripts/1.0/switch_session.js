@@ -74,7 +74,7 @@
         if (!taskHistory || taskHistory.length === 0) return false;
 
         // target task search (ID or title matching)
-        const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
         const idNorm = norm(sessionId);
         let targetTask = taskHistory.find(t => String(t.id) === sessionId);
         if (!targetTask) {

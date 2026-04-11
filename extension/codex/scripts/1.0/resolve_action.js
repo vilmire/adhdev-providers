@@ -88,7 +88,7 @@
       return JSON.stringify({ resolved: false, error: 'no buttons in approval area' });
     }
 
-    const normalize = (s) => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const normalize = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
     const optionNodes = Array.from(approvalArea.querySelectorAll('[role="radio"], [role="option"], [aria-checked], div, li'))
       .filter((el) => {
         if (!isVisible(el)) return false;

@@ -74,7 +74,7 @@
 
         // 3. row matching
         const rows = container.querySelectorAll('[class*="cursor-pointer"][class*="justify-between"][class*="rounded-md"]');
-        const norm = s => (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
         const idNorm = norm(id);
         let targetRow = null;
 
