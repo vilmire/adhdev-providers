@@ -1,5 +1,5 @@
 {
-  "version": "2026.04.09",
+  "version": "2026.04.11",
   "providers": {
     "agentpool-acp": {
       "providerVersion": "0.0.0",
@@ -349,6 +349,13 @@
           "scriptDir": "scripts/1.0"
         }
       ]
+    },
+    "claude-code-vscode": {
+      "providerVersion": "1.0.0",
+      "category": "extension",
+      "name": "Claude Code (VS Code)",
+      "status": "Unverified",
+      "details": "Anthropic Claude Code sidebar webview (CDP)"
     },
     "cline": {
       "providerVersion": "0.0.0",

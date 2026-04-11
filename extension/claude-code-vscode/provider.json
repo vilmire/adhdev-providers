@@ -1,0 +1,39 @@
+{
+  "type": "claude-code-vscode",
+  "name": "Claude Code (VS Code)",
+  "category": "extension",
+  "extensionId": "anthropic.claude-code",
+  "extensionIdPattern": "extensionId=anthropic(\\.|%2e)claude-code",
+  "extensionIdPattern_flags": "i",
+  "vscodeCommands": {
+    "focusPanel": "claude-vscode.sidebar.open"
+  },
+  "settings": {
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "defaultScriptDir": "scripts/1.0",
+  "compatibility": [],
+  "status": "Unverified",
+  "details": "Anthropic Claude Code sidebar webview — heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer"
+}

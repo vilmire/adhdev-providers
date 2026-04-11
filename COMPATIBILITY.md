@@ -137,6 +137,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 
 | Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
 |----------|-------------|-------|---------|-------|-----------------|-------|
+| `claude-code-vscode` | Claude Code (VS Code) | ❓ | ❓ | ❓ | | Anthropic `anthropic.claude-code` webview; CDP scripts cover read/send/panel/focus/resolve — validate per IDE build |
 | `cline` | Cline | ❓ | ❓ | ❓ | | |
 | `codex` | Codex | ⚠️ | ❓ | ❓ | openai.chatgpt `26.406.31014` | macOS partial: Cursor-hosted Codex now has locale-agnostic read/list/switch handling, approve-path resolve_action, and transcript cleanup for localized timestamps plus stale replay turns; recent-task history can still collapse to the current chat and some send attempts still fail to materialize as a real turn |
 | `roo-code` | Roo Code | ❓ | ❓ | ❓ | | |
@@ -145,6 +146,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 
 | Provider | readChat | sendMessage | openPanel | listSessions | switchSession | newSession | listModels | setModel | listModes | setMode | resolveAction | focusEditor |
 |----------|----------|-------------|-----------|--------------|---------------|------------|------------|----------|-----------|---------|---------------|-------------|
+| `claude-code-vscode` | ✅ | ✅ | ✅ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ➖ | ✅ | ✅ |
 | `cline` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `codex` | ✅ | ✅ | ➖ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ➖ |
 | `roo-code` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
