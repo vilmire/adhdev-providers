@@ -156,6 +156,22 @@
       });
     }
 
+    if (messages.length === 0) {
+      const rowSel =
+        '[class*="message-row" i], [class*="MessageRow" i], [class*="chat-turn" i], [class*="ChatTurn" i], [data-testid*="message" i], [class*="conversation-turn" i]';
+      try {
+        scroll.querySelectorAll(rowSel).forEach((el, i) => {
+          if (!el.offsetHeight) return;
+          const low = (el.className && String(el.className).toLowerCase()) || '';
+          const aria = (el.getAttribute('aria-label') || '').toLowerCase();
+          let role = 'assistant';
+          if (low.includes('user') || aria.includes('user') || el.querySelector('[data-role="user"], [data-message-role="user" i]')) role = 'user';
+          const md = getCleanMd(el) || (el.textContent || '').trim();
+          pushMsg(role, md, Date.now() - i * 400);
+        });
+      } catch (e) { /* ignore */ }
+    }
+
     let status = 'idle';
     const btnText = (b) => (b.textContent || '').trim().toLowerCase();
     const buttons = Array.from(doc.querySelectorAll('button, [role="button"], vscode-button')).filter(

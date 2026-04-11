@@ -40,7 +40,8 @@
     const doc = resolveDoc();
     const clickSend = () => {
       const send =
-        doc.querySelector('[data-testid="send-button"], [aria-label*="send" i], button[title*="Send" i]') ||
+        doc.querySelector('[data-testid="send-button"], [data-testid*="send" i], [aria-label*="send" i], button[title*="Send" i]') ||
+        Array.from(doc.querySelectorAll('vscode-button')).find((b) => /send|submit|arrow/i.test(b.textContent || b.getAttribute('aria-label') || '')) ||
         Array.from(doc.querySelectorAll('button')).find((b) => /^send$/i.test((b.textContent || '').trim()));
       if (send && send.offsetParent) {
         send.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -63,7 +64,11 @@
     }
 
     if (!editor) {
-      const ta = doc.querySelector('textarea');
+      const tas = [...doc.querySelectorAll('textarea')].filter((t) => t.offsetParent && t.offsetHeight > 12);
+      const ta =
+        tas.length === 0
+          ? null
+          : tas.reduce((a, b) => (b.getBoundingClientRect().bottom >= a.getBoundingClientRect().bottom ? b : a));
       if (ta && ta.offsetParent) {
         const proto = ta.ownerDocument.defaultView?.HTMLTextAreaElement?.prototype || HTMLTextAreaElement.prototype;
         const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
