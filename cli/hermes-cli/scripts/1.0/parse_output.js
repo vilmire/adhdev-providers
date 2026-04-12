@@ -197,10 +197,19 @@ module.exports = function parseOutput(input) {
     }
   }
 
+  // Try to extract currently shown model from the header line:
+  // "⚕ gemini-3-flash-preview · Nous Research"
+  let controlValues;
+  const headerMatch = /⚕\s+([^·\n]+)\s+·/m.exec(toText(abovePrompt, { trim: false }));
+  if (headerMatch && headerMatch[1]) {
+    controlValues = { model: headerMatch[1].trim() };
+  }
+
   return {
     id: 'cli_session',
     status,
     title: 'Hermes Agent',
-    messages: toMessageObjects(msgs, status)
+    messages: toMessageObjects(msgs, status),
+    ...(controlValues ? { controlValues } : {})
   };
 };

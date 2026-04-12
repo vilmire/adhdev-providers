@@ -28,6 +28,29 @@
       "description": "Show notification when approval is needed"
     }
   },
+  "controls": [
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Model",
+      "icon": "🤖",
+      "placement": "bar",
+      "order": 10,
+      "dynamic": true,
+      "listScript": "listModels",
+      "setScript": "setModel",
+      "readFrom": "model"
+    },
+    {
+      "id": "new_session",
+      "type": "action",
+      "label": "New",
+      "icon": "➕",
+      "placement": "bar",
+      "order": 80,
+      "invokeScript": "newSession"
+    }
+  ],
   "binary": "hermes",
   "sendDelayMs": 900,
   "sendKey": "\r",
