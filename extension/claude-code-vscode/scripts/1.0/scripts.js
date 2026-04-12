@@ -30,10 +30,26 @@ function withParams(name, params) {
     const btn = params?.BUTTON_TEXT || params?.buttonText || '';
     return script.replace(/\$\{ BUTTON_TEXT \}/g, JSON.stringify(btn));
   }
+  if (script.includes('${ MODEL }')) {
+    const value = params?.MODEL ?? params?.model ?? params?.value ?? '';
+    return script.replace(/\$\{ MODEL \}/g, JSON.stringify(value));
+  }
+  if (script.includes('${ MODE }')) {
+    const value = params?.MODE ?? params?.mode ?? params?.value ?? '';
+    return script.replace(/\$\{ MODE \}/g, JSON.stringify(value));
+  }
+  if (script.includes('${ VALUE }')) {
+    const value = params?.VALUE ?? params?.value ?? '';
+    return script.replace(/\$\{ VALUE \}/g, JSON.stringify(value));
+  }
   return `(${script})(${JSON.stringify(params)})`;
 }
 
 module.exports.readChat = () => load('read_chat.js');
+module.exports.listModels = () => load('list_models.js');
+module.exports.listModes = () => load('list_modes.js');
+module.exports.listSessions = () => load('list_sessions.js');
+module.exports.newSession = () => load('new_session.js');
 
 module.exports.sendMessage = (params) => {
   let s = load('send_message.js');
@@ -53,5 +69,16 @@ module.exports.resolveAction = (params) => {
   return s;
 };
 
+module.exports.switchSession = (params) => {
+  return withParams('switch_session.js', params || {});
+};
+
+module.exports.setModel = (params) => withParams('set_model.js', params || {});
+module.exports.setModelGui = (params) => withParams('set_model.js', params || {});
+module.exports.setMode = (params) => withParams('set_mode.js', params || {});
+module.exports.setEffort = (params) => withParams('set_effort.js', params || {});
+module.exports.setThinking = (params) => withParams('set_thinking.js', params || {});
+module.exports.requestUsage = () => load('request_usage.js');
+module.exports.clearInput = () => load('clear_input.js');
 module.exports.focusEditor = () => load('focus_editor.js');
 module.exports.openPanel = () => load('open_panel.js');

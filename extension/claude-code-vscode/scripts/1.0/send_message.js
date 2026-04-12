@@ -1,134 +1,81 @@
-/**
- * Claude Code (VS Code) — send_message
- *
- * Antigravity send_message: 하단 contenteditable + insertText + Enter 풀 시퀀스
- * Codex send_message: ProseMirror 정리 후 insertText / innerHTML 폴백
- */
 (async () => {
   try {
-    const msg = ${ MESSAGE };
-
-    function resolveDoc() {
-      let doc = document;
-      if (doc.getElementById('root')) {
-        const inner = doc.querySelector('iframe');
-        if (inner) {
-          try {
-            const d = inner.contentDocument || inner.contentWindow?.document;
-            if (d?.getElementById('root')) return d;
-          } catch (e) {}
-        }
-        return doc;
-      }
-      for (const iframe of doc.querySelectorAll('iframe')) {
-        try {
-          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (!innerDoc) continue;
-          if (innerDoc.getElementById('root')) return innerDoc;
-          for (const inner2 of innerDoc.querySelectorAll('iframe')) {
-            try {
-              const d2 = inner2.contentDocument || inner2.contentWindow?.document;
-              if (d2?.getElementById('root')) return d2;
-            } catch (e2) {}
-          }
-          if (innerDoc.querySelector('.ProseMirror, [contenteditable="true"], textarea')) return innerDoc;
-        } catch (e) {}
-      }
-      return doc;
+    const message = ${ MESSAGE };
+    if (!String(message || '').trim()) {
+      return JSON.stringify({ sent: false, error: 'message required' });
     }
 
-    const doc = resolveDoc();
-    const clickSend = () => {
-      const send =
-        doc.querySelector('[data-testid="send-button"], [data-testid*="send" i], [aria-label*="send" i], button[title*="Send" i]') ||
-        Array.from(doc.querySelectorAll('vscode-button')).find((b) => /send|submit|arrow/i.test(b.textContent || b.getAttribute('aria-label') || '')) ||
-        Array.from(doc.querySelectorAll('button')).find((b) => /^send$/i.test((b.textContent || '').trim()));
-      if (send && send.offsetParent) {
-        send.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
-        return true;
-      }
-      return false;
-    };
-
-    let editor =
-      doc.querySelector('.ProseMirror[contenteditable="true"]') ||
-      doc.querySelector('.ProseMirror');
-
-    if (!editor) {
-      const editors = doc.querySelectorAll('[contenteditable="true"][role="textbox"]');
-      if (editors.length) {
-        editor = [...editors].reduce((a, b) =>
-          b.getBoundingClientRect().y > a.getBoundingClientRect().y ? b : a
-        );
-      }
+    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const sendButton = document.querySelector('button.sendButton_gGYT1w');
+    if (!input || !sendButton) {
+      return JSON.stringify({ sent: false, error: 'input or send button not found' });
     }
 
-    if (!editor) {
-      const tas = [...doc.querySelectorAll('textarea')].filter((t) => t.offsetParent && t.offsetHeight > 12);
-      const ta =
-        tas.length === 0
-          ? null
-          : tas.reduce((a, b) => (b.getBoundingClientRect().bottom >= a.getBoundingClientRect().bottom ? b : a));
-      if (ta && ta.offsetParent) {
-        const proto = ta.ownerDocument.defaultView?.HTMLTextAreaElement?.prototype || HTMLTextAreaElement.prototype;
-        const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-        if (nativeSetter) nativeSetter.call(ta, msg);
-        else ta.value = msg;
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-        ta.dispatchEvent(new Event('change', { bubbles: true }));
-        ta.focus();
-        await new Promise((r) => setTimeout(r, 200));
-        ta.dispatchEvent(
-          new KeyboardEvent('keydown', {
-            key: 'Enter',
-            code: 'Enter',
-            keyCode: 13,
-            which: 13,
-            bubbles: true,
-            cancelable: true,
-          })
-        );
-        return 'sent';
-      }
-      return 'error: no editor';
-    }
+    input.focus();
 
-    editor.focus();
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(input);
+    selection.removeAllRanges();
+    selection.addRange(range);
     try {
-      doc.execCommand('selectAll', false, null);
-      doc.execCommand('delete', false, null);
-    } catch (e) {}
+      document.execCommand('delete', false);
+    } catch {}
+    input.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      inputType: 'deleteContentBackward',
+      data: null,
+    }));
+
+    const endRange = document.createRange();
+    endRange.selectNodeContents(input);
+    endRange.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(endRange);
 
     let inserted = false;
     try {
-      inserted = doc.execCommand('insertText', false, msg);
-    } catch (e) {}
+      inserted = document.execCommand('insertText', false, message);
+    } catch {}
     if (!inserted) {
-      editor.textContent = msg;
+      input.textContent = message;
     }
-    editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: msg }));
 
-    await new Promise((r) => setTimeout(r, 280));
-
-    const enterOpts = {
-      key: 'Enter',
-      code: 'Enter',
-      keyCode: 13,
-      which: 13,
+    input.dispatchEvent(new InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
-      composed: true,
-    };
-    editor.dispatchEvent(new KeyboardEvent('keydown', enterOpts));
-    editor.dispatchEvent(new KeyboardEvent('keypress', enterOpts));
-    editor.dispatchEvent(new KeyboardEvent('keyup', enterOpts));
+      inputType: 'insertText',
+      data: message,
+    }));
+    input.dispatchEvent(new InputEvent('input', {
+      bubbles: true,
+      inputType: 'insertText',
+      data: message,
+    }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
 
-    if (!clickSend()) {
-      /* Enter-only path often enough */
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    if (sendButton.disabled) {
+      return JSON.stringify({
+        sent: false,
+        error: 'send button stayed disabled',
+        text: input.textContent || '',
+      });
     }
 
-    return 'sent';
+    const rect = sendButton.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    sendButton.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    sendButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
+    sendButton.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    sendButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
+    sendButton.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+    if (typeof sendButton.click === 'function') sendButton.click();
+
+    return JSON.stringify({ sent: true, submitted: true });
   } catch (e) {
-    return 'error: ' + e.message;
+    return JSON.stringify({ sent: false, error: e.message || String(e) });
   }
 })();

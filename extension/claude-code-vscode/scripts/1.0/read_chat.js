@@ -1,223 +1,215 @@
-/**
- * Claude Code (VS Code) — read_chat
- *
- * 구현 근거:
- * - Codex 익스텐션: 웹뷰 → 자식 iframe → #root 탐색, 풍부 텍스트 추출 패턴
- * - Antigravity IDE: htmlToMd / 블록 태그 보행, 상태는 Stop/취소 버튼·애니메이션 힌트
- * - Cline: 최종 JSON 계약(agentType, messages[], status, activeModal)
- *
- * 주의: Anthropic UI는 자주 바뀌므로, 19280 DevConsole에서 DOM 맞춤이 필요할 수 있음.
- */
 (() => {
   try {
-    function resolveDoc() {
-      let doc = document;
-      let root = doc.getElementById('root');
-      if (root) {
-        const inner = doc.querySelector('iframe');
-        if (inner) {
-          try {
-            const d = inner.contentDocument || inner.contentWindow?.document;
-            if (d?.getElementById('root')) return d;
-          } catch (e) { /* cross-origin */ }
-        }
-        return doc;
-      }
-      for (const iframe of doc.querySelectorAll('iframe')) {
-        try {
-          const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (!innerDoc) continue;
-          if (innerDoc.getElementById('root')) return innerDoc;
-          for (const inner2 of innerDoc.querySelectorAll('iframe')) {
-            try {
-              const d2 = inner2.contentDocument || inner2.contentWindow?.document;
-              if (d2?.getElementById('root')) return d2;
-            } catch (e2) { /* skip */ }
-          }
-          if (innerDoc.querySelector('.ProseMirror, [role="log"], main')) return innerDoc;
-        } catch (e) { /* skip */ }
-      }
-      for (const iframe of doc.querySelectorAll('iframe')) {
-        try {
-          const d = iframe.contentDocument || iframe.contentWindow?.document;
-          if (d?.body && (d.body.innerText || '').length > 50) return d;
-        } catch (e) { /* skip */ }
-      }
-      return doc;
-    }
+    const normalizeInline = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const normalizeBlock = (value) => String(value || '')
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r/g, '')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
 
-    const doc = resolveDoc();
-    const root = doc.getElementById('root') || doc.body;
-    if (!root) return JSON.stringify({ error: 'no root/body' });
+    const visible = (el) => {
+      if (!el || el.closest('[inert]')) return false;
+      const rect = el.getBoundingClientRect();
+      const style = window.getComputedStyle(el);
+      return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
+    };
+    const getControlCache = () => {
+      if (!window.__adhdevClaudeCodeControls || typeof window.__adhdevClaudeCodeControls !== 'object') {
+        window.__adhdevClaudeCodeControls = {};
+      }
+      return window.__adhdevClaudeCodeControls;
+    };
+    const sanitizeToolOutput = (value) => normalizeBlock(value).replace(/\n?\[rerun:\s*[^\]]+\]\s*$/i, '').trim();
 
-    const isVisible = root.offsetHeight > 0;
+    const title = normalizeInline(
+      document.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
+    ) || 'Untitled';
 
-    const BLOCK_TAGS = new Set(['DIV', 'P', 'BR', 'LI', 'TR', 'SECTION', 'ARTICLE', 'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE']);
-    function extractCodeText(node) {
-      if (node.nodeType === 3) return node.textContent || '';
-      if (node.nodeType !== 1) return '';
-      if (node.tagName === 'BR') return '\n';
-      const parts = [];
-      for (const child of node.childNodes) {
-        const isBlock = child.nodeType === 1 && BLOCK_TAGS.has(child.tagName);
-        const text = extractCodeText(child);
-        if (text) {
-          if (isBlock && parts.length > 0) parts.push('\n');
-          parts.push(text);
-          if (isBlock) parts.push('\n');
-        }
-      }
-      return parts.join('').replace(/\n{2,}/g, '\n');
-    }
-    function childrenToMd(node) {
-      if (node.nodeType === 3) return node.textContent || '';
-      if (node.nodeType !== 1) return '';
-      const tag = node.tagName;
-      if (tag === 'STYLE' || tag === 'SCRIPT' || tag === 'SVG') return '';
-      if (tag === 'PRE') {
-        const codeEl = node.querySelector('code');
-        const lang = codeEl ? (codeEl.className.match(/language-(\w+)/)?.[1] || '') : '';
-        const code = extractCodeText(codeEl || node);
-        return '\n```' + lang + '\n' + code.trim() + '\n```\n';
-      }
-      if (tag === 'CODE') {
-        if (node.parentElement && node.parentElement.tagName === 'PRE') return node.textContent || '';
-        return '`' + (node.textContent || '').trim() + '`';
-      }
-      if (tag === 'P' || tag === 'DIV') return '\n' + Array.from(node.childNodes).map(childrenToMd).join('') + '\n';
-      if (tag === 'BR') return '\n';
-      return Array.from(node.childNodes).map(childrenToMd).join('');
-    }
-    function getCleanMd(el) {
-      const clone = el.cloneNode(true);
-      clone.querySelectorAll('button, [role="button"], style, script, svg, .codicon').forEach((n) => n.remove());
-      return childrenToMd(clone).replace(/\n{3,}/g, '\n\n').trim();
-    }
+    const root = document.getElementById('root') || document.body;
+    const isVisible = visible(root);
+    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const inputContent = normalizeBlock(input?.innerText || input?.textContent || '');
+
+    const buttons = Array.from(document.querySelectorAll('button')).filter(visible);
+    const buttonTexts = buttons
+      .map((button) => normalizeInline(button.textContent || button.getAttribute('aria-label') || button.getAttribute('title') || ''))
+      .filter(Boolean);
 
     const messages = [];
     const seen = new Set();
-    const pushMsg = (role, content, ts) => {
-      const c = (content || '').replace(/\s{3,}/g, '\n').trim();
-      if (!c || c.length < 2) return;
-      const h = role + ':' + c.slice(0, 160);
-      if (seen.has(h)) return;
-      seen.add(h);
-      messages.push({ role, content: c.slice(0, 12000), timestamp: ts || Date.now() });
+    const pushMessage = (role, content, timestamp, extras = {}) => {
+      const text = normalizeBlock(content);
+      if (!text) return;
+      const key = `${role}:${extras.kind || 'standard'}:${text}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      messages.push({ role, content: text, timestamp, ...extras });
     };
 
-    const scroll =
-      doc.querySelector('[role="log"]') ||
-      doc.querySelector('[class*="conversation" i], [class*="messages" i], [class*="thread" i]') ||
-      doc.querySelector('main') ||
-      root;
+    const messageRows = Array.from(document.querySelectorAll('.messagesContainer_07S1Yg .message_07S1Yg'))
+      .filter(visible)
+      .filter((row) => !row.parentElement?.closest('.message_07S1Yg'));
 
-    const roleSelectors = [
-      ['[data-role="user"]', 'user'],
-      ['[data-role="assistant"]', 'assistant'],
-      ['[data-message-role="user" i]', 'user'],
-      ['[data-message-role="assistant" i]', 'assistant'],
-      ['[data-turn="user" i]', 'user'],
-      ['[data-turn="assistant" i]', 'assistant'],
-    ];
-    for (const [sel, role] of roleSelectors) {
-      try {
-        scroll.querySelectorAll(sel).forEach((el, i) => {
-          if (!el.offsetHeight) return;
-          const md = getCleanMd(el);
-          pushMsg(role, md || (el.textContent || '').trim(), Date.now() - i * 1000);
-        });
-      } catch (e) { /* ignore */ }
-    }
+    messageRows.forEach((row, index) => {
+      const cls = normalizeInline(row.className || '');
+      if (!cls.includes('message_07S1Yg')) return;
 
-    if (messages.length === 0) {
-      const articles = scroll.querySelectorAll('[role="article"], article');
-      articles.forEach((el, i) => {
-        if (!el.offsetHeight) return;
-        const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-        const cls = (el.className && String(el.className).toLowerCase()) || '';
-        let role = 'assistant';
-        if (aria.includes('user') || cls.includes('user')) role = 'user';
-        const md = getCleanMd(el);
-        pushMsg(role, md || (el.textContent || '').trim(), Date.now() - i * 1000);
-      });
-    }
+      const text = normalizeBlock(row.innerText || row.textContent || '');
+      if (!text || text === title) return;
 
-    if (messages.length === 0) {
-      const candidates = scroll.querySelectorAll(
-        '.ProseMirror, [class*="markdown" i], [class*="prose" i], [class*="message" i], .leading-relaxed'
+      let role = null;
+      if (cls.includes('userMessageContainer_07S1Yg')) role = 'user';
+      if (cls.includes('timelineMessage_07S1Yg')) role = 'assistant';
+      if (!role) return;
+      if (role === 'user' && /^Switched to\s+/i.test(text)) return;
+
+      if (role === 'assistant') {
+        const thinking = row.querySelector('details.thinking_aHyQPQ, details[class*="thinking"]');
+        if (thinking) {
+          const label = normalizeInline(thinking.querySelector('summary span')?.textContent || 'Thinking');
+          const thoughtText = normalizeBlock(
+            thinking.querySelector('.thinkingContent_aHyQPQ, [class*="thinkingContent"]')?.innerText
+            || thinking.querySelector('.thinkingContent_aHyQPQ, [class*="thinkingContent"]')?.textContent
+            || ''
+          );
+          pushMessage(
+            'assistant',
+            thoughtText || label,
+            Date.now() - (messageRows.length - index) * 1000,
+            { kind: 'thought', meta: { label } },
+          );
+          return;
+        }
+
+        const toolUse = row.querySelector('.toolUse_uq5aLg, [class*="toolUse"]');
+        if (toolUse) {
+          const toolLabel = normalizeInline(
+            toolUse.querySelector('.toolNameText_ZUQaOA, [class*="toolNameText"]')?.textContent
+            || toolUse.querySelector('summary')?.textContent
+            || 'Tool'
+          );
+          const toolRows = Array.from(toolUse.querySelectorAll('.toolBodyRow_ZUQaOA, [class*="toolBodyRow"]'));
+          const sections = toolRows.map((toolRow) => ({
+            label: normalizeInline(toolRow.querySelector('.toolBodyRowLabel_ZUQaOA, [class*="toolBodyRowLabel"]')?.textContent || ''),
+            content: sanitizeToolOutput(
+              toolRow.querySelector('.toolBodyRowContent_ZUQaOA, [class*="toolBodyRowContent"]')?.innerText
+              || toolRow.querySelector('.toolBodyRowContent_ZUQaOA, [class*="toolBodyRowContent"]')?.textContent
+              || ''
+            ),
+          })).filter((section) => section.label || section.content);
+
+          const inputSection = sections.find((section) => /^in$/i.test(section.label));
+          const outputSection = sections.find((section) => /^out$/i.test(section.label));
+          const terminalLike = /^(bash|sh|zsh|terminal)$/i.test(toolLabel);
+
+          if (terminalLike) {
+            const chunks = [];
+            if (inputSection?.content) chunks.push(`$ ${inputSection.content}`);
+            if (outputSection?.content) chunks.push(outputSection.content);
+            if (!chunks.length && text) chunks.push(sanitizeToolOutput(text));
+            pushMessage(
+              'assistant',
+              chunks.join('\n\n'),
+              Date.now() - (messageRows.length - index) * 1000,
+              { kind: 'terminal', meta: { label: toolLabel } },
+            );
+            return;
+          }
+
+          const toolSummary = [toolLabel, inputSection?.content || outputSection?.content || text]
+            .filter(Boolean)
+            .join('\n')
+            .trim();
+          pushMessage(
+            'assistant',
+            toolSummary,
+            Date.now() - (messageRows.length - index) * 1000,
+            { kind: 'tool', meta: { label: toolLabel } },
+          );
+          return;
+        }
+      }
+
+      const isThoughtSummary = role === 'assistant' && /^Thought for\s+[\d.]+\s*(seconds?|s)$/i.test(text);
+      pushMessage(
+        role,
+        text,
+        Date.now() - (messageRows.length - index) * 1000,
+        isThoughtSummary ? { kind: 'thought', meta: { label: 'Thinking' } } : undefined,
       );
-      candidates.forEach((el, i) => {
-        if (!el.offsetHeight || el.offsetHeight < 24) return;
-        const t = getCleanMd(el) || (el.textContent || '').trim();
-        if (t.length < 8) return;
-        const low = (el.className && String(el.className).toLowerCase()) || '';
-        const role = low.includes('user') ? 'user' : 'assistant';
-        pushMsg(role, t, Date.now() - i * 500);
-      });
-    }
+    });
 
     if (messages.length === 0) {
-      const rowSel =
-        '[class*="message-row" i], [class*="MessageRow" i], [class*="chat-turn" i], [class*="ChatTurn" i], [data-testid*="message" i], [class*="conversation-turn" i]';
-      try {
-        scroll.querySelectorAll(rowSel).forEach((el, i) => {
-          if (!el.offsetHeight) return;
-          const low = (el.className && String(el.className).toLowerCase()) || '';
-          const aria = (el.getAttribute('aria-label') || '').toLowerCase();
-          let role = 'assistant';
-          if (low.includes('user') || aria.includes('user') || el.querySelector('[data-role="user"], [data-message-role="user" i]')) role = 'user';
-          const md = getCleanMd(el) || (el.textContent || '').trim();
-          pushMsg(role, md, Date.now() - i * 400);
-        });
-      } catch (e) { /* ignore */ }
+      const welcome = document.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
+      if (welcome && visible(welcome)) {
+        pushMessage('assistant', welcome.innerText || welcome.textContent || '', Date.now());
+      }
     }
+
+    const spinner = document.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
+    const spinnerText = spinner && visible(spinner) ? normalizeBlock(spinner.innerText || spinner.textContent || '') : '';
+    const modeButton = document.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
+    const mode = normalizeInline(modeButton?.textContent || getControlCache().mode || '');
+    const cachedThinking = getControlCache().thinking;
+    const effortLabel = normalizeInline(
+      document.querySelector('.effortLabel_8RAulQ, [class*="effortLabel"]')?.textContent
+      || getControlCache().effort
+      || ''
+    );
+    const effort = (() => {
+      const match = effortLabel.match(/(low|medium|high|max)/i);
+      return match ? match[1].toLowerCase() : '';
+    })();
+    const model = normalizeInline(getControlCache().model || '');
 
     let status = 'idle';
-    const btnText = (b) => (b.textContent || '').trim().toLowerCase();
-    const buttons = Array.from(doc.querySelectorAll('button, [role="button"], vscode-button')).filter(
-      (b) => b.offsetWidth > 0
-    );
-    const labels = buttons.map(btnText);
-    if (labels.some((t) => /^(stop|cancel task)/i.test(t) || t.includes('stop'))) status = 'generating';
-    if (doc.querySelector('[aria-busy="true"], [data-busy="true"]')) status = 'generating';
+    if (spinner && visible(spinner)) status = 'generating';
+    if (document.querySelector('[aria-busy="true"], [data-busy="true"]')) status = 'generating';
+    if (buttonTexts.some((text) => /^(stop|cancel|interrupt)$/i.test(text))) status = 'generating';
 
-    const approvalHints = /allow|approve|accept|deny|reject|run command|yes|no|dismiss|continue/i;
-    if (labels.some((t) => approvalHints.test(t) && t.length < 48)) status = 'waiting_approval';
+    const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run/i.test(text));
+    let activeModal = null;
+    if (approvalButtons.length > 0) {
+      status = 'waiting_approval';
+      activeModal = {
+        message: normalizeBlock(document.body.innerText || ''),
+        buttons: [...new Set(approvalButtons)],
+      };
+    }
 
     if (!isVisible && messages.length === 0) status = 'panel_hidden';
 
-    let inputContent = '';
-    const input =
-      doc.querySelector('.ProseMirror[contenteditable="true"]') ||
-      doc.querySelector('[data-testid="chat-input"]') ||
-      doc.querySelector('textarea');
-    if (input) inputContent = input.value || input.textContent || '';
-
-    let model = '';
-    const modelEl = doc.querySelector('[class*="model" i][class*="select" i], [aria-label*="model" i]');
-    if (modelEl) model = (modelEl.textContent || '').trim().slice(0, 120);
-
-    let activeModal = null;
-    if (status === 'waiting_approval') {
-      const btns = buttons
-        .map((b) => (b.textContent || '').trim())
-        .filter((t) => t && t.length < 50 && approvalHints.test(t));
-      if (btns.length) activeModal = { message: 'Claude Code needs confirmation', buttons: [...new Set(btns)] };
-    }
-
     return JSON.stringify({
+      id: title,
+      title,
       agentType: 'claude-code-vscode',
       agentName: 'Claude Code',
       extensionId: 'anthropic.claude-code',
       status,
+      ...(model ? { model } : {}),
+      ...(mode ? { mode } : {}),
+      ...(effort ? { effort } : {}),
+      ...(typeof cachedThinking === 'boolean' ? { thinking: cachedThinking } : {}),
       isVisible,
+      isWelcomeScreen: messages.length === 1 && messages[0]?.role === 'assistant' && /what to do first/i.test(messages[0]?.content || ''),
       messages: messages.slice(-40),
       inputContent,
-      model,
-      mode: '',
       activeModal,
+      controlValues: {
+        ...(model ? { model } : {}),
+        ...(mode ? { mode } : {}),
+        ...(effort ? { effort } : {}),
+        ...(typeof cachedThinking === 'boolean' ? { thinking: cachedThinking } : {}),
+      },
+      generation: status === 'generating'
+        ? {
+            spinnerText: spinnerText || null,
+          }
+        : null,
     });
   } catch (e) {
-    return JSON.stringify({ error: e.message || String(e) });
+    return JSON.stringify({ error: e.message || String(e), status: 'error', messages: [] });
   }
 })();

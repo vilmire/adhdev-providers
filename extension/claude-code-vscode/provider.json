@@ -32,6 +32,56 @@
       "max": 600
     }
   },
+  "controls": [
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Model",
+      "icon": "🤖",
+      "placement": "bar",
+      "order": 10,
+      "dynamic": true,
+      "listScript": "listModels",
+      "setScript": "setModelGui",
+      "readFrom": "model"
+    },
+    {
+      "id": "effort",
+      "type": "select",
+      "label": "Effort",
+      "icon": "⚡",
+      "placement": "bar",
+      "order": 20,
+      "options": [
+        { "value": "low", "label": "Low" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "high", "label": "High" },
+        { "value": "max", "label": "Max" }
+      ],
+      "setScript": "setEffort",
+      "readFrom": "effort"
+    },
+    {
+      "id": "thinking",
+      "type": "toggle",
+      "label": "Thinking",
+      "icon": "🧠",
+      "placement": "bar",
+      "order": 30,
+      "setScript": "setThinking",
+      "readFrom": "thinking"
+    },
+    {
+      "id": "usage",
+      "type": "action",
+      "label": "Usage",
+      "icon": "📊",
+      "placement": "bar",
+      "order": 40,
+      "invokeScript": "requestUsage",
+      "resultDisplay": "none"
+    }
+  ],
   "defaultScriptDir": "scripts/1.0",
   "compatibility": [],
   "status": "Unverified",
