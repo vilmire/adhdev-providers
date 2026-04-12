@@ -1,41 +1,30 @@
-/**
- * Hermes CLI — detect_status (MVP)
- */
 'use strict';
 
-function textOf(input) {
-  return [input?.tail, input?.screenText, input?.buffer, input?.rawBuffer]
-    .filter(Boolean)
-    .map(String)
-    .join('\n');
+function sourceText(input) {
+  return String(input?.screenText || input?.tail || input?.buffer || '');
 }
 
 module.exports = function detectStatus(input) {
-  const t = textOf(input);
-  if (!t.trim()) return 'idle';
+  const text = sourceText(input);
+  if (!text.trim()) return 'idle';
 
-  // Approval-ish prompts
-  if (/(\(y\/n\)|\[Y\/n\]|Enter to confirm|Always allow|Allow once|Approve)/i.test(t)) {
+  const hasDangerousPrompt = /Dangerous Command/i.test(text)
+    && /Allow once|Allow for this session|Add to permanent allowlist|Deny/i.test(text);
+  if (hasDangerousPrompt) {
     return 'waiting_approval';
   }
 
-  // Generating / busy
-  if (/(Thinking|Planning|Analyzing|Searching|Working|Drafting|Synthesizing|Inspecting)/i.test(t)) {
-    return 'generating';
-  }
-  // Hermes status bar includes elapsed like "59s" and "ctx".
-  if (/\bctx\b/i.test(t) && /\b\d+s\b/.test(t)) {
-    return 'generating';
-  }
-  if (/[\u2800-\u28ff]{2,}/.test(t)) {
-    return 'generating';
-  }
+  const hasBarePrompt = /^❯\s*$/m.test(text);
+  if (hasBarePrompt) return 'idle';
 
-  // Ready prompt glyph
-  if (/^❯\s*$/m.test(t)) {
-    return 'ready';
-  }
+  const hasPrompt = /Type your message or \/help for commands/i.test(text)
+    || /Resume this session with:/i.test(text);
+  const isGenerating = /Initializing agent/i.test(text)
+    || /reasoning/i.test(text)
+    || /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
 
-  // Default
-  return 'ready';
+  if (hasPrompt && !isGenerating) return 'idle';
+  if (isGenerating) return 'generating';
+
+  return 'idle';
 };

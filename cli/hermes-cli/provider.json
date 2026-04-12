@@ -2,8 +2,11 @@
   "type": "hermes-cli",
   "name": "Hermes Agent",
   "category": "cli",
-  "aliases": ["hermes"],
-  "icon": "🪶",
+  "aliases": [
+    "hermes",
+    "hermes-agent"
+  ],
+  "icon": "⚕",
   "displayName": "Hermes Agent",
   "settings": {
     "notifications": {
@@ -26,83 +29,213 @@
       "public": true,
       "label": "Approval Notifications",
       "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
     }
   },
   "controls": [
     {
-      "id": "model",
+      "id": "provider",
       "type": "select",
-      "label": "Model",
-      "icon": "🤖",
+      "label": "Provider",
+      "icon": "🌐",
       "placement": "bar",
       "order": 10,
-      "dynamic": true,
-      "listScript": "listModels",
-      "setScript": "setModel",
-      "readFrom": "model"
+      "defaultValue": "auto",
+      "options": [
+        { "value": "auto", "label": "Auto" },
+        { "value": "openai-codex", "label": "OpenAI Codex" },
+        { "value": "openrouter", "label": "OpenRouter" },
+        { "value": "nous", "label": "Nous" },
+        { "value": "anthropic", "label": "Anthropic" },
+        { "value": "gemini", "label": "Gemini" },
+        { "value": "copilot", "label": "Copilot" },
+        { "value": "copilot-acp", "label": "Copilot ACP" },
+        { "value": "huggingface", "label": "Hugging Face" },
+        { "value": "zai", "label": "Z.AI" },
+        { "value": "kimi-coding", "label": "Kimi Coding" },
+        { "value": "minimax", "label": "MiniMax" },
+        { "value": "minimax-cn", "label": "MiniMax CN" },
+        { "value": "kilocode", "label": "Kilocode" },
+        { "value": "xiaomi", "label": "Xiaomi" }
+      ],
+      "setScript": "setProvider",
+      "readFrom": "provider"
+    },
+    {
+      "id": "reasoning",
+      "type": "select",
+      "label": "Reasoning",
+      "icon": "🧠",
+      "placement": "bar",
+      "order": 20,
+      "defaultValue": "none",
+      "options": [
+        { "value": "none", "label": "None" },
+        { "value": "minimal", "label": "Minimal" },
+        { "value": "low", "label": "Low" },
+        { "value": "medium", "label": "Medium" },
+        { "value": "high", "label": "High" },
+        { "value": "xhigh", "label": "XHigh" }
+      ],
+      "setScript": "setReasoning",
+      "readFrom": "reasoning"
+    },
+    {
+      "id": "yolo",
+      "type": "toggle",
+      "label": "YOLO",
+      "icon": "⚠",
+      "placement": "bar",
+      "order": 30,
+      "defaultValue": false,
+      "setScript": "setYolo",
+      "readFrom": "yolo"
     },
     {
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "➕",
+      "icon": "✚",
+      "placement": "bar",
+      "order": 70,
+      "invokeScript": "newSession",
+      "confirmTitle": "Start a new Hermes session?",
+      "confirmMessage": "This clears the current dashboard transcript and switches Hermes to a fresh session.",
+      "confirmLabel": "Start new session"
+    },
+    {
+      "id": "undo_last",
+      "type": "action",
+      "label": "Undo",
+      "icon": "↶",
+      "placement": "bar",
+      "order": 75,
+      "invokeScript": "undoLast",
+      "confirmTitle": "Undo the last Hermes exchange?",
+      "confirmMessage": "This asks Hermes to remove the most recent exchange. Dashboard transcript updates may lag briefly.",
+      "confirmLabel": "Send undo"
+    },
+    {
+      "id": "retry_last",
+      "type": "action",
+      "label": "Retry",
+      "icon": "↺",
       "placement": "bar",
       "order": 80,
-      "invokeScript": "newSession"
+      "invokeScript": "retryLast",
+      "confirmTitle": "Retry the last Hermes turn?",
+      "confirmMessage": "This asks Hermes to rerun the most recent prompt in the current session.",
+      "confirmLabel": "Retry turn"
     }
   ],
   "binary": "hermes",
-  "sendDelayMs": 900,
+  "versionCommand": "hermes version",
+  "sendDelayMs": 500,
   "sendKey": "\r",
-  "submitStrategy": "immediate",
   "spawn": {
     "command": "hermes",
     "args": [
-      "chat",
-      "--provider",
-      "openrouter",
-      "--model",
-      "google/gemini-3-flash-preview"
+      "chat"
     ],
-    "shell": false,
+    "shell": true,
     "env": {}
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "/quit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeSessionArgs": [
+      "--resume",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
   },
   "patterns": {
     "prompt": [
-      { "source": "Hermes Agent", "flags": "i" },
-      { "source": "Welcome to Hermes Agent! Type your message", "flags": "i" },
-      { "source": "^❯\\s*$", "flags": "m" },
-      { "source": "[›❯]\\s*$", "flags": "m" }
+      {
+        "source": "Welcome to Hermes Agent! Type your message or /help for commands\\.",
+        "flags": "i"
+      },
+      {
+        "source": "^❯\\s*$",
+        "flags": "m"
+      }
     ],
     "generating": [
-      { "source": "(Thinking|Planning|Analyzing|Searching|Working|Drafting|Synthesizing|Inspecting)", "flags": "i" },
-      { "source": "\\bctx\\b", "flags": "i" },
-      { "source": "\\b\\d+s\\b", "flags": "i" },
-      { "source": "[\\u2800-\\u28ff]", "flags": "" }
+      {
+        "source": "Initializing agent",
+        "flags": "i"
+      },
+      {
+        "source": "reasoning",
+        "flags": "i"
+      },
+      {
+        "source": "Enter to interrupt, Ctrl\\+C to cancel",
+        "flags": "i"
+      }
     ],
     "approval": [
-      { "source": "\\bapprove\\b", "flags": "i" },
-      { "source": "Choice \\[\\d+-\\d+\\]", "flags": "i" },
-      { "source": "\\(y/n\\)", "flags": "i" },
-      { "source": "\\[Y/n\\]", "flags": "i" },
-      { "source": "Enter to confirm", "flags": "i" }
+      {
+        "source": "Dangerous Command",
+        "flags": "i"
+      },
+      {
+        "source": "Allow once",
+        "flags": "i"
+      },
+      {
+        "source": "Allow for this session",
+        "flags": "i"
+      },
+      {
+        "source": "Add to permanent allowlist",
+        "flags": "i"
+      },
+      {
+        "source": "Deny",
+        "flags": "i"
+      }
     ],
-    "ready": []
+    "ready": [
+      {
+        "source": "^❯\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "Type your message or /help for commands",
+        "flags": "i"
+      }
+    ]
   },
-  "resume": {
-    "supported": false,
-    "stopStrategy": "command",
-    "stopCommand": "/stop",
-    "shutdownGraceMs": 4000,
-    "sessionIdFormat": "string",
-    "resumeSessionArgs": ["--resume", "{{id}}"],
-    "resumeArgs": ["--continue"]
+  "approvalKeys": {
+    "0": "\r"
   },
   "compatibility": [
-    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+    {
+      "ideVersion": ">=0.8.0",
+      "scriptDir": "scripts/1.0"
+    }
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Beta",
-  "details": "Terminal (TUI) via hermes chat",
-  "disableUpstream": true
+  "details": "Terminal only"
 }

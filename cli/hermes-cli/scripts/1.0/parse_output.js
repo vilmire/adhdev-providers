@@ -1,215 +1,161 @@
-/**
- * Hermes CLI — parse_output (TUI parser)
- *
- * Goal: work without --quiet.
- * Strategy (inspired by Claude Code provider):
- * - Build a screen snapshot (lines with indices)
- * - Identify the last prompt line (❯) and ignore everything below it
- * - Scope to the current turn using the last user message when possible
- * - Strip known chrome/noise blocks (banner, tools/skills sidebars, status bar)
- * - Extract the last contiguous content block as assistant text
- */
 'use strict';
 
 const detectStatus = require('./detect_status.js');
-const { buildFromBufferFallback, normalizeLineText, toText } = require('./screen_helpers.js');
+const parseApproval = require('./parse_approval.js');
+const {
+  cleanAnsi,
+  extractCurrentModel,
+  extractProviderSessionId,
+} = require('./helpers.js');
 
-function normalizeText(text) {
-  return String(text || '').replace(/\s+/g, ' ').trim();
+function normalize(line) {
+  return cleanAnsi(line)
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function looksLikeSamePrompt(a, b) {
-  const left = normalizeText(a).toLowerCase();
-  const right = normalizeText(b).toLowerCase();
-  if (!left || !right) return false;
-  if (left === right) return true;
-  const min = Math.min(left.length, right.length);
-  if (min < 24) return false;
-  return left.startsWith(right) || right.startsWith(left) || left.includes(right) || right.includes(left);
+function isNoise(line) {
+  return !line
+    || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
+    || /^\d+$/.test(line)
+    || /Hermes Agent v[0-9]/i.test(line)
+    || /Available Tools|Available Skills/i.test(line)
+    || /gpt-5\.4|ctx --|\d+(?:\.\d+)?K\/\d+(?:\.\d+)?M|\[\S+\]\s*\d+%/i.test(line)
+    || /Type your message or \/help for commands/i.test(line)
+    || /Tip: hermes sessions prune/i.test(line)
+    || /Enter to interrupt, Ctrl\+C to cancel/i.test(line)
+    || /Initializing agent/i.test(line)
+    || /reasoning/i.test(line)
+    || /^❯\s*$/.test(line)
+    || /^Session:\s+\d{8}_\d{6}_/i.test(line)
+    || /^Project:\s+/i.test(line)
+    || /^Resume this session with:/i.test(line);
 }
 
-function getLastUserPrompt(previousMessages) {
-  return [...(Array.isArray(previousMessages) ? previousMessages : [])]
-    .reverse()
-    .find(m => m?.role === 'user' && typeof m.content === 'string')
-    ?.content || '';
-}
+function extractHistoryState(text) {
+  const source = cleanAnsi(text);
+  if (!source.trim()) return {};
 
-function isBoxLine(trimmed) {
-  return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
-}
-
-function isStatusBar(trimmed) {
-  return /\bctx\b/i.test(trimmed) && /\b\d+s\b/.test(trimmed);
-}
-
-function isPromptLine(trimmed) {
-  return /^❯\s*$/.test(trimmed);
-}
-
-function isBannerLine(trimmed) {
-  // Big ASCII art block often contains these.
-  return /██╗|╚═╝/.test(trimmed);
-}
-
-function isChromeLine(trimmed) {
-  if (!trimmed) return true;
-  if (isBoxLine(trimmed)) return true;
-  if (isStatusBar(trimmed)) return true;
-  if (isPromptLine(trimmed)) return true;
-  if (isBannerLine(trimmed)) return true;
-  if (/^Hermes Agent\b/i.test(trimmed)) return true;
-  if (/^Welcome to Hermes Agent!/i.test(trimmed)) return true;
-  if (/^Available Tools\b/i.test(trimmed)) return true;
-  if (/^Available Skills\b/i.test(trimmed)) return true;
-  if (/^Session:\s*\d{8}_\d{6}_/i.test(trimmed)) return true;
-  if (/^\/?help for commands\b/i.test(trimmed)) return true;
-  if (/^✦ Tip:/i.test(trimmed)) return true;
-  if (/^Goodbye!/.test(trimmed)) return true;
-  if (/^usage: hermes\b/i.test(trimmed)) return true;
-  // Setup warnings / misc
-  if (/tirith security scanner enabled but not available/i.test(trimmed)) return true;
-  return false;
-}
-
-function stripCompressionWarningBlock(lines) {
-  // Drop from "⚠ Compression model" until a blank line.
-  const out = [];
-  let dropping = false;
-  for (const l of lines) {
-    const t = l.trim();
-    if (!dropping && /^⚠\s+Compression model\b/i.test(t)) {
-      dropping = true;
-      continue;
-    }
-    if (dropping) {
-      if (t === '') dropping = false;
-      continue;
-    }
-    out.push(l);
-  }
-  return out;
-}
-
-function scopeToCurrentTurn(lines, promptText) {
-  const prompt = normalizeText(promptText);
-  if (!prompt) return lines;
-
-  // Find a line that approximately matches the prompt text, then only keep lines after it.
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const t = normalizeLineText(lines[i]);
-    if (!t) continue;
-    if (looksLikeSamePrompt(t, prompt)) {
-      return lines.slice(i + 1);
-    }
-  }
-  return lines;
-}
-
-function extractAssistantBlock(lines) {
-  // Remove chrome lines but keep content.
-  const cleaned = [];
-  for (const line of lines) {
-    const trimmed = normalizeLineText(line);
-    if (!trimmed) {
-      cleaned.push('');
-      continue;
-    }
-    if (isChromeLine(trimmed)) continue;
-    cleaned.push(String(line?.text ?? line));
+  const newSessionMatch = source.match(/New session started!/i);
+  if (newSessionMatch) {
+    return {
+      historyMessageCount: 0,
+      sessionEvent: 'new_session',
+    };
   }
 
-  // Normalize and remove compression warning block (can appear even in non-quiet output)
-  let normalized = cleaned
-    .join('\n')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n');
-
-  let normLines = normalized.split('\n').map(l => l.replace(/\s+$/g, ''));
-  normLines = stripCompressionWarningBlock(normLines);
-
-  // Drop leading/trailing empties
-  while (normLines.length && !normLines[0].trim()) normLines.shift();
-  while (normLines.length && !normLines[normLines.length - 1].trim()) normLines.pop();
-  if (normLines.length === 0) return '';
-
-  // Choose the last non-empty block separated by blank lines.
-  const blocks = [];
-  let cur = [];
-  for (const l of normLines) {
-    if (!l.trim()) {
-      if (cur.length) { blocks.push(cur.join('\n').trim()); cur = []; }
-      continue;
-    }
-    cur.push(l);
+  const remainingMatch = source.match(/(\d+)\s+message\(s\)\s+remaining in history\./i);
+  const undoMatch = source.match(/Undid\s+(\d+)\s+message\(s\)\./i);
+  if (remainingMatch || undoMatch) {
+    return {
+      historyMessageCount: remainingMatch ? Number.parseInt(remainingMatch[1], 10) : undefined,
+      sessionEvent: 'undo',
+    };
   }
-  if (cur.length) blocks.push(cur.join('\n').trim());
 
-  const lastBlock = blocks.filter(Boolean).at(-1) || '';
-
-  // If the last block is still massive chrome, return empty.
-  if (!lastBlock) return '';
-  if (/^Available Tools\b/i.test(lastBlock)) return '';
-  return lastBlock;
+  return {};
 }
 
-function toMessageObjects(messages, status) {
-  const base = Array.isArray(messages) ? messages : [];
-  return base.slice(-50).map((m, i, arr) => ({
-    id: `msg_${i}`,
-    role: m.role,
-    content: m.content,
-    index: i,
+function dedupeMessages(messages) {
+  const next = [];
+  for (const message of messages) {
+    const prev = next[next.length - 1];
+    if (prev && prev.role === message.role && prev.content === message.content) {
+      continue;
+    }
+    next.push(message);
+  }
+  return next.slice(-50).map((message, index) => ({
+    id: `msg_${index}`,
+    role: message.role,
+    content: message.content,
+    index,
     kind: 'standard',
-    ...(status === 'generating' && i === arr.length - 1 && m.role === 'assistant'
-      ? { meta: { streaming: true } }
-      : {})
   }));
 }
 
-module.exports = function parseOutput(input) {
-  const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
+function parseMessages(text) {
+  const lines = cleanAnsi(text).split(/\r?\n/);
+  const messages = [];
+  let inAssistantBox = false;
+  let assistantLines = [];
 
-  // Prefer real screen snapshot; fall back to buffer.
-  const screen = buildFromBufferFallback(input);
+  const flushAssistant = () => {
+    const content = assistantLines
+      .map(normalize)
+      .filter((line) => !isNoise(line))
+      .join('\n')
+      .trim();
+    if (content) {
+      messages.push({ role: 'assistant', content });
+    }
+    assistantLines = [];
+  };
 
-  // Ignore everything below the last prompt (input area)
-  const abovePrompt = Array.isArray(screen.linesAbovePrompt)
-    ? screen.linesAbovePrompt
-    : (screen.promptLineIndex >= 0 ? screen.lines.slice(0, screen.promptLineIndex) : screen.lines);
+  for (const rawLine of lines) {
+    const line = normalize(rawLine);
+    if (!line) continue;
 
-  const tailText = toText(abovePrompt, { trim: false }).slice(-2000);
-  const status = detectStatus({ ...input, tail: tailText, screenText: toText(screen.lines, { trim: false }) });
+    if (/^●\s+/.test(line)) {
+      if (inAssistantBox) {
+        flushAssistant();
+        inAssistantBox = false;
+      }
+      const content = line.replace(/^●\s+/, '').trim();
+      if (content) messages.push({ role: 'user', content });
+      continue;
+    }
 
-  const lastUserPrompt = getLastUserPrompt(previousMessages);
-  const scopedLines = scopeToCurrentTurn(abovePrompt, lastUserPrompt);
-  const assistantText = extractAssistantBlock(scopedLines);
+    if (/^╭─\s*⚕\s*Hermes/i.test(line)) {
+      if (inAssistantBox) flushAssistant();
+      inAssistantBox = true;
+      assistantLines = [];
+      continue;
+    }
 
-  const msgs = previousMessages
-    .filter(m => m && (m.role === 'user' || m.role === 'assistant'))
-    .map(m => ({ role: m.role, content: String(m.content || '') }));
+    if (/^╰─/.test(line)) {
+      if (inAssistantBox) {
+        flushAssistant();
+        inAssistantBox = false;
+      }
+      continue;
+    }
 
-  if (assistantText) {
-    const last = msgs[msgs.length - 1];
-    if (!last || last.role !== 'assistant') msgs.push({ role: 'assistant', content: assistantText });
-    else if (assistantText.length > last.content.length && normalizeText(last.content) !== normalizeText(assistantText)) {
-      last.content = assistantText;
+    if (inAssistantBox) {
+      assistantLines.push(line);
     }
   }
 
-  // Try to extract currently shown model from the header line:
-  // "⚕ gemini-3-flash-preview · Nous Research"
-  let controlValues;
-  const headerMatch = /⚕\s+([^·\n]+)\s+·/m.exec(toText(abovePrompt, { trim: false }));
-  if (headerMatch && headerMatch[1]) {
-    controlValues = { model: headerMatch[1].trim() };
-  }
+  if (inAssistantBox) flushAssistant();
+
+  return dedupeMessages(messages);
+}
+
+module.exports = function parseOutput(input) {
+  const transcript = String(input?.buffer || input?.screenText || input?.rawBuffer || '');
+  const screenText = String(input?.screenText || '');
+  const status = detectStatus({
+    screenText,
+    tail: input?.recentBuffer || input?.tail || '',
+    buffer: transcript,
+  });
+
+  const messages = parseMessages(transcript || screenText);
+  const activeModal = status === 'waiting_approval'
+    ? parseApproval({ screenText, buffer: transcript, tail: input?.recentBuffer || input?.tail || '' })
+    : null;
+  const model = extractCurrentModel(screenText || transcript);
+  const providerSessionId = extractProviderSessionId(transcript || screenText);
+  const historyState = extractHistoryState(transcript || screenText);
 
   return {
     id: 'cli_session',
-    status,
     title: 'Hermes Agent',
-    messages: toMessageObjects(msgs, status),
-    ...(controlValues ? { controlValues } : {})
+    status,
+    model,
+    messages,
+    activeModal,
+    providerSessionId,
+    ...historyState,
   };
 };

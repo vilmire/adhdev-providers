@@ -1,18 +1,25 @@
-/**
- * Hermes CLI — parse_approval (MVP)
- *
- * Hermes approval UX isn't confirmed yet; return a generic modal.
- */
 'use strict';
 
+function cleanAnsi(text) {
+  return String(text || '').replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '');
+}
+
 module.exports = function parseApproval(input) {
-  const screenText = String(input?.screenText || input?.buffer || input?.tail || '');
+  const text = cleanAnsi(input?.screenText || input?.buffer || input?.tail || '');
+  if (!text.trim()) return null;
+  const isDangerousPrompt = /Dangerous Command/i.test(text)
+    && /Allow once|Allow for this session|Add to permanent allowlist|Deny/i.test(text);
+  if (!isDangerousPrompt) return null;
+
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^Auto-approved:/i.test(line))
+    .slice(-20);
+
   return {
-    title: 'Hermes approval',
-    message: screenText.slice(-2000),
-    options: [
-      { id: 'yes', label: 'Yes', key: 'y' },
-      { id: 'no', label: 'No', key: 'n' }
-    ]
+    message: lines.join(' ').slice(0, 220) || 'Approval required',
+    buttons: ['Allow once', 'Allow for this session', 'Add to permanent allowlist', 'Deny'],
   };
 };

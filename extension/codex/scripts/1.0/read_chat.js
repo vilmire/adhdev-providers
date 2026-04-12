@@ -69,9 +69,19 @@
     function extractRichContent(container) {
       let out = '';
 
+      function isHiddenElement(el) {
+        if (!el || el.nodeType !== 1) return false;
+        if (el.getAttribute('aria-hidden') === 'true') return true;
+        if (el.hasAttribute('hidden') || el.closest('[hidden], [aria-hidden="true"], [inert]')) return true;
+        const style = doc.defaultView?.getComputedStyle?.(el);
+        if (!style) return false;
+        return style.display === 'none' || style.visibility === 'hidden';
+      }
+
       function extractCode(node) {
         if (node.nodeType === 3) return node.textContent || '';
         if (node.nodeType !== 1) return '';
+        if (isHiddenElement(node)) return '';
         if (node.tagName === 'BR') return '\n';
         const parts = [];
         for (const c of node.childNodes) {
@@ -134,6 +144,7 @@
         }
         if (node.nodeType !== 1) return;
         const el = node;
+        if (isHiddenElement(el)) return;
         const tag = el.tagName;
         const cls = (el.className && typeof el.className === 'string') ? el.className : '';
 
@@ -247,6 +258,27 @@
     }
 
     function sanitizeMessageContent(raw) {
+      const collapseRepeatedPrefix = (value) => {
+        const text = String(value || '').trim();
+        if (text.length < 80) return text;
+
+        const normalized = text.replace(/\s+/g, ' ').trim();
+        const minProbe = Math.min(160, Math.max(48, Math.floor(normalized.length / 4)));
+        const probe = normalized.slice(0, minProbe).trim();
+        if (probe.length < 40) return text;
+
+        const secondIdx = normalized.indexOf(probe, probe.length);
+        if (secondIdx < 0) return text;
+
+        const repeatedPrefix = normalized.slice(0, secondIdx).trim();
+        if (repeatedPrefix.length < 40) return text;
+
+        const compactOriginal = text.replace(/\s+/g, ' ').trim();
+        const compactSuffix = compactOriginal.slice(secondIdx).trim();
+        if (!compactSuffix || compactSuffix.length + 24 < repeatedPrefix.length) return text;
+        return compactSuffix;
+      };
+
       const stripTrailingTimestamp = (value) => String(value || '')
         .replace(/\s+(?:오전|오후)\s?\d{1,2}:\d{2}$/u, '')
         .replace(/\s+\d{1,2}:\d{2}\s?(?:AM|PM)$/i, '')
@@ -275,10 +307,10 @@
         filtered.push(line);
       }
 
-      return filtered
+      return collapseRepeatedPrefix(filtered
         .join('\n')
         .replace(/\n{3,}/g, '\n\n')
-        .trim();
+        .trim());
     }
 
     function parseUnitIndex(unitKey) {

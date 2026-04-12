@@ -188,15 +188,17 @@
 
           (async () => {
             let evidence = null;
-            for (let i = 0; i < 15; i += 1) {
+            for (let i = 0; i < 30; i += 1) {
               await wait(100);
               const remaining = normalizeText(editor.textContent || '');
               const turnCount = getTurnCount();
               const matchingUserTurns = getMatchingUserTurnCount();
               const busy = isComposerBusy();
-              if (busy || turnCount > initialTurnCount || matchingUserTurns > initialUserTurnMatches) {
+              const cleared = !remaining;
+              if (busy || cleared || turnCount > initialTurnCount || matchingUserTurns > initialUserTurnMatches) {
                 evidence = {
                   remaining,
+                  cleared,
                   busy,
                   turnCount,
                   matchingUserTurns,
@@ -211,6 +213,7 @@
               method: sendButton ? 'button+enter' : 'enter',
               message: message.slice(0, 100),
               remaining: finalRemaining,
+              cleared: evidence?.cleared || !finalRemaining,
               busy: evidence?.busy || false,
               turnCount: evidence?.turnCount ?? getTurnCount(),
               matchingUserTurns: evidence?.matchingUserTurns ?? getMatchingUserTurnCount(),

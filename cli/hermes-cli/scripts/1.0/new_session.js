@@ -1,16 +1,10 @@
 'use strict';
 
-/**
- * Hermes CLI — newSession
- *
- * Hermes supports /new (and /reset). Prefer /new.
- */
+const { buildPtyWrite } = require('./helpers.js');
+
 module.exports = function newSession() {
-  return {
-    success: true,
-    command: {
-      type: 'pty_write',
-      text: '/new',
-    },
-  };
+  return buildPtyWrite('/new\r/status', {
+    sessionEvent: 'new_session',
+    historyMessageCount: 0,
+  });
 };
