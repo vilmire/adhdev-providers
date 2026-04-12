@@ -1,0 +1,85 @@
+{
+  "type": "hermes-cli",
+  "name": "Hermes Agent",
+  "category": "cli",
+  "aliases": ["hermes"],
+  "icon": "🪶",
+  "displayName": "Hermes Agent",
+  "settings": {
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve tool execution without prompt"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    }
+  },
+  "binary": "hermes",
+  "sendDelayMs": 900,
+  "sendKey": "\r",
+  "submitStrategy": "immediate",
+  "spawn": {
+    "command": "hermes",
+    "args": [
+      "chat",
+      "--provider",
+      "openrouter",
+      "--model",
+      "google/gemini-3-flash-preview"
+    ],
+    "shell": false,
+    "env": {}
+  },
+  "patterns": {
+    "prompt": [
+      { "source": "Hermes Agent", "flags": "i" },
+      { "source": "Welcome to Hermes Agent! Type your message", "flags": "i" },
+      { "source": "^❯\\s*$", "flags": "m" },
+      { "source": "[›❯]\\s*$", "flags": "m" }
+    ],
+    "generating": [
+      { "source": "(Thinking|Planning|Analyzing|Searching|Working|Drafting|Synthesizing|Inspecting)", "flags": "i" },
+      { "source": "\\bctx\\b", "flags": "i" },
+      { "source": "\\b\\d+s\\b", "flags": "i" },
+      { "source": "[\\u2800-\\u28ff]", "flags": "" }
+    ],
+    "approval": [
+      { "source": "\\bapprove\\b", "flags": "i" },
+      { "source": "Choice \\[\\d+-\\d+\\]", "flags": "i" },
+      { "source": "\\(y/n\\)", "flags": "i" },
+      { "source": "\\[Y/n\\]", "flags": "i" },
+      { "source": "Enter to confirm", "flags": "i" }
+    ],
+    "ready": []
+  },
+  "resume": {
+    "supported": false,
+    "stopStrategy": "command",
+    "stopCommand": "/stop",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeSessionArgs": ["--resume", "{{id}}"],
+    "resumeArgs": ["--continue"]
+  },
+  "compatibility": [
+    { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
+  ],
+  "defaultScriptDir": "scripts/1.0",
+  "status": "Beta",
+  "details": "Terminal (TUI) via hermes chat",
+  "disableUpstream": true
+}
