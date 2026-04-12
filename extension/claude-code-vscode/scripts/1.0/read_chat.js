@@ -1,5 +1,8 @@
 (() => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const normalizeInline = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const normalizeBlock = (value) => String(value || '')
       .replace(/\u00a0/g, ' ')
@@ -12,7 +15,7 @@
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
-      const style = window.getComputedStyle(el);
+      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
       return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
     };
     const getControlCache = () => {
@@ -24,15 +27,15 @@
     const sanitizeToolOutput = (value) => normalizeBlock(value).replace(/\n?\[rerun:\s*[^\]]+\]\s*$/i, '').trim();
 
     const title = normalizeInline(
-      document.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
+      doc.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
     ) || 'Untitled';
 
-    const root = document.getElementById('root') || document.body;
+    const root = doc.getElementById('root') || doc.body;
     const isVisible = visible(root);
-    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
     const inputContent = normalizeBlock(input?.innerText || input?.textContent || '');
 
-    const buttons = Array.from(document.querySelectorAll('button')).filter(visible);
+    const buttons = Array.from(doc.querySelectorAll('button')).filter(visible);
     const buttonTexts = buttons
       .map((button) => normalizeInline(button.textContent || button.getAttribute('aria-label') || button.getAttribute('title') || ''))
       .filter(Boolean);
@@ -48,7 +51,7 @@
       messages.push({ role, content: text, timestamp, ...extras });
     };
 
-    const messageRows = Array.from(document.querySelectorAll('.messagesContainer_07S1Yg .message_07S1Yg'))
+    const messageRows = Array.from(doc.querySelectorAll('.messagesContainer_07S1Yg .message_07S1Yg'))
       .filter(visible)
       .filter((row) => !row.parentElement?.closest('.message_07S1Yg'));
 
@@ -142,19 +145,19 @@
     });
 
     if (messages.length === 0) {
-      const welcome = document.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
+      const welcome = doc.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
       if (welcome && visible(welcome)) {
         pushMessage('assistant', welcome.innerText || welcome.textContent || '', Date.now());
       }
     }
 
-    const spinner = document.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
+    const spinner = doc.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
     const spinnerText = spinner && visible(spinner) ? normalizeBlock(spinner.innerText || spinner.textContent || '') : '';
-    const modeButton = document.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
+    const modeButton = doc.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
     const mode = normalizeInline(modeButton?.textContent || getControlCache().mode || '');
     const cachedThinking = getControlCache().thinking;
     const effortLabel = normalizeInline(
-      document.querySelector('.effortLabel_8RAulQ, [class*="effortLabel"]')?.textContent
+      doc.querySelector('.effortLabel_8RAulQ, [class*="effortLabel"]')?.textContent
       || getControlCache().effort
       || ''
     );
@@ -166,7 +169,7 @@
 
     let status = 'idle';
     if (spinner && visible(spinner)) status = 'generating';
-    if (document.querySelector('[aria-busy="true"], [data-busy="true"]')) status = 'generating';
+    if (doc.querySelector('[aria-busy="true"], [data-busy="true"]')) status = 'generating';
     if (buttonTexts.some((text) => /^(stop|cancel|interrupt)$/i.test(text))) status = 'generating';
 
     const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run/i.test(text));
@@ -174,7 +177,7 @@
     if (approvalButtons.length > 0) {
       status = 'waiting_approval';
       activeModal = {
-        message: normalizeBlock(document.body.innerText || ''),
+        message: normalizeBlock(doc.body?.innerText || ''),
         buttons: [...new Set(approvalButtons)],
       };
     }

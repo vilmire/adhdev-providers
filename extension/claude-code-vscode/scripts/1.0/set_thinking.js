@@ -1,5 +1,8 @@
 ;(async () => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const target = ${ VALUE };
     if (typeof target !== 'boolean') {
       return JSON.stringify({ success: false, error: 'boolean value required' });
@@ -9,7 +12,7 @@
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
-      const style = window.getComputedStyle(el);
+      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
       return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
     };
     const getCache = () => {
@@ -19,26 +22,26 @@
       return window.__adhdevClaudeCodeControls;
     };
 
-    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
     if (!input) return JSON.stringify({ success: false, error: 'input not found' });
 
     input.focus();
     input.textContent = '/';
-    input.dispatchEvent(new InputEvent('beforeinput', {
+    input.dispatchEvent(new view.InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
       data: '/',
     }));
-    input.dispatchEvent(new InputEvent('input', {
+    input.dispatchEvent(new view.InputEvent('input', {
       bubbles: true,
       inputType: 'insertText',
       data: '/',
     }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new view.Event('change', { bubbles: true }));
     await new Promise((resolve) => setTimeout(resolve, 250));
 
-    const commandItem = Array.from(document.querySelectorAll('[title="Toggle extended thinking mode"], .commandItem_G_S7FQ, [class*="commandItem"]'))
+    const commandItem = Array.from(doc.querySelectorAll('[title="Toggle extended thinking mode"], .commandItem_G_S7FQ, [class*="commandItem"]'))
       .filter(visible)
       .find((el) => {
         const text = normalize(el.textContent || el.getAttribute('aria-label') || '');
@@ -58,14 +61,14 @@
       await new Promise((resolve) => setTimeout(resolve, 120));
     }
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     input.textContent = '';
-    input.dispatchEvent(new InputEvent('input', {
+    input.dispatchEvent(new view.InputEvent('input', {
       bubbles: true,
       inputType: 'deleteContentBackward',
       data: null,
     }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new view.Event('change', { bubbles: true }));
 
     getCache().thinking = target;
     return JSON.stringify({ success: true, thinking: target, changed: current !== target });

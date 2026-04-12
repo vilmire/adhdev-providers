@@ -1,5 +1,8 @@
 (() => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const isVisible = (el) => {
       if (!el || el.closest('[inert]')) return false;
@@ -10,15 +13,15 @@
       const rect = el.getBoundingClientRect();
       const x = rect.left + rect.width / 2;
       const y = rect.top + rect.height / 2;
-      el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-      el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
-      el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-      el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
-      el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+      el.dispatchEvent(new view.PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      el.dispatchEvent(new view.MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
+      el.dispatchEvent(new view.PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+      el.dispatchEvent(new view.MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
+      el.dispatchEvent(new view.MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
       if (typeof el.click === 'function') el.click();
     };
 
-    const buttons = Array.from(document.querySelectorAll('button, [role="button"]')).filter(isVisible);
+    const buttons = Array.from(doc.querySelectorAll('button, [role="button"]')).filter(isVisible);
     const target = buttons.find((button) => {
       const text = normalize(button.textContent || button.getAttribute('aria-label') || '').toLowerCase();
       return text === 'new session' || text.includes('new session');

@@ -1,9 +1,11 @@
 (args = {}) => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const wanted = normalize(args.sessionId || args.id || args.title || '');
     const current = normalize(
-      document.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
+      doc.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
     );
 
     if (!wanted) return JSON.stringify({ switched: false, error: 'sessionId/title required' });
@@ -11,10 +13,10 @@
       return JSON.stringify({ switched: true, title: current });
     }
 
-    const historyButton = document.querySelector('button[aria-label="Session history"]');
+    const historyButton = doc.querySelector('button[aria-label="Session history"]');
     if (historyButton) historyButton.click();
 
-    const options = Array.from(document.querySelectorAll('button, [role="button"], [role="option"], a'))
+    const options = Array.from(doc.querySelectorAll('button, [role="button"], [role="option"], a'))
       .map((el) => ({
         el,
         label: normalize(el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || ''),

@@ -1,33 +1,36 @@
 (async () => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const message = ${ MESSAGE };
     if (!String(message || '').trim()) {
       return JSON.stringify({ sent: false, error: 'message required' });
     }
 
-    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
-    const sendButton = document.querySelector('button.sendButton_gGYT1w');
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const sendButton = doc.querySelector('button.sendButton_gGYT1w');
     if (!input || !sendButton) {
       return JSON.stringify({ sent: false, error: 'input or send button not found' });
     }
 
     input.focus();
 
-    const selection = window.getSelection();
-    const range = document.createRange();
+    const selection = view.getSelection();
+    const range = doc.createRange();
     range.selectNodeContents(input);
     selection.removeAllRanges();
     selection.addRange(range);
     try {
-      document.execCommand('delete', false);
+      doc.execCommand('delete', false);
     } catch {}
-    input.dispatchEvent(new InputEvent('input', {
+    input.dispatchEvent(new view.InputEvent('input', {
       bubbles: true,
       inputType: 'deleteContentBackward',
       data: null,
     }));
 
-    const endRange = document.createRange();
+    const endRange = doc.createRange();
     endRange.selectNodeContents(input);
     endRange.collapse(false);
     selection.removeAllRanges();
@@ -35,24 +38,24 @@
 
     let inserted = false;
     try {
-      inserted = document.execCommand('insertText', false, message);
+      inserted = doc.execCommand('insertText', false, message);
     } catch {}
     if (!inserted) {
       input.textContent = message;
     }
 
-    input.dispatchEvent(new InputEvent('beforeinput', {
+    input.dispatchEvent(new view.InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
       data: message,
     }));
-    input.dispatchEvent(new InputEvent('input', {
+    input.dispatchEvent(new view.InputEvent('input', {
       bubbles: true,
       inputType: 'insertText',
       data: message,
     }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new view.Event('change', { bubbles: true }));
 
     await new Promise((resolve) => setTimeout(resolve, 80));
 
@@ -67,11 +70,11 @@
     const rect = sendButton.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
-    sendButton.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-    sendButton.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
-    sendButton.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
-    sendButton.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
-    sendButton.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
+    sendButton.dispatchEvent(new view.PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    sendButton.dispatchEvent(new view.MouseEvent('mousedown', { bubbles: true, clientX: x, clientY: y }));
+    sendButton.dispatchEvent(new view.PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    sendButton.dispatchEvent(new view.MouseEvent('mouseup', { bubbles: true, clientX: x, clientY: y }));
+    sendButton.dispatchEvent(new view.MouseEvent('click', { bubbles: true, clientX: x, clientY: y }));
     if (typeof sendButton.click === 'function') sendButton.click();
 
     return JSON.stringify({ sent: true, submitted: true });

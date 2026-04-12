@@ -1,8 +1,10 @@
 (() => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const title = normalize(
-      document.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
+      doc.querySelector('button.titleText_aqhumA, .titleText_aqhumA, .titleTextInner_aqhumA')?.textContent || ''
     );
 
     if (!title || /^new session$/i.test(title)) {

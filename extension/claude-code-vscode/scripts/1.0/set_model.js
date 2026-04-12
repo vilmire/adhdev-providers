@@ -1,5 +1,8 @@
 ;(async () => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const requested = String(${ MODEL } || '').trim().toLowerCase();
     if (!requested) return JSON.stringify({ success: false, error: 'model required' });
 
@@ -7,7 +10,7 @@
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
-      const style = window.getComputedStyle(el);
+      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
       return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
     };
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -26,7 +29,7 @@
     const target = aliases[requested];
     if (!target) return JSON.stringify({ success: false, error: `unsupported model: ${requested}` });
 
-    const input = document.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
     if (!input) {
       return JSON.stringify({ success: false, error: 'input not found' });
     }
@@ -40,31 +43,31 @@
     const clearInput = () => {
       input.focus();
       input.textContent = '';
-      input.dispatchEvent(new InputEvent('input', {
+      input.dispatchEvent(new view.InputEvent('input', {
         bubbles: true,
         inputType: 'deleteContentBackward',
         data: null,
       }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.dispatchEvent(new view.Event('change', { bubbles: true }));
     };
 
     input.focus();
     input.textContent = '/';
-    input.dispatchEvent(new InputEvent('beforeinput', {
+    input.dispatchEvent(new view.InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
       inputType: 'insertText',
       data: '/',
     }));
-    input.dispatchEvent(new InputEvent('input', {
+    input.dispatchEvent(new view.InputEvent('input', {
       bubbles: true,
       inputType: 'insertText',
       data: '/',
     }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    input.dispatchEvent(new view.Event('change', { bubbles: true }));
     await sleep(250);
 
-    const switchItem = Array.from(document.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
+    const switchItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
       .filter(visible)
       .find((el) => {
         const text = normalize(el.textContent || '');
@@ -79,7 +82,7 @@
     switchItem.click();
     await sleep(250);
 
-    const modelItem = Array.from(document.querySelectorAll('.modelItem_G8AMvA, [class*="modelItem"]'))
+    const modelItem = Array.from(doc.querySelectorAll('.modelItem_G8AMvA, [class*="modelItem"]'))
       .filter(visible)
       .find((el) => {
         const label = normalize(
@@ -90,7 +93,7 @@
         return label === target.menuLabel;
       });
     if (!modelItem) {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       clearInput();
       return JSON.stringify({ success: false, error: `model option not found: ${target.menuLabel}` });
     }
@@ -107,7 +110,7 @@
       await sleep(250);
     }
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     clearInput();
 
     const cache = getCache();

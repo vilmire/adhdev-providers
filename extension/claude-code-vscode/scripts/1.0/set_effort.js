@@ -1,5 +1,8 @@
 ;(async () => {
   try {
+    const frame = document.getElementById('active-frame');
+    const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
     const target = String(${ VALUE } || '').trim().toLowerCase();
     const order = ['low', 'medium', 'high', 'max'];
     if (!order.includes(target)) {
@@ -10,7 +13,7 @@
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
-      const style = window.getComputedStyle(el);
+      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
       return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
     };
     const getCache = () => {
@@ -19,16 +22,16 @@
       }
       return window.__adhdevClaudeCodeControls;
     };
-    const footerButton = document.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
+    const footerButton = doc.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
     if (!footerButton) return JSON.stringify({ success: false, error: 'mode button not found' });
 
     footerButton.click();
     await new Promise((resolve) => setTimeout(resolve, 250));
 
-    const effortButton = Array.from(document.querySelectorAll('button.effortRow_8RAulQ, button[class*="effortRow"]'))
+    const effortButton = Array.from(doc.querySelectorAll('button.effortRow_8RAulQ, button[class*="effortRow"]'))
       .find(visible);
     if (!effortButton) {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       return JSON.stringify({ success: false, error: 'effort button not found' });
     }
 
@@ -40,12 +43,12 @@
 
     let current = readEffort();
     if (!current) {
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       return JSON.stringify({ success: false, error: 'current effort unreadable' });
     }
     if (current === target) {
       getCache().effort = current;
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       return JSON.stringify({ success: true, effort: current, changed: false });
     }
 
@@ -55,12 +58,12 @@
       current = readEffort();
       if (current === target) {
         getCache().effort = current;
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         return JSON.stringify({ success: true, effort: current, changed: true });
       }
     }
 
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     return JSON.stringify({ success: false, error: `failed to reach effort: ${target}`, current });
   } catch (e) {
     return JSON.stringify({ success: false, error: e.message || String(e) });
