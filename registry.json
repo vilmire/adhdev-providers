@@ -337,6 +337,19 @@
         }
       ]
     },
+    "hermes-cli": {
+      "providerVersion": "0.0.0",
+      "category": "cli",
+      "name": "Hermes Agent",
+      "status": "Beta",
+      "details": "Terminal (TUI) via hermes chat",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
+    },
     "opencode-cli": {
       "providerVersion": "0.0.0",
       "category": "cli",
@@ -469,19 +482,6 @@
       "name": "Windsurf",
       "status": "Stable",
       "details": "Full CDP support",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
-    },
-    "hermes-cli": {
-      "providerVersion": "0.0.0",
-      "category": "cli",
-      "name": "Hermes Agent",
-      "status": "Beta",
-      "details": "Terminal (TUI) via hermes chat",
       "compatibility": [
         {
           "ideVersion": ">=1.0.0",
