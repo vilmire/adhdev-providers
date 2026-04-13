@@ -15,98 +15,59 @@
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
-      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
-      return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
+      return rect.width > 0 && rect.height > 0;
     };
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
-    if (!input) {
-      return JSON.stringify({ success: false, error: 'input not found' });
-    }
-
-    const clearInput = () => {
-      input.focus();
-      const sel = view.getSelection();
-      const r = doc.createRange();
-      r.selectNodeContents(input);
-      sel.removeAllRanges();
-      sel.addRange(r);
-      try { doc.execCommand('delete', false); } catch {}
-      input.dispatchEvent(new view.InputEvent('input', {
-        bubbles: true,
-        inputType: 'deleteContentBackward',
-        data: null,
-      }));
-      input.dispatchEvent(new view.Event('change', { bubbles: true }));
+    const closeMenu = () => {
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     };
 
-    const closeButton = () => Array.from(doc.querySelectorAll('button'))
-      .filter(visible)
-      .find((button) => /close/i.test(normalize(button.getAttribute('aria-label') || button.getAttribute('title') || button.textContent || '')));
-
-    // Clear and type '/' using execCommand to trigger slash command menu
-    clearInput();
-    await sleep(50);
-
-    input.focus();
-    let inserted = false;
-    try { inserted = doc.execCommand('insertText', false, '/'); } catch {}
-    if (!inserted) {
-      input.textContent = '/';
+    // Open command menu via footer menu button (toggle — only click if not already open)
+    const menuBtn = doc.querySelector('button.menuButton_gGYT1w');
+    if (!menuBtn) {
+      return JSON.stringify({ success: false, error: 'menu button not found' });
     }
-    input.dispatchEvent(new view.InputEvent('beforeinput', {
-      bubbles: true,
-      cancelable: true,
-      inputType: 'insertText',
-      data: '/',
-    }));
-    input.dispatchEvent(new view.InputEvent('input', {
-      bubbles: true,
-      inputType: 'insertText',
-      data: '/',
-    }));
-    input.dispatchEvent(new view.Event('change', { bubbles: true }));
-    await sleep(400);
 
-    const usageItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
-      .filter(visible)
-      .find((el) => {
-        const text = normalize(el.textContent || '');
-        const title = normalize(el.getAttribute('title') || '');
-        return /account\s*&?\s*usage/i.test(text) || /account\s*&?\s*usage/i.test(title)
-          || /usage/i.test(text) && /account/i.test(text);
-      });
+    if (!doc.querySelector('.menuPopup_G_S7FQ')) {
+      menuBtn.click();
+      // Wait for popup to appear (poll up to 800ms)
+      for (let i = 0; i < 8; i++) {
+        await sleep(100);
+        if (doc.querySelector('.menuPopup_G_S7FQ')) break;
+      }
+    }
+
+    const usageItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ .commandLabel_G_S7FQ'))
+      .find((el) => /account/i.test(el.textContent) && /usage/i.test(el.textContent));
+
     if (!usageItem) {
-      clearInput();
+      closeMenu();
       return JSON.stringify({ success: false, error: 'account usage menu item not found' });
     }
 
-    usageItem.click();
-    await sleep(350);
+    usageItem.closest('.commandItem_G_S7FQ').click();
+    await sleep(400);
 
-    const dialog = Array.from(doc.querySelectorAll('.dialog_f3sAzg, [class*="dialog"], [role="dialog"]'))
-      .filter(visible)
-      .find((el) => /account|usage/i.test(normalize(el.textContent || '')));
-    if (!dialog) {
-      clearInput();
+    const dialog = doc.querySelector('.dialog_f3sAzg');
+    if (!dialog || !visible(dialog)) {
       return JSON.stringify({ success: false, error: 'account usage dialog not found' });
     }
 
-    const rows = Array.from(dialog.querySelectorAll('.accountRow_JuUW3A, [class*="accountRow"]'));
+    const rows = Array.from(dialog.querySelectorAll('.accountRow_JuUW3A'));
     const account = Object.fromEntries(rows.map((row) => {
-      const label = normalize(row.querySelector('.accountLabel_JuUW3A, [class*="accountLabel"]')?.textContent || '');
-      const value = normalize(row.querySelector('.accountValue_JuUW3A, [class*="accountValue"]')?.textContent || '');
+      const label = normalize(row.querySelector('.accountLabel_JuUW3A')?.textContent || '');
+      const value = normalize(row.querySelector('.accountValue_JuUW3A')?.textContent || '');
       return label ? [label, value] : null;
     }).filter(Boolean));
 
-    const usageBars = Array.from(dialog.querySelectorAll('.usageBarContainer_JuUW3A, [class*="usageBarContainer"]'))
+    const usageBars = Array.from(dialog.querySelectorAll('.usageBarContainer_JuUW3A'))
       .map((container) => ({
-        label: normalize(container.querySelector('.usageLabel_JuUW3A, [class*="usageLabel"]')?.textContent || ''),
-        percent: normalize(container.querySelector('.usagePercent_JuUW3A, [class*="usagePercent"]')?.textContent || ''),
-        reset: normalize(container.querySelector('.resetText_JuUW3A, [class*="resetText"]')?.textContent || ''),
+        label: normalize(container.querySelector('.usageLabel_JuUW3A')?.textContent || ''),
+        percent: normalize(container.querySelector('.usagePercent_JuUW3A')?.textContent || ''),
+        reset: normalize(container.querySelector('.resetText_JuUW3A')?.textContent || ''),
       }))
-      .filter((item) => item.label || item.percent || item.reset);
+      .filter((item) => item.label || item.percent);
 
     const plan = formatPlan(account.Plan || '');
     const summaryLines = ['Usage'];
@@ -119,9 +80,7 @@
     }
     const summary = summaryLines.join('\n');
 
-    closeButton()?.click();
-    doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    clearInput();
+    closeMenu();
 
     return JSON.stringify({
       success: true,
