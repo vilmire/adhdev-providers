@@ -167,10 +167,13 @@
     })();
     const model = normalizeInline(getControlCache().model || '');
 
+    const footerStopButton = Array.from(doc.querySelectorAll('button.footerButton_gGYT1w, button[class*="footerButton"]'))
+      .filter(visible)
+      .find((b) => /^(stop|cancel|interrupt)$/i.test(normalizeInline(b.textContent || b.getAttribute('aria-label') || '')));
+
     let status = 'idle';
     if (spinner && visible(spinner)) status = 'generating';
-    if (doc.querySelector('[aria-busy="true"], [data-busy="true"]')) status = 'generating';
-    if (buttonTexts.some((text) => /^(stop|cancel|interrupt)$/i.test(text))) status = 'generating';
+    if (footerStopButton) status = 'generating';
 
     const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run/i.test(text));
     let activeModal = null;
