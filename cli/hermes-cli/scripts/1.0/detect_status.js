@@ -14,17 +14,18 @@ module.exports = function detectStatus(input) {
     return 'waiting_approval';
   }
 
-  const hasBarePrompt = /^❯\s*$/m.test(text);
-  if (hasBarePrompt) return 'idle';
-
   const hasPrompt = /Type your message or \/help for commands/i.test(text)
     || /Resume this session with:/i.test(text);
   const isGenerating = /Initializing agent/i.test(text)
     || /reasoning/i.test(text)
     || /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
 
-  if (hasPrompt && !isGenerating) return 'idle';
   if (isGenerating) return 'generating';
+
+  const hasBarePrompt = /^❯\s*$/m.test(text);
+  if (hasBarePrompt) return 'idle';
+
+  if (hasPrompt) return 'idle';
 
   return 'idle';
 };
