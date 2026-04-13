@@ -175,7 +175,7 @@
     if (spinner && visible(spinner)) status = 'generating';
     if (footerStopButton) status = 'generating';
 
-    const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run/i.test(text));
+    const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run|\byes\b|\bno\b/i.test(text));
     let activeModal = null;
     if (approvalButtons.length > 0) {
       status = 'waiting_approval';
