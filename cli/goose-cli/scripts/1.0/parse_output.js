@@ -1,5 +1,5 @@
 'use strict';
-const detectStatus  = require('./detect_status.js');
+const detectStatus = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
 
 function splitLines(text) {
@@ -20,31 +20,80 @@ function normalize(text) {
     return String(text || '').replace(/\s+/g, ' ').trim();
 }
 
-function parsePromptLine(line) {
-    const trimmed = sanitize(line).trim();
-    const match = trimmed.match(/^[❯›>$]\s*(.*)$/);
-    if (!match) return null;
-    const body = match[1].trim();
-    if (/^\d+[.)]\s+/.test(body)) return null;
-    return body;
+function tokenize(text) {
+    return String(text || '')
+        .toLowerCase()
+        .split(/[^a-z0-9_./:-]+/)
+        .map(token => token.trim())
+        .filter(token => token.length >= 4);
 }
 
-function isBoxLine(trimmed) {
-    return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
+function getLastUserPrompt(previousMessages) {
+    return [...(Array.isArray(previousMessages) ? previousMessages : [])]
+        .reverse()
+        .find(message => message?.role === 'user' && typeof message.content === 'string')
+        ?.content || '';
+}
+
+function promptTokenHits(line, promptText) {
+    const tokens = tokenize(promptText);
+    if (tokens.length === 0) return 0;
+    const normalizedLine = normalize(line).toLowerCase();
+    if (!normalizedLine) return 0;
+    return tokens.filter(token => normalizedLine.includes(token)).length;
+}
+
+function looksLikePromptFragment(line, promptText) {
+    const trimmed = sanitize(line).trim();
+    if (!trimmed) return false;
+    const normalizedPrompt = normalize(promptText).toLowerCase();
+    const normalizedLine = normalize(trimmed).toLowerCase();
+    if (!normalizedPrompt) return false;
+    if (normalizedLine === normalizedPrompt) return true;
+    if (normalizedPrompt.includes(normalizedLine) || normalizedLine.includes(normalizedPrompt)) return true;
+    const hits = promptTokenHits(trimmed, promptText);
+    return hits >= Math.min(3, tokenize(promptText).length);
+}
+
+function findPromptLineIndex(lines, promptText) {
+    const normalizedPrompt = normalize(promptText).toLowerCase();
+    if (!normalizedPrompt) return -1;
+    let bestIndex = -1;
+    let bestScore = 0;
+    for (let index = 0; index < lines.length; index += 1) {
+        const score = promptTokenHits(lines[index], promptText);
+        if (score > bestScore) {
+            bestIndex = index;
+            bestScore = score;
+        }
+        const normalizedLine = normalize(lines[index]).toLowerCase();
+        if (normalizedLine && (normalizedPrompt.includes(normalizedLine) || normalizedLine.includes(normalizedPrompt))) {
+            bestIndex = index;
+            bestScore = Math.max(bestScore, tokenize(promptText).length + 1);
+        }
+    }
+    return bestScore > 0 ? bestIndex : -1;
+}
+
+function isHeaderLine(trimmed) {
+    return /^__\s*\( O\)>/.test(trimmed)
+        || /^\\____\)/.test(trimmed)
+        || /^L\s+L\s+goose is ready/i.test(trimmed);
 }
 
 function isFooterLine(trimmed) {
-    return /^➜\s+\S+/.test(trimmed)
-        || /\b\d+(?:\.\d+)?[KM]?\s+tokens used\b/i.test(trimmed)
-        || /\b\d+% context left\b/i.test(trimmed)
-        || /Type your message/i.test(trimmed);
+    return /^🪿\s+Enter to send/i.test(trimmed)
+        || /^⏱\s+/i.test(trimmed)
+        || /^[━╌─╍╎╏╴╶╸╺╼╾]+\s+\d+%\s+\d+[kKmM]?\/\d+[kKmM]?/.test(trimmed)
+        || /^\d+%\s+\d+[kKmM]?\/\d+[kKmM]?/.test(trimmed);
 }
 
 function isStatusLine(trimmed) {
     return !trimmed
         || /^[\u2800-\u28ff\s]+$/.test(trimmed)
-        || /esc to (cancel|interrupt|stop)/i.test(trimmed)
-        || /(thinking|processing|working|running|analyzing|planning|reading|searching|inspecting)/i.test(trimmed);
+        || /^[◐◑◒◓◔◕◴◷◶◵]+/.test(trimmed)
+        || /Ctrl\+C to interrupt/i.test(trimmed)
+        || /(thinking|processing|working|running|analyzing|planning|reading|searching|inspecting|initializing|growing|compiling)/i.test(trimmed);
 }
 
 function isApprovalLine(trimmed) {
@@ -53,79 +102,122 @@ function isApprovalLine(trimmed) {
         || /Allow.*tool/i.test(trimmed);
 }
 
-function cleanContentLine(line) {
-    const trimmed = sanitize(line).trim();
-    if (!trimmed || isBoxLine(trimmed) || isFooterLine(trimmed) || isStatusLine(trimmed) || isApprovalLine(trimmed)) return '';
-    return trimmed.replace(/^[⏺•]\s+/, '').trim();
+function isNoiseLine(trimmed) {
+    return isHeaderLine(trimmed)
+        || isFooterLine(trimmed)
+        || isStatusLine(trimmed)
+        || isApprovalLine(trimmed)
+        || /^Warning: Failed to update project tracker/i.test(trimmed);
 }
 
-function collectMeaningfulLines(lines) {
-    const out = [];
-    for (const rawLine of lines) {
-        if (parsePromptLine(rawLine) !== null) continue;
-        const cleaned = cleanContentLine(rawLine);
-        if (!cleaned) continue;
-        if (out[out.length - 1] !== cleaned) out.push(cleaned);
+function trimPromptEcho(lines, promptText) {
+    const out = [...lines];
+    while (out.length > 0) {
+        const trimmed = sanitize(out[0]).trim();
+        if (!trimmed) {
+            out.shift();
+            continue;
+        }
+        if (/^Warning: Failed to update project tracker/i.test(trimmed)) {
+            out.shift();
+            continue;
+        }
+        if (/^🪿\s+/.test(trimmed)) {
+            out.shift();
+            continue;
+        }
+        if (looksLikePromptFragment(trimmed, promptText)) {
+            out.shift();
+            continue;
+        }
+        break;
     }
     return out;
 }
 
-function extractProviderSessionId(rawBuffer, buffer, screenText) {
-    const source = [rawBuffer, buffer, screenText]
-        .map(value => String(value || ''))
-        .join('\n');
-    const match = source.match(/\b(\d{8}_\d+)\s+·\s+\/[^\s]+/);
-    return match ? match[1] : '';
+function trimTrailingNoise(lines) {
+    const out = [...lines];
+    while (out.length > 0) {
+        const trimmed = sanitize(out[out.length - 1]).trim();
+        if (!trimmed || isNoiseLine(trimmed)) {
+            out.pop();
+            continue;
+        }
+        break;
+    }
+    return out;
 }
 
-function extractVisibleTurn(text, previousMessages) {
-    const lines = splitLines(text);
-    let emptyPromptIndex = -1;
-    for (let i = lines.length - 1; i >= 0; i--) {
-        if (parsePromptLine(lines[i]) === '') {
-            emptyPromptIndex = i;
-            break;
+function normalizeBlankRuns(lines) {
+    const out = [];
+    for (const line of lines) {
+        const cleaned = sanitize(line);
+        if (!cleaned.trim()) {
+            if (out.length > 0 && out[out.length - 1] !== '') out.push('');
+            continue;
         }
+        out.push(cleaned);
     }
-
-    const userPrompt = (() => {
-        const upperBound = emptyPromptIndex >= 0 ? emptyPromptIndex - 1 : lines.length - 1;
-        for (let i = upperBound; i >= 0; i--) {
-            const parsed = parsePromptLine(lines[i]);
-            if (parsed) return { index: i, text: parsed };
-        }
-        return { index: -1, text: '' };
-    })();
-
-    const promptLines = [];
-    let assistantStart = userPrompt.index >= 0 ? userPrompt.index + 1 : 0;
-    if (userPrompt.index >= 0) {
-        promptLines.push(userPrompt.text);
-        for (let i = userPrompt.index + 1; i < lines.length; i++) {
-            const trimmed = sanitize(lines[i]).trim();
-            if (!trimmed) {
-                assistantStart = i + 1;
-                break;
-            }
-            if (/^[⏺•]/.test(trimmed) || isBoxLine(trimmed) || isFooterLine(trimmed) || isStatusLine(trimmed) || isApprovalLine(trimmed)) {
-                assistantStart = i;
-                break;
-            }
-            promptLines.push(trimmed);
-            assistantStart = i + 1;
-        }
-    }
-
-    const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
-    const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
-
-    return {
-        promptText: promptLines.join(' ').trim(),
-        assistantText: assistantLines.join('\n').trim(),
-    };
+    while (out[0] === '') out.shift();
+    while (out[out.length - 1] === '') out.pop();
+    return out;
 }
 
-function buildMessages(previousMessages, promptText, assistantText, partialText) {
+function extractAssistantText(screenText, previousMessages) {
+    const lines = splitLines(screenText);
+    const promptText = getLastUserPrompt(previousMessages);
+    const promptIndex = findPromptLineIndex(lines, promptText);
+    const scoped = promptIndex >= 0 ? lines.slice(promptIndex + 1) : lines;
+    const trimmed = trimPromptEcho(scoped, promptText);
+    const kept = [];
+    for (const rawLine of trimmed) {
+        const cleaned = sanitize(rawLine);
+        const text = cleaned.trim();
+        if (isHeaderLine(text)) continue;
+        if (isFooterLine(text)) break;
+        if (isStatusLine(text) || isApprovalLine(text) || /^🪿\s+/.test(text)) continue;
+        kept.push(cleaned);
+    }
+    return normalizeBlankRuns(trimTrailingNoise(kept)).join('\n').trim();
+}
+
+function splitBlocks(text) {
+    return String(text || '')
+        .split(/\n{2,}/)
+        .map(block => block.trim())
+        .filter(Boolean);
+}
+
+function mergeAssistantContent(existing, incoming) {
+    const current = String(existing || '').trim();
+    const next = String(incoming || '').trim();
+    if (!current) return next;
+    if (!next) return current;
+    const normalizedCurrent = normalize(current);
+    const normalizedNext = normalize(next);
+    if (normalizedCurrent === normalizedNext) return current.length >= next.length ? current : next;
+    if (normalizedCurrent.includes(normalizedNext)) return current;
+    if (normalizedNext.includes(normalizedCurrent)) return next;
+
+    const merged = splitBlocks(current);
+    for (const block of splitBlocks(next)) {
+        const normalizedBlock = normalize(block);
+        const existingIndex = merged.findIndex(candidate => {
+            const normalizedCandidate = normalize(candidate);
+            return normalizedCandidate === normalizedBlock
+                || normalizedCandidate.includes(normalizedBlock)
+                || normalizedBlock.includes(normalizedCandidate);
+        });
+        if (existingIndex >= 0) {
+            if (block.length > merged[existingIndex].length) merged[existingIndex] = block;
+            continue;
+        }
+        merged.push(block);
+    }
+    return merged.join('\n\n').trim();
+}
+
+function buildMessages(previousMessages, assistantText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
             .filter(message => message && (message.role === 'user' || message.role === 'assistant'))
@@ -136,27 +228,14 @@ function buildMessages(previousMessages, promptText, assistantText, partialText)
             }))
         : [];
 
-    if (promptText) {
-        const normalizedPrompt = normalize(promptText);
-        const last = base[base.length - 1];
-        if (!last || last.role !== 'user' || normalize(last.content) !== normalizedPrompt) {
-            base.push({ role: 'user', content: promptText });
-        }
-    }
-
-    const candidateAssistant = assistantText || partialText;
-    if (!candidateAssistant) return base;
-
-    const normalizedAssistant = normalize(candidateAssistant);
-    if (!normalizedAssistant) return base;
+    if (!assistantText) return base;
 
     const last = base[base.length - 1];
     if (last && last.role === 'assistant') {
-        if (normalize(last.content) !== normalizedAssistant) last.content = candidateAssistant;
+        last.content = mergeAssistantContent(last.content, assistantText);
     } else {
-        base.push({ role: 'assistant', content: candidateAssistant });
+        base.push({ role: 'assistant', content: assistantText });
     }
-
     return base;
 }
 
@@ -175,30 +254,36 @@ function toMessageObjects(messages, status) {
     }));
 }
 
+function extractProviderSessionId(rawBuffer, buffer, screenText) {
+    const source = [rawBuffer, buffer, screenText]
+        .map(value => String(value || ''))
+        .join('\n');
+    const match = source.match(/\b(\d{8}_\d+)\s+·\s+\/[^\s]+/);
+    return match ? match[1] : '';
+}
+
 module.exports = function parseOutput(input) {
     const screenText = String(input?.screenText || '');
     const buffer = String(input?.buffer || '');
-    const transcript = buffer || screenText;
-    const tail = String(input?.recentBuffer || transcript.slice(-500));
+    const tail = String(input?.recentBuffer || screenText.slice(-500) || buffer.slice(-500));
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
     const status = detectStatus({ tail, screenText, rawBuffer: input?.rawBuffer || '' });
     const activeModal = status === 'waiting_approval'
-        ? parseApproval({ buffer: transcript, tail, screenText, rawBuffer: input?.rawBuffer || '' })
+        ? parseApproval({ buffer: buffer || screenText, tail, screenText, rawBuffer: input?.rawBuffer || '' })
         : null;
 
-    const { promptText, assistantText } = status === 'waiting_approval'
-        ? { promptText: '', assistantText: '' }
-        : extractVisibleTurn(transcript, previousMessages);
-    const partialText = status === 'generating'
-        ? collectMeaningfulLines(splitLines(String(input?.partialResponse || ''))).join('\n').trim()
-        : '';
+    const assistantText = status === 'waiting_approval'
+        ? ''
+        : extractAssistantText(screenText || buffer, previousMessages);
+    const partialText = status === 'generating' ? extractAssistantText(String(input?.partialResponse || ''), previousMessages) : '';
+    const candidateAssistant = mergeAssistantContent(assistantText, partialText);
 
     return {
         id: 'cli_session',
         status,
         title: 'Goose',
-        messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText, partialText), status),
+        messages: toMessageObjects(buildMessages(previousMessages, candidateAssistant), status),
         activeModal,
-        providerSessionId: extractProviderSessionId(input?.rawBuffer, transcript, screenText) || undefined,
+        providerSessionId: extractProviderSessionId(input?.rawBuffer, buffer, screenText) || undefined,
     };
 };

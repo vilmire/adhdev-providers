@@ -29,5 +29,7 @@
     "2": "3"
   },
   "status": "Beta",
-  "details": "Terminal only"
+  "details": "Terminal only",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

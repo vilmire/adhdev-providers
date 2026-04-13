@@ -1,16 +1,72 @@
 #!/usr/bin/env node
 /**
  * ADHDev Provider Validator
- * 
+ *
  * Usage:
- *   node validate.js                              # validate all providers
- *   node validate.js ide/my-ide/provider.json     # validate a single file
+ *   node validate.js                               # validate all providers
+ *   node validate.js ide/my-ide/provider.json      # validate a single file
  */
 const fs = require('fs');
 const path = require('path');
 
-const REQUIRED_FIELDS = ['type', 'name', 'category'];
+const REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion', 'contractVersion'];
 const VALID_CATEGORIES = ['ide', 'extension', 'cli', 'acp'];
+const VALUE_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider']);
+const VALID_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider', 'action', 'display']);
+const VALID_CONTROL_PLACEMENTS = new Set(['bar', 'header', 'menu']);
+const KNOWN_PROVIDER_FIELDS = new Set([
+  'type',
+  'name',
+  'category',
+  'aliases',
+  'cdpPorts',
+  'targetFilter',
+  'cli',
+  'icon',
+  'displayName',
+  'install',
+  'versionCommand',
+  'testedVersions',
+  'processNames',
+  'launch',
+  'paths',
+  'extensionId',
+  'extensionIdPattern',
+  'extensionIdPattern_flags',
+  'compatibility',
+  'defaultScriptDir',
+  'binary',
+  'spawn',
+  'approvalKeys',
+  'patterns',
+  'cleanOutput',
+  'resume',
+  'sessionProbe',
+  'approvalPositiveHints',
+  'scripts',
+  'vscodeCommands',
+  'inputMethod',
+  'inputSelector',
+  'webviewMatchText',
+  'os',
+  'versions',
+  'overrides',
+  'settings',
+  'controls',
+  'staticConfigOptions',
+  'spawnArgBuilder',
+  'auth',
+  'contractVersion',
+  'capabilities',
+  'providerVersion',
+  'status',
+  'details',
+  'sendDelayMs',
+  'sendKey',
+  'submitStrategy',
+  'disableUpstream',
+]);
+
 const USED_PORTS = new Map();
 const USED_TYPES = new Map();
 
@@ -18,179 +74,244 @@ let errors = 0;
 let warnings = 0;
 let validated = 0;
 
-function validate(filePath) {
-  const rel = path.relative(process.cwd(), filePath);
-  const providerDir = path.dirname(filePath);
-  
-  // 1. Parse JSON
-  let mod;
-  try {
-    const raw = fs.readFileSync(filePath, 'utf-8');
-    mod = JSON.parse(raw);
-  } catch (e) {
-    console.error(`❌ ${rel}: parse error — ${e.message}`);
-    errors++;
-    return;
+function normalizeIndividualScriptName(filename) {
+  const stem = filename.replace(/\.js$/, '');
+  return stem.replace(/_([a-z])/g, (_, ch) => ch.toUpperCase());
+}
+
+function collectScriptInventory(dir) {
+  const inventory = new Set();
+  if (!fs.existsSync(dir)) return inventory;
+
+  const scriptsJs = path.join(dir, 'scripts.js');
+  if (fs.existsSync(scriptsJs)) {
+    try {
+      delete require.cache[require.resolve(scriptsJs)];
+      const exported = require(scriptsJs);
+      Object.keys(exported || {}).forEach((key) => inventory.add(key));
+    } catch (error) {
+      inventory.add(`__load_error__:${error.message}`);
+    }
   }
 
-  // 2. Required fields
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    if (!entry.name.endsWith('.js') || entry.name === 'scripts.js') continue;
+    inventory.add(normalizeIndividualScriptName(entry.name));
+  }
+
+  return inventory;
+}
+
+function mergeScriptInventory(providerDir, provider) {
+  const inventory = new Set();
+  const dirs = new Set();
+
+  if (typeof provider.defaultScriptDir === 'string' && provider.defaultScriptDir.trim()) {
+    dirs.add(path.join(providerDir, provider.defaultScriptDir));
+  }
+  if (Array.isArray(provider.compatibility)) {
+    for (const entry of provider.compatibility) {
+      if (entry && typeof entry.scriptDir === 'string' && entry.scriptDir.trim()) {
+        dirs.add(path.join(providerDir, entry.scriptDir));
+      }
+    }
+  }
+
+  for (const dir of dirs) {
+    for (const item of collectScriptInventory(dir)) {
+      inventory.add(item);
+    }
+  }
+
+  return inventory;
+}
+
+function warn(rel, message) {
+  console.warn(`⚠  ${rel}: ${message}`);
+  warnings++;
+}
+
+function fail(rel, message) {
+  console.error(`❌ ${rel}: ${message}`);
+  errors++;
+}
+
+function validateControl(rel, control, inventory) {
+  const localErrors = [];
+  const localWarnings = [];
+
+  if (!control || typeof control !== 'object' || Array.isArray(control)) {
+    localErrors.push('controls: each control must be an object');
+    return { errors: localErrors, warnings: localWarnings };
+  }
+
+  const id = typeof control.id === 'string' && control.id.trim() ? control.id.trim() : 'unknown';
+  const prefix = `controls.${id}`;
+
+  if (!control.id || !String(control.id).trim()) localErrors.push(`${prefix}: id is required`);
+  if (!control.type || !VALID_CONTROL_TYPES.has(control.type)) localErrors.push(`${prefix}: type is invalid or missing`);
+  if (!control.label || !String(control.label).trim()) localErrors.push(`${prefix}: label is required`);
+  if (!control.placement || !VALID_CONTROL_PLACEMENTS.has(control.placement)) {
+    localErrors.push(`${prefix}: placement must be one of ${Array.from(VALID_CONTROL_PLACEMENTS).join(', ')}`);
+  }
+
+  if (control.dynamic && !control.listScript) {
+    localErrors.push(`${prefix}: dynamic controls require listScript`);
+  }
+  if (VALUE_CONTROL_TYPES.has(control.type) && !control.setScript) {
+    localErrors.push(`${prefix}: ${control.type} controls require setScript`);
+  }
+  if (control.type === 'action' && !control.invokeScript) {
+    localErrors.push(`${prefix}: action controls require invokeScript`);
+  }
+  if (control.type === 'slider') {
+    if (typeof control.min !== 'number' || typeof control.max !== 'number') {
+      localErrors.push(`${prefix}: slider controls require numeric min and max`);
+    } else if (control.min > control.max) {
+      localErrors.push(`${prefix}: slider min cannot exceed max`);
+    }
+  }
+  if (control.readFrom !== undefined && (typeof control.readFrom !== 'string' || !control.readFrom.trim())) {
+    localErrors.push(`${prefix}: readFrom must be a non-empty string when provided`);
+  }
+
+  for (const scriptName of [control.listScript, control.setScript, control.invokeScript]) {
+    if (!scriptName) continue;
+    if (!inventory.has(scriptName)) {
+      localWarnings.push(`${prefix}: referenced script '${scriptName}' not found in compatibility/default script inventory`);
+    }
+  }
+
+  return { errors: localErrors, warnings: localWarnings };
+}
+
+function validateProvider(providerDir, rel, mod) {
   for (const field of REQUIRED_FIELDS) {
-    if (!mod[field]) {
-      console.error(`❌ ${rel}: missing required field '${field}'`);
-      errors++;
+    if (mod[field] === undefined || mod[field] === null || mod[field] === '') {
+      fail(rel, `missing required field '${field}'`);
       return;
     }
   }
 
-  // 3. Valid category
   if (!VALID_CATEGORIES.includes(mod.category)) {
-    console.error(`❌ ${rel}: invalid category '${mod.category}' (must be: ${VALID_CATEGORIES.join(', ')})`);
-    errors++;
+    fail(rel, `invalid category '${mod.category}' (must be: ${VALID_CATEGORIES.join(', ')})`);
     return;
   }
 
-  // 4. Unique type
   if (USED_TYPES.has(mod.type)) {
-    console.error(`❌ ${rel}: duplicate type '${mod.type}' (also in ${USED_TYPES.get(mod.type)})`);
-    errors++;
+    fail(rel, `duplicate type '${mod.type}' (also in ${USED_TYPES.get(mod.type)})`);
     return;
   }
   USED_TYPES.set(mod.type, rel);
 
-  // 5. IDE-specific checks
+  if (typeof mod.providerVersion !== 'string' || !/^\d+\.\d+\.\d+$/.test(mod.providerVersion)) {
+    warn(rel, `providerVersion should be semver (got ${JSON.stringify(mod.providerVersion)})`);
+  }
+  if (typeof mod.contractVersion !== 'number') {
+    fail(rel, `contractVersion must be a number (got ${JSON.stringify(mod.contractVersion)})`);
+  } else if (mod.contractVersion < 2) {
+    warn(rel, `contractVersion ${mod.contractVersion} is older than the current typed contract baseline (2)`);
+  }
+
+  for (const key of Object.keys(mod)) {
+    if (!KNOWN_PROVIDER_FIELDS.has(key)) {
+      warn(rel, `unknown provider field '${key}'`);
+    }
+  }
+
   if (mod.category === 'ide') {
-    if (!mod.cdpPorts || !Array.isArray(mod.cdpPorts) || mod.cdpPorts.length < 2) {
-      console.warn(`⚠  ${rel}: IDE missing cdpPorts [primary, fallback]`);
-      warnings++;
+    if (!Array.isArray(mod.cdpPorts) || mod.cdpPorts.length < 2) {
+      warn(rel, 'IDE missing cdpPorts [primary, fallback]');
     } else {
       for (const port of mod.cdpPorts) {
         if (USED_PORTS.has(port)) {
-          console.error(`❌ ${rel}: CDP port ${port} conflicts with ${USED_PORTS.get(port)}`);
-          errors++;
+          fail(rel, `CDP port ${port} conflicts with ${USED_PORTS.get(port)}`);
         }
         USED_PORTS.set(port, rel);
       }
     }
+    if (!mod.cli) warn(rel, "IDE missing 'cli' field");
+    if (!mod.paths) warn(rel, "IDE missing 'paths' (install detection won't work)");
+  }
 
-    if (!mod.cli) {
-      console.warn(`⚠  ${rel}: IDE missing 'cli' field`);
-      warnings++;
-    }
-
-    if (!mod.paths) {
-      console.warn(`⚠  ${rel}: IDE missing 'paths' (install detection won't work)`);
-      warnings++;
+  if (mod.category === 'extension') {
+    if (!mod.extensionId && !mod.extensionIdPattern) {
+      warn(rel, "extension missing 'extensionId' or 'extensionIdPattern' (discovery may fail)");
     }
   }
 
-  // 6. ACP-specific checks
-  if (mod.category === 'acp') {
-    if (!mod.spawn || !mod.spawn.command) {
-      console.warn(`⚠  ${rel}: ACP missing spawn.command`);
-      warnings++;
+  if (mod.category === 'cli' || mod.category === 'acp') {
+    if (!mod.spawn || typeof mod.spawn !== 'object' || !mod.spawn.command) {
+      fail(rel, `${mod.category.toUpperCase()} missing spawn.command`);
     }
   }
 
-  // 7. CLI-specific checks
-  if (mod.category === 'cli') {
-    if (!mod.spawn || !mod.spawn.command) {
-      console.warn(`⚠  ${rel}: CLI missing spawn.command`);
-      warnings++;
-    }
-  }
-
-  // 8. Script directory checks (IDE/Extension/CLI with compatibility)
   if (mod.defaultScriptDir) {
     const defaultDir = path.join(providerDir, mod.defaultScriptDir);
     if (!fs.existsSync(defaultDir)) {
-      console.error(`❌ ${rel}: defaultScriptDir '${mod.defaultScriptDir}' not found`);
-      errors++;
-    } else {
-      // Check for scripts.js or individual script files
-      const hasScriptsJs = fs.existsSync(path.join(defaultDir, 'scripts.js'));
-      const jsFiles = fs.readdirSync(defaultDir).filter(f => f.endsWith('.js') && f !== 'scripts.js');
-
-      if (!hasScriptsJs && jsFiles.length === 0) {
-        console.warn(`⚠  ${rel}: defaultScriptDir '${mod.defaultScriptDir}' has no scripts`);
-        warnings++;
-      }
-
-      // For IDE/Extension: check readChat + sendMessage presence
-      if (mod.category === 'ide' || mod.category === 'extension') {
-        if (hasScriptsJs) {
-          // Validate scripts.js exports
-          try {
-            delete require.cache[require.resolve(path.join(defaultDir, 'scripts.js'))];
-            const scripts = require(path.join(defaultDir, 'scripts.js'));
-            const hasRead = scripts.readChat || scripts.webviewReadChat;
-            const hasSend = scripts.sendMessage || scripts.webviewSendMessage;
-            if (!hasRead) {
-              console.warn(`⚠  ${rel}: no readChat/webviewReadChat in scripts.js`);
-              warnings++;
-            }
-            if (!hasSend) {
-              console.warn(`⚠  ${rel}: no sendMessage/webviewSendMessage in scripts.js`);
-              warnings++;
-            }
-          } catch (e) {
-            console.warn(`⚠  ${rel}: scripts.js load error — ${e.message}`);
-            warnings++;
-          }
-        } else {
-          // Check individual files (supports both read_chat.js and webview_read_chat.js naming)
-          const hasRead = jsFiles.includes('read_chat.js') || jsFiles.includes('webview_read_chat.js');
-          const hasSend = jsFiles.includes('send_message.js') || jsFiles.includes('webview_send_message.js');
-          if (!hasRead) {
-            console.warn(`⚠  ${rel}: no read_chat.js or webview_read_chat.js found`);
-            warnings++;
-          }
-          if (!hasSend) {
-            console.warn(`⚠  ${rel}: no send_message.js or webview_send_message.js found`);
-            warnings++;
-          }
-        }
-      }
+      fail(rel, `defaultScriptDir '${mod.defaultScriptDir}' not found`);
     }
+  } else if (mod.category === 'ide' || mod.category === 'extension') {
+    warn(rel, 'defaultScriptDir missing for IDE/extension provider');
   }
 
-  // 9. Compatibility array validation
   if (Array.isArray(mod.compatibility)) {
     for (const entry of mod.compatibility) {
-      if (!entry.ideVersion) {
-        console.warn(`⚠  ${rel}: compatibility entry missing 'ideVersion'`);
-        warnings++;
-      }
+      if (!entry.ideVersion) warn(rel, "compatibility entry missing 'ideVersion'");
       if (!entry.scriptDir) {
-        console.warn(`⚠  ${rel}: compatibility entry missing 'scriptDir'`);
-        warnings++;
+        warn(rel, "compatibility entry missing 'scriptDir'");
       } else {
         const compatDir = path.join(providerDir, entry.scriptDir);
         if (!fs.existsSync(compatDir)) {
-          console.error(`❌ ${rel}: compatibility scriptDir '${entry.scriptDir}' not found`);
-          errors++;
+          fail(rel, `compatibility scriptDir '${entry.scriptDir}' not found`);
         }
       }
     }
   }
 
-  // 10. Extension-specific checks
-  if (mod.category === 'extension') {
-    if (!mod.extensionIdPattern) {
-      console.warn(`⚠  ${rel}: extension missing 'extensionIdPattern' (webview discovery won't work)`);
-      warnings++;
+  const inventory = mergeScriptInventory(providerDir, mod);
+  const loadErrors = [...inventory].filter((name) => name.startsWith('__load_error__:'));
+  for (const message of loadErrors) {
+    warn(rel, `scripts.js load error — ${message.replace('__load_error__:', '')}`);
+  }
+
+  const controls = Array.isArray(mod.controls) ? mod.controls : [];
+  const controlIds = new Set();
+  for (const control of controls) {
+    const result = validateControl(rel, control, inventory);
+    result.errors.forEach((message) => fail(rel, message));
+    result.warnings.forEach((message) => warn(rel, message));
+    if (control && typeof control.id === 'string') {
+      if (controlIds.has(control.id)) fail(rel, `duplicate control id '${control.id}'`);
+      controlIds.add(control.id);
     }
   }
 
-  // 11. Webview IDE consistency
-  if (mod.category === 'ide' && mod.webviewMatchText) {
-    if (!mod.defaultScriptDir) {
-      console.warn(`⚠  ${rel}: has webviewMatchText but no defaultScriptDir`);
-      warnings++;
-    }
+  const hasModelScripts = inventory.has('listModels') && inventory.has('setModel');
+  const hasModeScripts = inventory.has('listModes') && inventory.has('setMode');
+  const hasNewSession = inventory.has('newSession');
+  if ((hasModelScripts || hasModeScripts || hasNewSession) && controls.length === 0) {
+    warn(rel, 'provider exports typed control scripts but declares no controls');
   }
 
   validated++;
   console.log(`✅ ${rel}: ${mod.type} (${mod.category}) — ${mod.name}`);
+}
+
+function validate(filePath) {
+  const rel = path.relative(process.cwd(), filePath);
+  const providerDir = path.dirname(filePath);
+
+  let mod;
+  try {
+    mod = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch (error) {
+    fail(rel, `parse error — ${error.message}`);
+    return;
+  }
+
+  validateProvider(providerDir, rel, mod);
 }
 
 function scanDir(dir) {
@@ -207,22 +328,18 @@ function scanDir(dir) {
   }
 }
 
-// ─── Main ───
 const args = process.argv.slice(2);
 
 if (args.length > 0) {
-  // Validate specific file(s)
   for (const arg of args) {
     const filePath = path.resolve(arg);
     if (!fs.existsSync(filePath)) {
-      console.error(`❌ File not found: ${arg}`);
-      errors++;
+      fail(arg, 'file not found');
       continue;
     }
     validate(filePath);
   }
 } else {
-  // Validate all
   console.log('🔍 Validating all providers...\n');
   scanDir(process.cwd());
 }

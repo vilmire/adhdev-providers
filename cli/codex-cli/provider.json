@@ -47,10 +47,12 @@
   },
   "binary": "codex",
   "sendDelayMs": 1200,
-  "sendKey": "\r",
+  "sendKey": "\r\n",
   "spawn": {
     "command": "codex",
-    "args": [],
+    "args": [
+      "--dangerously-bypass-approvals-and-sandbox"
+    ],
     "shell": false,
     "env": {}
   },
@@ -110,5 +112,7 @@
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Stable",
-  "details": "Terminal only"
+  "details": "Terminal only",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

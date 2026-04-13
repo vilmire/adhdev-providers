@@ -37,5 +37,42 @@
   "compatibility": [],
   "status": "Stable",
   "details": "Independent Stream",
-  "disableUpstream": true
+  "disableUpstream": true,
+  "providerVersion": "1.0.0",
+  "contractVersion": 2,
+  "controls": [
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Model",
+      "icon": "🤖",
+      "placement": "bar",
+      "order": 10,
+      "dynamic": true,
+      "listScript": "listModels",
+      "setScript": "setModel",
+      "readFrom": "model"
+    },
+    {
+      "id": "mode",
+      "type": "select",
+      "label": "Mode",
+      "icon": "🧭",
+      "placement": "bar",
+      "order": 20,
+      "dynamic": true,
+      "listScript": "listModes",
+      "setScript": "setMode",
+      "readFrom": "mode"
+    },
+    {
+      "id": "new_session",
+      "type": "action",
+      "label": "New",
+      "icon": "➕",
+      "placement": "bar",
+      "order": 80,
+      "invokeScript": "newSession"
+    }
+  ]
 }

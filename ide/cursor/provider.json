@@ -73,5 +73,41 @@
     }
   },
   "status": "Stable",
-  "details": "Full CDP support"
+  "details": "Full CDP support",
+  "contractVersion": 2,
+  "controls": [
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Model",
+      "icon": "🤖",
+      "placement": "bar",
+      "order": 10,
+      "dynamic": true,
+      "listScript": "listModels",
+      "setScript": "setModel",
+      "readFrom": "model"
+    },
+    {
+      "id": "mode",
+      "type": "select",
+      "label": "Mode",
+      "icon": "🧭",
+      "placement": "bar",
+      "order": 20,
+      "dynamic": true,
+      "listScript": "listModes",
+      "setScript": "setMode",
+      "readFrom": "mode"
+    },
+    {
+      "id": "new_session",
+      "type": "action",
+      "label": "New",
+      "icon": "➕",
+      "placement": "bar",
+      "order": 80,
+      "invokeScript": "newSession"
+    }
+  ]
 }

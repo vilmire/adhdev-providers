@@ -74,6 +74,7 @@ touch extension/my-ext/provider.json
   "displayName": "My IDE",
   "icon": "🔧",
   "providerVersion": "1.0.0",
+  "contractVersion": 2,
   "versionCommand": "my-ide --version",
   "compatibility": [
     { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" }
@@ -197,7 +198,7 @@ Good promotion PRs say:
 - [ ] `node validate.js` passes with no errors
 - [ ] `type` does not conflict with existing providers
 - [ ] CDP ports do not overlap (for IDE providers)
-- [ ] `provider.json` has `providerVersion`, `compatibility`, `defaultScriptDir`
+- [ ] `provider.json` has `providerVersion`, `contractVersion`, `compatibility`, `defaultScriptDir`
 - [ ] At least `readChat` + `sendMessage` scripts implemented
 - [ ] Tested via DevConsole (if ADHDev is available)
 - [ ] `registry.json` NOT manually edited

@@ -56,21 +56,66 @@
       "order": 10,
       "defaultValue": "auto",
       "options": [
-        { "value": "auto", "label": "Auto" },
-        { "value": "openai-codex", "label": "OpenAI Codex" },
-        { "value": "openrouter", "label": "OpenRouter" },
-        { "value": "nous", "label": "Nous" },
-        { "value": "anthropic", "label": "Anthropic" },
-        { "value": "gemini", "label": "Gemini" },
-        { "value": "copilot", "label": "Copilot" },
-        { "value": "copilot-acp", "label": "Copilot ACP" },
-        { "value": "huggingface", "label": "Hugging Face" },
-        { "value": "zai", "label": "Z.AI" },
-        { "value": "kimi-coding", "label": "Kimi Coding" },
-        { "value": "minimax", "label": "MiniMax" },
-        { "value": "minimax-cn", "label": "MiniMax CN" },
-        { "value": "kilocode", "label": "Kilocode" },
-        { "value": "xiaomi", "label": "Xiaomi" }
+        {
+          "value": "auto",
+          "label": "Auto"
+        },
+        {
+          "value": "openai-codex",
+          "label": "OpenAI Codex"
+        },
+        {
+          "value": "openrouter",
+          "label": "OpenRouter"
+        },
+        {
+          "value": "nous",
+          "label": "Nous"
+        },
+        {
+          "value": "anthropic",
+          "label": "Anthropic"
+        },
+        {
+          "value": "gemini",
+          "label": "Gemini"
+        },
+        {
+          "value": "copilot",
+          "label": "Copilot"
+        },
+        {
+          "value": "copilot-acp",
+          "label": "Copilot ACP"
+        },
+        {
+          "value": "huggingface",
+          "label": "Hugging Face"
+        },
+        {
+          "value": "zai",
+          "label": "Z.AI"
+        },
+        {
+          "value": "kimi-coding",
+          "label": "Kimi Coding"
+        },
+        {
+          "value": "minimax",
+          "label": "MiniMax"
+        },
+        {
+          "value": "minimax-cn",
+          "label": "MiniMax CN"
+        },
+        {
+          "value": "kilocode",
+          "label": "Kilocode"
+        },
+        {
+          "value": "xiaomi",
+          "label": "Xiaomi"
+        }
       ],
       "setScript": "setProvider",
       "readFrom": "provider"
@@ -84,12 +129,30 @@
       "order": 20,
       "defaultValue": "none",
       "options": [
-        { "value": "none", "label": "None" },
-        { "value": "minimal", "label": "Minimal" },
-        { "value": "low", "label": "Low" },
-        { "value": "medium", "label": "Medium" },
-        { "value": "high", "label": "High" },
-        { "value": "xhigh", "label": "XHigh" }
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "minimal",
+          "label": "Minimal"
+        },
+        {
+          "value": "low",
+          "label": "Low"
+        },
+        {
+          "value": "medium",
+          "label": "Medium"
+        },
+        {
+          "value": "high",
+          "label": "High"
+        },
+        {
+          "value": "xhigh",
+          "label": "XHigh"
+        }
       ],
       "setScript": "setReasoning",
       "readFrom": "reasoning"
@@ -237,5 +300,7 @@
   ],
   "defaultScriptDir": "scripts/1.0",
   "status": "Beta",
-  "details": "Terminal only"
+  "details": "Terminal only",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

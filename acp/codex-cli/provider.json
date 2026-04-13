@@ -7,7 +7,9 @@
   "install": "npm install -g @zed-industries/codex-acp  (requires OPENAI_API_KEY)",
   "spawn": {
     "command": "codex",
-    "args": ["--acp"],
+    "args": [
+      "--acp"
+    ],
     "shell": false
   },
   "auth": [
@@ -53,5 +55,7 @@
       "min": 30,
       "max": 600
     }
-  }
+  },
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

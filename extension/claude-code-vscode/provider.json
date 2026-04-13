@@ -53,10 +53,22 @@
       "placement": "bar",
       "order": 20,
       "options": [
-        { "value": "low", "label": "Low" },
-        { "value": "medium", "label": "Medium" },
-        { "value": "high", "label": "High" },
-        { "value": "max", "label": "Max" }
+        {
+          "value": "low",
+          "label": "Low"
+        },
+        {
+          "value": "medium",
+          "label": "Medium"
+        },
+        {
+          "value": "high",
+          "label": "High"
+        },
+        {
+          "value": "max",
+          "label": "Max"
+        }
       ],
       "setScript": "setEffort",
       "readFrom": "effort"
@@ -97,5 +109,7 @@
   "defaultScriptDir": "scripts/1.0",
   "compatibility": [],
   "status": "Unverified",
-  "details": "Anthropic Claude Code sidebar webview — heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer"
+  "details": "Anthropic Claude Code sidebar webview — heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

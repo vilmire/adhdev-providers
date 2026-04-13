@@ -110,5 +110,7 @@
       "min": 30,
       "max": 600
     }
-  }
+  },
+  "providerVersion": "1.0.0",
+  "contractVersion": 2
 }

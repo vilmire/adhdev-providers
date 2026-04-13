@@ -39,6 +39,7 @@ ide/my-ide/
   "name": "My IDE",
   "category": "ide",
   "providerVersion": "1.0.0",
+  "contractVersion": 2,
   "versionCommand": "my-ide --version",
   "compatibility": [
     { "ideVersion": ">=1.0.0", "scriptDir": "scripts/1.0" },
@@ -61,9 +62,10 @@ When the daemon starts:
 ## Adding a New Provider
 
 1. Create `provider.json` in the appropriate category
-2. Create version-specific script directories
-3. Validate: `node validate.js ide/my-ide/provider.json`
-4. Submit a PR
+2. Set `providerVersion` and `contractVersion` in the provider metadata
+3. Create version-specific script directories
+4. Validate: `node validate.js ide/my-ide/provider.json`
+5. Submit a PR
 
 Important:
 
