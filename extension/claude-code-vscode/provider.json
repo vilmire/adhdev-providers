@@ -62,6 +62,18 @@
       "readFrom": "effort"
     },
     {
+      "id": "mode",
+      "type": "select",
+      "label": "Mode",
+      "icon": "✏️",
+      "placement": "bar",
+      "order": 25,
+      "dynamic": true,
+      "listScript": "listModes",
+      "setScript": "setMode",
+      "readFrom": "mode"
+    },
+    {
       "id": "thinking",
       "type": "toggle",
       "label": "Thinking",

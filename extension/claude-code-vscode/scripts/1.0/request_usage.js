@@ -27,7 +27,12 @@
 
     const clearInput = () => {
       input.focus();
-      input.textContent = '';
+      const sel = view.getSelection();
+      const r = doc.createRange();
+      r.selectNodeContents(input);
+      sel.removeAllRanges();
+      sel.addRange(r);
+      try { doc.execCommand('delete', false); } catch {}
       input.dispatchEvent(new view.InputEvent('input', {
         bubbles: true,
         inputType: 'deleteContentBackward',
@@ -40,8 +45,16 @@
       .filter(visible)
       .find((button) => /close/i.test(normalize(button.getAttribute('aria-label') || button.getAttribute('title') || button.textContent || '')));
 
+    // Clear and type '/' using execCommand to trigger slash command menu
+    clearInput();
+    await sleep(50);
+
     input.focus();
-    input.textContent = '/';
+    let inserted = false;
+    try { inserted = doc.execCommand('insertText', false, '/'); } catch {}
+    if (!inserted) {
+      input.textContent = '/';
+    }
     input.dispatchEvent(new view.InputEvent('beforeinput', {
       bubbles: true,
       cancelable: true,
@@ -54,14 +67,15 @@
       data: '/',
     }));
     input.dispatchEvent(new view.Event('change', { bubbles: true }));
-    await sleep(250);
+    await sleep(400);
 
     const usageItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
       .filter(visible)
       .find((el) => {
         const text = normalize(el.textContent || '');
         const title = normalize(el.getAttribute('title') || '');
-        return /account\s*&\s*usage/i.test(text) || /account\s*&\s*usage/i.test(title);
+        return /account\s*&?\s*usage/i.test(text) || /account\s*&?\s*usage/i.test(title)
+          || /usage/i.test(text) && /account/i.test(text);
       });
     if (!usageItem) {
       clearInput();
@@ -69,11 +83,11 @@
     }
 
     usageItem.click();
-    await sleep(250);
+    await sleep(350);
 
-    const dialog = Array.from(doc.querySelectorAll('.dialog_f3sAzg, [class*="dialog"]'))
+    const dialog = Array.from(doc.querySelectorAll('.dialog_f3sAzg, [class*="dialog"], [role="dialog"]'))
       .filter(visible)
-      .find((el) => /account\s*&\s*usage/i.test(normalize(el.textContent || '')));
+      .find((el) => /account|usage/i.test(normalize(el.textContent || '')));
     if (!dialog) {
       clearInput();
       return JSON.stringify({ success: false, error: 'account usage dialog not found' });
