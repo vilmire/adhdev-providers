@@ -35,11 +35,6 @@
     const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
     const inputContent = normalizeBlock(input?.innerText || input?.textContent || '');
 
-    const buttons = Array.from(doc.querySelectorAll('button')).filter(visible);
-    const buttonTexts = buttons
-      .map((button) => normalizeInline(button.textContent || button.getAttribute('aria-label') || button.getAttribute('title') || ''))
-      .filter(Boolean);
-
     const messages = [];
     const seen = new Set();
     const pushMessage = (role, content, timestamp, extras = {}) => {
@@ -103,8 +98,9 @@
             ),
           })).filter((section) => section.label || section.content);
 
-          const inputSection = sections.find((section) => /^in$/i.test(section.label));
-          const outputSection = sections.find((section) => /^out$/i.test(section.label));
+          const outputSection = sections.find((section) => /^(out|output|result)$/i.test(section.label));
+          const inputSection = sections.find((section) => /^(in|input)$/i.test(section.label))
+            || sections.find((section) => section !== outputSection && section.content);
           const terminalLike = /^(bash|sh|zsh|terminal)$/i.test(toolLabel);
 
           if (terminalLike) {
@@ -175,13 +171,25 @@
     if (spinner && visible(spinner)) status = 'generating';
     if (footerStopButton) status = 'generating';
 
-    const approvalButtons = buttonTexts.filter((text) => /approve|allow|deny|reject|accept|continue|run|\byes\b|\bno\b/i.test(text));
+    // Detect numbered options (e.g. "1 Yes\n2 No") in the last assistant message
+    const lastAssistant = messages.filter((m) => m.role === 'assistant').slice(-1)[0];
+    const numberedOptions = [];
+    if (lastAssistant) {
+      const optLines = lastAssistant.content.split('\n').filter((l) => /^\s*\d+[.\s)]\s*\S/.test(l));
+      if (optLines.length >= 2) {
+        for (const l of optLines) {
+          const m = l.match(/^\s*(\d+)[.\s)]\s*(.+)/);
+          if (m) numberedOptions.push(`${m[1]} ${m[2].trim()}`);
+        }
+      }
+    }
+
     let activeModal = null;
-    if (approvalButtons.length > 0) {
+    if (numberedOptions.length >= 2) {
       status = 'waiting_approval';
       activeModal = {
-        message: normalizeBlock(doc.body?.innerText || ''),
-        buttons: [...new Set(approvalButtons)],
+        message: lastAssistant.content,
+        buttons: numberedOptions,
       };
     }
 

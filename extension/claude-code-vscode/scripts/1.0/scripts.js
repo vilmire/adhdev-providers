@@ -63,9 +63,11 @@ module.exports.sendMessage = (params) => {
 
 module.exports.resolveAction = (params) => {
   const action = typeof params === 'string' ? params : params?.action || 'approve';
+  const buttonText = typeof params !== 'string' ? params?.button || params?.buttonText || '' : '';
   let s = load('resolve_action.js');
   if (!s) return null;
   s = s.replace(/\$\{\s*ACTION\s*\}/g, JSON.stringify(action));
+  s = s.replace(/\$\{\s*BUTTON_TEXT\s*\}/g, JSON.stringify(buttonText));
   return s;
 };
 
