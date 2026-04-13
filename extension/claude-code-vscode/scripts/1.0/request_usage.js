@@ -19,7 +19,9 @@
     };
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    const closeMenu = () => {
+    const closeDialog = () => {
+      const closeBtn = doc.querySelector('.dialog_f3sAzg button[aria-label="Close"], .dialog_f3sAzg button[aria-label*="lose"]');
+      if (closeBtn) { closeBtn.click(); return; }
       doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     };
 
@@ -42,7 +44,7 @@
       .find((el) => /account/i.test(el.textContent) && /usage/i.test(el.textContent));
 
     if (!usageItem) {
-      closeMenu();
+      closeDialog();
       return JSON.stringify({ success: false, error: 'account usage menu item not found' });
     }
 
@@ -80,7 +82,7 @@
     }
     const summary = summaryLines.join('\n');
 
-    closeMenu();
+    closeDialog();
 
     return JSON.stringify({
       success: true,
