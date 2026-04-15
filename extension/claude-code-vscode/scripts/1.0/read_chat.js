@@ -171,15 +171,28 @@
     if (spinner && visible(spinner)) status = 'generating';
     if (footerStopButton) status = 'generating';
 
-    // Detect numbered options (e.g. "1 Yes\n2 No") in the last assistant message
+    // Detect numbered approval prompts (e.g. "1 Yes\n2 No, tell Claude…") in the last
+    // assistant message. Guard against false positives from normal numbered lists by:
+    //   1. Only triggering when idle (not while Claude is still generating)
+    //   2. Requiring options to be short (≤70 chars) — approval labels are concise
+    //   3. Requiring at least one option to start with an approval-style keyword
     const lastAssistant = messages.filter((m) => m.role === 'assistant').slice(-1)[0];
     const numberedOptions = [];
-    if (lastAssistant) {
+    if (lastAssistant && status === 'idle') {
       const optLines = lastAssistant.content.split('\n').filter((l) => /^\s*\d+[.\s)]\s*\S/.test(l));
-      if (optLines.length >= 2) {
+      if (optLines.length >= 2 && optLines.length <= 6) {
+        const parsed = [];
         for (const l of optLines) {
           const m = l.match(/^\s*(\d+)[.\s)]\s*(.+)/);
-          if (m) numberedOptions.push(`${m[1]} ${m[2].trim()}`);
+          if (m) parsed.push(`${m[1]} ${m[2].trim()}`);
+        }
+        // Require compact options and at least one approval-style keyword to distinguish
+        // from regular numbered lists (steps, options, code examples, etc.)
+        const approvalKw = /^(yes|no|allow|deny|approve|reject|cancel|skip|run|always|once|proceed|continue|confirm|dismiss|abort)/i;
+        const looksLikeApproval = parsed.every((opt) => opt.length <= 70)
+          && parsed.some((opt) => approvalKw.test(opt.replace(/^\d+\s+/, '')));
+        if (looksLikeApproval) {
+          numberedOptions.push(...parsed);
         }
       }
     }
