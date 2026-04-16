@@ -238,6 +238,7 @@ module.exports = function parseOutput(input) {
     screenText,
     tail: input?.recentBuffer || input?.tail || '',
     buffer: transcript,
+    isWaitingForResponse: input?.isWaitingForResponse,
   });
 
   const baseMessages = Array.isArray(input?.messages)
