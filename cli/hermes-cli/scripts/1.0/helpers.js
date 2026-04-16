@@ -22,7 +22,7 @@ function extractProviderSessionId(text) {
 
 function buildPtyWrite(text, extra) {
   const payload = extra && typeof extra === 'object' ? { ...extra } : {};
-  payload.success = true;
+  payload.ok = true;
   payload.command = { type: 'pty_write', text: String(text || '').trim() };
   return payload;
 }

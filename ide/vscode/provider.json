@@ -3,7 +3,7 @@
   "name": "Visual Studio Code",
   "category": "ide",
   "displayName": "VS Code",
-  "icon": "💙",
+  "icon": "\ud83d\udc99",
   "cli": "code",
   "cdpPorts": [
     9339,
@@ -94,7 +94,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "🤖",
+      "icon": "\ud83e\udd16",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -106,7 +106,7 @@
       "id": "mode",
       "type": "select",
       "label": "Mode",
-      "icon": "🧭",
+      "icon": "\ud83e\udded",
       "placement": "bar",
       "order": 20,
       "dynamic": true,
@@ -118,10 +118,27 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "➕",
+      "icon": "\u2795",
       "placement": "bar",
       "order": 80,
       "invokeScript": "newSession"
     }
-  ]
+  ],
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  }
 }

@@ -3,7 +3,7 @@
   "name": "DeepAgents (ACP)",
   "category": "acp",
   "displayName": "DeepAgents",
-  "icon": "🔗",
+  "icon": "\ud83d\udd17",
   "install": "npm install -g deepagents-acp",
   "spawn": {
     "command": "deepagents-acp",
@@ -50,5 +50,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

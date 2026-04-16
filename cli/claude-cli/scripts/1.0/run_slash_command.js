@@ -6,7 +6,7 @@ module.exports = function runSlashCommand(input) {
 
     if (!command) {
         return {
-            success: false,
+            ok: false,
             error: 'Slash command value is required',
         };
     }
@@ -14,14 +14,14 @@ module.exports = function runSlashCommand(input) {
     const allowed = new Set(['/init', '/help']);
     if (!allowed.has(command)) {
         return {
-            success: false,
+            ok: false,
             error: `Unsupported Claude Code slash command: ${command}`,
         };
     }
 
     return {
-        success: true,
-        sent: true,
+        ok: true,
+        currentValue: command,
         command: {
             type: 'send_message',
             text: command,

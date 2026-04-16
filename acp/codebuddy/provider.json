@@ -3,7 +3,7 @@
   "name": "Codebuddy Code (ACP)",
   "category": "acp",
   "displayName": "Codebuddy Code",
-  "icon": "🐧",
+  "icon": "\ud83d\udc27",
   "install": "npm install -g @tencent-ai/codebuddy-code",
   "spawn": {
     "command": "codebuddy-code",
@@ -52,5 +52,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

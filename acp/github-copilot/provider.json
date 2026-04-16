@@ -3,7 +3,7 @@
   "name": "GitHub Copilot (ACP)",
   "category": "acp",
   "displayName": "GitHub Copilot",
-  "icon": "🐙",
+  "icon": "\ud83d\udc19",
   "install": "npm install -g @github/copilot  (requires GitHub auth)",
   "spawn": {
     "command": "copilot",
@@ -52,5 +52,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

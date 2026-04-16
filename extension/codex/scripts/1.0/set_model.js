@@ -92,6 +92,8 @@
               success: true,
               previousModel: currentModel,
               selectedModel: text,
+              model: text,
+              currentValue: text,
             }));
           }
         }
@@ -111,6 +113,8 @@
             success: true,
             previousModel: currentModel,
             selectedModel: text,
+            model: text,
+            currentValue: text,
             fallback: true,
           }));
         }

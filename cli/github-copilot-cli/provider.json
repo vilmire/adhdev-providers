@@ -5,7 +5,7 @@
   "aliases": [
     "gh-copilot"
   ],
-  "icon": "🤖",
+  "icon": "\ud83e\udd16",
   "displayName": "GitHub Copilot CLI",
   "binary": "gh",
   "spawn": {
@@ -31,5 +31,22 @@
   "status": "Beta",
   "details": "Terminal only",
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

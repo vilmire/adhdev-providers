@@ -7,12 +7,12 @@ const VALID_LEVELS = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh
 module.exports = function setReasoning(input) {
   const value = input?.args?.value || input?.args?.VALUE;
   if (!value || typeof value !== 'string') {
-    return { success: false, error: 'Reasoning level is required' };
+    return { ok: false, error: 'Reasoning level is required' };
   }
 
   const level = value.trim().toLowerCase();
   if (!VALID_LEVELS.has(level)) {
-    return { success: false, error: `Invalid reasoning level: ${level}` };
+    return { ok: false, error: `Invalid reasoning level: ${level}` };
   }
 
   return buildPtyWrite(`/reasoning ${level}`, {

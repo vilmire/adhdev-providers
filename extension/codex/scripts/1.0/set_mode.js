@@ -63,7 +63,14 @@
     }
 
     function isVisible(el) {
-      return !!el && el.offsetWidth > 0 && el.offsetHeight > 0 && !el.closest('[inert]');
+      if (!el || el.closest('[inert]')) return false;
+      const rect = el.getBoundingClientRect?.();
+      if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+      const style = el.ownerDocument?.defaultView?.getComputedStyle?.(el);
+      if (style && (style.visibility === 'hidden' || style.display === 'none' || style.pointerEvents === 'none')) {
+        return false;
+      }
+      return true;
     }
 
     function clickElement(el) {

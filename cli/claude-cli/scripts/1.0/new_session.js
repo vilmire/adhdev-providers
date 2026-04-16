@@ -7,7 +7,7 @@
  */
 module.exports = function newSession(input) {
     return {
-        success: true,
+        ok: true,
         command: {
             type: 'pty_write',
             text: '/clear',

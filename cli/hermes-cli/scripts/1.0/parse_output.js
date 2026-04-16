@@ -56,11 +56,66 @@ function extractHistoryState(text) {
   return {};
 }
 
+function normalizeMessage(message) {
+  return {
+    role: message?.role === 'user' ? 'user' : 'assistant',
+    kind: typeof message?.kind === 'string' && message.kind ? message.kind : 'standard',
+    senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
+    content: String(message?.content || '').trim(),
+  };
+}
+
+function isLikelyTruncatedDuplicate(longer, shorter) {
+  if (!longer || !shorter) return false;
+  if (longer.length <= shorter.length) return false;
+  if (shorter.length < 48) return false;
+  return longer.startsWith(shorter) || longer.includes(shorter);
+}
+
+function messagesMatch(left, right) {
+  const a = normalizeMessage(left);
+  const b = normalizeMessage(right);
+  if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
+  return a.content === b.content
+    || isLikelyTruncatedDuplicate(a.content, b.content)
+    || isLikelyTruncatedDuplicate(b.content, a.content);
+}
+
+function chooseMoreCompleteMessage(left, right) {
+  const a = normalizeMessage(left);
+  const b = normalizeMessage(right);
+  const preferred = b.content.length > a.content.length ? b : a;
+  const fallback = preferred === a ? b : a;
+  return {
+    role: preferred.role,
+    kind: preferred.kind || fallback.kind,
+    senderName: preferred.senderName || fallback.senderName,
+    content: preferred.content,
+  };
+}
+
+function parseActivityMessage(line) {
+  const match = line.match(/^[┊│]\s*(📚|💻|⚡|🛠️?|🔎|🔍|\$)\s+(.+)$/u);
+  if (!match) return null;
+  const icon = match[1];
+  const body = match[2]
+    .replace(/\s+\d+(?:\.\d+)?s$/u, '')
+    .trim();
+  if (!body) return null;
+  if (icon === '💻' || icon === '$' || body.startsWith('$')) {
+    return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
+  }
+  return { role: 'assistant', kind: 'tool', senderName: 'Tool', content: body };
+}
+
 function dedupeMessages(messages) {
   const next = [];
-  for (const message of messages) {
+  for (const rawMessage of messages) {
+    const message = normalizeMessage(rawMessage);
+    if (!message.content) continue;
     const prev = next[next.length - 1];
-    if (prev && prev.role === message.role && prev.content === message.content) {
+    if (prev && messagesMatch(prev, message)) {
+      next[next.length - 1] = chooseMoreCompleteMessage(prev, message);
       continue;
     }
     next.push(message);
@@ -70,8 +125,38 @@ function dedupeMessages(messages) {
     role: message.role,
     content: message.content,
     index,
-    kind: 'standard',
+    kind: message.kind || 'standard',
+    ...(message.senderName ? { senderName: message.senderName } : {}),
   }));
+}
+
+function mergeMessageHistories(baseMessages, currentMessages) {
+  const merged = (Array.isArray(baseMessages) ? baseMessages : []).map(normalizeMessage).filter((message) => message.content);
+  const current = (Array.isArray(currentMessages) ? currentMessages : []).map(normalizeMessage).filter((message) => message.content);
+  if (merged.length === 0) return dedupeMessages(current);
+  if (current.length === 0) return dedupeMessages(merged);
+
+  let cursor = 0;
+  for (const message of current) {
+    let matchIndex = -1;
+    for (let i = cursor; i < merged.length; i += 1) {
+      if (messagesMatch(merged[i], message)) {
+        matchIndex = i;
+        break;
+      }
+    }
+
+    if (matchIndex >= 0) {
+      merged[matchIndex] = chooseMoreCompleteMessage(merged[matchIndex], message);
+      cursor = matchIndex + 1;
+      continue;
+    }
+
+    merged.push(message);
+    cursor = merged.length;
+  }
+
+  return dedupeMessages(merged);
 }
 
 function parseMessages(text) {
@@ -121,6 +206,16 @@ function parseMessages(text) {
       continue;
     }
 
+    const activityMessage = parseActivityMessage(line);
+    if (activityMessage) {
+      if (inAssistantBox) {
+        flushAssistant();
+        inAssistantBox = false;
+      }
+      messages.push(activityMessage);
+      continue;
+    }
+
     if (inAssistantBox) {
       assistantLines.push(line);
     }
@@ -140,7 +235,32 @@ module.exports = function parseOutput(input) {
     buffer: transcript,
   });
 
-  const messages = parseMessages(transcript || screenText);
+  const baseMessages = Array.isArray(input?.messages)
+    ? input.messages
+        .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
+        .map((message) => ({
+          role: message.role,
+          kind: message.kind,
+          senderName: message.senderName,
+          content: String(message.content || ''),
+        }))
+    : [];
+  const transcriptMessages = parseMessages(transcript || '')
+    .map((message) => ({
+      role: message.role,
+      kind: message.kind,
+      senderName: message.senderName,
+      content: String(message.content || ''),
+    }));
+  const screenMessages = parseMessages(screenText || '')
+    .map((message) => ({
+      role: message.role,
+      kind: message.kind,
+      senderName: message.senderName,
+      content: String(message.content || ''),
+    }));
+  const currentMessages = screenMessages.length > 0 ? screenMessages : transcriptMessages;
+  const messages = mergeMessageHistories(baseMessages, currentMessages);
   const activeModal = status === 'waiting_approval'
     ? parseApproval({ screenText, buffer: transcript, tail: input?.recentBuffer || input?.tail || '' })
     : null;

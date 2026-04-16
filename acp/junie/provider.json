@@ -3,7 +3,7 @@
   "name": "Junie (ACP)",
   "category": "acp",
   "displayName": "Junie",
-  "icon": "🟣",
+  "icon": "\ud83d\udfe3",
   "install": "Download from https://github.com/JetBrains/junie/releases",
   "spawn": {
     "command": "junie",
@@ -50,5 +50,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

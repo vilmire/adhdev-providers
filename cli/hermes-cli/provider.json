@@ -6,7 +6,7 @@
     "hermes",
     "hermes-agent"
   ],
-  "icon": "⚕",
+  "icon": "\u2695",
   "displayName": "Hermes Agent",
   "settings": {
     "notifications": {
@@ -51,7 +51,7 @@
       "id": "provider",
       "type": "select",
       "label": "Provider",
-      "icon": "🌐",
+      "icon": "\ud83c\udf10",
       "placement": "bar",
       "order": 10,
       "defaultValue": "auto",
@@ -124,7 +124,7 @@
       "id": "reasoning",
       "type": "select",
       "label": "Reasoning",
-      "icon": "🧠",
+      "icon": "\ud83e\udde0",
       "placement": "bar",
       "order": 20,
       "defaultValue": "none",
@@ -161,7 +161,7 @@
       "id": "yolo",
       "type": "toggle",
       "label": "YOLO",
-      "icon": "⚠",
+      "icon": "\u26a0",
       "placement": "bar",
       "order": 30,
       "defaultValue": false,
@@ -172,8 +172,9 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "✚",
+      "icon": "\u271a",
       "placement": "bar",
+      "hidden": true,
       "order": 70,
       "invokeScript": "newSession",
       "confirmTitle": "Start a new Hermes session?",
@@ -184,7 +185,7 @@
       "id": "undo_last",
       "type": "action",
       "label": "Undo",
-      "icon": "↶",
+      "icon": "\u21b6",
       "placement": "bar",
       "order": 75,
       "invokeScript": "undoLast",
@@ -196,7 +197,7 @@
       "id": "retry_last",
       "type": "action",
       "label": "Retry",
-      "icon": "↺",
+      "icon": "\u21ba",
       "placement": "bar",
       "order": 80,
       "invokeScript": "retryLast",
@@ -216,6 +217,10 @@
     ],
     "shell": true,
     "env": {}
+  },
+  "timeouts": {
+    "generatingIdle": 20000,
+    "idleFinish": 20000
   },
   "resume": {
     "supported": true,
@@ -238,7 +243,7 @@
         "flags": "i"
       },
       {
-        "source": "^❯\\s*$",
+        "source": "^\u276f\\s*$",
         "flags": "m"
       }
     ],
@@ -280,7 +285,7 @@
     ],
     "ready": [
       {
-        "source": "^❯\\s*$",
+        "source": "^\u276f\\s*$",
         "flags": "m"
       },
       {
@@ -302,5 +307,22 @@
   "status": "Beta",
   "details": "Terminal only",
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  }
 }

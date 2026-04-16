@@ -6,7 +6,7 @@
     "claude",
     "claude-code"
   ],
-  "icon": "🤖",
+  "icon": "\ud83e\udd16",
   "displayName": "Claude Code",
   "settings": {
     "notifications": {
@@ -51,7 +51,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "🤖",
+      "icon": "\ud83e\udd16",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -63,7 +63,7 @@
       "id": "effort",
       "type": "select",
       "label": "Effort",
-      "icon": "⚡",
+      "icon": "\u26a1",
       "placement": "bar",
       "order": 20,
       "options": [
@@ -91,7 +91,7 @@
       "id": "compact",
       "type": "toggle",
       "label": "Compact",
-      "icon": "📐",
+      "icon": "\ud83d\udcd0",
       "placement": "bar",
       "order": 70,
       "setScript": "setCompact",
@@ -101,7 +101,7 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "➕",
+      "icon": "\u2795",
       "placement": "bar",
       "order": 80,
       "invokeScript": "newSession"
@@ -138,11 +138,11 @@
         "flags": "i"
       },
       {
-        "source": "[›❯]\\s*$",
+        "source": "[\u203a\u276f]\\s*$",
         "flags": "m"
       },
       {
-        "source": "medium\\s+·\\s+/effort",
+        "source": "medium\\s+\u00b7\\s+/effort",
         "flags": "i"
       }
     ],
@@ -184,7 +184,7 @@
         "flags": "i"
       },
       {
-        "source": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?",
+        "source": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?",
         "flags": "i"
       }
     ],
@@ -212,7 +212,7 @@
         "flags": "i"
       },
       {
-        "source": "[›❯]\\s*$",
+        "source": "[\u203a\u276f]\\s*$",
         "flags": "m"
       }
     ],
@@ -266,5 +266,22 @@
   "details": "Terminal only",
   "disableUpstream": true,
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  }
 }

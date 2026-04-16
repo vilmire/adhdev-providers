@@ -3,7 +3,7 @@
   "name": "Factory Droid (ACP)",
   "category": "acp",
   "displayName": "Factory Droid",
-  "icon": "🏭",
+  "icon": "\ud83c\udfed",
   "install": "npm install -g droid",
   "spawn": {
     "command": "droid",
@@ -58,5 +58,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

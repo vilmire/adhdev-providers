@@ -3,7 +3,7 @@
   "name": "pi ACP",
   "category": "acp",
   "displayName": "pi ACP",
-  "icon": "🥧",
+  "icon": "\ud83e\udd67",
   "install": "npm install -g pi-acp",
   "spawn": {
     "command": "pi-acp",
@@ -50,5 +50,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

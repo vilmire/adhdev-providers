@@ -35,6 +35,9 @@ module.exports = function detectStatus(input) {
   const hasThinkingIndicator = /(?:^|\n)\s*(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?reasoning(?:\.\.\.|…)/im.test(text);
   const hasInitializing = /Initializing agent/i.test(text);
   const hasInterruptFooter = /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
+  const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
+  const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:📋|💻|⚡|\$)/.test(text);
+  const hasLiveTurnMarkers = hasLiveUserTurn || hasLiveToolActivity;
 
   const lastPromptIndex = lastMatchingIndex((line) => /^❯\s*$/.test(line));
   const lastAssistantEndIndex = lastMatchingIndex((line) => /^╰─/.test(line));
@@ -47,14 +50,19 @@ module.exports = function detectStatus(input) {
     return 'idle';
   }
 
-  // Only call idle when we see a prompt indicator AND no active generation footer.
-  // If hasInterruptFooter is also present (e.g. startup text still in 20-line window
-  // while a new generation is underway), fall through rather than false-complete.
-  if ((hasBarePrompt || hasPrompt) && !hasThinkingIndicator && !hasInitializing && !hasInterruptFooter) {
+  if (input?.isWaitingForResponse === true) {
+    return 'generating';
+  }
+
+  // Only call idle when we see a prompt indicator, no active generation footer,
+  // and no live turn markers such as the current user prompt or tool activity.
+  // This avoids false-completing while Hermes is still working through a tool plan
+  // after startup text leaves a stale idle prompt in the visible window.
+  if ((hasBarePrompt || hasPrompt) && !hasThinkingIndicator && !hasInitializing && !hasInterruptFooter && !hasLiveTurnMarkers) {
     return 'idle';
   }
 
-  if (hasInitializing || hasThinkingIndicator || hasInterruptFooter) {
+  if (hasInitializing || hasThinkingIndicator || hasInterruptFooter || hasLiveTurnMarkers) {
     return 'generating';
   }
 

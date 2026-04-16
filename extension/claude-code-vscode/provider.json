@@ -37,7 +37,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "🤖",
+      "icon": "\ud83e\udd16",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -49,7 +49,7 @@
       "id": "effort",
       "type": "select",
       "label": "Effort",
-      "icon": "⚡",
+      "icon": "\u26a1",
       "placement": "bar",
       "order": 20,
       "options": [
@@ -77,7 +77,7 @@
       "id": "mode",
       "type": "select",
       "label": "Mode",
-      "icon": "✏️",
+      "icon": "\u270f\ufe0f",
       "placement": "bar",
       "order": 25,
       "dynamic": true,
@@ -89,7 +89,7 @@
       "id": "thinking",
       "type": "toggle",
       "label": "Thinking",
-      "icon": "🧠",
+      "icon": "\ud83e\udde0",
       "placement": "bar",
       "order": 30,
       "setScript": "setThinking",
@@ -99,7 +99,7 @@
       "id": "usage",
       "type": "action",
       "label": "Usage",
-      "icon": "📊",
+      "icon": "\ud83d\udcca",
       "placement": "bar",
       "order": 40,
       "invokeScript": "requestUsage",
@@ -109,7 +109,24 @@
   "defaultScriptDir": "scripts/1.0",
   "compatibility": [],
   "status": "Unverified",
-  "details": "Anthropic Claude Code sidebar webview — heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer",
+  "details": "Anthropic Claude Code sidebar webview \u2014 heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer",
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  }
 }

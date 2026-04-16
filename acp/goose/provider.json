@@ -3,7 +3,7 @@
   "name": "Goose (ACP)",
   "category": "acp",
   "displayName": "Goose",
-  "icon": "🪿",
+  "icon": "\ud83e\udebf",
   "install": "brew install goose  or download from https://github.com/block/goose/releases",
   "spawn": {
     "command": "goose",
@@ -55,5 +55,22 @@
     }
   },
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

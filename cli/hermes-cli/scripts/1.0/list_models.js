@@ -10,12 +10,12 @@
  */
 module.exports = function listModels() {
   return {
-    models: [
-      'google/gemini-3-flash-preview',
-      'google/gemini-3.1-flash-lite-preview',
-      'openai/gpt-5.4-mini',
-      'openai/gpt-5.3-codex',
-      'anthropic/claude-sonnet-4.6'
+    options: [
+      { value: 'google/gemini-3-flash-preview', label: 'google/gemini-3-flash-preview' },
+      { value: 'google/gemini-3.1-flash-lite-preview', label: 'google/gemini-3.1-flash-lite-preview' },
+      { value: 'openai/gpt-5.4-mini', label: 'openai/gpt-5.4-mini' },
+      { value: 'openai/gpt-5.3-codex', label: 'openai/gpt-5.3-codex' },
+      { value: 'anthropic/claude-sonnet-4.6', label: 'anthropic/claude-sonnet-4.6' }
     ]
   };
 };

@@ -64,6 +64,7 @@ const KNOWN_PROVIDER_FIELDS = new Set([
   'sendDelayMs',
   'sendKey',
   'submitStrategy',
+  'timeouts',
   'disableUpstream',
 ]);
 
@@ -214,6 +215,45 @@ function validateProvider(providerDir, rel, mod) {
     warn(rel, `contractVersion ${mod.contractVersion} is older than the current typed contract baseline (2)`);
   }
 
+  if (mod.contractVersion === 2) {
+    if (!mod.capabilities || typeof mod.capabilities !== 'object') {
+      fail(rel, 'contractVersion 2 providers must declare capabilities');
+    } else {
+      const input = mod.capabilities.input;
+      const output = mod.capabilities.output;
+      const controlsCapabilities = mod.capabilities.controls;
+      const validMediaTypes = ['text', 'image', 'audio', 'video', 'resource'];
+
+      if (!input || typeof input !== 'object') {
+        fail(rel, 'capabilities.input is required');
+      } else {
+        if (typeof input.multipart !== 'boolean') fail(rel, 'capabilities.input.multipart must be boolean');
+        if (!Array.isArray(input.mediaTypes) || input.mediaTypes.length === 0) {
+          fail(rel, 'capabilities.input.mediaTypes must be a non-empty array');
+        } else if (input.mediaTypes.some((type) => typeof type !== 'string' || !validMediaTypes.includes(type))) {
+          fail(rel, `capabilities.input.mediaTypes must only include: ${validMediaTypes.join(', ')}`);
+        }
+      }
+
+      if (!output || typeof output !== 'object') {
+        fail(rel, 'capabilities.output is required');
+      } else {
+        if (typeof output.richContent !== 'boolean') fail(rel, 'capabilities.output.richContent must be boolean');
+        if (!Array.isArray(output.mediaTypes) || output.mediaTypes.length === 0) {
+          fail(rel, 'capabilities.output.mediaTypes must be a non-empty array');
+        } else if (output.mediaTypes.some((type) => typeof type !== 'string' || !validMediaTypes.includes(type))) {
+          fail(rel, `capabilities.output.mediaTypes must only include: ${validMediaTypes.join(', ')}`);
+        }
+      }
+
+      if (!controlsCapabilities || typeof controlsCapabilities !== 'object') {
+        fail(rel, 'capabilities.controls is required');
+      } else if (typeof controlsCapabilities.typedResults !== 'boolean') {
+        fail(rel, 'capabilities.controls.typedResults must be boolean');
+      }
+    }
+  }
+
   for (const key of Object.keys(mod)) {
     if (!KNOWN_PROVIDER_FIELDS.has(key)) {
       warn(rel, `unknown provider field '${key}'`);
@@ -277,6 +317,9 @@ function validateProvider(providerDir, rel, mod) {
   }
 
   const controls = Array.isArray(mod.controls) ? mod.controls : [];
+  if (controls.length > 0 && mod.capabilities?.controls?.typedResults !== true) {
+    fail(rel, 'providers declaring controls must set capabilities.controls.typedResults=true');
+  }
   const controlIds = new Set();
   for (const control of controls) {
     const result = validateControl(rel, control, inventory);

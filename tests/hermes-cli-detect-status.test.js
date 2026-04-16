@@ -60,6 +60,30 @@ test('hermes-cli stays generating when startup text is still in the 20-line wind
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
+test('hermes-cli treats isWaitingForResponse as generating even if a stale prompt is still visible', () => {
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'generating');
+});
+
+test('hermes-cli stays generating when startup text remains visible but the active turn has only plan/tool lines', () => {
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+    'Resume this session with:',
+    'hermes --resume 20260415_184430_97ac2b',
+    'Session: 20260415_184430_97ac2b',
+    '● Please do all of the following in this workspace: (+11 lines)',
+    '┊ 📋 plan 4 task(s) 0.0s',
+    '┊ 💻 $ pwd 0.5s',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
 test('hermes-cli returns to idle when a completed assistant box is followed by the prompt', () => {
   const screenText = [
     'Welcome to Hermes Agent! Type your message or /help for commands.',
@@ -73,4 +97,18 @@ test('hermes-cli returns to idle when a completed assistant box is followed by t
   ].join('\n');
 
   assert.equal(detectStatus({ screenText }), 'idle');
+});
+
+test('hermes-cli returns to idle after a completed assistant box even if isWaitingForResponse is still true', () => {
+  const screenText = [
+    '⚡ Interrupted during API call.',
+    '● In one short paragraph, summarize what you just executed.',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'I created and ran tmp/adhdev_cli_verify.py in the workspace.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '⚕ gpt-5.4 │ 13.4K/1.1M │ [░░░░░░░░░░] 1% │',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });

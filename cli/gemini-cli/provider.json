@@ -5,7 +5,7 @@
   "aliases": [
     "gemini"
   ],
-  "icon": "♊",
+  "icon": "\u264a",
   "displayName": "Gemini CLI",
   "settings": {
     "notifications": {
@@ -65,7 +65,7 @@
         "flags": "m"
       },
       {
-        "source": "[›❯]\\s*$",
+        "source": "[\u203a\u276f]\\s*$",
         "flags": "m"
       },
       {
@@ -83,7 +83,7 @@
         "flags": ""
       },
       {
-        "source": "[▀▄▌▐░▒▓█]",
+        "source": "[\u2580\u2584\u258c\u2590\u2591\u2592\u2593\u2588]",
         "flags": ""
       },
       {
@@ -166,5 +166,22 @@
   "status": "Beta",
   "details": "Terminal only",
   "providerVersion": "1.0.0",
-  "contractVersion": 2
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
 }

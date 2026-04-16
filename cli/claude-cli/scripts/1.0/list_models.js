@@ -12,13 +12,13 @@
  */
 module.exports = function listModels(input) {
     return {
-        models: [
-            'sonnet',
-            'opus',
-            'haiku',
-            'claude-sonnet-4-6',
-            'claude-opus-4',
-            'claude-haiku-3-5',
+        options: [
+            { value: 'sonnet', label: 'sonnet' },
+            { value: 'opus', label: 'opus' },
+            { value: 'haiku', label: 'haiku' },
+            { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6' },
+            { value: 'claude-opus-4', label: 'claude-opus-4' },
+            { value: 'claude-haiku-3-5', label: 'claude-haiku-3-5' },
         ],
     };
 };
