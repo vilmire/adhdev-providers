@@ -62,3 +62,18 @@ module.exports.rollbackList = (input) => {
   const mod = loadModule('rollback_list.js');
   return mod ? mod(input) : null;
 };
+
+module.exports.setModel = (input) => {
+  const mod = loadModule('set_model.js');
+  return mod ? mod(input) : null;
+};
+
+module.exports.listModels = (input) => {
+  const mod = loadModule('list_models.js');
+  return mod ? mod(input) : null;
+};
+
+module.exports.runSlashCommand = (input) => {
+  const mod = loadModule('run_slash_command.js');
+  return mod ? mod(input) : null;
+};

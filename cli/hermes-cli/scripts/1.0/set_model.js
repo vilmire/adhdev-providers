@@ -1,5 +1,7 @@
 'use strict';
 
+const { buildPtyWrite } = require('./helpers.js');
+
 /**
  * Hermes CLI — setModel
  *
@@ -11,12 +13,7 @@ module.exports = function setModel(input) {
     return { ok: false, error: 'Model value is required' };
   }
 
-  return {
-    ok: true,
+  return buildPtyWrite(`/model ${value.trim()}`, {
     currentValue: value.trim(),
-    command: {
-      type: 'pty_write',
-      text: `/model ${value.trim()}`,
-    },
-  };
+  });
 };
