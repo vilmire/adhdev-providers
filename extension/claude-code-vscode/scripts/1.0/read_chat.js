@@ -169,14 +169,11 @@
       );
     });
 
-    if (messages.length === 0) {
-      const welcome = doc.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
-      if (welcome && visible(welcome)) {
-        pushMessage('assistant', welcome.innerText || welcome.textContent || '', {
-          _turnKey: buildTurnKey('assistant', 'standard', 'welcome', welcome.innerText || welcome.textContent || ''),
-        });
-      }
-    }
+    const welcome = doc.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
+    const welcomeText = welcome && visible(welcome)
+      ? normalizeBlock(welcome.innerText || welcome.textContent || '')
+      : '';
+    const isWelcomeScreen = messages.length === 0 && !!welcomeText;
 
     const spinner = doc.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
     const spinnerText = spinner && visible(spinner) ? normalizeBlock(spinner.innerText || spinner.textContent || '') : '';
@@ -198,16 +195,38 @@
       .filter(visible)
       .find((b) => /^(stop|cancel|interrupt)$/i.test(normalizeInline(b.textContent || b.getAttribute('aria-label') || '')));
     const providerSessionId = buildProviderSessionId(messages);
+    const approvalPositive = /^(yes|allow|approve|accept|continue|run|always|once|proceed|confirm|submit|save|resume)/i;
+    const approvalNegative = /^(no|deny|reject|cancel|dismiss|skip|abort)/i;
+    const normalizeApprovalLabel = (label) => label.replace(/^\d+(?:[.)]|\s)+/, '').trim();
+    const collectApprovalButtons = () => {
+      const labels = [];
+      const seenLabels = new Set();
+      const searchDocs = Array.from(new Set([doc, document].filter(Boolean)));
+      for (const searchDoc of searchDocs) {
+        const nodes = Array.from(searchDoc.querySelectorAll('button, [role="button"], [role="option"], [role="radio"]'));
+        for (const node of nodes) {
+          if (!visible(node) || node.disabled) continue;
+          const label = normalizeInline(node.textContent || node.getAttribute('aria-label') || node.getAttribute('title') || '');
+          const normalizedLabel = normalizeApprovalLabel(label);
+          if (!label || label.length > 120) continue;
+          if (!approvalPositive.test(normalizedLabel) && !approvalNegative.test(normalizedLabel)) continue;
+          const key = label.toLowerCase();
+          if (seenLabels.has(key)) continue;
+          seenLabels.add(key);
+          labels.push(label);
+        }
+      }
+      return labels;
+    };
 
     let status = 'idle';
     if (spinner && visible(spinner)) status = 'generating';
     if (footerStopButton) status = 'generating';
 
-    // Detect numbered approval prompts (e.g. "1 Yes\n2 No, tell Claude…") in the last
-    // assistant message. Guard against false positives from normal numbered lists by:
-    //   1. Only triggering when idle (not while Claude is still generating)
-    //   2. Requiring options to be short (≤70 chars) — approval labels are concise
-    //   3. Requiring at least one option to start with an approval-style keyword
+    // Detect approval prompts from either numbered assistant text OR visible approval-style
+    // buttons/options in the current webview. Claude Code sometimes renders real action
+    // buttons instead of the older numbered text-only prompt, so relying on the last
+    // assistant message alone misses live approvals.
     const lastAssistant = messages.filter((m) => m.role === 'assistant').slice(-1)[0];
     const numberedOptions = [];
     if (lastAssistant && status === 'idle') {
@@ -218,23 +237,23 @@
           const m = l.match(/^\s*(\d+)[.\s)]\s*(.+)/);
           if (m) parsed.push(`${m[1]} ${m[2].trim()}`);
         }
-        // Require compact options and at least one approval-style keyword to distinguish
-        // from regular numbered lists (steps, options, code examples, etc.)
-        const approvalKw = /^(yes|no|allow|deny|approve|reject|cancel|skip|run|always|once|proceed|continue|confirm|dismiss|abort)/i;
         const looksLikeApproval = parsed.every((opt) => opt.length <= 70)
-          && parsed.some((opt) => approvalKw.test(opt.replace(/^\d+\s+/, '')));
+          && parsed.some((opt) => approvalPositive.test(opt.replace(/^\d+\s+/, '')) || approvalNegative.test(opt.replace(/^\d+\s+/, '')));
         if (looksLikeApproval) {
           numberedOptions.push(...parsed);
         }
       }
     }
 
+    const approvalButtons = collectApprovalButtons();
+
     let activeModal = null;
-    if (numberedOptions.length >= 2) {
+    const combinedApprovalButtons = Array.from(new Set([...numberedOptions, ...approvalButtons]));
+    if (combinedApprovalButtons.length >= 2) {
       status = 'waiting_approval';
       activeModal = {
-        message: lastAssistant.content,
-        buttons: numberedOptions,
+        message: lastAssistant?.content || 'Claude Code requires approval',
+        buttons: combinedApprovalButtons,
       };
     }
 
@@ -253,7 +272,7 @@
       ...(effort ? { effort } : {}),
       ...(typeof cachedThinking === 'boolean' ? { thinking: cachedThinking } : {}),
       isVisible,
-      isWelcomeScreen: messages.length === 1 && messages[0]?.role === 'assistant' && /what to do first/i.test(messages[0]?.content || ''),
+      isWelcomeScreen,
       messages: messages.slice(-40),
       inputContent,
       activeModal,
