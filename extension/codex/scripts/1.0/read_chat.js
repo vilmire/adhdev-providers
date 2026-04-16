@@ -387,6 +387,15 @@
       return typeof turnKey === 'string' && /^turn-index-\d+$/i.test(turnKey);
     }
 
+    function buildStableProviderSessionId(messages, fallbackTitle) {
+      const stableTurnKeys = getTurnKeys(messages).filter((turnKey) => !isSyntheticTurnKey(turnKey));
+      if (stableTurnKeys.length > 0) {
+        return `codex:turns:${stableTurnKeys.slice(0, 3).join('|')}`;
+      }
+      const normalizedTitle = String(fallbackTitle || '').replace(/\s+/g, ' ').trim().toLowerCase();
+      return normalizedTitle ? `codex:title:${normalizedTitle}` : 'codex:conversation';
+    }
+
     function isUuidLikeTurnKey(turnKey) {
       return typeof turnKey === 'string' && /^[0-9a-f]{8}-[0-9a-f-]{8,}$/i.test(turnKey);
     }
@@ -548,8 +557,8 @@
     // ─── 1. Messages ───
     const initialVisibleMessages = collectVisibleMessages();
     const initialVisibleTurnKeys = getTurnKeys(initialVisibleMessages);
-    const conversationKey = `codex:${doc.location?.href || ''}:${headerText || 'conversation'}`;
-    const cache = globalCache[conversationKey] || (globalCache[conversationKey] = { byUnit: {}, harvested: false, visibleTurnKeys: [] });
+    const cacheKey = `codex:${doc.location?.href || ''}:${headerText || 'conversation'}`;
+    const cache = globalCache[cacheKey] || (globalCache[cacheKey] = { byUnit: {}, harvested: false, visibleTurnKeys: [] });
     const hasLegacyCacheShape = cache.harvested && !Array.isArray(cache.visibleTurnKeys);
     if (
       hasLegacyCacheShape
@@ -781,8 +790,10 @@
     const taskBtn = doc.querySelector('[aria-haspopup="menu"]');
     const taskInfo = taskBtn ? (taskBtn.textContent || '').trim() : '';
     const title = (isTaskList && hasComposer ? 'Codex' : headerText) || 'Codex';
+    const providerSessionId = buildStableProviderSessionId(messages, title);
     return JSON.stringify({
       id: 'codex',
+      providerSessionId,
       agentType: 'codex',
       agentName: 'Codex',
       extensionId: 'openai.chatgpt',

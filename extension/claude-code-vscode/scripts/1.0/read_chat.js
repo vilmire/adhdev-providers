@@ -11,6 +11,24 @@
       .replace(/\n{3,}/g, '\n\n')
       .replace(/[ \t]{2,}/g, ' ')
       .trim();
+    const simpleHash = (value) => {
+      const text = String(value || '');
+      let hash = 0;
+      for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) - hash + text.charCodeAt(i)) | 0;
+      }
+      return Math.abs(hash).toString(36);
+    };
+    const buildTurnKey = (role, kind, orderKey, content) => `claude-code:${role}:${kind || 'standard'}:${orderKey}:${simpleHash(content)}`;
+    const buildProviderSessionId = (messages) => {
+      const stableTurnKeys = messages
+        .map((message) => typeof message?._turnKey === 'string' ? message._turnKey.trim() : '')
+        .filter(Boolean);
+      if (stableTurnKeys.length > 0) {
+        return `claude-code:${stableTurnKeys.slice(0, 4).join('|')}`;
+      }
+      return '';
+    };
 
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
@@ -37,13 +55,13 @@
 
     const messages = [];
     const seen = new Set();
-    const pushMessage = (role, content, timestamp, extras = {}) => {
+    const pushMessage = (role, content, extras = {}) => {
       const text = normalizeBlock(content);
       if (!text) return;
       const key = `${role}:${extras.kind || 'standard'}:${text}`;
       if (seen.has(key)) return;
       seen.add(key);
-      messages.push({ role, content: text, timestamp, ...extras });
+      messages.push({ role, content: text, ...extras });
     };
 
     const messageRows = Array.from(doc.querySelectorAll('.messagesContainer_07S1Yg .message_07S1Yg'))
@@ -75,8 +93,11 @@
           pushMessage(
             'assistant',
             thoughtText || label,
-            Date.now() - (messageRows.length - index) * 1000,
-            { kind: 'thought', meta: { label } },
+            {
+              kind: 'thought',
+              meta: { label },
+              _turnKey: buildTurnKey('assistant', 'thought', index, thoughtText || label),
+            },
           );
           return;
         }
@@ -111,8 +132,11 @@
             pushMessage(
               'assistant',
               chunks.join('\n\n'),
-              Date.now() - (messageRows.length - index) * 1000,
-              { kind: 'terminal', meta: { label: toolLabel } },
+              {
+                kind: 'terminal',
+                meta: { label: toolLabel },
+                _turnKey: buildTurnKey('assistant', 'terminal', index, chunks.join('\n\n')),
+              },
             );
             return;
           }
@@ -124,8 +148,11 @@
           pushMessage(
             'assistant',
             toolSummary,
-            Date.now() - (messageRows.length - index) * 1000,
-            { kind: 'tool', meta: { label: toolLabel } },
+            {
+              kind: 'tool',
+              meta: { label: toolLabel },
+              _turnKey: buildTurnKey('assistant', 'tool', index, toolSummary),
+            },
           );
           return;
         }
@@ -135,15 +162,19 @@
       pushMessage(
         role,
         text,
-        Date.now() - (messageRows.length - index) * 1000,
-        isThoughtSummary ? { kind: 'thought', meta: { label: 'Thinking' } } : undefined,
+        {
+          ...(isThoughtSummary ? { kind: 'thought', meta: { label: 'Thinking' } } : {}),
+          _turnKey: buildTurnKey(role, isThoughtSummary ? 'thought' : 'standard', index, text),
+        },
       );
     });
 
     if (messages.length === 0) {
       const welcome = doc.querySelector('.message_AV_aEg, .messageContainer_AV_aEg, [class*="emptyState" i] [class*="message" i]');
       if (welcome && visible(welcome)) {
-        pushMessage('assistant', welcome.innerText || welcome.textContent || '', Date.now());
+        pushMessage('assistant', welcome.innerText || welcome.textContent || '', {
+          _turnKey: buildTurnKey('assistant', 'standard', 'welcome', welcome.innerText || welcome.textContent || ''),
+        });
       }
     }
 
@@ -166,6 +197,7 @@
     const footerStopButton = Array.from(doc.querySelectorAll('button.footerButton_gGYT1w, button[class*="footerButton"]'))
       .filter(visible)
       .find((b) => /^(stop|cancel|interrupt)$/i.test(normalizeInline(b.textContent || b.getAttribute('aria-label') || '')));
+    const providerSessionId = buildProviderSessionId(messages);
 
     let status = 'idle';
     if (spinner && visible(spinner)) status = 'generating';
@@ -210,6 +242,7 @@
 
     return JSON.stringify({
       id: title,
+      ...(providerSessionId ? { providerSessionId } : {}),
       title,
       agentType: 'claude-code-vscode',
       agentName: 'Claude Code',
