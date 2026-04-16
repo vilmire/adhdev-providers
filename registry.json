@@ -1,253 +1,253 @@
 {
-  "version": "2026.04.13",
+  "version": "2026.04.16",
   "providers": {
     "agentpool-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "AgentPool (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "amp-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Amp (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "auggie-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Auggie CLI (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "autodev-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "AutoDev (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "autohand-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Autohand Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "blackbox-ai-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Blackbox AI (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "claude-agent-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Claude Agent (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "cline-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Cline (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "codebuddy-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Codebuddy Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "codex-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Codex (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "corust-agent-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Corust Agent (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "crow-cli-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "crow-cli (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "cursor-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Cursor (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "deepagents-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "DeepAgents (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "dimcode-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "DimCode (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "docker-cagent-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Docker cagent (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "factory-droid-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Factory Droid (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "fast-agent-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "fast-agent (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "gemini-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Gemini CLI (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "github-copilot-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "GitHub Copilot (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "goose-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Goose (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "junie-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Junie (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "kilo-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Kilo (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "kimi-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Kimi CLI (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "minion-code-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Minion Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "mistral-vibe-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Mistral Vibe (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "nova-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Nova (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "openclaw-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "OpenClaw (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "opencode-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "OpenCode (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "openhands-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "OpenHands (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "pi-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "pi ACP",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "qoder-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Qoder CLI (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "qwen-code-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Qwen Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "stakpak-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Stakpak (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "vtcode-acp": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "acp",
       "name": "VT Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
     "aider-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Aider",
       "status": "Beta",
@@ -260,7 +260,7 @@
       ]
     },
     "claude-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Claude Code",
       "status": "Stable",
@@ -273,7 +273,7 @@
       ]
     },
     "codex-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Codex CLI",
       "status": "Stable",
@@ -286,7 +286,7 @@
       ]
     },
     "cursor-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Cursor CLI",
       "status": "Beta",
@@ -299,7 +299,7 @@
       ]
     },
     "gemini-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Gemini CLI",
       "status": "Beta",
@@ -312,7 +312,7 @@
       ]
     },
     "github-copilot-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "GitHub Copilot CLI",
       "status": "Beta",
@@ -325,7 +325,7 @@
       ]
     },
     "goose-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Goose",
       "status": "Beta",
@@ -338,7 +338,7 @@
       ]
     },
     "hermes-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "Hermes Agent",
       "status": "Beta",
@@ -351,7 +351,7 @@
       ]
     },
     "opencode-cli": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "cli",
       "name": "OpenCode CLI",
       "status": "Beta",
@@ -364,28 +364,28 @@
       ]
     },
     "claude-code-vscode": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "extension",
       "name": "Claude Code (VS Code)",
       "status": "Unverified",
       "details": "Anthropic Claude Code sidebar webview — heuristics from Codex/Cline iframe + Antigravity input/markdown patterns; tune against live DOM via DevServer"
     },
     "cline": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "extension",
       "name": "Cline",
       "status": "Stable",
       "details": "Independent Stream"
     },
     "codex": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "extension",
       "name": "Codex",
       "status": "Stable",
       "details": "Independent Stream"
     },
     "roo-code": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "extension",
       "name": "Roo Code",
       "status": "Stable",
@@ -418,7 +418,7 @@
       ]
     },
     "kiro": {
-      "providerVersion": "0.0.0",
+      "providerVersion": "1.0.0",
       "category": "ide",
       "name": "Kiro",
       "status": "Stable",
