@@ -1,7 +1,9 @@
 'use strict';
 
 function cleanAnsi(text) {
-  return String(text || '').replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '');
+  return String(text || '')
+    .replace(/\u0007/g, '')
+    .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '');
 }
 
 module.exports = function parseApproval(input) {

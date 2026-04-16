@@ -25,7 +25,7 @@ function isNoise(line) {
     || /Tip: hermes sessions prune/i.test(line)
     || /Enter to interrupt, Ctrl\+C to cancel/i.test(line)
     || /Initializing agent/i.test(line)
-    || /reasoning/i.test(line)
+    || /(?:^|\s)(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?reasoning(?:\.\.\.|…)/i.test(line)
     || /^❯\s*$/.test(line)
     || /^Session:\s+\d{8}_\d{6}_/i.test(line)
     || /^Project:\s+/i.test(line)
@@ -95,7 +95,9 @@ function chooseMoreCompleteMessage(left, right) {
 }
 
 function parseActivityMessage(line) {
-  const match = line.match(/^[┊│]\s*(📚|💻|⚡|🛠️?|🔎|🔍|\$)\s+(.+)$/u);
+  // Match any emoji/symbol after the activity-line prefix (┊ or │).
+  // Captures the first token (emoji or $) so we can classify terminal vs tool.
+  const match = line.match(/^[┊│]\s*(\p{Emoji}\uFE0F?|\$)\s+(.+)$/u);
   if (!match) return null;
   const icon = match[1];
   const body = match[2]
@@ -104,6 +106,9 @@ function parseActivityMessage(line) {
   if (!body) return null;
   if (icon === '💻' || icon === '$' || body.startsWith('$')) {
     return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
+  }
+  if (icon === '📋') {
+    return { role: 'assistant', kind: 'tool', senderName: 'Plan', content: body };
   }
   return { role: 'assistant', kind: 'tool', senderName: 'Tool', content: body };
 }

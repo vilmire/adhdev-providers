@@ -36,7 +36,7 @@ module.exports = function detectStatus(input) {
   const hasInitializing = /Initializing agent/i.test(text);
   const hasInterruptFooter = /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
-  const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:📋|💻|⚡|\$)/.test(text);
+  const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:\p{Emoji}\uFE0F?|\$)/u.test(text);
   const hasLiveTurnMarkers = hasLiveUserTurn || hasLiveToolActivity;
 
   const lastPromptIndex = lastMatchingIndex((line) => /^❯\s*$/.test(line));
