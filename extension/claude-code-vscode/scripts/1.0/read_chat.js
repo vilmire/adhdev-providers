@@ -178,7 +178,8 @@
     const spinner = doc.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
     const spinnerText = spinner && visible(spinner) ? normalizeBlock(spinner.innerText || spinner.textContent || '') : '';
     const modeButton = doc.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
-    const mode = normalizeInline(modeButton?.textContent || getControlCache().mode || '');
+    const mode = normalizeInline(modeButton?.textContent || '');
+    if (mode) getControlCache().mode = mode;
     const cachedThinking = getControlCache().thinking;
     const effortLabel = normalizeInline(
       doc.querySelector('.effortLabel_8RAulQ, [class*="effortLabel"]')?.textContent

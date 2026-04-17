@@ -52,7 +52,7 @@ function createElement({
   };
 }
 
-function createDocument({ approvalTargets = [], welcomeText = '' } = {}) {
+function createDocument({ approvalTargets = [], welcomeText = '', modeText = '', initialCache = undefined } = {}) {
   const defaultView = {
     getComputedStyle() {
       return { display: 'block', visibility: 'visible' };
@@ -79,6 +79,7 @@ function createDocument({ approvalTargets = [], welcomeText = '' } = {}) {
 
   const body = createElement({ tagName: 'BODY', text: '', ownerDocument: null });
   const welcomeElement = welcomeText ? createElement({ tagName: 'DIV', text: welcomeText, className: 'message_AV_aEg', ownerDocument: null }) : null;
+  const modeButton = modeText ? createElement({ tagName: 'BUTTON', text: modeText, className: 'footerButton_gGYT1w footerButtonPrimary_gGYT1w', ownerDocument: null }) : null;
   const doc = {
     body,
     defaultView,
@@ -97,7 +98,7 @@ function createDocument({ approvalTargets = [], welcomeText = '' } = {}) {
       return false;
     },
     querySelector(selector) {
-      if (selector === 'button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w') return null;
+      if (selector === 'button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w') return modeButton;
       if (selector === '.effortLabel_8RAulQ, [class*="effortLabel"]') return null;
       if (selector === '.messagesContainer_07S1Yg > .spinnerRow_07S1Yg') return null;
       if (selector === '[role="textbox"].messageInput_cKsPxg' || selector === '[role="textbox"].messageInput_cKsPxg, [role="textbox"][contenteditable="true"]') return null;
@@ -113,7 +114,9 @@ function createDocument({ approvalTargets = [], welcomeText = '' } = {}) {
     },
   };
   body.ownerDocument = doc;
+  if (modeButton) modeButton.ownerDocument = doc;
   for (const target of approvalTargets) target.ownerDocument = doc;
+  if (initialCache && typeof initialCache === 'object') defaultView.__adhdevClaudeCodeControls = { ...initialCache };
   return { doc, defaultView };
 }
 
@@ -163,6 +166,32 @@ test('claude-code-vscode read_chat suppresses welcome empty-state text as a real
   assert.equal(parsed.status, 'idle');
   assert.equal(parsed.isWelcomeScreen, true);
   assert.deepEqual(parsed.messages, []);
+});
+
+test('claude-code-vscode read_chat does not resurrect stale cached mode when no live mode control is visible', () => {
+  const { doc, defaultView } = createDocument({ initialCache: { mode: 'Edit automatically' } });
+
+  const raw = runScript(
+    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    { document: doc, window: defaultView },
+  );
+  const parsed = JSON.parse(raw);
+
+  assert.equal(parsed.mode, undefined);
+  assert.equal(parsed.controlValues?.mode, undefined);
+});
+
+test('claude-code-vscode read_chat reports live mode text when the footer mode control is visible', () => {
+  const { doc, defaultView } = createDocument({ modeText: 'Ask before edits' });
+
+  const raw = runScript(
+    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    { document: doc, window: defaultView },
+  );
+  const parsed = JSON.parse(raw);
+
+  assert.equal(parsed.mode, 'Ask before edits');
+  assert.equal(parsed.controlValues?.mode, 'Ask before edits');
 });
 
 test('claude-code-vscode resolve_action clicks exact matching role=button approval targets', async () => {
