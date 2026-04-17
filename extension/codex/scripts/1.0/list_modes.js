@@ -1,12 +1,15 @@
 /**
  * Codex Extension — list_modes
  *
- * Finds the mode/autonomy dropdown by locating the model button (GPT-* text)
- * and clicking the NEXT haspopup=menu button in DOM order (the brain icon).
- * Opens it (Radix), reads options + selected, closes.
+ * Finds the mode/autonomy dropdown in hosted Codex webviews, even when the
+ * controls live in the outer document and the picker is rendered as a listbox.
  */
 (() => {
   try {
+    const knownModes = new Set(['ask', 'edit', 'agent', 'full auto', 'auto', 'read only', 'planning', 'fast', 'normal']);
+    const workspaceLabels = new Set(['local', 'remote', 'workspace']);
+    const permissionWords = ['permission', 'permissions', 'access', 'read', 'write', 'approval', 'approve', 'sandbox'];
+
     function resolveDoc() {
       let doc = document;
       let root = doc.getElementById('root');
@@ -14,8 +17,15 @@
         for (const iframe of doc.querySelectorAll('iframe')) {
           try {
             const innerDoc = iframe.contentDocument || iframe.contentWindow?.document;
-            if (innerDoc?.getElementById('root')) { doc = innerDoc; root = innerDoc.getElementById('root'); break; }
-          } catch (e) {}
+            const innerRoot = innerDoc?.getElementById('root');
+            if (innerRoot) {
+              doc = innerDoc;
+              root = innerRoot;
+              break;
+            }
+          } catch (e) {
+            // ignore cross-origin iframes
+          }
         }
       }
       return { doc, root };
@@ -26,8 +36,12 @@
       return ((el.textContent || '').trim() || (el.getAttribute('aria-label') || '').trim()).replace(/\s+/g, ' ');
     }
 
+    function normalize(text) {
+      return (text || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    }
+
     function isVisible(el) {
-      if (!el || el.closest('[inert]')) return false;
+      if (!el || el.closest?.('[inert]')) return false;
       const rect = el.getBoundingClientRect?.();
       if (!rect || rect.width <= 0 || rect.height <= 0) return false;
       const style = el.ownerDocument?.defaultView?.getComputedStyle?.(el);
@@ -48,74 +62,121 @@
       el.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: cx, clientY: cy }));
     }
 
-    const { doc, root } = resolveDoc();
-    if (!root) return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'no root' });
-
-    // Step 1: Find ALL haspopup=menu buttons in DOM order across the entire document
-    const allMenuBtns = Array.from(doc.querySelectorAll('button[aria-haspopup="menu"]'))
-      .filter(b => isVisible(b));
-
-    // Step 2: Find the model button (GPT-* text)
-    const modelIdx = allMenuBtns.findIndex(b => /^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(getText(b)));
-    if (modelIdx < 0) {
-      return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'model button not found' });
+    function getMenuItems(picker) {
+      return Array.from(
+        picker.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="option"], div[class*="cursor-interaction"]'),
+      )
+        .map((item) => {
+          const text = getText(item);
+          const lower = normalize(text);
+          const selected =
+            item.getAttribute('aria-checked') === 'true' ||
+            item.getAttribute('data-state') === 'checked' ||
+            !!item.querySelector?.('[data-state="checked"], [aria-checked="true"]') ||
+            item.querySelectorAll?.('svg')?.length >= 2;
+          return { text, lower, selected };
+        })
+        .filter(({ text, lower }) => {
+          if (!text || text.length > 120) return false;
+          if (/^select\b|^model\b/i.test(text)) return false;
+          if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) return false;
+          if (workspaceLabels.has(lower)) return false;
+          return true;
+        });
     }
 
-    // Step 3: The mode button is the NEXT haspopup=menu button after the model button
-    if (modelIdx + 1 >= allMenuBtns.length) {
-      return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'no button after model button' });
-    }
-    const modeBtn = allMenuBtns[modelIdx + 1];
+    function getCandidateButtons(doc) {
+      const buttons = [];
+      for (const searchDoc of [doc, document]) {
+        const searchRoots = [
+          searchDoc.querySelector('[class*="thread-composer-max-width"]'),
+          searchDoc.querySelector('[class*="thread-composer"]'),
+          searchDoc.querySelector('[class*="pb-2"]'),
+          searchDoc.body,
+        ].filter(Boolean);
 
-    // Step 4: Click the mode button and read the dropdown
-    clickElement(modeBtn);
+        for (const searchRoot of searchRoots) {
+          for (const button of searchRoot.querySelectorAll('button[aria-haspopup="menu"]')) {
+            if (!isVisible(button) || buttons.includes(button)) continue;
+            const text = getText(button);
+            const lower = normalize(text);
+            const aria = normalize(button.getAttribute('aria-label') || '');
+            if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) continue;
+            if (workspaceLabels.has(lower)) continue;
+            if (aria.includes('add files')) continue;
+            buttons.push(button);
+          }
+        }
+      }
+      return buttons;
+    }
+
+    function findOpenPicker(doc) {
+      const candidates = [
+        ...Array.from(doc.querySelectorAll('[role="menu"][data-state="open"], [role="listbox"][data-state="open"]')),
+        ...Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"]')).filter(isVisible),
+      ];
+      return candidates.find(isVisible) || null;
+    }
+
+    function scoreCandidate(buttonText, items) {
+      if (items.length === 0) return -1;
+      const buttonLower = normalize(buttonText);
+      let score = 0;
+      if (buttonLower && !workspaceLabels.has(buttonLower)) score += 2;
+      if (knownModes.has(buttonLower)) score += 12;
+      if (items.some(({ lower }) => knownModes.has(lower))) score += 8;
+      if (items.some(({ lower }) => permissionWords.some((word) => lower.includes(word)))) score += 8;
+      if (permissionWords.some((word) => buttonLower.includes(word))) score += 10;
+      if (items.length >= 2 && items.length <= 8) score += 3;
+      return score;
+    }
+
+    const { doc } = resolveDoc();
+    const candidates = getCandidateButtons(doc);
+    if (candidates.length === 0) {
+      return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'mode menu button not found' });
+    }
 
     return new Promise((resolve) => {
-      setTimeout(() => {
-        const menu =
-          doc.querySelector('[role="menu"][data-state="open"]') ||
-          doc.querySelector('[role="listbox"][data-state="open"]') ||
-          Array.from(doc.querySelectorAll('[role="menu"], [role="listbox"]')).find(isVisible) ||
-          null;
+      const inspected = [];
 
-        if (!menu) {
-          doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
-          resolve(JSON.stringify({ modes: [], current: '', currentMode: '', error: 'mode menu did not open' }));
+      const inspectCandidate = (index) => {
+        if (index >= candidates.length) {
+          const best = inspected.sort((a, b) => b.score - a.score)[0];
+          if (!best) {
+            resolve(JSON.stringify({ modes: [], current: '', currentMode: '', error: 'mode menu did not open' }));
+            return;
+          }
+          resolve(JSON.stringify({
+            modes: best.items.map(({ text }) => text),
+            current: best.current || '',
+            currentMode: best.current || '',
+          }));
           return;
         }
 
-        // Read menu items
-        const items = Array.from(
-          menu.querySelectorAll('[role="menuitem"], [role="menuitemradio"], [role="option"], div[class*="cursor-interaction"]')
-        )
-          .map(item => {
-            const text = getText(item);
-            const svgCount = item.querySelectorAll('svg').length;
-            const selected =
-              item.getAttribute('aria-checked') === 'true' ||
-              item.getAttribute('data-state') === 'checked' ||
-              !!item.querySelector('[data-state="checked"], [aria-checked="true"]') ||
-              // Codex uses an extra checkmark SVG on the selected mode item
-              svgCount >= 2;
-            return { text, selected };
-          })
-          .filter(({ text }) => text && text.length > 0 && text.length < 80);
-
-        const modes = items.map(i => i.text);
-        const selectedItem = items.find(i => i.selected);
-        const current = selectedItem ? selectedItem.text : '';
-
-        // Close the menu
-        doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
+        const button = candidates[index];
+        const menuDoc = button.ownerDocument || doc;
+        clickElement(button);
 
         setTimeout(() => {
-          resolve(JSON.stringify({
-            modes,
+          const picker = findOpenPicker(menuDoc);
+          const items = picker ? getMenuItems(picker) : [];
+          const selected = items.find((item) => item.selected);
+          const current = selected?.text || getText(button);
+          inspected.push({
             current,
-            currentMode: current,
-          }));
-        }, 50);
-      }, 350);
+            items,
+            score: scoreCandidate(getText(button), items),
+          });
+
+          menuDoc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
+          setTimeout(() => inspectCandidate(index + 1), 80);
+        }, 260);
+      };
+
+      inspectCandidate(0);
     });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e), modes: [], current: '', currentMode: '' });

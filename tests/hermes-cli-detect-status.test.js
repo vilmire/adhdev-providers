@@ -60,13 +60,13 @@ test('hermes-cli stays generating when startup text is still in the 20-line wind
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
-test('hermes-cli treats isWaitingForResponse as generating even if a stale prompt is still visible', () => {
+test('hermes-cli returns to idle when a stale prompt is visible and no live generation markers remain, even if isWaitingForResponse is still true', () => {
   const screenText = [
     'Welcome to Hermes Agent! Type your message or /help for commands.',
     '❯',
   ].join('\n');
 
-  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'generating');
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
 
 test('hermes-cli stays generating when startup text remains visible but the active turn has only plan/tool lines', () => {

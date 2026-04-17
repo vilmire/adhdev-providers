@@ -2,8 +2,18 @@
   try {
     const frame = document.getElementById('active-frame');
     const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
-    const view = doc.defaultView || window;
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const currentShellModeButton = doc.querySelector('button[aria-label^="Select conversation mode"]');
+    const currentShellModelButton = doc.querySelector('button[aria-label^="Select model"]');
+
+    if (currentShellModeButton || currentShellModelButton || doc.querySelector('.antigravity-agent-side-panel')) {
+      return JSON.stringify({
+        ok: false,
+        error: 'Usage is not exposed by the current Antigravity-hosted Claude Code surface',
+      });
+    }
+
+    const view = doc.defaultView || window;
     const formatPlan = (value) => normalize(value)
       .replace(/^Claude\s+/i, '')
       .replace(/\bpro\b/i, 'Pro')
@@ -25,15 +35,13 @@
       doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
     };
 
-    // Open command menu via footer menu button (toggle — only click if not already open)
     const menuBtn = doc.querySelector('button.menuButton_gGYT1w');
     if (!menuBtn) {
-      return JSON.stringify({ success: false, error: 'menu button not found' });
+      return JSON.stringify({ ok: false, error: 'menu button not found' });
     }
 
     if (!doc.querySelector('.menuPopup_G_S7FQ')) {
       menuBtn.click();
-      // Wait for popup to appear (poll up to 800ms)
       for (let i = 0; i < 8; i++) {
         await sleep(100);
         if (doc.querySelector('.menuPopup_G_S7FQ')) break;
@@ -45,7 +53,7 @@
 
     if (!usageItem) {
       closeDialog();
-      return JSON.stringify({ success: false, error: 'account usage menu item not found' });
+      return JSON.stringify({ ok: false, error: 'account usage menu item not found' });
     }
 
     usageItem.closest('.commandItem_G_S7FQ').click();
@@ -53,7 +61,7 @@
 
     const dialog = doc.querySelector('.dialog_f3sAzg');
     if (!dialog || !visible(dialog)) {
-      return JSON.stringify({ success: false, error: 'account usage dialog not found' });
+      return JSON.stringify({ ok: false, error: 'account usage dialog not found' });
     }
 
     const rows = Array.from(dialog.querySelectorAll('.accountRow_JuUW3A'));
@@ -85,7 +93,7 @@
     closeDialog();
 
     return JSON.stringify({
-      success: true,
+      ok: true,
       usage: {
         plan: plan || null,
         bars: usageBars,
@@ -102,6 +110,6 @@
       }],
     });
   } catch (e) {
-    return JSON.stringify({ success: false, error: e.message || String(e) });
+    return JSON.stringify({ ok: false, error: e.message || String(e) });
   }
 })()

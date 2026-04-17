@@ -32,6 +32,19 @@
       "max": 600
     }
   },
+  "approvalPositiveHints": [
+    "yes",
+    "allow once",
+    "approve",
+    "accept",
+    "continue",
+    "run",
+    "proceed",
+    "confirm",
+    "save",
+    "allow",
+    "always allow"
+  ],
   "controls": [
     {
       "id": "model",

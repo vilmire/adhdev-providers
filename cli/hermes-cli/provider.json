@@ -210,6 +210,7 @@
   "versionCommand": "hermes version",
   "sendDelayMs": 500,
   "sendKey": "\r",
+  "allowInputDuringGeneration": true,
   "spawn": {
     "command": "hermes",
     "args": [

@@ -56,6 +56,45 @@ test('hermes-cli parseOutput preserves prior transcript messages when the curren
   );
 });
 
+test('hermes-cli parseOutput keeps full prior transcript when the conversation already exceeds 50 messages', () => {
+  const priorMessages = Array.from({ length: 60 }, (_, index) => ({
+    role: index % 2 === 0 ? 'user' : 'assistant',
+    content: `turn-${index + 1}`,
+  }));
+
+  const result = parseOutput({
+    screenText: [
+      '● turn-61',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'turn-62',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● turn-61',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'turn-62',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: priorMessages,
+  });
+
+  assert.equal(result.messages.length, 62);
+  assert.deepEqual(toMessages(result).slice(0, 4), [
+    { role: 'user', content: 'turn-1' },
+    { role: 'assistant', content: 'turn-2' },
+    { role: 'user', content: 'turn-3' },
+    { role: 'assistant', content: 'turn-4' },
+  ]);
+  assert.deepEqual(toMessages(result).slice(-4), [
+    { role: 'user', content: 'turn-59' },
+    { role: 'assistant', content: 'turn-60' },
+    { role: 'user', content: 'turn-61' },
+    { role: 'assistant', content: 'turn-62' },
+  ]);
+});
+
 test('hermes-cli parseOutput does not duplicate prior turns when the visible transcript already contains them', () => {
   const userMessage = '지금 채팅 터미널 전환 버튼 동작도 엄청 느려졌고 제대로 ⚠️ Dangerous Command 얼라우도 안되고 제너레이팅중에 유저인풋을 강제로 막는거같은데 이건 불필요한 행동임.';
   const screenText = [
@@ -218,4 +257,39 @@ test('hermes-cli parseOutput surfaces live tool activity and progress bubbles du
   });
 
   assert.deepEqual(toDetailedMessages(staleBufferResult), expectedMessages);
+});
+
+test('hermes-cli parseOutput ignores startup update warnings so the live user turn is not duplicated', () => {
+  const prompt = 'Run pwd, then reply with the working directory. Use tools if needed and keep it short.';
+  const screenText = [
+    '╭───────────── Hermes Agent v0.8.0 (2026.4.8) · upstream 764536b6 ─────────────╮',
+    '│                                    ⚠ 450 commits behind — run hermes',
+    '│                                    update to update                          │',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    `● ${prompt}`,
+    'Initializing agent...',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(
+    toDetailedMessages(result),
+    [
+      {
+        role: 'user',
+        kind: 'standard',
+        senderName: undefined,
+        content: prompt,
+      },
+    ],
+  );
 });

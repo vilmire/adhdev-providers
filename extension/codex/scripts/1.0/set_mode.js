@@ -27,7 +27,7 @@
       return undefined;
     };
 
-    const modeValue = findValue(args, ['mode', 'MODE']);
+    const modeValue = findValue(args, ['mode', 'MODE', 'value']);
     const targetMode = modeValue != null ? String(modeValue) : '';
 
     function resolveDoc() {
@@ -154,8 +154,7 @@
       return score;
     }
 
-    const { doc, root } = resolveDoc();
-    if (!root) return JSON.stringify({ success: false, error: 'no root' });
+    const { doc } = resolveDoc();
 
     const want =
       typeof targetMode === 'string'
@@ -243,13 +242,11 @@
 
           if (match) {
             clickElement(match.el);
-            setTimeout(() => {
-              resolve(JSON.stringify({
-                success: true,
-                mode: match.text,
-                changed: normalize(match.text) !== normalize(current),
-              }));
-            }, 220);
+            resolve(JSON.stringify({
+              success: true,
+              mode: match.text,
+              changed: normalize(match.text) !== normalize(current),
+            }));
             return;
           }
 

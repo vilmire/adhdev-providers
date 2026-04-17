@@ -7,6 +7,7 @@
     const buttonText = ${ BUTTON_TEXT };
 
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const normalizeApprovalLabel = (value) => normalize(value).replace(/^\d+(?:\s*[.)]|\s)+/, '').trim().toLowerCase();
     const isVisible = (el) => {
       if (!el || el.closest?.('[inert]')) return false;
       const rect = el.getBoundingClientRect?.() || { width: 0, height: 0, left: 0, top: 0 };
@@ -40,7 +41,7 @@
           const key = `${label.toLowerCase()}::${node.tagName || ''}::${node.getAttribute?.('role') || ''}`;
           if (seen.has(key)) continue;
           seen.add(key);
-          targets.push({ node, label, normalized: label.toLowerCase() });
+          targets.push({ node, label, approvalLabel: normalizeApprovalLabel(label), normalized: label.toLowerCase() });
         }
       }
       return targets;
@@ -99,10 +100,10 @@
       return JSON.stringify({ resolved: true, clicked: num });
     }
 
-    const approvePatterns = ['approve', 'allow', 'accept', 'continue', 'run', 'yes', 'always', 'once', 'proceed', 'confirm', 'submit', 'save', 'resume'];
+    const approvePatterns = ['yes', 'allow once', 'approve', 'accept', 'continue', 'run', 'proceed', 'confirm', 'submit', 'save', 'resume', 'trust', 'allow', 'always allow'];
     const rejectPatterns = ['reject', 'deny', 'cancel', 'dismiss', 'no', 'skip', 'abort'];
     const patterns = action === 'approve' ? approvePatterns : rejectPatterns;
-    const match = targets.find(({ normalized }) => patterns.some((pattern) => normalized === pattern || normalized.startsWith(pattern) || normalized.includes(pattern)));
+    const match = targets.find(({ approvalLabel }) => patterns.some((pattern) => approvalLabel === pattern || approvalLabel.startsWith(pattern) || approvalLabel.includes(pattern)));
     if (!match) {
       return JSON.stringify({ resolved: false, error: 'approval target not found', available: targets.map((target) => target.label) });
     }

@@ -26,6 +26,7 @@ function isNoise(line) {
     || /Enter to interrupt, Ctrl\+C to cancel/i.test(line)
     || /Initializing agent/i.test(line)
     || /(?:^|\s)(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?reasoning(?:\.\.\.|…)/i.test(line)
+    || /commits behind/i.test(line)
     || /^❯\s*$/.test(line)
     || /^Session:\s+\d{8}_\d{6}_/i.test(line)
     || /^Project:\s+/i.test(line)
@@ -102,8 +103,9 @@ function parseActivityMessage(line) {
   const icon = match[1];
   const body = match[2]
     .replace(/\s+\d+(?:\.\d+)?s$/u, '')
+    .replace(/\s*[│┊]\s*$/u, '')
     .trim();
-  if (!body) return null;
+  if (!body || isNoise(body)) return null;
   if (icon === '💻' || icon === '$' || body.startsWith('$')) {
     return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
   }
@@ -125,7 +127,7 @@ function dedupeMessages(messages) {
     }
     next.push(message);
   }
-  return next.slice(-50).map((message, index) => ({
+  return next.map((message, index) => ({
     id: `msg_${index}`,
     role: message.role,
     content: message.content,

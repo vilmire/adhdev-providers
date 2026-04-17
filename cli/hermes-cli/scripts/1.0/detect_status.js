@@ -50,16 +50,18 @@ module.exports = function detectStatus(input) {
     return 'idle';
   }
 
-  if (input?.isWaitingForResponse === true) {
-    return 'generating';
-  }
-
   // Only call idle when we see a prompt indicator, no active generation footer,
   // and no live turn markers such as the current user prompt or tool activity.
   // This avoids false-completing while Hermes is still working through a tool plan
   // after startup text leaves a stale idle prompt in the visible window.
+  // Important: evaluate this BEFORE trusting adapter isWaitingForResponse, because
+  // the adapter flag can stay stale after Hermes returns to a prompt-only screen.
   if ((hasBarePrompt || hasPrompt) && !hasThinkingIndicator && !hasInitializing && !hasInterruptFooter && !hasLiveTurnMarkers) {
     return 'idle';
+  }
+
+  if (input?.isWaitingForResponse === true) {
+    return 'generating';
   }
 
   if (hasInitializing || hasThinkingIndicator || hasInterruptFooter || hasLiveTurnMarkers) {
