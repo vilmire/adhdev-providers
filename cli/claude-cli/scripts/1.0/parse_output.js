@@ -455,20 +455,33 @@ function toMessageObjects(messages, status) {
 
 function extractControlValues(screenText) {
     const values = {};
-    const lines = splitLines(screenText);
+    const lines = splitLines(screenText)
+        .map((rawLine) => sanitizeLine(rawLine).trim())
+        .filter(Boolean)
+        .slice(-15);
 
-    for (const rawLine of lines) {
-        const trimmed = sanitizeLine(rawLine).trim();
+    const explicitDefault = lines.some((trimmed) => /^(?:[⎿└╰│>\-\s]+)?Set model to\s+(?:Sonnet|Opus|Haiku)(?:\s+\d+(?:\.\d+)*)?\s+\(default\)$/i.test(trimmed));
+    if (explicitDefault) {
+        values.model = 'default';
+    }
 
-        // Model: footer shows "Sonnet" / "Opus" / "Haiku" at line start
-        const modelMatch = trimmed.match(/^(Sonnet|Opus|Haiku)\b/i);
-        if (modelMatch) {
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const trimmed = lines[index];
+
+        const setModelMatch = trimmed.match(/^(?:[⎿└╰│>\-\s]+)?Set model to\s+(Sonnet|Opus|Haiku)(?:\s+\d+(?:\.\d+)*)?$/i);
+        if (setModelMatch && values.model !== 'default') {
+            values.model = setModelMatch[1].toLowerCase();
+        }
+
+        // Model: footer shows "Sonnet 4.6 ..." / "Opus 4.6 ..." / "Haiku 4.6 ..."
+        const modelMatch = trimmed.match(/^(Sonnet|Opus|Haiku)(?:\s+\d+(?:\.\d+)*)?\b/i);
+        if (modelMatch && values.model !== 'default' && values.model === undefined) {
             values.model = modelMatch[1].toLowerCase();
         }
 
         // Effort: footer shows "[spinner] medium · /effort" or similar
         const effortMatch = trimmed.match(/\b(low|medium|high|max)\s+[·•]\s+\/effort\b/i);
-        if (effortMatch) {
+        if (effortMatch && values.effort === undefined) {
             values.effort = effortMatch[1].toLowerCase();
         }
     }

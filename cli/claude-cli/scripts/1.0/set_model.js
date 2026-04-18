@@ -11,12 +11,16 @@ module.exports = function setModel(input) {
         return { ok: false, error: 'Model value is required' };
     }
 
+    const model = value.trim();
     return {
         ok: true,
-        currentValue: value.trim(),
+        currentValue: model,
+        controlValues: {
+            model,
+        },
         command: {
             type: 'pty_write',
-            text: `/model ${value.trim()}`,
+            text: `/model ${model}`,
         },
     };
 };
