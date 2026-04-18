@@ -41,6 +41,8 @@ module.exports.sendMessage = (params) => {
 module.exports.setMode = (params) => withParams('set_mode.js', params);
 
 module.exports.setModel = (params) => withParams('set_model.js', params);
+module.exports.focusEditor = () => load('focus_editor.js');
+module.exports.openPanel = () => load('open_panel.js');
 
 module.exports.switchSession = (params) => {
   const normalized = typeof params === 'string'

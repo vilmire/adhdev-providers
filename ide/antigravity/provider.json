@@ -124,6 +124,7 @@
       "label": "New",
       "icon": "\u2795",
       "placement": "bar",
+      "hidden": true,
       "order": 80,
       "invokeScript": "newSession"
     }

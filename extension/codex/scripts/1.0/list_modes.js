@@ -111,6 +111,16 @@
       return buttons;
     }
 
+    function hasVisibleSessionRows(doc) {
+      return Array.from(doc.querySelectorAll('div[role="button"], [role="button"], div, li, a'))
+        .filter(isVisible)
+        .some((el) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < 24 || rect.top > 220 || rect.height < 20 || rect.height > 56) return false;
+          return !!el.querySelector('.tabular-nums, [class*="tabular-nums"], [class*="text-right"]');
+        });
+    }
+
     function findOpenPicker(doc) {
       const candidates = [
         ...Array.from(doc.querySelectorAll('[role="menu"][data-state="open"], [role="listbox"][data-state="open"]')),
@@ -133,6 +143,10 @@
     }
 
     const { doc } = resolveDoc();
+    const inTaskList = !doc.querySelector('[data-content-search-turn-key]') && hasVisibleSessionRows(doc);
+    if (inTaskList) {
+      return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'task list visible; open a Codex thread first' });
+    }
     const candidates = getCandidateButtons(doc);
     if (candidates.length === 0) {
       return JSON.stringify({ modes: [], current: '', currentMode: '', error: 'mode menu button not found' });

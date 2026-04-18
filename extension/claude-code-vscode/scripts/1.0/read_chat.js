@@ -49,7 +49,22 @@
     ) || 'Untitled';
 
     const root = doc.getElementById('root') || doc.body;
-    const isVisible = visible(root);
+    const visibleUiNodes = [
+      root,
+      ...Array.from(doc.querySelectorAll([
+        '.messagesContainer_07S1Yg',
+        '.message_07S1Yg',
+        '.newSessionButton_djirOA',
+        '.sessionItem_OOQiHg',
+        '.tab_OOQiHg',
+        '[role="textbox"]',
+        'input',
+        'textarea',
+        'button',
+        '[role="button"]'
+      ].join(',')))
+    ];
+    const isVisible = visibleUiNodes.some(visible);
     const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
     const inputContent = normalizeBlock(input?.innerText || input?.textContent || '');
 
@@ -177,24 +192,13 @@
 
     const spinner = doc.querySelector('.messagesContainer_07S1Yg > .spinnerRow_07S1Yg');
     const spinnerText = spinner && visible(spinner) ? normalizeBlock(spinner.innerText || spinner.textContent || '') : '';
-    const modeButton = doc.querySelector('button[aria-label^="Select conversation mode"]')
-      || doc.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
+    const modeButton = doc.querySelector('button.footerButton_gGYT1w.footerButtonPrimary_gGYT1w');
     const mode = normalizeInline(
       modeButton?.textContent
-      || modeButton?.getAttribute?.('aria-label')?.replace(/^Select conversation mode, current:\s*/i, '')
+      || modeButton?.getAttribute?.('aria-label')
       || ''
     );
     if (mode) getControlCache().mode = mode;
-    const modelButton = doc.querySelector('button[aria-label^="Select model"]');
-    const liveModel = normalizeInline(
-      modelButton?.textContent
-      || modelButton?.getAttribute?.('aria-label')?.replace(/^Select model, current:\s*/i, '')
-      || ''
-    );
-    if (liveModel) {
-      getControlCache().model = liveModel;
-      getControlCache().modelLabel = liveModel;
-    }
     const cachedThinking = getControlCache().thinking;
     const effortLabel = normalizeInline(
       doc.querySelector('.effortLabel_8RAulQ, [class*="effortLabel"]')?.textContent
@@ -205,7 +209,7 @@
       const match = effortLabel.match(/(low|medium|high|max)/i);
       return match ? match[1].toLowerCase() : '';
     })();
-    const model = liveModel || normalizeInline(getControlCache().modelLabel || getControlCache().model || '');
+    const model = normalizeInline(getControlCache().modelLabel || getControlCache().model || '');
 
     const footerStopButton = Array.from(doc.querySelectorAll('button.footerButton_gGYT1w, button[class*="footerButton"]'))
       .filter(visible)

@@ -9,117 +9,41 @@
 
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const shellCandidates = (() => {
-      const candidates = [requestedRaw];
-      if (requested === 'default' || requested === 'sonnet' || requested === 'claude-sonnet-4-6') {
-        candidates.push('Claude Sonnet 4.6 (Thinking)', 'Claude Sonnet');
-      }
-      if (requested === 'opus' || requested === 'claude-opus-4' || requested === 'claude-opus-4-6') {
-        candidates.push('Claude Opus 4.6 (Thinking)', 'Claude Opus');
-      }
-      if (requested === 'haiku' || requested === 'claude-haiku-3-5' || requested === 'claude-haiku-4-5') {
-        candidates.push('Claude Haiku');
-      }
-      return Array.from(new Set(candidates.map((value) => normalize(value)).filter(Boolean)));
-    })();
-
-    const findCurrentShellModelTrigger = () => {
-      const ariaButton = doc.querySelector('button[aria-label^="Select model"]');
-      if (ariaButton && ariaButton.offsetWidth > 0) return ariaButton;
-      const exact = doc.querySelector('.flex.min-w-0.max-w-full.cursor-pointer.items-center');
-      if (exact && exact.offsetWidth > 0) return exact;
-      return Array.from(doc.querySelectorAll('div, button')).find((el) => {
-        const cls = String(el.className || '');
-        return cls.includes('min-w-0')
-          && cls.includes('max-w-full')
-          && cls.includes('cursor-pointer')
-          && cls.includes('items-center')
-          && el.offsetWidth > 0;
-      }) || null;
-    };
-
-    const clickCurrentShellModel = (candidates) => {
-      const items = Array.from(doc.querySelectorAll('.px-2.py-1.flex.items-center.justify-between.cursor-pointer'));
-      for (const item of items) {
-        const label = normalize(item.querySelector('.text-xs.font-medium')?.textContent || item.textContent || '');
-        if (!label) continue;
-        const labelLower = label.toLowerCase();
-        const match = candidates.find((candidate) => {
-          const targetLower = candidate.toLowerCase();
-          return labelLower === targetLower || labelLower.includes(targetLower) || targetLower.includes(labelLower);
-        });
-        if (match) {
-          item.click();
-          return label;
-        }
-      }
-      return null;
-    };
-
-    const currentShellTrigger = findCurrentShellModelTrigger();
-    const currentShellModel = normalize(
-      currentShellTrigger?.textContent
-      || currentShellTrigger?.getAttribute?.('aria-label')?.replace(/^Select model, current:\s*/i, '')
-      || ''
-    );
-    if (currentShellTrigger) {
-      if (currentShellModel) {
-        const currentLower = currentShellModel.toLowerCase();
-        const alreadySelected = shellCandidates.some((candidate) => {
-          const targetLower = candidate.toLowerCase();
-          return currentLower === targetLower || currentLower.includes(targetLower) || targetLower.includes(currentLower);
-        });
-        if (alreadySelected) {
-          return JSON.stringify({ ok: true, model: currentShellModel, currentValue: currentShellModel, changed: false, method: 'antigravity-shell' });
-        }
-      }
-      const direct = clickCurrentShellModel(shellCandidates);
-      if (direct) {
-        await sleep(250);
-        return JSON.stringify({ ok: true, model: direct, currentValue: direct, changed: true, method: 'antigravity-shell' });
-      }
-      currentShellTrigger.click();
-      await sleep(350);
-      const hit = clickCurrentShellModel(shellCandidates);
-      if (hit) {
-        await sleep(250);
-        return JSON.stringify({ ok: true, model: hit, currentValue: hit, changed: true, method: 'antigravity-shell' });
-      }
-    }
-
     const visible = (el) => {
       if (!el || el.closest('[inert]')) return false;
       const rect = el.getBoundingClientRect();
       const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
       return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
     };
-    const aliases = {
-      default: { menuLabel: 'Default (recommended)', cacheValue: 'default' },
-      sonnet: { menuLabel: 'Default (recommended)', cacheValue: 'default' },
-      'claude-sonnet-4-6': { menuLabel: 'Default (recommended)', cacheValue: 'default' },
-      opus: { menuLabel: 'Opus', cacheValue: 'opus' },
-      'claude-opus-4': { menuLabel: 'Opus', cacheValue: 'opus' },
-      'claude-opus-4-6': { menuLabel: 'Opus', cacheValue: 'opus' },
-      haiku: { menuLabel: 'Haiku', cacheValue: 'haiku' },
-      'claude-haiku-3-5': { menuLabel: 'Haiku', cacheValue: 'haiku' },
-      'claude-haiku-4-5': { menuLabel: 'Haiku', cacheValue: 'haiku' },
-    };
-    const target = aliases[requested];
-    if (!target) return JSON.stringify({ ok: false, error: `unsupported model: ${requestedRaw}` });
-
-    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
-    if (!input) {
-      return JSON.stringify({ ok: false, error: `model not supported on the current Claude Code surface: ${requestedRaw}` });
-    }
-
     const getCache = () => {
       if (!window.__adhdevClaudeCodeControls || typeof window.__adhdevClaudeCodeControls !== 'object') {
         window.__adhdevClaudeCodeControls = {};
       }
       return window.__adhdevClaudeCodeControls;
     };
+
+    const aliases = {
+      default: ['Default (recommended)', 'Default', 'Sonnet'],
+      sonnet: ['Default (recommended)', 'Default', 'Sonnet'],
+      'claude-sonnet-4-6': ['Default (recommended)', 'Default', 'Sonnet'],
+      opus: ['Opus'],
+      'claude-opus-4': ['Opus'],
+      'claude-opus-4-6': ['Opus'],
+      haiku: ['Haiku'],
+      'claude-haiku-3-5': ['Haiku'],
+      'claude-haiku-4-5': ['Haiku'],
+    };
+    const requestedCandidates = Array.from(new Set([
+      requestedRaw,
+      ...(aliases[requested] || []),
+    ].map((value) => normalize(value)).filter(Boolean)));
+
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const menuButton = doc.querySelector('button.menuButton_gGYT1w');
+    let openedViaInput = false;
+
     const clearInput = () => {
-      input.focus();
+      if (!input) return;
       input.textContent = '';
       input.dispatchEvent(new view.InputEvent('input', {
         bubbles: true,
@@ -129,81 +53,117 @@
       input.dispatchEvent(new view.Event('change', { bubbles: true }));
     };
 
-    input.focus();
-    input.textContent = '/';
-    input.dispatchEvent(new view.InputEvent('beforeinput', {
-      bubbles: true,
-      cancelable: true,
-      inputType: 'insertText',
-      data: '/',
-    }));
-    input.dispatchEvent(new view.InputEvent('input', {
-      bubbles: true,
-      inputType: 'insertText',
-      data: '/',
-    }));
-    input.dispatchEvent(new view.Event('change', { bubbles: true }));
-    await sleep(250);
+    const openCommandMenu = async () => {
+      if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+      if (menuButton && visible(menuButton)) {
+        menuButton.click();
+        for (let i = 0; i < 8; i += 1) {
+          await sleep(100);
+          if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+        }
+      }
+      if (!input || !visible(input)) return false;
+      openedViaInput = true;
+      input.focus();
+      input.textContent = '/';
+      input.dispatchEvent(new view.InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: true,
+        inputType: 'insertText',
+        data: '/',
+      }));
+      input.dispatchEvent(new view.InputEvent('input', {
+        bubbles: true,
+        inputType: 'insertText',
+        data: '/',
+      }));
+      input.dispatchEvent(new view.Event('change', { bubbles: true }));
+      for (let i = 0; i < 8; i += 1) {
+        await sleep(100);
+        if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+      }
+      return false;
+    };
+
+    const opened = await openCommandMenu();
+    if (!opened) {
+      return JSON.stringify({ ok: false, error: `model not supported on the current Claude Code surface: ${requestedRaw}` });
+    }
 
     const switchItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
       .filter(visible)
       .find((el) => {
-        const text = normalize(el.textContent || '');
+        const text = normalize(el.textContent || el.getAttribute('aria-label') || '');
         const title = normalize(el.getAttribute('title') || '');
         return /switch model/i.test(text) || /change the ai model/i.test(title);
       });
     if (!switchItem) {
-      clearInput();
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (openedViaInput) clearInput();
       return JSON.stringify({ ok: false, error: 'switch model item not found' });
     }
 
     switchItem.click();
     await sleep(250);
 
-    const modelItem = Array.from(doc.querySelectorAll('.modelItem_G8AMvA, [class*="modelItem"]'))
+    const items = Array.from(doc.querySelectorAll('.modelItem_G8AMvA, [class*="modelItem"]'))
       .filter(visible)
-      .find((el) => {
+      .map((el) => {
         const label = normalize(
           el.querySelector('.modelLabel_G8AMvA, [class*="modelLabel"]')?.textContent
           || el.textContent
           || ''
         );
-        return label === target.menuLabel;
-      });
-    if (!modelItem) {
+        const className = normalize(el.className || '');
+        const active = /activeModelItem|selected|checked/i.test(className)
+          || el.getAttribute('aria-checked') === 'true'
+          || el.getAttribute('aria-selected') === 'true';
+        return label ? { el, label, active } : null;
+      })
+      .filter(Boolean);
+
+    const currentItem = items.find((item) => item.active) || null;
+    const currentLabel = currentItem?.label || normalize(getCache().modelLabel || getCache().model || '');
+    const alreadySelected = currentLabel && requestedCandidates.some((candidate) => {
+      const labelLower = currentLabel.toLowerCase();
+      const candidateLower = candidate.toLowerCase();
+      return labelLower === candidateLower || labelLower.includes(candidateLower) || candidateLower.includes(labelLower);
+    });
+    if (alreadySelected) {
       doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-      clearInput();
-      return JSON.stringify({ ok: false, error: `model option not found: ${target.menuLabel}` });
+      if (openedViaInput) clearInput();
+      getCache().model = currentLabel;
+      getCache().modelLabel = currentLabel;
+      return JSON.stringify({ ok: true, model: currentLabel, currentValue: currentLabel, changed: false, method: 'command-menu' });
     }
 
-    const label = normalize(
-      modelItem.querySelector('.modelLabel_G8AMvA, [class*="modelLabel"]')?.textContent
-      || modelItem.textContent
-      || target.menuLabel
-    );
-    const active = /activeModelItem/i.test(normalize(modelItem.className || ''));
-
-    if (!active) {
-      modelItem.click();
-      await sleep(250);
+    const match = items.find((item) => requestedCandidates.some((candidate) => {
+      const labelLower = item.label.toLowerCase();
+      const candidateLower = candidate.toLowerCase();
+      return labelLower === candidateLower || labelLower.includes(candidateLower) || candidateLower.includes(labelLower);
+    }));
+    if (!match) {
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (openedViaInput) clearInput();
+      return JSON.stringify({ ok: false, error: `model option not found: ${requestedRaw}`, available: items.map((item) => item.label) });
     }
 
+    match.el.click();
+    await sleep(250);
     doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    clearInput();
+    if (openedViaInput) clearInput();
 
-    const cache = getCache();
-    cache.model = target.cacheValue;
-    cache.modelLabel = label;
+    getCache().model = match.label;
+    getCache().modelLabel = match.label;
 
     return JSON.stringify({
       ok: true,
-      model: target.cacheValue,
-      currentValue: target.cacheValue,
-      label,
-      changed: !active,
-      method: 'gui',
+      model: match.label,
+      currentValue: match.label,
+      changed: true,
+      method: 'command-menu',
     });
   } catch (e) {
     return JSON.stringify({ ok: false, error: e.message || String(e) });
   }
-})()
+})();

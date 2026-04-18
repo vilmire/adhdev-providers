@@ -32,6 +32,53 @@
 
         const titleParts = document.title.split(' \u2014 ');
         const title = (titleParts.length >= 2 ? titleParts[titleParts.length - 1] : titleParts[0] || '').trim() || 'Active Session';
+        const normalizeInline = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+
+        const findModelTrigger = () => {
+            let trigger = document.querySelector('.flex.min-w-0.max-w-full.cursor-pointer.items-center');
+            if (!trigger || trigger.offsetWidth === 0) {
+                trigger = [...document.querySelectorAll('div, button')].find(e => {
+                    const cls = e.className || '';
+                    return cls.includes('min-w-0')
+                        && cls.includes('max-w-full')
+                        && cls.includes('cursor-pointer')
+                        && cls.includes('items-center')
+                        && e.offsetWidth > 0;
+                }) || null;
+            }
+            return trigger;
+        };
+
+        const findModeTrigger = () => {
+            const v1 = [...document.querySelectorAll('button')].find(b => {
+                const cls = b.className || '';
+                return cls.includes('py-1')
+                    && cls.includes('pl-1')
+                    && cls.includes('pr-2')
+                    && cls.includes('opacity-70')
+                    && b.offsetWidth > 0;
+            });
+            if (v1) return v1;
+            return [...document.querySelectorAll('button, span')].find(b => {
+                const cls = b.className || '';
+                const text = normalizeInline(b.textContent || '');
+                return cls.includes('py-1')
+                    && cls.includes('pl-1')
+                    && cls.includes('pr-2')
+                    && b.offsetWidth > 0
+                    && (text === 'Fast' || text === 'Planning' || text === 'Normal');
+            }) || null;
+        };
+
+        const modelTrigger = findModelTrigger();
+        const modeTrigger = findModeTrigger();
+        const model = normalizeInline(
+            modelTrigger?.querySelector?.('.text-xs.font-medium')?.textContent
+            || modelTrigger?.querySelector?.('span.text-xs')?.textContent
+            || modelTrigger?.textContent
+            || ''
+        );
+        const mode = normalizeInline(modeTrigger?.textContent || '');
 
         // ─── HTML → Markdown converter (Dashboard uses ReactMarkdown+remarkGfm) ───
         // extractCodeText: layout-independent code text extraction
@@ -345,7 +392,22 @@
             if (activeModal) status = 'waiting_approval';
         } catch (e) { activeModal = null; }
 
-        return { id: 'active_session', status, title, messages: final, inputContent, activeModal };
+        return {
+            id: 'active_session',
+            status,
+            title,
+            ...(model ? { model } : {}),
+            ...(mode ? { mode } : {}),
+            messages: final,
+            inputContent,
+            activeModal,
+            ...(model || mode ? {
+                controlValues: {
+                    ...(model ? { model } : {}),
+                    ...(mode ? { mode } : {}),
+                },
+            } : {}),
+        };
     } catch (e) {
         return { id: 'error', status: 'error', error: e.message, messages: [] };
     }

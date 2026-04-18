@@ -1,54 +1,128 @@
-(() => {
+;(async () => {
   try {
     const frame = document.getElementById('active-frame');
     const doc = frame?.contentDocument || frame?.contentWindow?.document || document;
+    const view = doc.defaultView || window;
 
     const normalize = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+    const visible = (el) => {
+      if (!el || el.closest('[inert]')) return false;
+      const rect = el.getBoundingClientRect();
+      const style = (el.ownerDocument?.defaultView || view).getComputedStyle(el);
+      return rect.width > 8 && rect.height > 8 && style.display !== 'none' && style.visibility !== 'hidden';
+    };
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const dedupe = (values) => Array.from(new Set(values.filter(Boolean)));
-
-    const findCurrentShellModelTrigger = () => {
-      const ariaButton = doc.querySelector('button[aria-label^="Select model"]');
-      if (ariaButton && ariaButton.offsetWidth > 0) return ariaButton;
-      const exact = doc.querySelector('.flex.min-w-0.max-w-full.cursor-pointer.items-center');
-      if (exact && exact.offsetWidth > 0) return exact;
-      return Array.from(doc.querySelectorAll('div, button')).find((el) => {
-        const cls = String(el.className || '');
-        return cls.includes('min-w-0')
-          && cls.includes('max-w-full')
-          && cls.includes('cursor-pointer')
-          && cls.includes('items-center')
-          && el.offsetWidth > 0;
-      }) || null;
+    const getCache = () => {
+      if (!window.__adhdevClaudeCodeControls || typeof window.__adhdevClaudeCodeControls !== 'object') {
+        window.__adhdevClaudeCodeControls = {};
+      }
+      return window.__adhdevClaudeCodeControls;
     };
 
-    const currentShellItems = Array.from(doc.querySelectorAll('.px-2.py-1.flex.items-center.justify-between.cursor-pointer'));
-    const shellModels = dedupe(currentShellItems.map((item) => normalize(
-      item.querySelector('.text-xs.font-medium')?.textContent
-      || item.textContent
-      || ''
-    )).filter((text) => text.length > 0 && text.length < 80 && !/^Model$/i.test(text)));
+    const input = doc.querySelector('[role="textbox"].messageInput_cKsPxg');
+    const menuButton = doc.querySelector('button.menuButton_gGYT1w');
+    let openedViaInput = false;
 
-    const shellTrigger = findCurrentShellModelTrigger();
-    const shellCurrent = normalize(
-      shellTrigger?.textContent
-      || shellTrigger?.getAttribute?.('aria-label')?.replace(/^Select model, current:\s*/i, '')
-      || ''
-    );
+    const clearInput = () => {
+      if (!input) return;
+      input.textContent = '';
+      input.dispatchEvent(new view.InputEvent('input', {
+        bubbles: true,
+        inputType: 'deleteContentBackward',
+        data: null,
+      }));
+      input.dispatchEvent(new view.Event('change', { bubbles: true }));
+    };
 
-    if (shellModels.length > 0 || shellCurrent) {
-      return JSON.stringify({
-        options: shellModels.map((model) => ({ value: model, label: model })),
-        currentValue: shellCurrent,
-      });
+    const openCommandMenu = async () => {
+      if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+      if (menuButton && visible(menuButton)) {
+        menuButton.click();
+        for (let i = 0; i < 8; i += 1) {
+          await sleep(100);
+          if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+        }
+      }
+      if (!input || !visible(input)) return false;
+      openedViaInput = true;
+      input.focus();
+      input.textContent = '/';
+      input.dispatchEvent(new view.InputEvent('beforeinput', {
+        bubbles: true,
+        cancelable: true,
+        inputType: 'insertText',
+        data: '/',
+      }));
+      input.dispatchEvent(new view.InputEvent('input', {
+        bubbles: true,
+        inputType: 'insertText',
+        data: '/',
+      }));
+      input.dispatchEvent(new view.Event('change', { bubbles: true }));
+      for (let i = 0; i < 8; i += 1) {
+        await sleep(100);
+        if (doc.querySelector('.menuPopup_G_S7FQ')) return true;
+      }
+      return false;
+    };
+
+    const opened = await openCommandMenu();
+    if (!opened) {
+      return JSON.stringify({ options: [], currentValue: '', error: 'model selector not found' });
     }
 
-    return JSON.stringify({
-      options: [
-        { value: 'default', label: 'default' },
-        { value: 'opus', label: 'opus' },
-        { value: 'haiku', label: 'haiku' },
-      ],
-    });
+    const switchItem = Array.from(doc.querySelectorAll('.commandItem_G_S7FQ, [class*="commandItem"]'))
+      .filter(visible)
+      .find((el) => {
+        const text = normalize(el.textContent || el.getAttribute('aria-label') || '');
+        const title = normalize(el.getAttribute('title') || '');
+        return /switch model/i.test(text) || /change the ai model/i.test(title);
+      });
+
+    if (!switchItem) {
+      doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      if (openedViaInput) clearInput();
+      return JSON.stringify({ options: [], currentValue: '', error: 'switch model item not found' });
+    }
+
+    switchItem.click();
+    await sleep(250);
+
+    const items = Array.from(doc.querySelectorAll('.modelItem_G8AMvA, [class*="modelItem"]'))
+      .filter(visible)
+      .map((item) => {
+        const label = normalize(
+          item.querySelector('.modelLabel_G8AMvA, [class*="modelLabel"]')?.textContent
+          || item.textContent
+          || ''
+        );
+        const className = normalize(item.className || '');
+        const active = /activeModelItem|selected|checked/i.test(className)
+          || item.getAttribute('aria-checked') === 'true'
+          || item.getAttribute('aria-selected') === 'true';
+        return label ? { label, active } : null;
+      })
+      .filter(Boolean);
+
+    const currentValue = items.find((item) => item.active)?.label
+      || normalize(getCache().modelLabel || getCache().model || '');
+
+    if (currentValue) {
+      getCache().model = currentValue;
+      getCache().modelLabel = currentValue;
+    }
+
+    const options = dedupe(items.map((item) => item.label)).map((label) => ({ value: label, label }));
+
+    doc.dispatchEvent(new view.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    if (openedViaInput) clearInput();
+
+    if (options.length > 0 || currentValue) {
+      return JSON.stringify({ options, currentValue });
+    }
+
+    return JSON.stringify({ options: [], currentValue: '', error: 'model selector not found' });
   } catch (e) {
     return JSON.stringify({ options: [], currentValue: '', error: e.message || String(e) });
   }

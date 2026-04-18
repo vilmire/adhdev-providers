@@ -770,19 +770,21 @@
     if (!isVisible && messages.length === 0) status = 'panel_hidden';
 
     // ─── 4. Model / Mode ───
-    // Model: found from haspopup=menu button whose text matches model name patterns (GPT-*, o1-*, etc.)
-    // Mode: Codex uses a brain icon button (no text) that requires clicking to read the dropdown.
-    //       readChat cannot click dropdowns (it's a polling script), so mode is left empty here
-    //       and provided by the separate listModes script.
+    // Surface the currently selected model/mode from visible menu buttons without
+    // opening pickers during polling so the dashboard bar can reflect live state.
     let model = '';
     let mode = '';
+    const knownModeLabels = new Set(['low', 'medium', 'high', 'extra high', 'ask', 'edit', 'agent', 'full auto', 'auto', 'planning', 'fast', 'normal']);
     const allMenuBtns = Array.from(doc.querySelectorAll('button[aria-haspopup="menu"]'))
       .filter(btn => btn.offsetWidth > 0 && !btn.closest('[inert]'));
     for (const btn of allMenuBtns) {
       const text = ((btn.textContent || '').trim() || (btn.getAttribute('aria-label') || '').trim()).replace(/\s+/g, ' ');
       if (/^(GPT-|gpt-|o\d|claude-|sonnet|opus)/i.test(text)) {
         model = text;
-        break;
+        continue;
+      }
+      if (!mode && knownModeLabels.has(text.toLowerCase())) {
+        mode = text;
       }
     }
 
@@ -807,6 +809,10 @@
       mode,
       taskInfo,
       activeModal,
+      controlValues: {
+        ...(model ? { model } : {}),
+        ...(mode ? { mode } : {}),
+      },
     });
   } catch (e) {
     return JSON.stringify({ error: e.message || String(e) });

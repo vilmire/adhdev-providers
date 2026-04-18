@@ -50,6 +50,16 @@
       return docs;
     }
 
+    function hasVisibleSessionRows(doc) {
+      return Array.from(doc.querySelectorAll('div[role="button"], [role="button"], div, li, a'))
+        .filter(isVisible)
+        .some((el) => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < 24 || rect.top > 220 || rect.height < 20 || rect.height > 56) return false;
+          return !!el.querySelector('.tabular-nums, [class*="tabular-nums"], [class*="text-right"]');
+        });
+    }
+
     function findModelButton(docs) {
       for (const doc of docs) {
         const buttons = Array.from(doc.querySelectorAll('button[aria-haspopup="menu"]')).filter(isVisible);
@@ -77,6 +87,14 @@
     }
 
     const docs = resolveDocs();
+    const activeDoc = docs.find((candidate) => candidate.querySelector('[data-content-search-turn-key]'))
+      || docs.find((candidate) => candidate.querySelector('.ProseMirror'))
+      || docs[0]
+      || document;
+    const inTaskList = !activeDoc.querySelector('[data-content-search-turn-key]') && hasVisibleSessionRows(activeDoc);
+    if (inTaskList) {
+      return JSON.stringify({ error: 'task list visible; open a Codex thread first', models: [], current: '', currentModel: '' });
+    }
     const modelBtn = findModelButton(docs);
     if (!modelBtn) return JSON.stringify({ error: 'Model selector button not found', models: [], current: '', currentModel: '' });
 

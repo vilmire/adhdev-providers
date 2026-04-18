@@ -302,32 +302,28 @@ function runScript(filePath, { document: doc, window: win, replacements = {} }) 
 
 const base = '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode';
 
-test('claude-code-vscode list_models reads current Antigravity-hosted model inventory', () => {
+test('claude-code-vscode list_models fails closed on a host-only Antigravity shell surface', async () => {
   const { doc, defaultView } = createCurrentShellDocument();
-  const raw = runScript(`${base}/scripts/1.0/list_models.js`, { document: doc, window: defaultView });
+  const raw = await runScript(`${base}/scripts/1.0/list_models.js`, { document: doc, window: defaultView });
   const parsed = JSON.parse(raw);
 
-  assert.deepEqual(parsed.options, [
-    { value: 'Claude Sonnet 4.6 (Thinking)', label: 'Claude Sonnet 4.6 (Thinking)' },
-    { value: 'Claude Opus 4.6 (Thinking)', label: 'Claude Opus 4.6 (Thinking)' },
-  ]);
-  assert.equal(parsed.currentValue, 'Claude Opus 4.6 (Thinking)');
+  assert.deepEqual(parsed.options, []);
+  assert.equal(parsed.currentValue, '');
+  assert.match(parsed.error || '', /model selector not found|switch model item not found/i);
 });
 
-test('claude-code-vscode list_modes reads current Antigravity conversation modes', () => {
+test('claude-code-vscode list_modes fails closed on a host-only Antigravity shell surface', async () => {
   const { doc, defaultView } = createCurrentShellDocument();
-  const raw = runScript(`${base}/scripts/1.0/list_modes.js`, { document: doc, window: defaultView });
+  const raw = await runScript(`${base}/scripts/1.0/list_modes.js`, { document: doc, window: defaultView });
   const parsed = JSON.parse(raw);
 
-  assert.deepEqual(parsed.options, [
-    { value: 'Planning', label: 'Planning' },
-    { value: 'Fast', label: 'Fast' },
-  ]);
-  assert.equal(parsed.currentValue, 'Fast');
+  assert.deepEqual(parsed.options, []);
+  assert.equal(parsed.currentValue, '');
+  assert.match(parsed.error || '', /mode selector not found/i);
 });
 
-test('claude-code-vscode set_mode clicks current Antigravity conversation mode entries', async () => {
-  const { doc, defaultView, planningLabel } = createCurrentShellDocument();
+test('claude-code-vscode set_mode fails closed on a host-only Antigravity shell surface', async () => {
+  const { doc, defaultView } = createCurrentShellDocument();
   const raw = await runScript(`${base}/scripts/1.0/set_mode.js`, {
     document: doc,
     window: defaultView,
@@ -337,14 +333,12 @@ test('claude-code-vscode set_mode clicks current Antigravity conversation mode e
   });
   const parsed = JSON.parse(raw);
 
-  assert.equal(parsed.ok, true);
-  assert.equal(parsed.mode, 'Planning');
-  assert.equal(parsed.currentValue, 'Planning');
-  assert.equal(planningLabel._clicked, true);
+  assert.equal(parsed.ok, false);
+  assert.match(parsed.error || '', /mode not supported/i);
 });
 
-test('claude-code-vscode set_model clicks current Antigravity model entries', async () => {
-  const { doc, defaultView, sonnetItem } = createCurrentShellDocument();
+test('claude-code-vscode set_model fails closed on a host-only Antigravity shell surface', async () => {
+  const { doc, defaultView } = createCurrentShellDocument();
   const raw = await runScript(`${base}/scripts/1.0/set_model.js`, {
     document: doc,
     window: defaultView,
@@ -354,21 +348,19 @@ test('claude-code-vscode set_model clicks current Antigravity model entries', as
   });
   const parsed = JSON.parse(raw);
 
-  assert.equal(parsed.ok, true);
-  assert.equal(parsed.model, 'Claude Sonnet 4.6 (Thinking)');
-  assert.equal(parsed.currentValue, 'Claude Sonnet 4.6 (Thinking)');
-  assert.equal(sonnetItem._clicked, true);
+  assert.equal(parsed.ok, false);
+  assert.match(parsed.error || '', /model not supported|model selector not found|switch model item not found/i);
 });
 
-test('claude-code-vscode read_chat exposes live Antigravity-hosted model and mode values', () => {
+test('claude-code-vscode read_chat does not surface host-only Antigravity model or mode controls', () => {
   const { doc, defaultView } = createCurrentShellDocument();
   const raw = runScript(`${base}/scripts/1.0/read_chat.js`, { document: doc, window: defaultView });
   const parsed = JSON.parse(raw);
 
-  assert.equal(parsed.mode, 'Fast');
-  assert.equal(parsed.model, 'Claude Opus 4.6 (Thinking)');
-  assert.equal(parsed.controlValues?.mode, 'Fast');
-  assert.equal(parsed.controlValues?.model, 'Claude Opus 4.6 (Thinking)');
+  assert.equal(parsed.mode, undefined);
+  assert.equal(parsed.model, undefined);
+  assert.equal(parsed.controlValues?.mode, undefined);
+  assert.equal(parsed.controlValues?.model, undefined);
 });
 
 test('claude-code-vscode request_usage returns a persisted Usage bubble on the session-frame surface', async () => {
