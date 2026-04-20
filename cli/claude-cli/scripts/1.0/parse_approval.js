@@ -26,6 +26,8 @@ function isNoise(line) {
     if (/^Update available!/i.test(trimmed)) return true;
     if (/^Claude Code v\d/i.test(trimmed)) return true;
     if (/^(Sonnet|Opus|Haiku)\b/i.test(trimmed)) return true;
+    if (/^Security guide$/i.test(trimmed)) return true;
+    if (/^Enter to confirm/i.test(trimmed)) return true;
     return false;
 }
 
@@ -48,6 +50,13 @@ function isButtonLine(line) {
     if (/^Esc to cancel/i.test(raw)) return false;
     return /^([❯›>]\s*)?\d+[.)]\s+/.test(raw)
         || /^(Allow\s*once|Always\s*allow.*|Deny|Reject|Yes|No)$/i.test(trimmed);
+}
+
+function isStartupTrustCue(line) {
+    const trimmed = normalize(line);
+    return /Quick safety check/i.test(trimmed)
+        || /Is this a project you trust/i.test(trimmed)
+        || /Claude Code'?ll be able to read, edit, and execute files here/i.test(trimmed);
 }
 
 function stripContextPrefix(line) {
@@ -95,14 +104,23 @@ module.exports = function parseApproval(input) {
         if (label && !buttons.includes(label)) buttons.push(label);
     }
 
+    const startupTrust = normalizedRecent.some(isStartupTrustCue);
     const hasApproval = buttons.length > 0
+        || startupTrust
         || /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(primary || fallback);
     if (!hasApproval) return null;
 
     const questionIndex = findLastIndex(lines, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
     const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
+    const startupIndex = findLastIndex(lines, isStartupTrustCue);
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
-    const startIndex = Math.max(0, (actionIndex >= 0 ? actionIndex : approvalIndex >= 0 ? approvalIndex - 2 : questionIndex >= 0 ? questionIndex - 4 : lines.length - 8));
+    const startIndex = Math.max(0, (
+        actionIndex >= 0 ? actionIndex
+            : approvalIndex >= 0 ? approvalIndex - 2
+                : questionIndex >= 0 ? questionIndex - 4
+                    : startupIndex >= 0 ? startupIndex
+                        : lines.length - 8
+    ));
     const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
 
     const context = [];

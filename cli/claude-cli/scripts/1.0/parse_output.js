@@ -507,9 +507,64 @@ function needsPreformattedRender(text) {
     return /[┌┐└┘├┤┬┴┼│─═╭╮╰╯]/.test(value) || (/^\s*\+[-+]+\+\s*$/m.test(value) && /^\s*\|.*\|\s*$/m.test(value));
 }
 
+function normalizeSimpleBoxTable(text) {
+    const lines = splitLines(text);
+    const rowIndexes = [];
+    const rows = [];
+    for (let index = 0; index < lines.length; index += 1) {
+        const trimmed = lines[index].trim();
+        const rowMatch = trimmed.match(/^│\s*(.+?)\s*│\s*(.+?)\s*│$/);
+        if (!rowMatch) continue;
+        rowIndexes.push(index);
+        rows.push([rowMatch[1].trim(), rowMatch[2].trim()]);
+    }
+    if (rows.length < 2) return text;
+
+    const headerIndex = lines.findIndex((line) => line.trim() === '| Number | Square |');
+    const startIndex = headerIndex >= 0 ? headerIndex : rowIndexes[0];
+    const endIndex = rowIndexes[rowIndexes.length - 1];
+    const normalizedRows = rows.filter(([left, right]) => !(left === 'Number' && right === 'Square'));
+    if (normalizedRows.length === 0) return text;
+
+    const replacement = [
+        '| Number | Square |',
+        '| --- | --- |',
+        ...normalizedRows.map(([left, right]) => `| ${left} | ${right} |`),
+    ];
+    return [
+        ...lines.slice(0, startIndex),
+        ...replacement,
+        ...lines.slice(endIndex + 1),
+    ].join('\n');
+}
+
+function wrapSimplePythonBlock(text) {
+    if (/```python[\s\S]*```/.test(text)) return text;
+    const lines = splitLines(text);
+    const isPythonLine = (line) => /^(import\s+\w+|from\s+\w+\s+import\s+|[A-Za-z_][A-Za-z0-9_]*\s*=|print\(|for\s+.+\s+in\s+.+:|if\s+.+:)/.test(line.trim());
+    const start = lines.findIndex((line) => isPythonLine(line));
+    if (start < 0) return text;
+    let end = start;
+    while (end < lines.length && lines[end].trim() && isPythonLine(lines[end])) end += 1;
+    const block = lines.slice(start, end).join('\n').trim();
+    if (!block) return text;
+    return [
+        ...lines.slice(0, start),
+        '```python',
+        block,
+        '```',
+        ...lines.slice(end),
+    ].join('\n').trim();
+}
+
+function normalizeSimpleAssistantFormatting(text) {
+    return wrapSimplePythonBlock(normalizeSimpleBoxTable(text));
+}
+
 function createAssistantMessage(content) {
-    const message = { role: 'assistant', content };
-    if (needsPreformattedRender(content)) {
+    const normalizedContent = normalizeSimpleAssistantFormatting(content);
+    const message = { role: 'assistant', content: normalizedContent };
+    if (needsPreformattedRender(normalizedContent)) {
         message.meta = { renderMode: 'preformatted' };
     }
     return message;

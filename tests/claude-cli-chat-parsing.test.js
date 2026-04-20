@@ -320,6 +320,41 @@ test('claude-cli parse_output surfaces an approval bubble from a real dangerous-
   ]);
 });
 
+test('claude-cli parse_output surfaces the startup trust prompt as an approval bubble', () => {
+  const screenText = [
+    'Quick safety check',
+    'Is this a project you trust?',
+    "Claude Code'll be able to read, edit, and execute files here.",
+    'Security guide',
+    '❯ 1. Yes, I trust this folder',
+    '2. No, exit',
+    'Enter to confirm · Esc to cancel',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [],
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal, {
+    message: "Claude Code'll be able to read, edit, and execute files here.",
+    buttons: [
+      'Yes, I trust this folder',
+      'No, exit',
+    ],
+  });
+  assert.deepEqual(toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })), [
+    {
+      role: 'assistant',
+      kind: 'system',
+      senderName: 'System',
+      content: "Approval requested\nClaude Code'll be able to read, edit, and execute files here.\n[Yes, I trust this folder] [No, exit]",
+    },
+  ]);
+});
+
 test('claude-cli parse_output prefers transcript-derived assistant text when the visible screen only shows the tail of a long reply', () => {
   const longReply = ['BEGIN', ...Array.from({ length: 40 }, (_, index) => String(index + 1)), 'END'].join('\n');
   const fullTranscript = [
@@ -363,4 +398,44 @@ test('claude-cli parse_output prefers transcript-derived assistant text when the
       content: longReply,
     },
   ]);
+});
+
+test('claude-cli parse_output normalizes simple box tables and wraps trailing python code in fences', () => {
+  const screenText = [
+    '❯ Please do all of the following in this workspace:',
+    '⏺ Script ran successfully and produced the expected three lines.',
+    '| Number | Square |',
+    '┌────────┬────────┐',
+    '│ Number │ Square │',
+    '├────────┼────────┤',
+    '│ 1 │ 1 │',
+    '├────────┼────────┤',
+    '│ 2 │ 4 │',
+    '├────────┼────────┤',
+    '│ 3 │ 9 │',
+    '├────────┼────────┤',
+    '│ 4 │ 16 │',
+    '├────────┼────────┤',
+    '│ 5 │ 25 │',
+    '└────────┴────────┘',
+    'import json',
+    'import os',
+    'nums = [1, 2, 3, 4, 5]',
+    'squares = [n * n for n in nums]',
+    'print(f"CWD={os.getcwd()}")',
+    'print("SQUARES=" + ",".join(str(s) for s in squares))',
+    'print("JSON=" + json.dumps({"squares": squares}, separators=(",", ":")))',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: 'Please do all of the following in this workspace:' }],
+  });
+
+  const assistant = toMessages(result).find((message) => message.role === 'assistant' && message.kind === 'standard');
+  assert.ok(assistant);
+  assert.match(assistant.content, /\| Number \| Square \|\n\| --- \| --- \|\n\| 1 \| 1 \|\n\| 2 \| 4 \|/);
+  assert.match(assistant.content, /```python\nimport json\nimport os\nnums = \[1, 2, 3, 4, 5\]/);
 });

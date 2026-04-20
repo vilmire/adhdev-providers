@@ -12,6 +12,28 @@ test('hermes-cli stays generating when the live thinking indicator is visible', 
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
+test('hermes-cli stays generating when a short ellipsis status line is visible above the prompt', () => {
+  const screenText = [
+    '⚕ Hermes Agent v0.10.0',
+    '(¬_¬) pondering...',
+    'Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('hermes-cli stays generating when an unknown short ellipsis status line is visible above the prompt', () => {
+  const screenText = [
+    '⚕ Hermes Agent v0.10.0',
+    '(¬_¬) calibrating...',
+    'Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
 test('hermes-cli reports idle only for a bare prompt without generating markers', () => {
   const screenText = [
     'Type your message or /help for commands.',

@@ -1,6 +1,7 @@
 'use strict';
 
 const { cleanAnsi } = require('./helpers.js');
+const { buildFromBufferFallback } = require('./screen_helpers.js');
 
 function sourceText(input) {
   const source = cleanAnsi(input?.screenText || input?.tail || input?.buffer || '');
@@ -9,6 +10,16 @@ function sourceText(input) {
     .map((line) => line.replace(/\s+/g, ' ').trim())
     .filter(Boolean);
   return lines.slice(-20).join('\n');
+}
+
+function isShortEllipsisStatusLine(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return false;
+  if (!/(?:\.\.\.|…)$/.test(trimmed)) return false;
+  if (trimmed.length > 64) return false;
+  if (/^(?:❯|⚕\s*❯|●|╭─|╰─|[┊│])/.test(trimmed)) return false;
+  if (/Type your message|Resume this session with:|Session:/i.test(trimmed)) return false;
+  return true;
 }
 
 module.exports = function detectStatus(input) {
@@ -29,10 +40,19 @@ module.exports = function detectStatus(input) {
     return -1;
   };
 
+  const screen = buildFromBufferFallback(input);
+  const linesAbovePrompt = Array.isArray(screen?.linesAbovePrompt) ? screen.linesAbovePrompt : [];
+  const nearbyAbovePrompt = linesAbovePrompt
+    .map((line) => String(line?.trimmed || line?.text || line || '').trim())
+    .filter(Boolean)
+    .slice(-3);
+  const hasEllipsisStatusAbovePrompt = nearbyAbovePrompt.some(isShortEllipsisStatusLine);
+
   const hasBarePrompt = /^❯\s*$/m.test(text);
   const hasPrompt = /Type your message or \/help for commands/i.test(text)
     || /Resume this session with:/i.test(text);
-  const hasThinkingIndicator = /(?:^|\n)\s*(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?reasoning(?:\.\.\.|…)/im.test(text);
+  const thinkingIndicatorPattern = /(?:^|\n)\s*(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?(?:reasoning|pondering|thinking)(?:\.\.\.|…)/im;
+  const hasThinkingIndicator = thinkingIndicatorPattern.test(text);
   const hasInitializing = /Initializing agent/i.test(text);
   const hasInterruptFooter = /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
@@ -41,13 +61,20 @@ module.exports = function detectStatus(input) {
 
   const lastPromptIndex = lastMatchingIndex((line) => /^❯\s*$/.test(line));
   const lastAssistantEndIndex = lastMatchingIndex((line) => /^╰─/.test(line));
-  const lastGeneratingIndex = lastMatchingIndex((line) => /Initializing agent|reasoning(?:\.\.\.|…)|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
+  const lastGeneratingIndex = lastMatchingIndex((line) => /Initializing agent|(?:reasoning|pondering|thinking)(?:\.\.\.|…)|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
   const finishedAssistantVisible = lastAssistantEndIndex >= 0
     && lastPromptIndex > lastAssistantEndIndex
     && (lastGeneratingIndex < 0 || lastGeneratingIndex <= lastAssistantEndIndex);
 
   if (finishedAssistantVisible) {
     return 'idle';
+  }
+
+  // Treat short status lines ending with ellipsis immediately above the input prompt
+  // as live generation markers. This is more robust than enumerating Hermes wording
+  // one-by-one because the visible placement near the prompt is the important signal.
+  if (hasEllipsisStatusAbovePrompt) {
+    return 'generating';
   }
 
   // Only call idle when we see a prompt indicator, no active generation footer,
