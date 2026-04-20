@@ -86,6 +86,7 @@ function isSpinnerLine(line) {
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
+    if (/^(?:[✻✶✳✢✽·•]\s+)?(?:Nesting|Considering|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\b.*(?:…|\.\.\.)?/iu.test(trimmed)) return true;
     if (/^[✻✶✳✢✽]\s+[A-Z][A-Za-z-]{3,}ing\b.*(?:…|\.{3})/u.test(trimmed)) return true;
     if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/i.test(trimmed)) return true;
     return /^[A-Z][a-z]+ing\u2026?$/.test(trimmed);
@@ -94,6 +95,7 @@ function isSpinnerLine(line) {
 function isToolLine(line) {
     const trimmed = normalize(line);
     return /^(?:[⏺•]\s+)?(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit|Exact output)(?:\(|:)/.test(trimmed)
+        || /^(?:[⏺•]\s+)?(?:Reading|Searching|Updating|Editing|Writing)\b/i.test(trimmed)
         || /^⎿\s+(?:Running|Wrote|Read|Updated|Edited|Created|\/)/i.test(trimmed);
 }
 
@@ -140,8 +142,8 @@ function hasActiveGenerating(lines) {
 
 function hasPromptAdjacentGenerating(screen) {
     if (!screen || screen.promptLineIndex < 0) return false;
-    const justAbovePrompt = sliceAroundPrompt(screen, { before: 2, after: 0, includePrompt: false });
-    return justAbovePrompt.some(line => isSpinnerLine(line) || /^\([^)]+\)$/.test(normalize(line)));
+    const justAbovePrompt = sliceAroundPrompt(screen, { before: 8, after: 0, includePrompt: false });
+    return justAbovePrompt.some(line => isSpinnerLine(line) || isToolLine(line) || /^\([^)]+\)$/.test(normalize(line)));
 }
 
 function hasVisibleCompletedReply(lines) {
