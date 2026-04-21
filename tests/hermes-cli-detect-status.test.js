@@ -36,6 +36,17 @@ test('hermes-cli ignores older ellipsis lines outside the 3-line prompt-adjacent
   assert.equal(detectStatus({ screenText }), 'idle');
 });
 
+test('hermes-cli stays generating when prompt-adjacent status text includes trailing metrics and footer noise', () => {
+  const screenText = [
+    '(°ロ°) ruminating...                           1m 49s)              🔍 recall:)  ⚕ gpt-5.4 │ 271K/1.1M │ [███░░░░░░░] 26% │ 1h 58m',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⚕ ❯ type a message + Enter to interrupt, Ctrl+C to cancel',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: false }), 'generating');
+});
+
 test('hermes-cli reports idle only for a bare prompt without generating markers', () => {
   const screenText = [
     'Type your message or /help for commands.',

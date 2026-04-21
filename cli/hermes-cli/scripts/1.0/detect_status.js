@@ -12,14 +12,14 @@ function sourceText(input) {
   return lines.slice(-20).join('\n');
 }
 
-function isShortEllipsisStatusLine(line) {
+function isPromptAdjacentStatusLine(line) {
   const trimmed = String(line || '').trim();
   if (!trimmed) return false;
-  if (!/(?:\.\.\.|…)$/.test(trimmed)) return false;
-  if (trimmed.length > 64) return false;
+  if (!/(?:\.\.\.|…)/.test(trimmed)) return false;
   if (/^(?:❯|⚕\s*❯|●|╭─|╰─|[┊│])/.test(trimmed)) return false;
   if (/Type your message|Resume this session with:|Session:/i.test(trimmed)) return false;
-  return true;
+  if (trimmed.length <= 64 && /(?:\.\.\.|…)\s*$/.test(trimmed)) return true;
+  return /(?:\.\.\.|…)\s+.*(?:\b\d+(?:\.\d+)?[sm]\b|[↑↓]|tokens?|recall:|gpt-[\w.-]+|\[[^\]]+\]|%)/i.test(trimmed);
 }
 
 function hasPromptAdjacentEllipsisStatus(screen) {
@@ -28,7 +28,7 @@ function hasPromptAdjacentEllipsisStatus(screen) {
     .map((line) => String(line?.trimmed || line?.text || line || '').trim())
     .filter(Boolean)
     .slice(-3)
-    .some(isShortEllipsisStatusLine);
+    .some(isPromptAdjacentStatusLine);
 }
 
 module.exports = function detectStatus(input) {
