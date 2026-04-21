@@ -1,5 +1,5 @@
 {
-  "version": "2026.04.18",
+  "version": "2026.04.21",
   "providers": {
     "agentpool-acp": {
       "providerVersion": "1.0.0",
