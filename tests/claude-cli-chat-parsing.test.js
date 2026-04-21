@@ -117,6 +117,35 @@ test('claude-cli detect_status stays generating when only tool activity is visib
   assert.equal(status, 'generating');
 });
 
+test('claude-cli detect_status returns idle when a completed assistant reply is the last meaningful line before the idle prompt', () => {
+  const status = detectStatus({
+    screenText: [
+      '❯ Reply with exactly T2:T1 and nothing else.',
+      '',
+      '⏺ T2:T1',
+      '',
+      '❯ Create a file named seven_turn_note.txt with exactly three lines A, B, C and',
+      ' then reply with exactly T3 and nothing else.',
+      '',
+      '⏺ Write(seven_turn_note.txt)',
+      ' ⎿  Wrote 3 lines to seven_turn_note.txt',
+      ' 1 A',
+      ' 2 B',
+      ' 3 C',
+      '',
+      '⏺ T3',
+      '',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '❯ ',
+      '────────────────────────────────────────────────────────────────────────────────',
+      ' ⏵⏵ accept edits on (shift+tab to cycle)',
+    ].join('\n'),
+    tail: '⏺ T3\n❯',
+  });
+
+  assert.equal(status, 'idle');
+});
+
 test('claude-cli parse_output keeps generating and surfaces live tool lines from a real runtime snapshot with a trailing prompt', () => {
   const screenText = [
     '           Claude Code v2.1.114',
@@ -180,6 +209,158 @@ test('claude-cli parse_output keeps generating and surfaces live tool lines from
       content: '· Considering…',
     },
   ]);
+});
+
+test('claude-cli parse_output prefers the clean visible T3 reply over polluted transcript residue after a completed tool turn', () => {
+  const screenText = [
+    '❯ Reply with exactly T2:T1 and nothing else.',
+    '',
+    '⏺ T2:T1',
+    '',
+    '❯ Create a file named seven_turn_note.txt with exactly three lines A, B, C and',
+    ' then reply with exactly T3 and nothing else.',
+    '',
+    '⏺ Write(seven_turn_note.txt)',
+    ' ⎿  Wrote 3 lines to seven_turn_note.txt',
+    ' 1 A',
+    ' 2 B',
+    ' 3 C',
+    '',
+    '⏺ T3',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '────────────────────────────────────────────────────────────────────────────────',
+    ' ⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const transcript = [
+    '❯ Reply with exactly T2:T1 and nothing else.',
+    '',
+    '⏺ T2:T1',
+    '',
+    '❯ Create a file named seven_turn_note.txt with exactly three lines A, B, C and',
+    ' then reply with exactly T3 and nothing else.',
+    '',
+    '⏺ Write(seven_turn_note.txt)',
+    ' ⎿  Wrote 3 lines to seven_turn_note.txt',
+    ' 1 A',
+    ' 2 B',
+    ' 3 C',
+    '',
+    '✽ Meandering… ( · ↓ 28 tokens)',
+    ' ⎿  Tip: Use /memory to view and manage Claude memory',
+    '',
+    'Meandering… 3 ↑ 41',
+    '✻ 53',
+    '66',
+    '✶ M 78',
+    'e 85',
+    '✳ a 91',
+    'M n 6',
+    '✢ e d 100 tokens)',
+    'a e 4',
+    '· n r 7',
+    'r g 8',
+    'i … 9',
+    '✢ n 10',
+    '… 1',
+    '✳ 2',
+    '3',
+    '✶',
+    '4 4',
+    '✻ 5',
+    '6',
+    '✽',
+    '7',
+    '↓ 8',
+    '9',
+    '⏺ T3',
+    '',
+    '❯ ',
+    ' ⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: transcript,
+    recentBuffer: transcript.slice(-500),
+    rawBuffer: transcript,
+    messages: [
+      { role: 'user', content: 'Reply with exactly T1 and nothing else.' },
+      { role: 'assistant', content: 'T1' },
+      { role: 'user', content: 'Reply with exactly T2:T1 and nothing else.' },
+      { role: 'assistant', content: 'T2:T1' },
+      { role: 'user', content: 'Create a file named seven_turn_note.txt with exactly three lines A, B, C and then reply with exactly T3 and nothing else.' },
+    ],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.messages.at(-1)?.content, 'T3');
+});
+
+test('claude-cli parse_output prefers the clean visible T3 reply over wrapped tip fragments from transcript tail', () => {
+  const screenText = [
+    '❯ Reply with exactly T2:T1 and nothing else.',
+    '',
+    '⏺ T2:T1',
+    '',
+    '❯ Create a file named seven_turn_note.txt with exactly three lines A, B, C and',
+    ' then reply with exactly T3 and nothing else.',
+    '',
+    '⏺ Write(seven_turn_note.txt)',
+    ' ⎿  Wrote 3 lines to seven_turn_note.txt',
+    ' 1 A',
+    ' 2 B',
+    ' 3 C',
+    '',
+    '⏺ T3',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '────────────────────────────────────────────────────────────────────────────────',
+    ' ⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const transcript = [
+    '❯ Reply with exactly T2:T1 and nothing else.',
+    '',
+    '⏺ T2:T1',
+    '',
+    '❯ Create a file named seven_turn_note.txt with exactly three lines A, B, C and',
+    ' then reply with exactly T3 and nothing else.',
+    '',
+    '⏺ Write(seven_turn_note.txt)',
+    ' ⎿  Wrote 3 lines to seven_turn_note.txt',
+    ' 1 A',
+    ' 2 B',
+    ' 3 C',
+    '✶ Infusing… ( · ↓ 24 tokens)',
+    ' ⎿  Tip: Use /config to change your default permission mode (including Plan',
+    ' Mode)',
+    '',
+    '⏺ T3',
+    '',
+    '❯ ',
+    ' ⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: transcript,
+    recentBuffer: transcript.slice(-500),
+    rawBuffer: transcript,
+    messages: [
+      { role: 'user', content: 'Reply with exactly T1 and nothing else.' },
+      { role: 'assistant', content: 'T1' },
+      { role: 'user', content: 'Reply with exactly T2:T1 and nothing else.' },
+      { role: 'assistant', content: 'T2:T1' },
+      { role: 'user', content: 'Create a file named seven_turn_note.txt with exactly three lines A, B, C and then reply with exactly T3 and nothing else.' },
+    ],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.messages.at(-1)?.content, 'T3');
 });
 
 test('claude-cli parse_output removes prompt-tail and spinner noise from long transcript replies', () => {
@@ -273,6 +454,27 @@ test('claude-cli parse_output strips separator and spinner residue around exact 
   assert.equal(assistant.content, 'CLEAN-SEQ-ONE');
 });
 
+test('claude-cli parse_output strips token-count spinner residue around short exact answers', () => {
+  const transcript = [
+    '❯ Reply with exactly T1 and nothing else.',
+    'emp ( · ↓ 1 tokens)',
+    'T1',
+    'Contemplating… ( · ↓ 1 tokens)',
+    '❯',
+    '⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: transcript,
+    buffer: transcript,
+    messages: [{ role: 'user', content: 'Reply with exactly T1 and nothing else.' }],
+  });
+
+  const assistant = result.messages.find((message) => message.role === 'assistant');
+  assert.ok(assistant);
+  assert.equal(assistant.content, 'T1');
+});
+
 test('claude-cli parse_output surfaces an approval bubble from a real dangerous-command prompt', () => {
   const screenText = [
     '────────────────────────────────────────────────────────────────────────────────',
@@ -351,6 +553,43 @@ test('claude-cli parse_output surfaces the startup trust prompt as an approval b
       kind: 'system',
       senderName: 'System',
       content: "Approval requested\nClaude Code'll be able to read, edit, and execute files here.\n[Yes, I trust this folder] [No, exit]",
+    },
+  ]);
+});
+
+test('claude-cli parse_output ignores the startup welcome dashboard after trust approval so a new user turn does not immediately commit stale splash text', () => {
+  const startupScreen = [
+    '╭─── Claude Code v2.1.116 ─────────────────────────────────────────────────────╮',
+    '│ │ Tips for getting │',
+    '│ Welcome back 알리! │ started │',
+    '│ │ Ask Claude to create a… │',
+    '│ ▗ ▗ ▖ ▖ │ ─────────────────────── │',
+    '│ │ Recent activity │',
+    '│ ▘▘ ▝▝ │ No recent activity │',
+    '│ Opus 4.7 with xhigh effort · Claude Pro · │ │',
+    "│ wqalistar@gmail.com's Organization │ │",
+    '│ /private/tmp/adhdev-claude-trace │ │',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '',
+    '❯ Reply with exactly T1 and nothing else.',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⏵⏵ accept edits on (shift+tab to cycle) ◉ xhigh · /effort',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: startupScreen,
+    buffer: startupScreen,
+    messages: [{ role: 'user', content: 'Reply with exactly T1 and nothing else.' }],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.deepEqual(toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Reply with exactly T1 and nothing else.',
     },
   ]);
 });

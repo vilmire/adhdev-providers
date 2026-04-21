@@ -109,7 +109,7 @@
   ],
   "binary": "claude",
   "sendDelayMs": 700,
-  "submitStrategy": "immediate",
+  "submitStrategy": "wait_for_echo",
   "spawn": {
     "command": "claude",
     "args": [

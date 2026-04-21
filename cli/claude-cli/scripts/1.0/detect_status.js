@@ -143,6 +143,14 @@ function hasActiveGenerating(lines) {
 function hasPromptAdjacentGenerating(screen) {
     if (!screen || screen.promptLineIndex < 0) return false;
     const justAbovePrompt = sliceAroundPrompt(screen, { before: 8, after: 0, includePrompt: false });
+    for (let index = justAbovePrompt.length - 1; index >= 0; index -= 1) {
+        const trimmed = normalize(justAbovePrompt[index]);
+        if (!trimmed) continue;
+        if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) continue;
+        if (isShellChrome(trimmed)) continue;
+        if (isAssistantReplyLine(trimmed) && !isSpinnerLine(trimmed)) return false;
+        break;
+    }
     return justAbovePrompt.some(line => isSpinnerLine(line) || isToolLine(line) || /^\([^)]+\)$/.test(normalize(line)));
 }
 
@@ -211,12 +219,14 @@ module.exports = function detectStatus(input) {
         if (looksLikeActiveOutput(activeLines)) return 'generating';
     }
 
-    const tail = String(input?.tail || '');
-    if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
-    if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
-    if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
-    if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/im.test(tail)) return 'generating';
-    if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
+    if (activeLines.length === 0) {
+        const tail = String(input?.tail || '');
+        if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
+        if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
+        if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
+        if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/im.test(tail)) return 'generating';
+        if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
+    }
 
     return 'idle';
 };

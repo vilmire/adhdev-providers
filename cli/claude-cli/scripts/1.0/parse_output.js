@@ -81,6 +81,17 @@ function getLastUserPrompt(previousMessages) {
         ?.content || '';
 }
 
+function resolveEffectivePromptText(inputPromptText, visiblePromptText, previousMessages) {
+    const explicitPrompt = String(inputPromptText || '').trim();
+    if (explicitPrompt) return explicitPrompt;
+    const visiblePrompt = String(visiblePromptText || '').trim();
+    const previousPrompt = String(getLastUserPrompt(previousMessages) || '').trim();
+    if (visiblePrompt && previousPrompt && looksLikeSamePrompt(visiblePrompt, previousPrompt)) {
+        return previousPrompt.length >= visiblePrompt.length ? previousPrompt : visiblePrompt;
+    }
+    return visiblePrompt || previousPrompt;
+}
+
 function parsePromptLine(line) {
     const trimmed = sanitizeLine(line).trim();
     const match = trimmed.match(/^[❯›>]\s*(.*)$/);
@@ -162,6 +173,18 @@ function isToolSummaryLine(trimmed) {
         || /^Wrote \d+ files?/i.test(trimmed)
         || /^Updated \d+ files?/i.test(trimmed)
         || /^Edited \d+ files?/i.test(trimmed);
+}
+
+function isStartupDashboardLine(trimmed) {
+    return /^Tips for getting$/i.test(trimmed)
+        || /^Welcome back\b/i.test(trimmed)
+        || /^Ask Claude to create a…$/i.test(trimmed)
+        || /^Recent activity$/i.test(trimmed)
+        || /^No recent activity$/i.test(trimmed)
+        || /^Claude Code v\d/i.test(trimmed)
+        || /Claude Pro/i.test(trimmed)
+        || /Organization$/i.test(trimmed)
+        || /^\/private\/tmp\//.test(trimmed);
 }
 
 function isNoiseLine(line) {
@@ -338,11 +361,14 @@ function isSpinnerResidueLine(line) {
     if (!trimmed) return false;
     if (/^[·•]\s+(?:[A-Za-z]\s+){1,6}[A-Za-z…]$/u.test(trimmed)) return true;
     if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?$/i.test(trimmed)) return true;
+    if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;
+    if (/^[A-Za-z]{1,8}\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;
     if (/^[·•]\s+(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?$/i.test(trimmed)) return false;
     if (/^[A-Za-z]\s+[A-Za-z…]$/u.test(trimmed)) return true;
     if (/^[A-Za-z]{1,2}\s+[A-Za-z]{1,2}$/u.test(trimmed)) return true;
     if (/^[A-Za-z]{1,4}$/u.test(trimmed) && /^[A-Z]/.test(trimmed) === false) return true;
     if (/[✻✶✳✢✽…]/u.test(trimmed) && /^[·•✻✶✳✢✽…\sA-Za-z]{1,12}$/u.test(trimmed)) return true;
+    if (isStartupDashboardLine(trimmed)) return true;
     return false;
 }
 
@@ -360,6 +386,14 @@ function isInlineSpinnerProgressLine(line) {
 function cleanupAssistantText(text, promptText = '') {
     let cleanedLines = trimTrailingNoise(splitLines(text))
         .map(line => normalizeAssistantBlockLine(line))
+        .map((line) => {
+            const original = line;
+            const stripped = line.replace(/\bthinking with xhigh effort\b/gi, '').replace(/\s+/g, ' ').trim();
+            if (/thinking with xhigh effort/i.test(original) && (!stripped || /^(?:[·•]|\d+(?:\s+\d+)*)$/.test(stripped))) {
+                return '';
+            }
+            return stripped;
+        })
         .filter(line => line.trim().length > 0)
         .filter(line => !isHorizontalSeparatorLine(line.trim()))
         .filter(line => !isNoiseLine(line) && !isFooterLine(line) && !isToolSummaryLine(line) && !isSpinnerResidueLine(line));
@@ -525,6 +559,13 @@ function normalizeSimpleBoxTable(text) {
     const endIndex = rowIndexes[rowIndexes.length - 1];
     const normalizedRows = rows.filter(([left, right]) => !(left === 'Number' && right === 'Square'));
     if (normalizedRows.length === 0) return text;
+    const containsStartupDashboard = normalizedRows.some(([left, right]) => (
+        isStartupDashboardLine(left)
+        || isStartupDashboardLine(right)
+        || /^Welcome back\b/i.test(left)
+        || /^Welcome back\b/i.test(right)
+    ));
+    if (containsStartupDashboard) return '';
 
     const replacement = [
         '| Number | Square |',
@@ -707,10 +748,30 @@ function buildVisibleMessages(lines, promptText = '') {
 function shouldPreferTranscriptMessages(visibleMessages, transcriptMessages) {
     if (!Array.isArray(transcriptMessages) || transcriptMessages.length === 0) return false;
     if (!Array.isArray(visibleMessages) || visibleMessages.length === 0) return true;
+
+    const standardAssistant = (messages) => messages.filter((message) => message?.role === 'assistant' && (message?.kind || 'standard') === 'standard');
+    const visibleAssistant = standardAssistant(visibleMessages);
+    const transcriptAssistant = standardAssistant(transcriptMessages);
+    const visibleLast = String(visibleAssistant[visibleAssistant.length - 1]?.content || '').trim();
+    const transcriptLast = String(transcriptAssistant[transcriptAssistant.length - 1]?.content || '').trim();
+    const looksPolluted = (text) => /\b(?:tokens?|Tip: Use \/memory|Wrote \d+ lines? to|Write\(|Meandering|Thinking|Processing|Working|Searching|Reading)\b/i.test(text)
+        || /(?:^|\n)\/[a-z0-9][a-z0-9-]*(?:\b|$)/i.test(text)
+        || /(?:^|\n)[✻✶✳✢✽]/u.test(text)
+        || /(?:^|\n)\d+\s+[A-Z]\b/.test(text)
+        || /(?:^|\n)[A-Za-z]\s+\d+\b/.test(text);
+    const looksCleanExactReply = (text) => /^[A-Z0-9][A-Z0-9:_| -]{1,40}$/u.test(text);
+
+    if (transcriptLast && looksPolluted(transcriptLast) && visibleLast && !looksPolluted(visibleLast)) {
+        return false;
+    }
+    if (looksCleanExactReply(visibleLast) && transcriptLast && !looksCleanExactReply(transcriptLast)) {
+        return false;
+    }
+    if (looksCleanExactReply(visibleLast) && transcriptLast && looksPolluted(transcriptLast)) {
+        return false;
+    }
     if (transcriptMessages.length > visibleMessages.length) return true;
 
-    const visibleAssistant = visibleMessages.filter((message) => message?.role === 'assistant' && (message?.kind || 'standard') === 'standard');
-    const transcriptAssistant = transcriptMessages.filter((message) => message?.role === 'assistant' && (message?.kind || 'standard') === 'standard');
     const visibleLength = visibleAssistant.reduce((sum, message) => sum + String(message?.content || '').length, 0);
     const transcriptLength = transcriptAssistant.reduce((sum, message) => sum + String(message?.content || '').length, 0);
     return transcriptLength > visibleLength;
@@ -790,9 +851,10 @@ function buildMessages(previousMessages, promptText, visibleMessages) {
     let sameTurnAsTail = false;
 
     if (promptText) {
-        const last = base[base.length - 1];
-        const previousUser = last?.role === 'assistant' ? base[base.length - 2] : last;
-        if (!previousUser || previousUser.role !== 'user' || !looksLikeSamePrompt(previousUser.content, promptText)) {
+        const previousUser = [...base]
+            .reverse()
+            .find((message) => message?.role === 'user' && typeof message.content === 'string');
+        if (!previousUser || !looksLikeSamePrompt(previousUser.content, promptText)) {
             base.push({ role: 'user', content: promptText });
         } else {
             sameTurnAsTail = true;
@@ -927,13 +989,14 @@ module.exports = function parseOutput(input) {
     const buffer = String(input?.buffer || '');
     const tail = String(input?.recentBuffer || (screenText || buffer).slice(-500));
     const transcriptSource = buffer || screenText || String(input?.rawBuffer || '');
+    const visibleScreen = buildScreenSnapshot(screenText || transcriptSource);
     const transcriptScreen = buildScreenSnapshot(transcriptSource);
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
 
     const status = detectStatus({
         tail,
         screenText,
-        screen: transcriptScreen,
+        screen: visibleScreen,
         tailScreen: buildScreenSnapshot(tail),
         rawBuffer: input?.rawBuffer || '',
     });
@@ -942,27 +1005,31 @@ module.exports = function parseOutput(input) {
         ? parseApproval({
             buffer: screenText || buffer,
             screenText,
-            screen: transcriptScreen,
-            bufferScreen: transcriptScreen,
+            screen: visibleScreen,
+            bufferScreen: visibleScreen,
             rawBuffer: input?.rawBuffer || '',
             tail,
         })
         : null;
+    const effectiveStatus = status === 'waiting_approval' && !activeModal
+        ? (/^\s*[❯›>]\s*$/m.test(screenText) ? 'idle' : 'generating')
+        : status;
 
-    const { promptText, assistantBlocks, assistantText: visibleAssistantText } = status === 'waiting_approval'
+    const { promptText, assistantBlocks, assistantText: visibleAssistantText } = effectiveStatus === 'waiting_approval'
         ? { promptText: '', assistantBlocks: [], assistantText: '' }
-        : extractVisibleTurn(transcriptScreen);
-    const effectivePromptText = String(input?.promptText || '').trim() || promptText || getLastUserPrompt(previousMessages);
-    let visibleMessages = status === 'waiting_approval'
+        : extractVisibleTurn(visibleScreen);
+    const effectivePromptText = resolveEffectivePromptText(input?.promptText, promptText, previousMessages);
+    const hasConversationAnchor = !!effectivePromptText || previousMessages.some((message) => message?.role === 'assistant');
+    let visibleMessages = effectiveStatus === 'waiting_approval'
         ? (activeModal ? [createApprovalMessage(activeModal)] : [])
-        : buildVisibleMessages(getVisibleAssistantRegion(transcriptScreen), effectivePromptText);
-    if (status !== 'waiting_approval') {
+        : (hasConversationAnchor ? buildVisibleMessages(getVisibleAssistantRegion(visibleScreen), effectivePromptText) : []);
+    if (effectiveStatus !== 'waiting_approval' && hasConversationAnchor) {
         const transcriptMessages = buildVisibleMessages(getTranscriptAssistantRegion(transcriptSource, effectivePromptText), effectivePromptText);
         if (shouldPreferTranscriptMessages(visibleMessages, transcriptMessages)) {
             visibleMessages = transcriptMessages;
         }
     }
-    if (visibleMessages.length === 0 && status !== 'waiting_approval') {
+    if (visibleMessages.length === 0 && status !== 'waiting_approval' && hasConversationAnchor) {
         const rawAssistantText = cleanupAssistantText(visibleAssistantText, effectivePromptText) || extractLastAssistantHeader(transcriptSource);
         const assistantText = trimPromptEchoPrefix(rawAssistantText, effectivePromptText)
             || (!looksLikePromptEchoText(rawAssistantText, effectivePromptText, previousMessages) ? String(rawAssistantText || '').trim() : '');
@@ -987,9 +1054,9 @@ module.exports = function parseOutput(input) {
 
     return {
         id: 'cli_session',
-        status,
+        status: effectiveStatus,
         title: 'Claude Code',
-        messages: toMessageObjects(builtMessages, status),
+        messages: toMessageObjects(builtMessages, effectiveStatus),
         activeModal,
         ...(controlValues ? { controlValues } : {}),
     };
