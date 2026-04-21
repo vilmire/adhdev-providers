@@ -66,10 +66,11 @@ function normalizeMessage(message) {
   };
 }
 
-function isLikelyTruncatedDuplicate(longer, shorter) {
+function isLikelyTruncatedDuplicate(longer, shorter, options = {}) {
   if (!longer || !shorter) return false;
   if (longer.length <= shorter.length) return false;
-  if (shorter.length < 48) return false;
+  const minLength = typeof options.minLength === 'number' ? options.minLength : 48;
+  if (shorter.length < minLength) return false;
   return longer.startsWith(shorter) || longer.includes(shorter);
 }
 
@@ -77,9 +78,10 @@ function messagesMatch(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
   if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
+  const duplicateMinLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 48;
   return a.content === b.content
-    || isLikelyTruncatedDuplicate(a.content, b.content)
-    || isLikelyTruncatedDuplicate(b.content, a.content);
+    || isLikelyTruncatedDuplicate(a.content, b.content, { minLength: duplicateMinLength })
+    || isLikelyTruncatedDuplicate(b.content, a.content, { minLength: duplicateMinLength });
 }
 
 function chooseMoreCompleteMessage(left, right) {

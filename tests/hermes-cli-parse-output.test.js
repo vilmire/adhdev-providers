@@ -188,6 +188,42 @@ test('hermes-cli parseOutput merges a soft-wrapped visible user turn instead of 
   );
 });
 
+test('hermes-cli parseOutput upgrades a repeated assistant prefix instead of appending duplicate assistant bubbles', () => {
+  const first = 'ㅇㅋ 기억해둘게.';
+  const second = 'ㅇㅋ 기억해둘게. 앞으로 네가 “풀받아”, “업데이트해” 같은 식으로 말하면';
+  const third = 'ㅇㅋ 기억해둘게. 앞으로 네가 “풀받아”, “업데이트해” 같은 식으로 말하면 기본적으로 현재 작업 repo';
+
+  const result = parseOutput({
+    screenText: [
+      '● user prompt',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      third,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● user prompt',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      third,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'user prompt' },
+      { role: 'assistant', content: first },
+      { role: 'assistant', content: second },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: 'user prompt' },
+      { role: 'assistant', content: third },
+    ],
+  );
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',
