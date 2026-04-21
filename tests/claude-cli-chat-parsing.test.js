@@ -117,6 +117,23 @@ test('claude-cli detect_status stays generating when only tool activity is visib
   assert.equal(status, 'generating');
 });
 
+test('claude-cli detect_status treats compacting/token metric lines as generating even with a trailing prompt footer', () => {
+  const status = detectStatus({
+    screenText: [
+      '✢ Compacting conversation… (9m 15s · ↑ 32.7k tokens · thought for 1s)',
+      '  ⎿ Tip: Running multiple Claude sessions? Use /color and /rename to tell them apart at a glance',
+      '',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '❯ ',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '  ⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt',
+    ].join('\n'),
+    tail: '✢ Compacting conversation… (9m 15s · ↑ 32.7k tokens · thought for 1s)\n❯\n  ⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt',
+  });
+
+  assert.equal(status, 'generating');
+});
+
 test('claude-cli detect_status returns idle when a completed assistant reply is the last meaningful line before the idle prompt', () => {
   const status = detectStatus({
     screenText: [

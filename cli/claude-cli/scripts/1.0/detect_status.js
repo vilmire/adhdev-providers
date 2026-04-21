@@ -28,6 +28,7 @@ function isShellChrome(line) {
     const trimmed = normalize(line);
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
+        || /^⎿\s+Tip:/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
         || /^⏵⏵\s+accept edits on/i.test(trimmed)
         || /^ctrl\+g to edit in VS Code/i.test(trimmed)
@@ -85,7 +86,7 @@ function isSpinnerMetricLine(line) {
     const trimmed = normalize(line);
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[A-Z][A-Za-z-]*(?:\s+[A-Z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
+    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[A-Z][A-Za-z-]*(?:\s+[A-Za-z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
 }
 
 function isSpinnerLine(line) {
