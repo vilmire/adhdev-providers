@@ -134,3 +134,16 @@ test('hermes-cli returns to idle after a completed assistant box even if isWaiti
 
   assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
+
+test('hermes-cli stays generating while an assistant box is still open even if the prompt is already visible', () => {
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '● Summarize the workspace status in one sentence.',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'The workspace looks healthy so far.',
+    'Still checking a couple more files...',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'generating');
+});

@@ -28,7 +28,9 @@ module.exports = function detectStatus(input) {
 
   const hasDangerousPrompt = /Dangerous Command/i.test(text)
     && /Allow once|Allow for this session|Add to permanent allowlist|Deny/i.test(text);
-  if (hasDangerousPrompt) {
+  const hasModernApprovalPrompt = /requires approval/i.test(text)
+    && /Approve delete|Do not delete|Other \(type your answer\)/i.test(text);
+  if (hasDangerousPrompt || hasModernApprovalPrompt) {
     return 'waiting_approval';
   }
 

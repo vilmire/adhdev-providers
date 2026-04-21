@@ -293,3 +293,40 @@ test('hermes-cli parseOutput ignores startup update warnings so the live user tu
     ],
   );
 });
+
+test('hermes-cli parseOutput keeps status generating while a partial assistant box is visible', () => {
+  const prompt = 'Summarize the workspace status in one sentence.';
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    `● ${prompt}`,
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'The workspace looks healthy so far.',
+    'Still checking a couple more files...',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'The workspace looks healthy so far.\nStill checking a couple more files...',
+    },
+  ]);
+});
