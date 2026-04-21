@@ -260,6 +260,44 @@ test('hermes-cli parseOutput surfaces dangerous-command approval as a visible sy
   assert.match(result.messages.at(-1)?.content || '', /Allow once/);
 });
 
+test('hermes-cli parseOutput lets approval parsing override a stale generating status when dangerous command buttons are visible', () => {
+  const screenText = [
+    '────────────────────────────────────────',
+    '╭────────────────────────────────────────────────────────────╮',
+    '│ ⚠️ Dangerous Command │',
+    '│ │',
+    '│ node -e "try{const │',
+    '│ m=require(\'/Users/moltbot/.openclaw/workspace/proje... │',
+    '│ │',
+    '│ ❯ Allow once │',
+    '│ Allow for this session │',
+    '│ Add to permanent allowlist │',
+    '│ Deny │',
+    '│ Show full command │',
+    '│ │',
+    '│ script execution via -e/-c flag │',
+    '╰────────────────────────────────────────────────────────────╯',
+    '',
+    ' 💻 node -e "try{const m=require(\'/Users/moltbot/.openclaw/workspace/projects/adhdev/package.json\'); console.log(Object.keys(m).length)}catch(e){console.error(e); process.exit(1)}" (50.3s)',
+    ' ↑/↓ to select, Enter to confirm ()',
+    ' ⚕ gpt-5.4 │ 17.3K/1.1M │ [░░░░░░░░░░] 2% │',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⚠ ❯',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.ok(result.activeModal);
+  assert.equal(result.messages.at(-1)?.kind, 'system');
+  assert.match(result.messages.at(-1)?.content || '', /Dangerous Command/);
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',

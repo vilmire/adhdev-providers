@@ -299,6 +299,12 @@ module.exports = function parseOutput(input) {
     isWaitingForResponse: input?.isWaitingForResponse,
   });
 
+  const parsedApproval = parseApproval({
+    screenText,
+    buffer: transcript,
+    tail: input?.recentBuffer || input?.tail || '',
+  });
+
   const baseMessages = Array.isArray(input?.messages)
     ? input.messages
         .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
@@ -325,10 +331,9 @@ module.exports = function parseOutput(input) {
     }));
   const currentMessages = screenMessages.length > 0 ? screenMessages : transcriptMessages;
   const messages = mergeMessageHistories(baseMessages, currentMessages);
-  const activeModal = status === 'waiting_approval'
-    ? parseApproval({ screenText, buffer: transcript, tail: input?.recentBuffer || input?.tail || '' })
-    : null;
-  const finalMessages = activeModal && status === 'waiting_approval'
+  const activeModal = parsedApproval || null;
+  const effectiveStatus = activeModal ? 'waiting_approval' : status;
+  const finalMessages = activeModal
     ? dedupeMessages([...messages, createApprovalMessage(activeModal)])
     : messages;
   const model = extractCurrentModel(screenText || transcript);
