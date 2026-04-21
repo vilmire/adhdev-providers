@@ -162,6 +162,32 @@ test('hermes-cli parseOutput keeps the fuller prior user turn when the visible t
   );
 });
 
+test('hermes-cli parseOutput merges a soft-wrapped visible user turn instead of duplicating the sent prompt', () => {
+  const fullUserMessage = '현재 터미널모드와 터미널모드가 아닐때 높이가 다르고 터미널모드는 항상 인풋창이 켜져있는데 이부분 채팅모드와 동일하게 사용해야함.';
+  const result = parseOutput({
+    screenText: [
+      '● 현재 터미널모드와 터미널모드가 아닐때 높이가 다르고 터미널모드는 항상 인풋창이',
+      '켜져있는데 이부분 채팅모드와 동일하게 사용해야함.',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● 현재 터미널모드와 터미널모드가 아닐때 높이가 다르고 터미널모드는 항상 인풋창이',
+      '켜져있는데 이부분 채팅모드와 동일하게 사용해야함.',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: fullUserMessage },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: fullUserMessage },
+    ],
+  );
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',

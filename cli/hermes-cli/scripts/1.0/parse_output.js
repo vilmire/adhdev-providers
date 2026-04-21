@@ -171,6 +171,8 @@ function parseMessages(text) {
   const messages = [];
   let inAssistantBox = false;
   let assistantLines = [];
+  let inUserMessage = false;
+  let userLines = [];
 
   const flushAssistant = () => {
     const content = assistantLines
@@ -184,21 +186,45 @@ function parseMessages(text) {
     assistantLines = [];
   };
 
+  const flushUser = () => {
+    const content = userLines
+      .map(normalize)
+      .filter((line) => line && !isNoise(line))
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (content) {
+      messages.push({ role: 'user', content });
+    }
+    userLines = [];
+    inUserMessage = false;
+  };
+
+  const isPromptLine = (line) => /^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(line);
+
   for (const rawLine of lines) {
     const line = normalize(rawLine);
-    if (!line) continue;
+    if (!line) {
+      if (inAssistantBox) assistantLines.push(line);
+      continue;
+    }
 
     if (/^●\s+/.test(line)) {
       if (inAssistantBox) {
         flushAssistant();
         inAssistantBox = false;
       }
+      if (inUserMessage) flushUser();
       const content = line.replace(/^●\s+/, '').trim();
-      if (content) messages.push({ role: 'user', content });
+      if (content) {
+        inUserMessage = true;
+        userLines = [content];
+      }
       continue;
     }
 
     if (/^╭─\s*⚕\s*Hermes/i.test(line)) {
+      if (inUserMessage) flushUser();
       if (inAssistantBox) flushAssistant();
       inAssistantBox = true;
       assistantLines = [];
@@ -215,6 +241,7 @@ function parseMessages(text) {
 
     const activityMessage = parseActivityMessage(line);
     if (activityMessage) {
+      if (inUserMessage) flushUser();
       if (inAssistantBox) {
         flushAssistant();
         inAssistantBox = false;
@@ -223,11 +250,22 @@ function parseMessages(text) {
       continue;
     }
 
+    if (inUserMessage) {
+      if (isPromptLine(line) || isNoise(line)) {
+        flushUser();
+        if (isPromptLine(line)) continue;
+      } else {
+        userLines.push(line);
+        continue;
+      }
+    }
+
     if (inAssistantBox) {
       assistantLines.push(line);
     }
   }
 
+  if (inUserMessage) flushUser();
   if (inAssistantBox) flushAssistant();
 
   return dedupeMessages(messages);
