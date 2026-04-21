@@ -4,8 +4,7 @@
  * Claude Code — listModels
  *
  * Returns available model options for the model selector.
- * Claude Code accepts aliases (default, sonnet, opus, haiku) and some
- * explicit model names.
+ * Keep this aligned to the aliases Claude Code actually accepts via `/model`.
  */
 
 function splitLines(text) {
@@ -51,9 +50,6 @@ module.exports = function listModels(input) {
             { value: 'sonnet', label: 'sonnet' },
             { value: 'opus', label: 'opus' },
             { value: 'haiku', label: 'haiku' },
-            { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6' },
-            { value: 'claude-opus-4', label: 'claude-opus-4' },
-            { value: 'claude-haiku-3-5', label: 'claude-haiku-3-5' },
         ],
         currentValue: inferCurrentModel(screenText),
     };

@@ -1,5 +1,15 @@
 'use strict';
 
+const MODEL_ALIASES = {
+    default: 'default',
+    sonnet: 'sonnet',
+    opus: 'opus',
+    haiku: 'haiku',
+    'claude-sonnet-4-6': 'sonnet',
+    'claude-opus-4': 'opus',
+    'claude-haiku-3-5': 'haiku',
+};
+
 /**
  * Claude Code — setModel
  *
@@ -11,7 +21,8 @@ module.exports = function setModel(input) {
         return { ok: false, error: 'Model value is required' };
     }
 
-    const model = value.trim();
+    const requestedModel = value.trim();
+    const model = MODEL_ALIASES[requestedModel] || requestedModel;
     return {
         ok: true,
         currentValue: model,

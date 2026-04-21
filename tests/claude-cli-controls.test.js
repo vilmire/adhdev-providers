@@ -53,6 +53,15 @@ test('claude-cli list_models ignores older default confirmation lines outside th
   assert.equal(result.currentValue, 'opus');
 });
 
+test('claude-cli list_models exposes only slash-command aliases the runtime can round-trip', () => {
+  const result = listModels({ screenText: '❯' });
+
+  assert.deepEqual(
+    result.options.map((option) => option.value),
+    ['default', 'sonnet', 'opus', 'haiku'],
+  );
+});
+
 test('claude-cli set_model returns controlValues for optimistic UI updates', () => {
   const result = setModel({ args: { value: 'opus' } });
 
@@ -60,6 +69,15 @@ test('claude-cli set_model returns controlValues for optimistic UI updates', () 
   assert.equal(result.currentValue, 'opus');
   assert.deepEqual(result.controlValues, { model: 'opus' });
   assert.deepEqual(result.command, { type: 'pty_write', text: '/model opus' });
+});
+
+test('claude-cli set_model normalizes explicit model ids to supported slash-command aliases', () => {
+  const result = setModel({ args: { value: 'claude-sonnet-4-6' } });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.currentValue, 'sonnet');
+  assert.deepEqual(result.controlValues, { model: 'sonnet' });
+  assert.deepEqual(result.command, { type: 'pty_write', text: '/model sonnet' });
 });
 
 test('claude-cli parse_output surfaces default model from a recent confirmation line', () => {
