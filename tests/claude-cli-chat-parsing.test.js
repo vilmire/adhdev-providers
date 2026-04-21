@@ -211,6 +211,44 @@ test('claude-cli parse_output keeps generating and surfaces live tool lines from
   ]);
 });
 
+test('claude-cli parse_output suppresses repeated thinking metric bubbles while preserving tool activity', () => {
+  const prompt = 'Inspect the oss diff and summarize what changed.';
+  const screenText = [
+    `❯ ${prompt}`,
+    '⏺ Fiddle-faddling… (16s · ↑ 864 tokens)',
+    '⏺ Brewing… (23s · ↑ 1.6k tokens)',
+    '⏺ Bash(cd /Users/moltbot/.openclaw/workspace/projects/adhdev && git -C oss diff)',
+    '⏺ Brewing… (28s · ↓ 1.7k tokens)',
+    '⏺ Brewing… (1m 19s · ↓ 2.5k tokens · thought for 46s)',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(
+    toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })),
+    [
+      {
+        role: 'user',
+        kind: 'standard',
+        senderName: undefined,
+        content: prompt,
+      },
+      {
+        role: 'assistant',
+        kind: 'terminal',
+        senderName: 'Terminal',
+        content: '$ cd /Users/moltbot/.openclaw/workspace/projects/adhdev && git -C oss diff',
+      },
+    ],
+  );
+});
+
 test('claude-cli parse_output prefers the clean visible T3 reply over polluted transcript residue after a completed tool turn', () => {
   const screenText = [
     '❯ Reply with exactly T2:T1 and nothing else.',

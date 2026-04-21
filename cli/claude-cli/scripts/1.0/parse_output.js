@@ -654,6 +654,13 @@ function isToolActivitySummary(text) {
         || /^Writing\b/i.test(trimmed);
 }
 
+function isThinkingMetricStatusLine(text) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return false;
+    if (!/[.…]\s*\(/u.test(trimmed)) return false;
+    return /^(?:[·•]\s*)?[A-Z][A-Za-z-]*(?:\s+[A-Z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
+}
+
 function buildVisibleMessages(lines, promptText = '') {
     const messages = [];
     let currentAssistant = [];
@@ -706,6 +713,11 @@ function buildVisibleMessages(lines, promptText = '') {
                 flushAssistant();
                 messages.push(createToolMessage(`$ ${bashCommand}`, { kind: 'terminal', senderName: 'Terminal' }));
                 skippingToolBlock = true;
+                captureDetailBlock = false;
+                continue;
+            }
+            if (isThinkingMetricStatusLine(cleaned)) {
+                skippingToolBlock = false;
                 captureDetailBlock = false;
                 continue;
             }

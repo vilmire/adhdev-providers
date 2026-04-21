@@ -81,9 +81,17 @@ function hasStartupTrustPrompt(lines) {
     return hasCue && (hasButtons || hasEnterConfirm);
 }
 
+function isSpinnerMetricLine(line) {
+    const trimmed = normalize(line);
+    if (!trimmed || isShellChrome(trimmed)) return false;
+    if (!/[.…]\s*\(/u.test(trimmed)) return false;
+    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[A-Z][A-Za-z-]*(?:\s+[A-Z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
+}
+
 function isSpinnerLine(line) {
     const trimmed = normalize(line);
     if (!trimmed || isShellChrome(trimmed)) return false;
+    if (isSpinnerMetricLine(trimmed)) return true;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
     if (/^(?:[✻✶✳✢✽·•]\s+)?(?:Nesting|Considering|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\b.*(?:…|\.\.\.)?/iu.test(trimmed)) return true;
