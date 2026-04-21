@@ -1,9 +1,17 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
+const provider = require('../cli/claude-cli/provider.json');
 const listModels = require('../cli/claude-cli/scripts/1.0/list_models.js');
 const setModel = require('../cli/claude-cli/scripts/1.0/set_model.js');
 const parseOutput = require('../cli/claude-cli/scripts/1.0/parse_output.js');
+
+test('claude-cli provider.json keeps only the frequently used bar controls', () => {
+  assert.deepEqual(
+    (provider.controls || []).map(control => control.id),
+    ['model', 'effort'],
+  );
+});
 
 test('claude-cli list_models includes default and infers current sonnet model from footer', () => {
   const result = listModels({

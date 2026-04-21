@@ -34,10 +34,12 @@ function buildScreenSnapshot(text) {
 
   const nonEmptyLines = lines.filter(line => !line.isEmpty);
 
-  // Hermes prompt: ❯
+  // Hermes prompt can appear either as a bare prompt line (`❯`) or as an
+  // inline footer/prompt line such as `⚕ ❯ type a message + Enter to interrupt...`.
   const promptLineIndex = (() => {
     for (let i = lines.length - 1; i >= 0; i -= 1) {
-      if (/^❯\s*(?:$|\S.*)$/.test(normalizeLineText(lines[i]))) return i;
+      const trimmed = normalizeLineText(lines[i]);
+      if (/^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(trimmed)) return i;
     }
     return -1;
   })();

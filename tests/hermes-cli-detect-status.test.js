@@ -2,28 +2,17 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const detectStatus = require('../cli/hermes-cli/scripts/1.0/detect_status.js');
 
-test('hermes-cli stays generating when the live thinking indicator is visible', () => {
+test('hermes-cli stays generating when a short ellipsis status line is visible above an inline prompt footer', () => {
   const screenText = [
     '⚕ Hermes Agent v0.8.0',
-    '( ˘⌣˘)♡ reasoning...',
+    '( ˘⌣˘) calibrating...',
     '⚕ ❯ type a message + Enter to interrupt, Ctrl+C to cancel',
   ].join('\n');
 
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
-test('hermes-cli stays generating when a short ellipsis status line is visible above the prompt', () => {
-  const screenText = [
-    '⚕ Hermes Agent v0.10.0',
-    '(¬_¬) pondering...',
-    'Type your message or /help for commands.',
-    '❯',
-  ].join('\n');
-
-  assert.equal(detectStatus({ screenText }), 'generating');
-});
-
-test('hermes-cli stays generating when an unknown short ellipsis status line is visible above the prompt', () => {
+test('hermes-cli stays generating when a short ellipsis status line is visible above the regular prompt', () => {
   const screenText = [
     '⚕ Hermes Agent v0.10.0',
     '(¬_¬) calibrating...',
@@ -32,6 +21,19 @@ test('hermes-cli stays generating when an unknown short ellipsis status line is 
   ].join('\n');
 
   assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('hermes-cli ignores older ellipsis lines outside the 3-line prompt-adjacent window', () => {
+  const screenText = [
+    '⚕ Hermes Agent v0.10.0',
+    '(¬_¬) calibrating...',
+    'older history line 1',
+    'older history line 2',
+    'Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
 });
 
 test('hermes-cli reports idle only for a bare prompt without generating markers', () => {
