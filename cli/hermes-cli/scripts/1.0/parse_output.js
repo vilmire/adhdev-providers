@@ -117,6 +117,22 @@ function parseActivityMessage(line) {
   return { role: 'assistant', kind: 'tool', senderName: 'Tool', content: body };
 }
 
+function createApprovalMessage(activeModal) {
+  const message = String(activeModal?.message || '').trim();
+  const buttons = Array.isArray(activeModal?.buttons)
+    ? activeModal.buttons.map((button) => String(button || '').trim()).filter(Boolean)
+    : [];
+  const lines = ['Approval requested'];
+  if (message) lines.push(message);
+  if (buttons.length > 0) lines.push(buttons.map((label) => `[${label}]`).join(' '));
+  return {
+    role: 'assistant',
+    kind: 'system',
+    senderName: 'System',
+    content: lines.join('\n'),
+  };
+}
+
 function dedupeMessages(messages) {
   const next = [];
   for (const rawMessage of messages) {
@@ -312,6 +328,9 @@ module.exports = function parseOutput(input) {
   const activeModal = status === 'waiting_approval'
     ? parseApproval({ screenText, buffer: transcript, tail: input?.recentBuffer || input?.tail || '' })
     : null;
+  const finalMessages = activeModal && status === 'waiting_approval'
+    ? dedupeMessages([...messages, createApprovalMessage(activeModal)])
+    : messages;
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
   const historyState = extractHistoryState(transcript || screenText);
@@ -321,7 +340,7 @@ module.exports = function parseOutput(input) {
     title: 'Hermes Agent',
     status,
     model,
-    messages,
+    messages: finalMessages,
     activeModal,
     providerSessionId,
     ...historyState,

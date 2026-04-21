@@ -224,6 +224,42 @@ test('hermes-cli parseOutput upgrades a repeated assistant prefix instead of app
   );
 });
 
+test('hermes-cli parseOutput surfaces dangerous-command approval as a visible system bubble', () => {
+  const screenText = [
+    '╭────────────────────────────────────────────────────────────╮',
+    '│ ⚠️  Dangerous Command                                      │',
+    '│                                                            │',
+    '│ node -e "try{const                                         │',
+    '│ m=require(\'/Users/moltbot/.openclaw/workspace/proje...     │',
+    '│                                                            │',
+    '│ ❯ Allow once                                               │',
+    '│   Allow for this session                                   │',
+    '│   Add to permanent allowlist                               │',
+    '│   Deny                                                     │',
+    '│   Show full command                                        │',
+    '│                                                            │',
+    '│ script execution via -e/-c flag                            │',
+    '╰────────────────────────────────────────────────────────────╯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal?.buttons, [
+    'Allow once',
+    'Allow for this session',
+    'Add to permanent allowlist',
+    'Deny',
+  ]);
+  assert.equal(result.messages.at(-1)?.kind, 'system');
+  assert.match(result.messages.at(-1)?.content || '', /Approval requested/);
+  assert.match(result.messages.at(-1)?.content || '', /Allow once/);
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',
