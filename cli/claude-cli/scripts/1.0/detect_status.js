@@ -86,7 +86,10 @@ function isSpinnerMetricLine(line) {
     const trimmed = normalize(line);
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[A-Z][A-Za-z-]*(?:\s+[A-Za-z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
+    const hasMetricParens = /\([^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\btokens?\b[^)]*\)$/iu.test(trimmed)
+        || /\([^)]*\btokens?\b[^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\)$/iu.test(trimmed);
+    if (!hasMetricParens) return false;
+    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
 }
 
 function isSpinnerLine(line) {
@@ -151,7 +154,7 @@ function hasActiveGenerating(lines) {
 
 function hasPromptAdjacentGenerating(screen) {
     if (!screen || screen.promptLineIndex < 0) return false;
-    const justAbovePrompt = sliceAroundPrompt(screen, { before: 8, after: 0, includePrompt: false });
+    const justAbovePrompt = sliceAroundPrompt(screen, { before: 4, after: 0, includePrompt: false });
     for (let index = justAbovePrompt.length - 1; index >= 0; index -= 1) {
         const trimmed = normalize(justAbovePrompt[index]);
         if (!trimmed) continue;
@@ -160,7 +163,7 @@ function hasPromptAdjacentGenerating(screen) {
         if (isAssistantReplyLine(trimmed) && !isSpinnerLine(trimmed)) return false;
         break;
     }
-    return justAbovePrompt.some(line => isSpinnerLine(line) || isToolLine(line) || /^\([^)]+\)$/.test(normalize(line)));
+    return justAbovePrompt.some(line => isSpinnerLine(line) || isToolLine(line));
 }
 
 function hasVisibleCompletedReply(lines) {

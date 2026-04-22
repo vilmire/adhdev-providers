@@ -266,6 +266,100 @@ test('claude-cli parse_output suppresses repeated thinking metric bubbles while 
   );
 });
 
+test('claude-cli parse_output splits visible assistant prose at each ⏺ boundary instead of merging adjacent assistant bubbles', () => {
+  const prompt = 'Summarize what you are doing in short steps.';
+  const screenText = [
+    `❯ ${prompt}`,
+    '⏺ First I will inspect the repo.',
+    '⏺ Then I will read package.json.',
+    '⏺ Bash(pwd)',
+    '  ⎿ /Users/moltbot/.openclaw/workspace/projects/adhdev',
+    '⏺ Finally I will summarize the findings.',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.deepEqual(
+    toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })),
+    [
+      {
+        role: 'user',
+        kind: 'standard',
+        senderName: undefined,
+        content: prompt,
+      },
+      {
+        role: 'assistant',
+        kind: 'standard',
+        senderName: undefined,
+        content: 'First I will inspect the repo.',
+      },
+      {
+        role: 'assistant',
+        kind: 'standard',
+        senderName: undefined,
+        content: 'Then I will read package.json.',
+      },
+      {
+        role: 'assistant',
+        kind: 'terminal',
+        senderName: 'Terminal',
+        content: '$ pwd',
+      },
+      {
+        role: 'assistant',
+        kind: 'standard',
+        senderName: undefined,
+        content: 'Finally I will summarize the findings.',
+      },
+    ],
+  );
+});
+
+test('claude-cli parse_output ignores lowercase token-metric spinner lines near the input and detect_status still treats them as generating', () => {
+  const prompt = 'Tell me when you are done.';
+  const screenText = [
+    `❯ ${prompt}`,
+    '⏺ First I am checking the current state.',
+    '⏺ compacting conversation… (12s · ↑ 3.2k tokens)',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  assert.equal(detectStatus({ screenText, tail: screenText }), 'generating');
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(
+    toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })),
+    [
+      {
+        role: 'user',
+        kind: 'standard',
+        senderName: undefined,
+        content: prompt,
+      },
+      {
+        role: 'assistant',
+        kind: 'standard',
+        senderName: undefined,
+        content: 'First I am checking the current state.',
+      },
+    ],
+  );
+});
+
 test('claude-cli parse_output prefers the clean visible T3 reply over polluted transcript residue after a completed tool turn', () => {
   const screenText = [
     '❯ Reply with exactly T2:T1 and nothing else.',

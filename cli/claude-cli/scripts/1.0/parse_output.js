@@ -658,7 +658,10 @@ function isThinkingMetricStatusLine(text) {
     const trimmed = String(text || '').trim();
     if (!trimmed) return false;
     if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    return /^(?:[·•]\s*)?[A-Z][A-Za-z-]*(?:\s+[A-Z][A-Za-z-]*)*[.…]\s*\([^)]*(?:tokens?|thought for|[↑↓]|\b\d+(?:\.\d+)?[sm]\b)[^)]*\)$/u.test(trimmed);
+    const hasMetricParens = /\([^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\btokens?\b[^)]*\)$/iu.test(trimmed)
+        || /\([^)]*\btokens?\b[^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\)$/iu.test(trimmed);
+    if (!hasMetricParens) return false;
+    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
 }
 
 function buildVisibleMessages(lines, promptText = '') {
@@ -717,6 +720,7 @@ function buildVisibleMessages(lines, promptText = '') {
                 continue;
             }
             if (isThinkingMetricStatusLine(cleaned)) {
+                flushAssistant();
                 skippingToolBlock = false;
                 captureDetailBlock = false;
                 continue;
@@ -736,6 +740,7 @@ function buildVisibleMessages(lines, promptText = '') {
                 continue;
             }
 
+            flushAssistant();
             skippingToolBlock = false;
             captureDetailBlock = /^(?:Exact output|Output|Result):/i.test(cleaned);
             currentAssistant.push(cleaned);
