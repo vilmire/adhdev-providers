@@ -18,6 +18,7 @@ function isPromptAdjacentStatusLine(line) {
   if (!/(?:\.\.\.|…)/.test(trimmed)) return false;
   if (/^(?:❯|⚕\s*❯|●|╭─|╰─|[┊│])/.test(trimmed)) return false;
   if (/Type your message|Resume this session with:|Session:/i.test(trimmed)) return false;
+  if (!/ing(?:\.\.\.|…)/i.test(trimmed)) return false;
   if (trimmed.length <= 64 && /(?:\.\.\.|…)\s*$/.test(trimmed)) return true;
   return /(?:\.\.\.|…)\s+.*(?:\b\d+(?:\.\d+)?[sm]\b|[↑↓]|tokens?|recall:|gpt-[\w.-]+|\[[^\]]+\]|%)/i.test(trimmed);
 }
@@ -27,7 +28,7 @@ function hasPromptAdjacentEllipsisStatus(screen) {
   return linesAbovePrompt
     .map((line) => String(line?.trimmed || line?.text || line || '').trim())
     .filter(Boolean)
-    .slice(-3)
+    .slice(-5)
     .some(isPromptAdjacentStatusLine);
 }
 

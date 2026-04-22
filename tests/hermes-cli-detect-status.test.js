@@ -23,12 +23,38 @@ test('hermes-cli stays generating when a short ellipsis status line is visible a
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
-test('hermes-cli ignores older ellipsis lines outside the 3-line prompt-adjacent window', () => {
+test('hermes-cli ignores older ing... lines outside the 5-line prompt-adjacent window', () => {
   const screenText = [
     '⚕ Hermes Agent v0.10.0',
-    '(¬_¬) calibrating...',
+    'calibrating...',
     'older history line 1',
     'older history line 2',
+    'older history line 3',
+    'older history line 4',
+    'Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
+});
+
+test('hermes-cli stays generating when an ing... status line is visible in the 5 lines above the user input', () => {
+  const screenText = [
+    'history line 1',
+    'history line 2',
+    'history line 3',
+    'planning...',
+    'Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('hermes-cli ignores non-ing ellipsis text above the prompt', () => {
+  const screenText = [
+    'history line',
+    'done...',
     'Type your message or /help for commands.',
     '❯',
   ].join('\n');
