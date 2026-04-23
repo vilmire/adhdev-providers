@@ -3,17 +3,18 @@
  * Cursor's terminal agent uses similar TUI patterns to Claude.
  */
 'use strict';
+
+const { parseApprovalContext } = require('./approval_helpers.js');
+
 module.exports = function detectStatus(input) {
-    const { tail } = input;
+    const tail = String(input?.tail || input?.screenText || input?.buffer || '');
     if (!tail) return 'idle';
-    // waiting_approval
-    if (/Allow\s*once/i.test(tail) || /Always\s*allow/i.test(tail)) return 'waiting_approval';
-    if (/\(y\/n\)/i.test(tail) || /\[Y\/n\]/i.test(tail)) return 'waiting_approval';
-    if (/approve|confirm/i.test(tail) && /deny|cancel/i.test(tail)) return 'waiting_approval';
-    // generating
+
+    if (parseApprovalContext(input)) return 'waiting_approval';
+
     if (/[\u2800-\u28ff]/.test(tail)) return 'generating';
     if (/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(tail)) return 'generating';
-    if (/thinking|processing|generating/i.test(tail)) return 'generating';
-    if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
+    if (/\b(?:thinking|processing|generating|working|analyzing|planning|reading|searching|editing|running|composing)\b/i.test(tail)) return 'generating';
+    if (/esc to (?:cancel|interrupt|stop)/i.test(tail)) return 'generating';
     return 'idle';
 };
