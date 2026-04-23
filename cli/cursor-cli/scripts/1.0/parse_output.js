@@ -22,6 +22,8 @@ function normalize(text) {
 
 function parsePromptLine(line) {
     const trimmed = sanitize(line).trim();
+    if (!trimmed) return null;
+    if (/^→\s*(?:Plan, search, build anything|Add a follow-up)(?:\s+ctrl\+c to stop)?$/i.test(trimmed)) return '';
     const match = trimmed.match(/^[❯›>$]\s*(.*)$/);
     if (!match) return null;
     const body = match[1].trim();
@@ -35,6 +37,11 @@ function isBoxLine(trimmed) {
 
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
+        || /^Cursor Agent$/i.test(trimmed)
+        || /^v\d{4}\.\d{2}\.\d{2}-/i.test(trimmed)
+        || /^hint:\s*\/auto-run/i.test(trimmed)
+        || /^Composer\b.+$/i.test(trimmed)
+        || /^\/(?:private\/)?(?:tmp|Users)\//.test(trimmed)
         || /Update available!/i.test(trimmed)
         || /\b\d+(?:\.\d+)?[KM]?\s+tokens used\b/i.test(trimmed)
         || /\b\d+% context left\b/i.test(trimmed)
@@ -115,6 +122,22 @@ function extractVisibleTurn(text, previousMessages) {
 
     const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
     const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
+
+    if (!promptLines.length) {
+        if (assistantLines.length >= 2) {
+            return {
+                promptText: assistantLines[assistantLines.length - 2],
+                assistantText: assistantLines[assistantLines.length - 1],
+            };
+        }
+        const visibleLines = collectMeaningfulLines(lines.slice(0, end));
+        if (visibleLines.length >= 2) {
+            return {
+                promptText: visibleLines[visibleLines.length - 2],
+                assistantText: visibleLines[visibleLines.length - 1],
+            };
+        }
+    }
 
     return {
         promptText: promptLines.join(' ').trim(),

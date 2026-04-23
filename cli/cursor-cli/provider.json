@@ -7,12 +7,43 @@
   ],
   "icon": "\ud83e\udd16",
   "displayName": "Cursor CLI",
-  "binary": "agent",
+  "controls": [
+    {
+      "id": "model",
+      "type": "select",
+      "label": "Model",
+      "icon": "🤖",
+      "placement": "bar",
+      "order": 10,
+      "listScript": "listModels",
+      "setScript": "setModel",
+      "readFrom": "model"
+    }
+  ],
+  "binary": "cursor",
+  "versionCommand": "cursor agent about",
+  "sendDelayMs": 500,
+  "submitStrategy": "wait_for_echo",
   "spawn": {
-    "command": "agent",
-    "args": [],
+    "command": "cursor",
+    "args": [
+      "agent"
+    ],
     "shell": true,
     "env": {}
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "ctrl_c",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "uuid",
+    "resumeSessionArgs": [
+      "--resume",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
   },
   "compatibility": [
     {
@@ -38,7 +69,7 @@
       ]
     },
     "controls": {
-      "typedResults": false
+      "typedResults": true
     }
   }
 }
