@@ -97,6 +97,13 @@ function chooseMoreCompleteMessage(left, right) {
   };
 }
 
+function looksLikeApprovalActivity(body) {
+  const text = String(body || '').trim();
+  if (!text) return false;
+  return /^(?:Dangerous Command|requires approval|Approve delete|Do not delete|Other \(type your answer\)|Allow once|Allow for this session|Add to permanent allowlist|Deny|Show full command)$/i.test(text)
+    || /script execution via -e\/-c flag/i.test(text);
+}
+
 function parseActivityMessage(line) {
   // Match any emoji/symbol after the activity-line prefix (┊ or │).
   // Captures the first token (emoji or $) so we can classify terminal vs tool.
@@ -107,7 +114,7 @@ function parseActivityMessage(line) {
     .replace(/\s+\d+(?:\.\d+)?s$/u, '')
     .replace(/\s*[│┊]\s*$/u, '')
     .trim();
-  if (!body || isNoise(body)) return null;
+  if (!body || isNoise(body) || looksLikeApprovalActivity(body)) return null;
   if (icon === '💻' || icon === '$' || body.startsWith('$')) {
     return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
   }

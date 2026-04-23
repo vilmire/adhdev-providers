@@ -298,6 +298,40 @@ test('hermes-cli parseOutput lets approval parsing override a stale generating s
   assert.match(result.messages.at(-1)?.content || '', /Dangerous Command/);
 });
 
+test('hermes-cli parseOutput ignores stale dangerous-command approval scrollback once the current screen is back at the idle prompt', () => {
+  const oldApproval = [
+    '╭────────────────────────────────────────────────────────────╮',
+    '│ ⚠️ Dangerous Command                                      │',
+    '│                                                            │',
+    '│ node -e "dangerous"                                       │',
+    '│                                                            │',
+    '│ ❯ Allow once                                               │',
+    '│   Allow for this session                                   │',
+    '│   Add to permanent allowlist                               │',
+    '│   Deny                                                     │',
+    '│   Show full command                                        │',
+    '│                                                            │',
+    '│ script execution via -e/-c flag                            │',
+    '╰────────────────────────────────────────────────────────────╯',
+  ];
+  const screenText = [
+    ...oldApproval,
+    ...Array.from({ length: 24 }, (_, index) => `history line ${index + 1}`),
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: false,
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.activeModal, null);
+  assert.ok(!result.messages.some((message) => /Approval requested|Dangerous Command/.test(message.content || '')));
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',

@@ -130,6 +130,30 @@ test('hermes-cli returns to idle when a stale prompt is visible and no live gene
   assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
 
+test('hermes-cli ignores stale dangerous-command approval lines when a normal idle prompt appears after them', () => {
+  const screenText = [
+    '╭────────────────────────────────────────────────────────────╮',
+    '│ ⚠️ Dangerous Command                                      │',
+    '│                                                            │',
+    '│ node -e "dangerous"                                       │',
+    '│                                                            │',
+    '│ ❯ Allow once                                               │',
+    '│   Allow for this session                                   │',
+    '│   Add to permanent allowlist                               │',
+    '│   Deny                                                     │',
+    '│   Show full command                                        │',
+    '│                                                            │',
+    '│ script execution via -e/-c flag                            │',
+    '╰────────────────────────────────────────────────────────────╯',
+    'history line 1',
+    'history line 2',
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
+});
+
 test('hermes-cli stays generating when startup text remains visible but the active turn has only plan/tool lines', () => {
   const screenText = [
     'Welcome to Hermes Agent! Type your message or /help for commands.',

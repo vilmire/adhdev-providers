@@ -1,5 +1,6 @@
 'use strict';
 
+const parseApproval = require('./parse_approval.js');
 const { cleanAnsi } = require('./helpers.js');
 const { buildFromBufferFallback } = require('./screen_helpers.js');
 
@@ -36,11 +37,13 @@ module.exports = function detectStatus(input) {
   const text = sourceText(input);
   if (!text.trim()) return 'idle';
 
-  const hasDangerousPrompt = /Dangerous Command/i.test(text)
-    && /Allow once|Allow for this session|Add to permanent allowlist|Deny/i.test(text);
-  const hasModernApprovalPrompt = /requires approval/i.test(text)
-    && /Approve delete|Do not delete|Other \(type your answer\)/i.test(text);
-  if (hasDangerousPrompt || hasModernApprovalPrompt) {
+  const approvalModal = parseApproval({
+    screenText: input?.screenText || '',
+    buffer: input?.buffer || '',
+    tail: input?.tail || '',
+    screen: input?.screen,
+  });
+  if (approvalModal) {
     return 'waiting_approval';
   }
 
