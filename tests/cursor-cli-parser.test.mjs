@@ -125,6 +125,42 @@ const postTrustScreen = `
  /private/tmp/adhdev-cursor-cli-approval-fix-live2
 `
 
+const staleComposingScreen = `
+ Cursor Agent
+ v2026.04.17-787b533
+ hint: /auto-run to skip all approvals
+
+ Create tmp/adhdev_cli_verify.py that prints exactly these three lines:
+ CWD=<current working directory>
+ SQUARES=1,4,9,16,25
+ JSON={"squares":[1,4,9,16,25]}
+ Then run python3 tmp/adhdev_cli_verify.py and reply with the exact output only.
+
+ CWD=/private/tmp/adhdev-cursor-cli-approval-fix-live5
+ SQUARES=1,4,9,16,25
+ JSON={"squares":[1,4,9,16,25]}
+
+ → Add a follow-up
+
+ Composer 2 Fast · 4.5% · 1 file edited
+ ctrl+r to review edits
+ /private/tmp/adhdev-cursor-cli-approval-fix-live5
+`
+
+const staleComposingTail = `
+ JSON={"squares":[1,4,9,16,25]}
+
+ → Add a follow-up
+
+ Composer 2 Fast · 4.3% · 1 file edited
+ ctrl+r to review edits
+ /private/tmp/adhdev-cursor-cli-approval-fix-live5
+
+ ⠣⠄ Composing 448 tokens
+ ctrl+r to review edits
+ /private/tmp/adhdev-cursor-cli-approval-fix-live5
+`
+
 test('cursor detect_status treats composing screens as generating', () => {
   assert.equal(detectStatus({ tail: generatingScreen }), 'generating')
 })
@@ -196,4 +232,11 @@ test('cursor ignores stale trust chrome once the main interactive prompt is visi
   assert.equal(detectStatus({ tail: postTrustScreen, screenText: postTrustScreen }), 'idle')
   assert.equal(parsed.status, 'idle')
   assert.equal(parsed.activeModal, null)
+})
+
+test('cursor detect_status prefers the visible idle prompt over stale composing tail', () => {
+  assert.equal(
+    detectStatus({ tail: staleComposingTail, screenText: staleComposingScreen, buffer: staleComposingScreen }),
+    'idle',
+  )
 })
