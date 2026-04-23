@@ -500,3 +500,30 @@ test('hermes-cli parseOutput keeps status generating while a partial assistant b
     },
   ]);
 });
+
+test('hermes-cli parseOutput keeps status generating when a stale startup prompt is visible during an in-flight turn', () => {
+  const prompt = 'Run the long tool workflow and tell me when it finishes.';
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+  ]);
+});

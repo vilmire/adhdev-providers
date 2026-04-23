@@ -33,6 +33,15 @@ function hasPromptAdjacentEllipsisStatus(screen) {
     .some(isPromptAdjacentStatusLine);
 }
 
+function hasStrictBarePromptOnly(text) {
+  const lines = String(text || '')
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return false;
+  return lines.every((line) => /^❯\s*$/.test(line) || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line));
+}
+
 module.exports = function detectStatus(input) {
   const text = sourceText(input);
   if (!text.trim()) return 'idle';
@@ -87,11 +96,13 @@ module.exports = function detectStatus(input) {
 
   // Only call idle when we see a prompt indicator, no active generation footer,
   // and no live turn markers such as the current user prompt or tool activity.
-  // This avoids false-completing while Hermes is still working through a tool plan
-  // after startup text leaves a stale idle prompt in the visible window.
-  // Important: evaluate this BEFORE trusting adapter isWaitingForResponse, because
-  // the adapter flag can stay stale after Hermes returns to a prompt-only screen.
+  // While a response is still considered in-flight, be much stricter: Hermes may
+  // briefly redraw a startup-style prompt during long tool/skill work, and letting
+  // that transient screen resolve to idle feeds script_idle_commit too early.
   if ((hasBarePrompt || hasPrompt) && !hasInitializing && !hasInterruptFooter && !hasLiveTurnMarkers && !hasEllipsisStatusAbovePrompt) {
+    if (input?.isWaitingForResponse === true) {
+      return hasStrictBarePromptOnly(text) ? 'idle' : 'generating';
+    }
     return 'idle';
   }
 
