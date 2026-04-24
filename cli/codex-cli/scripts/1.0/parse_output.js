@@ -123,6 +123,79 @@ function cleanLine(rawLine) {
         .trim();
 }
 
+function looksLikeCodeLine(line) {
+    const raw = String(line || '');
+    const trimmed = raw.trim();
+    if (!trimmed) return false;
+    if (looksLikeOutputLine(trimmed)) return false;
+    return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed)
+        || /^\s{2,}\S/.test(raw);
+}
+
+function looksLikeOutputLine(line) {
+    return /^(?:CWD=|SQUARES=|JSON=)/.test(String(line || '').trim());
+}
+
+function rehydrateRenderedSections(text) {
+    const raw = String(text || '');
+    if (!raw) return '';
+    const lines = raw.split(/\r?\n/);
+    const alreadyHasPythonFence = /```python[\s\S]*```/i.test(raw);
+    const alreadyHasTextFence = /```text[\s\S]*```/i.test(raw);
+
+    let codeStart = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (looksLikeCodeLine(lines[i])) {
+            codeStart = i;
+            break;
+        }
+    }
+
+    if (codeStart < 0) return raw.trim();
+
+    let codeEnd = codeStart;
+    while (codeEnd < lines.length) {
+        const line = lines[codeEnd];
+        if (!line.trim() || looksLikeCodeLine(line)) {
+            codeEnd += 1;
+            continue;
+        }
+        break;
+    }
+
+    let outputStart = codeEnd;
+    while (outputStart < lines.length && !looksLikeOutputLine(lines[outputStart])) outputStart += 1;
+    let outputEnd = outputStart;
+    while (outputEnd < lines.length && (!lines[outputEnd].trim() || looksLikeOutputLine(lines[outputEnd]))) outputEnd += 1;
+
+    const out = [];
+    out.push(...lines.slice(0, codeStart));
+    if (!alreadyHasPythonFence) {
+        if (out.length && out[out.length - 1].trim() !== '') out.push('');
+        out.push('```python');
+        out.push(...lines.slice(codeStart, codeEnd));
+        out.push('```');
+    } else {
+        out.push(...lines.slice(codeStart, codeEnd));
+    }
+
+    if (outputStart < lines.length) {
+        if (!alreadyHasTextFence) {
+            if (out.length && out[out.length - 1].trim() !== '') out.push('');
+            out.push('```text');
+            out.push(...lines.slice(outputStart, outputEnd));
+            out.push('```');
+        } else {
+            out.push(...lines.slice(outputStart, outputEnd));
+        }
+        out.push(...lines.slice(outputEnd));
+    } else {
+        out.push(...lines.slice(codeEnd));
+    }
+
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
 // ─── Startup screen detection ───────────────────
 
 function isStartupScreen(text) {
@@ -316,7 +389,7 @@ function toMessageObjects(messages, status) {
 
 // ─── Export ──────────────────────────────────────
 
-module.exports = function parseOutput(input) {
+function parseOutput(input) {
     const screenText = String(input?.screenText || '');
     const buffer = String(input?.buffer || '');
     const transcript = screenText || buffer;
@@ -350,7 +423,7 @@ module.exports = function parseOutput(input) {
     // Extract assistant text from both sources and pick richer
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
-    const assistantText = (fromScreen.length >= fromBuffer.length ? fromScreen : fromBuffer) || fromScreen || fromBuffer;
+    const assistantText = rehydrateRenderedSections((fromScreen.length >= fromBuffer.length ? fromScreen : fromBuffer) || fromScreen || fromBuffer);
 
     // Final startup guard
     if (!hasUserPrompt && isStartupScreen(assistantText)) {
@@ -373,4 +446,7 @@ module.exports = function parseOutput(input) {
         activeModal,
         providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
     };
-};
+}
+
+module.exports = parseOutput;
+module.exports.rehydrateRenderedSections = rehydrateRenderedSections;
