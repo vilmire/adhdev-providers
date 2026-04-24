@@ -20,11 +20,30 @@ function normalize(text) {
     return String(text || '').replace(/\s+/g, ' ').trim();
 }
 
+function tokenizePrompt(text) {
+    return String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(/[^A-Za-z0-9_.:/-가-힣]+/)
+        .map((token) => token.trim().toLowerCase())
+        .filter((token) => token.length >= 2);
+}
+
+function lineMatchesPrompt(line, promptText) {
+    const normalizedLine = normalize(line).toLowerCase();
+    const normalizedPrompt = normalize(promptText).toLowerCase();
+    if (!normalizedLine || !normalizedPrompt) return false;
+    if (normalizedLine === normalizedPrompt) return true;
+    const tokens = tokenizePrompt(promptText);
+    const matches = tokens.filter((token) => normalizedLine.includes(token)).length;
+    return matches >= Math.min(tokens.length, 3);
+}
+
 function parsePromptLine(line) {
     const trimmed = sanitize(line).trim();
     if (!trimmed) return null;
     if (/^→\s*(?:Plan, search, build anything|Add a follow-up)(?:\s+ctrl\+c to stop)?$/i.test(trimmed)) return '';
-    const match = trimmed.match(/^[❯›>$]\s*(.*)$/);
+    const match = trimmed.match(/^[❯›>]\s*(.*)$/);
     if (!match) return null;
     const body = match[1].trim();
     if (/^\d+[.)]\s+/.test(body)) return null;
@@ -41,6 +60,9 @@ function isFooterLine(trimmed) {
         || /^v\d{4}\.\d{2}\.\d{2}-/i.test(trimmed)
         || /^hint:\s*\/auto-run/i.test(trimmed)
         || /^Composer\b.+$/i.test(trimmed)
+        || /^Auto\s+·\s+\d+(?:\.\d+)?%\s+·\s+\d+\s+file edited$/i.test(trimmed)
+        || /^ctrl\+r to review (?:edits|changed files)$/i.test(trimmed)
+        || /^…\s+truncated \(.+ctrl\+o to expand/i.test(trimmed)
         || /^\/(?:private\/)?(?:tmp|Users)\//.test(trimmed)
         || /Update available!/i.test(trimmed)
         || /\b\d+(?:\.\d+)?[KM]?\s+tokens used\b/i.test(trimmed)
@@ -68,7 +90,87 @@ function isApprovalLine(trimmed) {
 function cleanContentLine(line) {
     const trimmed = sanitize(line).trim();
     if (!trimmed || isBoxLine(trimmed) || isFooterLine(trimmed) || isStatusLine(trimmed) || isApprovalLine(trimmed)) return '';
+    if (/^\$\s+/.test(trimmed)) return '';
     return trimmed.replace(/^[⏺•]\s+/, '').trim();
+}
+
+function isBoxTableRow(trimmed) {
+    return /^[│┃].*[│┃]$/.test(trimmed);
+}
+
+function toMarkdownTable(lines) {
+    const rows = lines
+        .map((line) => sanitize(line).trim())
+        .filter((line) => isBoxTableRow(line))
+        .map((line) => line.slice(1, -1).split(/[│┃]/).map((cell) => cell.trim()).filter(Boolean));
+    if (rows.length < 2) return lines;
+    const header = `| ${rows[0].join(' | ')} |`;
+    const separator = `| ${rows[0].map(() => '---').join(' | ')} |`;
+    const body = rows.slice(1).map((row) => `| ${row.join(' | ')} |`);
+    return [header, separator, ...body];
+}
+
+function looksLikeCodeLine(line) {
+    const trimmed = sanitize(line).trim();
+    if (!trimmed) return false;
+    if (/^(?:CWD=|SQUARES=|JSON=)/.test(trimmed)) return false;
+    return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed);
+}
+
+function rehydrateAssistantSections(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    const lines = splitLines(raw);
+    const out = [];
+    let index = 0;
+
+    while (index < lines.length) {
+        const trimmed = sanitize(lines[index]).trim();
+        if (!trimmed) {
+            out.push('');
+            index += 1;
+            continue;
+        }
+
+        if (isBoxTableRow(trimmed)) {
+            const tableLines = [];
+            while (index < lines.length && (isBoxTableRow(sanitize(lines[index]).trim()) || /^[├┤┬┴┼┌┐└┘─═]+$/.test(sanitize(lines[index]).trim()))) {
+                tableLines.push(lines[index]);
+                index += 1;
+            }
+            out.push(...toMarkdownTable(tableLines));
+            continue;
+        }
+
+        if (looksLikeCodeLine(trimmed)) {
+            const codeLines = [];
+            while (index < lines.length && (!sanitize(lines[index]).trim() || looksLikeCodeLine(lines[index]))) {
+                codeLines.push(lines[index]);
+                index += 1;
+            }
+            out.push('```python');
+            out.push(...codeLines.map((line) => sanitize(line).replace(/^\+\s*/, '')));
+            out.push('```');
+            continue;
+        }
+
+        if (/^(?:CWD=|SQUARES=|JSON=)/.test(trimmed)) {
+            const outputLines = [];
+            while (index < lines.length && (!sanitize(lines[index]).trim() || /^(?:CWD=|SQUARES=|JSON=)/.test(sanitize(lines[index]).trim()))) {
+                outputLines.push(sanitize(lines[index]));
+                index += 1;
+            }
+            out.push('```text');
+            out.push(...outputLines);
+            out.push('```');
+            continue;
+        }
+
+        out.push(trimmed);
+        index += 1;
+    }
+
+    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function collectMeaningfulLines(lines) {
@@ -84,16 +186,49 @@ function collectMeaningfulLines(lines) {
 
 function extractVisibleTurn(text, previousMessages) {
     const lines = splitLines(text);
-    let emptyPromptIndex = -1;
+    const lastUserMessage = Array.isArray(previousMessages)
+        ? [...previousMessages].reverse().find((message) => message?.role === 'user' && normalize(message.content))
+        : null;
+    const emptyPromptIndex = (() => {
+        for (let i = lines.length - 1; i >= 0; i--) {
+            if (parsePromptLine(lines[i]) === '') {
+                return i;
+            }
+        }
+        return -1;
+    })();
+
+    if (lastUserMessage) {
+        const promptAnchor = String(lastUserMessage.content || '').split(/\r?\n/).map((line) => line.trim()).find(Boolean) || String(lastUserMessage.content || '');
+        let matchedPromptIndex = -1;
+        for (let i = 0; i < lines.length; i++) {
+            if (lineMatchesPrompt(lines[i], promptAnchor)) matchedPromptIndex = i;
+        }
+        if (matchedPromptIndex >= 0) {
+            let assistantStart = matchedPromptIndex + 1;
+            while (assistantStart < lines.length && sanitize(lines[assistantStart]).trim()) assistantStart += 1;
+            while (assistantStart < lines.length && !sanitize(lines[assistantStart]).trim()) assistantStart += 1;
+            const end = emptyPromptIndex >= assistantStart ? emptyPromptIndex : lines.length;
+            const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
+            if (assistantLines.length > 0) {
+                return {
+                    promptText: '',
+                    assistantText: rehydrateAssistantSections(assistantLines.join('\n').trim()),
+                };
+            }
+        }
+    }
+
+    let fallbackEmptyPromptIndex = -1;
     for (let i = lines.length - 1; i >= 0; i--) {
         if (parsePromptLine(lines[i]) === '') {
-            emptyPromptIndex = i;
+            fallbackEmptyPromptIndex = i;
             break;
         }
     }
 
     const userPrompt = (() => {
-        const upperBound = emptyPromptIndex >= 0 ? emptyPromptIndex - 1 : lines.length - 1;
+        const upperBound = fallbackEmptyPromptIndex >= 0 ? fallbackEmptyPromptIndex - 1 : lines.length - 1;
         for (let i = upperBound; i >= 0; i--) {
             const parsed = parsePromptLine(lines[i]);
             if (parsed) return { index: i, text: parsed };
@@ -120,28 +255,22 @@ function extractVisibleTurn(text, previousMessages) {
         }
     }
 
-    const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
+    const end = fallbackEmptyPromptIndex >= 0 ? fallbackEmptyPromptIndex : lines.length;
     const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
 
     if (!promptLines.length) {
-        if (assistantLines.length >= 2) {
-            return {
-                promptText: assistantLines[assistantLines.length - 2],
-                assistantText: assistantLines[assistantLines.length - 1],
-            };
-        }
         const visibleLines = collectMeaningfulLines(lines.slice(0, end));
         if (visibleLines.length >= 2) {
             return {
                 promptText: visibleLines[visibleLines.length - 2],
-                assistantText: visibleLines[visibleLines.length - 1],
+                assistantText: rehydrateAssistantSections(visibleLines[visibleLines.length - 1]),
             };
         }
     }
 
     return {
         promptText: promptLines.join(' ').trim(),
-        assistantText: assistantLines.join('\n').trim(),
+        assistantText: rehydrateAssistantSections(assistantLines.join('\n').trim()),
     };
 }
 

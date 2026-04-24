@@ -21,7 +21,7 @@
     }
   ],
   "binary": "cursor",
-  "versionCommand": "cursor agent about",
+  "versionCommand": "cursor agent --version",
   "sendDelayMs": 500,
   "submitStrategy": "wait_for_echo",
   "spawn": {

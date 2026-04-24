@@ -9,11 +9,11 @@ const cursorDir = path.resolve(import.meta.dirname, '../cli/cursor-cli')
 const provider = JSON.parse(fs.readFileSync(path.join(cursorDir, 'provider.json'), 'utf8'))
 const scripts = require(path.join(cursorDir, 'scripts/1.0/scripts.js'))
 
-test('cursor-cli provider launches via `cursor agent` and reports the agent version command', () => {
+test('cursor-cli provider launches via `cursor agent` and uses a non-interactive version command', () => {
   assert.equal(provider.binary, 'cursor')
   assert.equal(provider.spawn?.command, 'cursor')
   assert.deepEqual(provider.spawn?.args, ['agent'])
-  assert.equal(provider.versionCommand, 'cursor agent about')
+  assert.equal(provider.versionCommand, 'cursor agent --version')
 })
 
 test('cursor-cli provider exposes resume metadata compatible with UUID chat ids', () => {

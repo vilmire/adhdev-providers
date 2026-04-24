@@ -240,3 +240,140 @@ test('cursor detect_status prefers the visible idle prompt over stale composing 
     'idle',
   )
 })
+
+const liveCompletionScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+Please do all of the following in this workspace:
+1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:
+CWD=<current working directory>
+SQUARES=1,4,9,16,25
+JSON={"squares":[1,4,9,16,25]}
+2. Run python3 tmp/adhdev_cli_verify.py.
+3. Respond with:
+- a one-sentence summary
+- a markdown table for the numbers and squares
+- a fenced python code block containing the script
+- a fenced text block containing the exact command output
+If you need permission to write the file or run the command, request it.
+
+요청하신 대로 tmp/adhdev_cli_verify.py를 생성(정리)하고 python3
+tmp/adhdev_cli_verify.py 실행까지 완료했으며, 출력은 지정하신 3줄 형식과
+정확히 일치합니다.
+
+┌────────┬────────┐
+│ Number │ Square │
+├────────┼────────┤
+│ 1 │ 1 │
+│ 2 │ 4 │
+│ 3 │ 9 │
+│ 4 │ 16 │
+│ 5 │ 25 │
+└────────┴────────┘
+
+import json
+import os
+def main() -> None:
+squares = [n * n for n in range(1, 6)]
+print(f"CWD={os.getcwd()}")
+print(f"SQUARES={','.join(str(n) for n in squares)}")
+print(f"JSON={json.dumps({'squares': squares}, separators=(',', ':'))}")
+if __name__ == "__main__":
+main()
+
+$ python3 "tmp/adhdev_cli_verify.py" 1.1s in current dir
+CWD=/private/tmp/adhdev-cli-verify-cursor-cli
+SQUARES=1,4,9,16,25
+JSON={"squares":[1,4,9,16,25]}
+
+→ Add a follow-up
+Auto · 6.6% · 1 file edited
+ctrl+r to review edits
+/private/tmp/adhdev-cli-verify-cursor-cli · main
+`
+
+const followupCompletionScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+Please do all of the following in this workspace:
+1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:
+CWD=<current working directory>
+SQUARES=1,4,9,16,25
+JSON={"squares":[1,4,9,16,25]}
+2. Run python3 tmp/adhdev_cli_verify.py.
+3. Respond with:
+- a one-sentence summary
+- a markdown table for the numbers and squares
+- a fenced python code block containing the script
+- a fenced text block containing the exact command output
+If you need permission to write the file or run the command, request it.
+
+요청하신 대로 tmp/adhdev_cli_verify.py를 생성(정리)하고 python3
+tmp/adhdev_cli_verify.py 실행까지 완료했으며, 출력은 지정하신 3줄 형식과
+정확히 일치합니다.
+
+→ Add a follow-up
+Auto · 6.6% · 1 file edited
+ctrl+r to review edits
+/private/tmp/adhdev-cli-verify-cursor-cli · main
+
+In one short paragraph, summarize what you just executed. You must
+mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.
+
+tmp/adhdev_cli_verify.py 파일을 정리해 저장한 뒤 python3
+tmp/adhdev_cli_verify.py를 실행했고, 현재 작업 디렉터리와 함께 제곱수
+시퀀스 1,4,9,16,25 및 동일 값을 담은 JSON 한 줄을 포함해 총 3줄이 정확히
+출력되는 것을 확인했습니다.
+
+→ Add a follow-up
+Auto · 6.6% · 1 file edited
+ctrl+r to review edits
+/private/tmp/adhdev-cli-verify-cursor-cli · main
+`
+
+test('cursor parse_output ignores shell-command/footer noise and rehydrates table/code/output from a completed live turn', () => {
+  const parsed = parseOutput({
+    screenText: liveCompletionScreen,
+    buffer: liveCompletionScreen,
+    recentBuffer: liveCompletionScreen,
+    messages: [
+      {
+        role: 'user',
+        content: 'Please do all of the following in this workspace:\n1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:\nCWD=<current working directory>\nSQUARES=1,4,9,16,25\nJSON={"squares":[1,4,9,16,25]}\n2. Run python3 tmp/adhdev_cli_verify.py.\n3. Respond with a summary, a markdown table, a fenced python block, and a fenced text block.',
+      },
+    ],
+  })
+
+  const messages = parsed.messages.map((message) => ({ role: message.role, content: message.content }))
+  assert.equal(parsed.status, 'idle')
+  assert.deepEqual(messages.map((message) => message.role), ['user', 'assistant'])
+  assert.doesNotMatch(messages[0].content, /^\$ python3/m)
+  assert.match(messages[1].content, /\| Number \| Square \|/)
+  assert.match(messages[1].content, /```python[\s\S]*def main\(\) -> None:[\s\S]*```/)
+  assert.match(messages[1].content, /```text[\s\S]*SQUARES=1,4,9,16,25[\s\S]*```/)
+  assert.doesNotMatch(messages[1].content, /Auto · 6\.6%|ctrl\+r to review edits/)
+})
+
+test('cursor parse_output appends a follow-up assistant reply without injecting synthetic user/footer messages', () => {
+  const parsed = parseOutput({
+    screenText: followupCompletionScreen,
+    buffer: followupCompletionScreen,
+    recentBuffer: followupCompletionScreen,
+    messages: [
+      { role: 'user', content: 'Please do all of the following in this workspace: ...' },
+      { role: 'assistant', content: 'Created and ran tmp/adhdev_cli_verify.py, which prints the required values exactly.' },
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.' },
+    ],
+  })
+
+  const messages = parsed.messages.map((message) => ({ role: message.role, content: message.content }))
+  assert.equal(parsed.status, 'idle')
+  assert.deepEqual(messages.map((message) => message.role), ['user', 'assistant', 'user', 'assistant'])
+  assert.doesNotMatch(messages[3].content, /Auto · 6\.6%|ctrl\+r to review edits/)
+  assert.match(messages[3].content, /tmp\/adhdev_cli_verify\.py/)
+  assert.match(messages[3].content, /1,4,9,16,25/)
+})
