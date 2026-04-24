@@ -2,7 +2,7 @@
 
 const parseApproval = require('./parse_approval.js');
 const { cleanAnsi } = require('./helpers.js');
-const { getScreen, getBufferScreen, getTailScreen } = require('./screen_helpers.js');
+const { getScreen, getBufferScreen, getTailScreen, isPromptLineAt } = require('./screen_helpers.js');
 
 function compactStatusText(text) {
   const source = cleanAnsi(text || '');
@@ -33,13 +33,26 @@ function hasPromptAdjacentEllipsisStatus(screen) {
     .some(isPromptAdjacentStatusLine);
 }
 
-function hasStrictBarePromptOnly(text) {
-  const lines = String(text || '')
-    .split(/\n/)
-    .map((line) => line.trim())
+function getPromptLineText(screen) {
+  const index = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
+  if (index < 0 || !Array.isArray(screen?.lines)) return '';
+  return String(screen.lines[index]?.trimmed || screen.lines[index]?.text || '').trim();
+}
+
+function hasPromptLine(screen) {
+  const index = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
+  return index >= 0 && Array.isArray(screen?.lines) && isPromptLineAt(screen.lines, index);
+}
+
+function hasPromptReadyRegion(screen) {
+  if (!hasPromptLine(screen)) return false;
+  const lines = Array.isArray(screen?.lines) ? screen.lines : [];
+  const promptIndex = screen.promptLineIndex;
+  const below = lines.slice(promptIndex + 1)
+    .map((line) => String(line?.trimmed || line?.text || '').trim())
     .filter(Boolean);
-  if (lines.length === 0) return false;
-  return lines.every((line) => /^❯\s*$/.test(line) || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line));
+  return below.every((line) => /^[-─━═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
+    || /Type your message|Resume this session with:|Session:|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
 }
 
 function buildStatusSignals(screen) {
@@ -53,9 +66,11 @@ function buildStatusSignals(screen) {
   };
 
   const hasEllipsisStatusAbovePrompt = hasPromptAdjacentEllipsisStatus(screen);
-  const hasBarePrompt = /^❯\s*$/m.test(text);
+  const promptLineText = getPromptLineText(screen);
+  const hasBarePrompt = /^❯\s*$/.test(promptLineText);
   const hasPrompt = /Type your message or \/help for commands/i.test(text)
     || /Resume this session with:/i.test(text);
+  const hasPromptReady = hasPromptReadyRegion(screen);
   const hasInitializing = /Initializing agent/i.test(text);
   const hasInterruptFooter = /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
@@ -75,6 +90,7 @@ function buildStatusSignals(screen) {
     text,
     hasBarePrompt,
     hasPrompt,
+    hasPromptReady,
     hasInitializing,
     hasInterruptFooter,
     hasLiveTurnMarkers,
@@ -123,7 +139,7 @@ module.exports = function detectStatus(input) {
     return 'generating';
   }
 
-  if ((current.hasBarePrompt || current.hasPrompt)
+  if ((current.hasBarePrompt || current.hasPromptReady || current.hasPrompt)
       && !current.hasInitializing
       && !current.hasInterruptFooter
       && !current.hasLiveTurnMarkers

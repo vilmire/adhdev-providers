@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 
 const parseOutput = require('../cli/claude-cli/scripts/1.0/parse_output.js');
 const detectStatus = require('../cli/claude-cli/scripts/1.0/detect_status.js');
+const { buildScreenSnapshot } = require('../cli/claude-cli/scripts/1.0/screen_helpers.js');
 
 function toMessages(result) {
   return result.messages.map((message) => ({
@@ -13,6 +14,45 @@ function toMessages(result) {
     meta: message.meta,
   }));
 }
+
+
+
+test('claude-cli treats a separator-bounded > row as the live input prompt region', () => {
+  const screenText = [
+    '⏺ Earlier assistant answer.',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> currently typed user input',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '> currently typed user input');
+  assert.equal(detectStatus({ screenText, screen }), 'idle');
+});
+
+test('claude-cli does not treat separator-bounded assistant blockquotes away from the live input footer as prompt-ready', () => {
+  const screenText = [
+    '⏺ Here is a quoted section:',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> quoted assistant content, not a prompt box',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '⏺ continuing the same assistant reply',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLineIndex, -1);
+  assert.equal(detectStatus({ screenText, screen }), 'generating');
+});
+
+test('claude-cli does not treat an unbounded > content line as the input prompt region', () => {
+  const screenText = [
+    '⏺ Earlier assistant answer.',
+    '> quoted assistant content, not a prompt box',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLineIndex, -1);
+});
 
 test('claude-cli parse_output keeps full prior transcript instead of slicing to the last 50 messages', () => {
   const priorMessages = Array.from({ length: 60 }, (_, index) => ({

@@ -14,6 +14,7 @@ const {
     takeLast,
     nonEmpty,
     sliceAroundPrompt,
+    isPromptLineAt,
 } = require('./screen_helpers.js');
 
 function normalize(line) {
@@ -22,6 +23,15 @@ function normalize(line) {
 
 function isIdlePrompt(line) {
     return /^[❯›>]\s*$/.test(normalize(line));
+}
+
+function hasPromptReadyRegion(screen) {
+    const promptIndex = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
+    if (promptIndex < 0 || !Array.isArray(screen?.lines) || !isPromptLineAt(screen.lines, promptIndex)) return false;
+    const below = screen.lines.slice(promptIndex + 1)
+        .map(line => normalize(line))
+        .filter(Boolean);
+    return below.every(line => /^[-─━═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line) || isShellChrome(line));
 }
 
 function isShellChrome(line) {
@@ -225,6 +235,7 @@ module.exports = function detectStatus(input) {
         if (hasPromptAdjacentGenerating(screen)) return 'generating';
         if (hasVisibleCompletedReply(activeLines)) return 'idle';
         if (hasActiveGenerating(activeLines)) return 'generating';
+        if (hasPromptReadyRegion(screen)) return 'idle';
         if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
         if (takeLast(activeLines, 8).some(isShellChrome)) return 'idle';
         // No prompt visible + active content = still generating

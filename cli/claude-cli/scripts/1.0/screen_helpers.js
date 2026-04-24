@@ -19,6 +19,52 @@ function normalizeLineText(line) {
         .trim();
 }
 
+function isHorizontalSeparatorLine(line) {
+    return /^[-─━═]{8,}$/.test(normalizeLineText(line));
+}
+
+function hasOnlyStructuralPromptChromeBelow(lines, index) {
+    const trailing = lines
+        .slice(index + 1)
+        .map(normalizeLineText)
+        .filter(Boolean);
+    return trailing.length > 0
+        && trailing.length <= 2
+        && trailing.every(line => /^[-─━═]{8,}$/.test(line));
+}
+
+function isInsideOpenBox(lines, index) {
+    let open = false;
+    for (let i = 0; i < index; i += 1) {
+        const trimmed = normalizeLineText(lines[i]);
+        if (/^╭/.test(trimmed)) open = true;
+        if (/^╰/.test(trimmed)) open = false;
+    }
+    return open;
+}
+
+function isStructuralInputPromptLine(lines, index) {
+    if (!Array.isArray(lines) || index <= 0 || index >= lines.length - 1) return false;
+    const trimmed = normalizeLineText(lines[index]);
+    if (!/^>\s*(?:$|\S.*)$/.test(trimmed)) return false;
+    if (isInsideOpenBox(lines, index)) return false;
+    if (!hasOnlyStructuralPromptChromeBelow(lines, index)) return false;
+    return isHorizontalSeparatorLine(lines[index - 1]) && isHorizontalSeparatorLine(lines[index + 1]);
+}
+
+function isPromptLineAt(lines, index) {
+    const trimmed = normalizeLineText(lines[index]);
+    if (/^[❯›]\s*(?:$|\S.*)$/.test(trimmed)) return true;
+    return isStructuralInputPromptLine(lines, index);
+}
+
+function findPromptLineIndex(lines) {
+    for (let i = lines.length - 1; i >= 0; i -= 1) {
+        if (isPromptLineAt(lines, i)) return i;
+    }
+    return -1;
+}
+
 function buildScreenSnapshot(text) {
     const normalizedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = splitLines(normalizedText).map((line, index, arr) => ({
@@ -30,12 +76,7 @@ function buildScreenSnapshot(text) {
         isEmpty: normalizeLineText(line).length === 0,
     }));
     const nonEmptyLines = lines.filter(line => !line.isEmpty);
-    const promptLineIndex = (() => {
-        for (let i = lines.length - 1; i >= 0; i -= 1) {
-            if (/^[❯›>]\s*(?:$|\S.*)$/.test(normalizeLineText(lines[i]))) return i;
-        }
-        return -1;
-    })();
+    const promptLineIndex = findPromptLineIndex(lines);
 
     return {
         text: normalizedText,
@@ -131,6 +172,10 @@ module.exports = {
     getBufferScreen,
     getTailScreen,
     normalizeLineText,
+    isHorizontalSeparatorLine,
+    isStructuralInputPromptLine,
+    isPromptLineAt,
+    findPromptLineIndex,
     trimTop,
     trimBottom,
     takeLast,

@@ -46,12 +46,21 @@ function findLastIndex(lines, predicate) {
 }
 
 function hasNormalPromptAfter(lines, startIndex) {
-  return lines.slice(startIndex + 1).some((line) => (
+  const trailing = lines.slice(startIndex + 1);
+  const promptIndex = trailing.findIndex((line) => (
     /^❯\s*$/.test(line)
     || /^(?:⚕\s*)?❯\s*type a message\b/i.test(line)
     || /^Type your message or \/help for commands\.?$/i.test(line)
     || /^Resume this session with:/i.test(line)
   ));
+  if (promptIndex < 0) return false;
+
+  const beforePrompt = trailing.slice(0, promptIndex + 1).join('\n');
+  if (/↑\/↓ to select|Enter to confirm|requires approval|approve the delete\?/i.test(beforePrompt)) {
+    return false;
+  }
+
+  return true;
 }
 
 function buildLegacyApproval(lines) {
@@ -81,8 +90,12 @@ function buildModernApproval(lines) {
   if (lastButtonIndex < 0) return null;
   if (hasNormalPromptAfter(lines, lastButtonIndex)) return null;
 
-  const titleIndex = findLastIndex(lines.slice(0, lastButtonIndex + 1), (line) => /requires approval|approve the delete\?/i.test(line));
-  if (titleIndex < 0 || titleIndex < (lastButtonIndex - 12)) return null;
+  const titleSearchStart = Math.max(0, lastButtonIndex - 12);
+  const titleRelativeIndex = lines
+    .slice(titleSearchStart, lastButtonIndex + 1)
+    .findIndex((line) => /requires approval|approve the delete\?/i.test(line));
+  if (titleRelativeIndex < 0) return null;
+  const titleIndex = titleSearchStart + titleRelativeIndex;
 
   const region = lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 3));
   const buttons = [];

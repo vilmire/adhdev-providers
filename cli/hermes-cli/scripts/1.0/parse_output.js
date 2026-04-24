@@ -313,6 +313,17 @@ function shouldPreferRawMessages({
   return transcriptCount > screenCount || rawMessages.length >= 4;
 }
 
+function parseStructuralInputPromptLine(lines, index) {
+  if (!Array.isArray(lines) || index <= 0 || index >= lines.length - 1) return null;
+  const previous = normalize(lines[index - 1]);
+  const current = normalize(lines[index]);
+  const next = normalize(lines[index + 1]);
+  if (!/^[-─━═]{8,}$/.test(previous) || !/^[-─━═]{8,}$/.test(next)) return null;
+  const match = current.match(/^>\s*(.*)$/);
+  if (!match) return null;
+  return match[1].trim();
+}
+
 function parseMessages(text) {
   const lines = cleanAnsi(text).split(/\r?\n/);
   const messages = [];
@@ -351,10 +362,21 @@ function parseMessages(text) {
 
   const isPromptLine = (line) => /^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(line);
 
-  for (const rawLine of lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const rawLine = lines[index];
     const line = normalize(rawLine);
     if (!line) {
       if (inAssistantBox) assistantLines.push(line);
+      continue;
+    }
+
+    const structuralPrompt = !inAssistantBox ? parseStructuralInputPromptLine(lines, index) : null;
+    if (structuralPrompt !== null) {
+      if (inUserMessage) flushUser();
+      if (structuralPrompt) {
+        inUserMessage = true;
+        userLines = [structuralPrompt];
+      }
       continue;
     }
 

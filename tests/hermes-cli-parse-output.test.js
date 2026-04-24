@@ -1,6 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const parseOutput = require('../cli/hermes-cli/scripts/1.0/parse_output.js');
+const detectStatus = require('../cli/hermes-cli/scripts/1.0/detect_status.js');
+const { buildScreenSnapshot } = require('../cli/hermes-cli/scripts/1.0/screen_helpers.js');
 
 function toMessages(result) {
   return result.messages.map((message) => ({ role: message.role, content: message.content }));
@@ -14,6 +16,64 @@ function toDetailedMessages(result) {
     content: message.content,
   }));
 }
+
+
+
+test('hermes-cli treats a separator-bounded > row as the live input prompt region', () => {
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Earlier assistant answer.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> currently typed user input',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '> currently typed user input');
+  assert.equal(detectStatus({ screenText, screen }), 'idle');
+});
+
+test('hermes-cli does not treat assistant box blockquotes bounded by rules as a live input prompt', () => {
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Here is a quoted section:',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> quoted assistant content, not user input',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLineIndex, -1);
+  assert.equal(detectStatus({ screenText, screen }), 'generating');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+  assert.deepEqual(toMessages(result), [
+    {
+      role: 'assistant',
+      content: 'Here is a quoted section:\n> quoted assistant content, not user input',
+    },
+  ]);
+});
+
+test('hermes-cli parseOutput recognizes separator-bounded > rows as user prompt lines', () => {
+  const screenText = [
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> Find the answer from this prompt',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'assistant reply',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: 'Find the answer from this prompt' },
+    { role: 'assistant', content: 'assistant reply' },
+  ]);
+});
 
 test('hermes-cli parseOutput preserves prior transcript messages when the current turn buffer only contains the new turn', () => {
   const screenText = [
