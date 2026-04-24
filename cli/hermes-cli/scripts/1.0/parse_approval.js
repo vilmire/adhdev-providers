@@ -45,6 +45,22 @@ function findLastIndex(lines, predicate) {
   return -1;
 }
 
+function normalizeOptionLine(line) {
+  return String(line || '')
+    .replace(/^❯\s*/, '')
+    .replace(/^\d+\.\s*/, '')
+    .trim();
+}
+
+function lineMatchesButton(line, label) {
+  return normalizeOptionLine(line) === label;
+}
+
+function isStructuralApprovalLine(line) {
+  return /^(?:╭|╰)[─━═-]{4,}/.test(line)
+    || line === '[object Object]';
+}
+
 function hasNormalPromptAfter(lines, startIndex) {
   const trailing = lines.slice(startIndex + 1);
   const promptIndex = trailing.findIndex((line) => (
@@ -64,20 +80,20 @@ function hasNormalPromptAfter(lines, startIndex) {
 }
 
 function buildLegacyApproval(lines) {
-  const lastButtonIndex = findLastIndex(lines, (line) => LEGACY_BUTTONS.some((label) => line === label || line === `❯ ${label}`));
+  const lastButtonIndex = findLastIndex(lines, (line) => LEGACY_BUTTONS.some((label) => lineMatchesButton(line, label)));
   if (lastButtonIndex < 0) return null;
 
   const titleIndex = findLastIndex(lines.slice(0, lastButtonIndex + 1), (line) => /Dangerous Command/i.test(line));
   if (titleIndex < 0 || titleIndex < (lastButtonIndex - 16)) return null;
   if (hasNormalPromptAfter(lines, lastButtonIndex)) return null;
 
-  const buttons = LEGACY_BUTTONS.filter((label) => lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 4)).some((line) => line === label || line === `❯ ${label}`));
+  const region = lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 4));
+  const buttons = LEGACY_BUTTONS.filter((label) => region.some((line) => lineMatchesButton(line, label)));
   if (buttons.length === 0) return null;
 
-  const messageLines = lines
-    .slice(titleIndex, Math.min(lines.length, lastButtonIndex + 4))
-    .map((line) => line.replace(/^❯\s*/, '').trim())
-    .filter((line) => line && !LEGACY_BUTTONS.includes(line) && line !== 'Show full command');
+  const messageLines = region
+    .map((line) => normalizeOptionLine(line))
+    .filter((line) => line && !LEGACY_BUTTONS.includes(line) && line !== 'Show full command' && !isStructuralApprovalLine(line));
 
   return {
     message: messageLines.join(' ').replace(/\s+/g, ' ').trim().slice(0, 220) || 'Approval required',
@@ -86,7 +102,7 @@ function buildLegacyApproval(lines) {
 }
 
 function buildModernApproval(lines) {
-  const lastButtonIndex = findLastIndex(lines, (line) => MODERN_BUTTONS.some((label) => line === label || line === `❯ ${label}`));
+  const lastButtonIndex = findLastIndex(lines, (line) => MODERN_BUTTONS.some((label) => lineMatchesButton(line, label)));
   if (lastButtonIndex < 0) return null;
   if (hasNormalPromptAfter(lines, lastButtonIndex)) return null;
 
@@ -100,7 +116,7 @@ function buildModernApproval(lines) {
   const region = lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 3));
   const buttons = [];
   for (const label of MODERN_BUTTONS) {
-    if (region.some((line) => line === label || line === `❯ ${label}`)) buttons.push(label);
+    if (region.some((line) => lineMatchesButton(line, label))) buttons.push(label);
   }
   if (buttons.length === 0) return null;
 
