@@ -34,6 +34,14 @@ function hasPromptReadyRegion(screen) {
     return below.every(line => /^[-─━═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line) || isShellChrome(line));
 }
 
+function hasInterruptInputPromptLine(screen) {
+    const promptIndex = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
+    if (promptIndex < 0 || !Array.isArray(screen?.lines) || !isPromptLineAt(screen.lines, promptIndex)) return false;
+    const promptText = normalize(screen.lines[promptIndex]);
+    return /type a message\b.*Enter to interrupt, Ctrl\+C to cancel/i.test(promptText)
+        || /Enter to interrupt, Ctrl\+C to cancel/i.test(promptText);
+}
+
 function isShellChrome(line) {
     const trimmed = normalize(line);
     return /^➜\s+\S+/.test(trimmed)
@@ -232,6 +240,7 @@ module.exports = function detectStatus(input) {
 
     if (activeLines.length > 0) {
         if (hasActiveApproval(activeLines)) return 'waiting_approval';
+        if (hasInterruptInputPromptLine(screen)) return 'generating';
         if (hasPromptAdjacentGenerating(screen)) return 'generating';
         if (hasVisibleCompletedReply(activeLines)) return 'idle';
         if (hasActiveGenerating(activeLines)) return 'generating';

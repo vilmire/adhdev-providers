@@ -30,6 +30,31 @@ test('claude-cli treats a separator-bounded > row as the live input prompt regio
   assert.equal(detectStatus({ screenText, screen }), 'idle');
 });
 
+test('claude-cli treats interrupt copy inside the live input prompt as generating', () => {
+  const screenText = [
+    '⏺ Earlier assistant answer.',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> type a message + Enter to interrupt, Ctrl+C to cancel',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '> type a message + Enter to interrupt, Ctrl+C to cancel');
+  assert.equal(detectStatus({ screenText, screen }), 'generating');
+  assert.equal(parseOutput({ screenText, buffer: screenText, messages: [] }).status, 'generating');
+});
+
+test('claude-cli does not treat interrupt copy outside the live input prompt as generating', () => {
+  const screenText = [
+    '⏺ Literal text: type a message + Enter to interrupt, Ctrl+C to cancel',
+    '❯',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '❯');
+  assert.equal(detectStatus({ screenText, screen }), 'idle');
+});
+
 test('claude-cli does not treat separator-bounded assistant blockquotes away from the live input footer as prompt-ready', () => {
   const screenText = [
     '⏺ Here is a quoted section:',
