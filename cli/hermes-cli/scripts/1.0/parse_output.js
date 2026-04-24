@@ -186,16 +186,41 @@ function looksLikeApprovalActivity(body) {
     || /script execution via -e\/-c flag/i.test(text);
 }
 
-function parseActivityMessage(line) {
+function parseActivityHead(line) {
   // Match any emoji/symbol after the activity-line prefix (┊ or │).
   // Captures the first token (emoji or $) so we can classify terminal vs tool.
-  const match = line.match(/^[┊│]\s*(\p{Emoji}\uFE0F?|\$)\s+(.+)$/u);
+  const source = String(line || '').trimStart();
+  const match = source.match(/^[┊│]\s*(\p{Emoji}\uFE0F?|\$)\s+(.+)$/u);
   if (!match) return null;
-  const icon = match[1];
-  const body = match[2]
+  return { icon: match[1], body: match[2] };
+}
+
+function joinActivityParts(parts) {
+  return parts.reduce((acc, rawPart) => {
+    const part = String(rawPart || '').replace(/\s+/g, ' ');
+    if (!part.trim()) return acc;
+    if (!acc) return part.trimStart();
+    const accEndsWithSpace = /\s$/.test(acc);
+    const partStartsWithSpace = /^\s/.test(part);
+    if (accEndsWithSpace || partStartsWithSpace) {
+      return `${acc.replace(/\s+$/u, ' ')}${part.trimStart()}`;
+    }
+    return `${acc}${part.trimStart()}`;
+  }, '');
+}
+
+function normalizeActivityBody(parts) {
+  return joinActivityParts(parts)
     .replace(/\s+\d+(?:\.\d+)?s$/u, '')
     .replace(/\s*[│┊]\s*$/u, '')
     .trim();
+}
+
+function parseActivityMessage(line, continuationLines = []) {
+  const head = parseActivityHead(line);
+  if (!head) return null;
+  const icon = head.icon;
+  const body = normalizeActivityBody([head.body, ...continuationLines]);
   if (!body || isNoise(body) || looksLikeApprovalActivity(body)) return null;
   if (icon === '💻' || icon === '$' || body.startsWith('$')) {
     return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
@@ -410,15 +435,38 @@ function parseMessages(text) {
       continue;
     }
 
-    const activityMessage = parseActivityMessage(line);
-    if (activityMessage) {
-      if (inUserMessage) flushUser();
-      if (inAssistantBox) {
-        flushAssistant();
-        inAssistantBox = false;
+    const activityHead = parseActivityHead(rawLine);
+    if (activityHead) {
+      const continuationLines = [];
+      let nextIndex = index + 1;
+      while (nextIndex < lines.length) {
+        const nextRawLine = lines[nextIndex];
+        const nextLine = normalize(nextRawLine);
+        if (!nextLine) break;
+        if (parseActivityHead(nextRawLine)
+          || /^\p{Emoji}\uFE0F?\s+/u.test(nextRawLine.trimStart())
+          || /^●\s+/.test(nextLine)
+          || /^╭─\s*⚕\s*Hermes/i.test(nextLine)
+          || /^╰─/.test(nextLine)
+          || isPromptLine(nextLine)
+          || /^[-─━═]{8,}$/.test(nextLine)) {
+          break;
+        }
+        continuationLines.push(cleanAnsi(nextRawLine));
+        nextIndex += 1;
       }
-      messages.push(activityMessage);
-      continue;
+
+      const activityMessage = parseActivityMessage(rawLine, continuationLines);
+      if (activityMessage) {
+        if (inUserMessage) flushUser();
+        if (inAssistantBox) {
+          flushAssistant();
+          inAssistantBox = false;
+        }
+        messages.push(activityMessage);
+        index = nextIndex - 1;
+        continue;
+      }
     }
 
     if (inUserMessage) {

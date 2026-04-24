@@ -751,6 +751,58 @@ test('hermes-cli parseOutput surfaces live tool activity and progress bubbles du
   assert.deepEqual(toDetailedMessages(staleBufferResult), expectedMessages);
 });
 
+test('hermes-cli parseOutput rejoins wrapped activity rows before classifying tool bubbles', () => {
+  const screenText = [
+    '● Check repo status.',
+    "  ┊ 💻 $         git -C /Users/moltbot/.openclaw/workspace/projects/adhdev-provi",
+    "ders fetch --all --prune --quiet && git -C /Users/moltbot/.openclaw/workspace/pr",
+    "ojects/adhdev-providers status --short --branch  0.7s",
+    "  ┊ 💻 $         git fetch --all --prune --quiet && printf 'top '; git rev-list ",
+    "--left-right --count origin/main...HEAD  1.5s",
+    "  ┊ 📖 read      /Users/moltbot/.openclaw/workspace/projects/adhdev/packages/dae",
+    "mon-cloud/src/cli/cdp-utils.ts  1.0s",
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Done.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Check repo status.',
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: '$ git -C /Users/moltbot/.openclaw/workspace/projects/adhdev-providers fetch --all --prune --quiet && git -C /Users/moltbot/.openclaw/workspace/projects/adhdev-providers status --short --branch',
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: "$ git fetch --all --prune --quiet && printf 'top '; git rev-list --left-right --count origin/main...HEAD",
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'read /Users/moltbot/.openclaw/workspace/projects/adhdev/packages/daemon-cloud/src/cli/cdp-utils.ts',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Done.',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput ignores startup update warnings so the live user turn is not duplicated', () => {
   const prompt = 'Run pwd, then reply with the working directory. Use tools if needed and keep it short.';
   const screenText = [
