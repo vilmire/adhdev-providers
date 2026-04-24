@@ -44,6 +44,14 @@ function hasPromptLine(screen) {
   return index >= 0 && Array.isArray(screen?.lines) && isPromptLineAt(screen.lines, index);
 }
 
+function hasInterruptInputPromptLine(screen) {
+  const index = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
+  if (index < 0 || !Array.isArray(screen?.lines) || !isPromptLineAt(screen.lines, index)) return false;
+  const promptText = String(screen.lines[index]?.trimmed || screen.lines[index]?.text || '').trim();
+  return /type a message\b.*Enter to interrupt, Ctrl\+C to cancel/i.test(promptText)
+    || /Enter to interrupt, Ctrl\+C to cancel/i.test(promptText);
+}
+
 function hasPromptReadyRegion(screen) {
   if (!hasPromptLine(screen)) return false;
   const lines = Array.isArray(screen?.lines) ? screen.lines : [];
@@ -72,7 +80,7 @@ function buildStatusSignals(screen) {
     || /Resume this session with:/i.test(text);
   const hasPromptReady = hasPromptReadyRegion(screen);
   const hasInitializing = /Initializing agent/i.test(text);
-  const hasInterruptFooter = /Enter to interrupt, Ctrl\+C to cancel/i.test(text);
+  const hasInterruptInputPrompt = hasInterruptInputPromptLine(screen);
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
   const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:\p{Emoji}\uFE0F?|\$)/u.test(text);
   const hasLiveTurnMarkers = hasLiveUserTurn || hasLiveToolActivity;
@@ -92,7 +100,7 @@ function buildStatusSignals(screen) {
     hasPrompt,
     hasPromptReady,
     hasInitializing,
-    hasInterruptFooter,
+    hasInterruptInputPrompt,
     hasLiveTurnMarkers,
     hasEllipsisStatusAbovePrompt,
     finishedAssistantVisible,
@@ -119,6 +127,10 @@ module.exports = function detectStatus(input) {
     return 'waiting_approval';
   }
 
+  if (current.hasInterruptInputPrompt) {
+    return 'generating';
+  }
+
   if (current.finishedAssistantVisible) {
     return 'idle';
   }
@@ -126,7 +138,7 @@ module.exports = function detectStatus(input) {
   const recentRawSignals = [tailScreen, bufferScreen]
     .map(buildStatusSignals)
     .some((signals) => signals.hasInitializing
-      || signals.hasInterruptFooter
+      || signals.hasInterruptInputPrompt
       || signals.hasLiveTurnMarkers
       || signals.hasEllipsisStatusAbovePrompt
       || signals.hasOpenAssistantBox);
@@ -141,7 +153,7 @@ module.exports = function detectStatus(input) {
 
   if ((current.hasBarePrompt || current.hasPromptReady || current.hasPrompt)
       && !current.hasInitializing
-      && !current.hasInterruptFooter
+      && !current.hasInterruptInputPrompt
       && !current.hasLiveTurnMarkers
       && !current.hasEllipsisStatusAbovePrompt) {
     if (recentRawSignals) {
@@ -150,7 +162,7 @@ module.exports = function detectStatus(input) {
     return 'idle';
   }
 
-  if (current.hasInitializing || current.hasInterruptFooter || current.hasLiveTurnMarkers || current.hasEllipsisStatusAbovePrompt) {
+  if (current.hasInitializing || current.hasInterruptInputPrompt || current.hasLiveTurnMarkers || current.hasEllipsisStatusAbovePrompt) {
     return 'generating';
   }
 

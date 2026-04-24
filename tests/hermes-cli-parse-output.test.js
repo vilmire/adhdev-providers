@@ -34,6 +34,35 @@ test('hermes-cli treats a separator-bounded > row as the live input prompt regio
   assert.equal(detectStatus({ screenText, screen }), 'idle');
 });
 
+test('hermes-cli treats interrupt copy inside the live input prompt as generating', () => {
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Earlier assistant answer.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> type a message + Enter to interrupt, Ctrl+C to cancel',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '> type a message + Enter to interrupt, Ctrl+C to cancel');
+  assert.equal(detectStatus({ screenText, screen }), 'generating');
+  assert.equal(parseOutput({ screenText, buffer: screenText, messages: [] }).status, 'generating');
+});
+
+test('hermes-cli does not treat interrupt copy outside the live input prompt as generating', () => {
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Literal text: type a message + Enter to interrupt, Ctrl+C to cancel',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '❯');
+  assert.equal(detectStatus({ screenText, screen }), 'idle');
+});
+
 test('hermes-cli does not treat assistant box blockquotes bounded by rules as a live input prompt', () => {
   const screenText = [
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
