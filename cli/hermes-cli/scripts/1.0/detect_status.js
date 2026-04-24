@@ -2,10 +2,10 @@
 
 const parseApproval = require('./parse_approval.js');
 const { cleanAnsi } = require('./helpers.js');
-const { buildFromBufferFallback } = require('./screen_helpers.js');
+const { getScreen, getBufferScreen, getTailScreen } = require('./screen_helpers.js');
 
-function sourceText(input) {
-  const source = cleanAnsi(input?.screenText || input?.tail || input?.buffer || '');
+function compactStatusText(text) {
+  const source = cleanAnsi(text || '');
   const lines = source
     .split(/\r?\n/)
     .map((line) => line.replace(/\s+/g, ' ').trim())
@@ -42,20 +42,8 @@ function hasStrictBarePromptOnly(text) {
   return lines.every((line) => /^❯\s*$/.test(line) || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line));
 }
 
-module.exports = function detectStatus(input) {
-  const text = sourceText(input);
-  if (!text.trim()) return 'idle';
-
-  const approvalModal = parseApproval({
-    screenText: input?.screenText || '',
-    buffer: input?.buffer || '',
-    tail: input?.tail || '',
-    screen: input?.screen,
-  });
-  if (approvalModal) {
-    return 'waiting_approval';
-  }
-
+function buildStatusSignals(screen) {
+  const text = compactStatusText(screen?.text || '');
   const lines = text.split(/\n/).map((line) => line.trim()).filter(Boolean);
   const lastMatchingIndex = (predicate) => {
     for (let index = lines.length - 1; index >= 0; index -= 1) {
@@ -64,9 +52,7 @@ module.exports = function detectStatus(input) {
     return -1;
   };
 
-  const screen = buildFromBufferFallback(input);
   const hasEllipsisStatusAbovePrompt = hasPromptAdjacentEllipsisStatus(screen);
-
   const hasBarePrompt = /^❯\s*$/m.test(text);
   const hasPrompt = /Type your message or \/help for commands/i.test(text)
     || /Resume this session with:/i.test(text);
@@ -75,47 +61,82 @@ module.exports = function detectStatus(input) {
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
   const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:\p{Emoji}\uFE0F?|\$)/u.test(text);
   const hasLiveTurnMarkers = hasLiveUserTurn || hasLiveToolActivity;
-
   const lastPromptIndex = lastMatchingIndex((line) => /^❯\s*$/.test(line));
+  const lastAssistantStartIndex = lastMatchingIndex((line) => /^╭─\s*⚕\s*Hermes/i.test(line));
   const lastAssistantEndIndex = lastMatchingIndex((line) => /^╰─/.test(line));
   const lastGeneratingIndex = lastMatchingIndex((line) => /Initializing agent|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
   const finishedAssistantVisible = lastAssistantEndIndex >= 0
     && lastPromptIndex > lastAssistantEndIndex
     && (lastGeneratingIndex < 0 || lastGeneratingIndex <= lastAssistantEndIndex);
+  const hasOpenAssistantBox = lastAssistantStartIndex >= 0
+    && lastAssistantStartIndex > lastAssistantEndIndex;
 
-  if (finishedAssistantVisible) {
+  return {
+    text,
+    hasBarePrompt,
+    hasPrompt,
+    hasInitializing,
+    hasInterruptFooter,
+    hasLiveTurnMarkers,
+    hasEllipsisStatusAbovePrompt,
+    finishedAssistantVisible,
+    hasOpenAssistantBox,
+  };
+}
+
+module.exports = function detectStatus(input) {
+  const currentScreen = getScreen(input);
+  const bufferScreen = getBufferScreen(input);
+  const tailScreen = getTailScreen(input);
+  const current = buildStatusSignals(currentScreen);
+  if (!current.text.trim()) return 'idle';
+
+  const approvalModal = parseApproval({
+    screenText: currentScreen?.text || input?.screenText || '',
+    buffer: bufferScreen?.text || input?.buffer || '',
+    tail: tailScreen?.text || input?.tail || input?.recentBuffer || '',
+    screen: currentScreen,
+    bufferScreen,
+    tailScreen,
+  });
+  if (approvalModal) {
+    return 'waiting_approval';
+  }
+
+  if (current.finishedAssistantVisible) {
     return 'idle';
   }
 
-  // Treat short status lines ending with ellipsis in the 3 lines immediately above
-  // the input prompt as live generation markers. This keeps detection generic and
-  // avoids hard-coding provider-specific verbs like thinking/synthesizing.
-  if (hasEllipsisStatusAbovePrompt) {
+  const recentRawSignals = [tailScreen, bufferScreen]
+    .map(buildStatusSignals)
+    .some((signals) => signals.hasInitializing
+      || signals.hasInterruptFooter
+      || signals.hasLiveTurnMarkers
+      || signals.hasEllipsisStatusAbovePrompt
+      || signals.hasOpenAssistantBox);
+
+  if (current.hasOpenAssistantBox) {
     return 'generating';
   }
 
-  // Only call idle when we see a prompt indicator, no active generation footer,
-  // and no live turn markers such as the current user prompt or tool activity.
-  // While a response is still considered in-flight, be much stricter: Hermes may
-  // briefly redraw a startup-style prompt during long tool/skill work, and letting
-  // that transient screen resolve to idle feeds script_idle_commit too early.
-  if ((hasBarePrompt || hasPrompt) && !hasInitializing && !hasInterruptFooter && !hasLiveTurnMarkers && !hasEllipsisStatusAbovePrompt) {
-    if (input?.isWaitingForResponse === true) {
-      return hasStrictBarePromptOnly(text) ? 'idle' : 'generating';
+  if (current.hasEllipsisStatusAbovePrompt) {
+    return 'generating';
+  }
+
+  if ((current.hasBarePrompt || current.hasPrompt)
+      && !current.hasInitializing
+      && !current.hasInterruptFooter
+      && !current.hasLiveTurnMarkers
+      && !current.hasEllipsisStatusAbovePrompt) {
+    if (recentRawSignals) {
+      return 'generating';
     }
     return 'idle';
   }
 
-  if (input?.isWaitingForResponse === true) {
+  if (current.hasInitializing || current.hasInterruptFooter || current.hasLiveTurnMarkers || current.hasEllipsisStatusAbovePrompt) {
     return 'generating';
   }
 
-  if (hasInitializing || hasInterruptFooter || hasLiveTurnMarkers || hasEllipsisStatusAbovePrompt) {
-    return 'generating';
-  }
-
-  // No clear idle indicator found — default to generating so tool execution with
-  // large output (interrupt footer scrolled past the 20-line window) doesn't
-  // trigger a false completion notification.
   return 'generating';
 };

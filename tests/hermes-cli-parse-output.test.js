@@ -95,6 +95,98 @@ test('hermes-cli parseOutput keeps full prior transcript when the conversation a
   ]);
 });
 
+test('hermes-cli parseOutput prefers a full raw transcript over stale input.messages when buffer already contains the conversation', () => {
+  const transcript = [
+    '● correct-user-1',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'correct-assistant-1',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '● correct-user-2',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'correct-assistant-2',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: [
+      '● correct-user-2',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'correct-assistant-2',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: transcript,
+    messages: [
+      { role: 'user', content: 'stale-user-1' },
+      { role: 'assistant', content: 'stale-assistant-1' },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: 'correct-user-1' },
+      { role: 'assistant', content: 'correct-assistant-1' },
+      { role: 'user', content: 'correct-user-2' },
+      { role: 'assistant', content: 'correct-assistant-2' },
+    ],
+  );
+});
+
+test('hermes-cli parseOutput drops stale input.messages when the raw transcript announces a new session', () => {
+  const result = parseOutput({
+    screenText: [
+      'New session started!',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      'New session started!',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'old-user' },
+      { role: 'assistant', content: 'old-assistant' },
+    ],
+  });
+
+  assert.equal(result.sessionEvent, 'new_session');
+  assert.equal(result.historyMessageCount, 0);
+  assert.deepEqual(toMessages(result), []);
+});
+
+test('hermes-cli parseOutput trims stale input.messages to the raw remaining-history count after undo', () => {
+  const result = parseOutput({
+    screenText: [
+      'Undid 2 message(s).',
+      '4 message(s) remaining in history.',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      'Undid 2 message(s).',
+      '4 message(s) remaining in history.',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'turn-1' },
+      { role: 'assistant', content: 'turn-2' },
+      { role: 'user', content: 'turn-3' },
+      { role: 'assistant', content: 'turn-4' },
+      { role: 'user', content: 'turn-5' },
+      { role: 'assistant', content: 'turn-6' },
+    ],
+  });
+
+  assert.equal(result.sessionEvent, 'undo');
+  assert.equal(result.historyMessageCount, 4);
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: 'turn-1' },
+    { role: 'assistant', content: 'turn-2' },
+    { role: 'user', content: 'turn-3' },
+    { role: 'assistant', content: 'turn-4' },
+  ]);
+});
+
 test('hermes-cli parseOutput does not duplicate prior turns when the visible transcript already contains them', () => {
   const userMessage = '지금 채팅 터미널 전환 버튼 동작도 엄청 느려졌고 제대로 ⚠️ Dangerous Command 얼라우도 안되고 제너레이팅중에 유저인풋을 강제로 막는거같은데 이건 불필요한 행동임.';
   const screenText = [
@@ -162,6 +254,108 @@ test('hermes-cli parseOutput keeps the fuller prior user turn when the visible t
   );
 });
 
+test('hermes-cli parseOutput rejoins soft-wrapped assistant prose so follow-up summaries preserve exact command names and sequences', () => {
+  const result = parseOutput({
+    screenText: [
+      '● In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in the workspace and executed it with pyt',
+      'hon3, verifying that it printed the current working directory along with the squ',
+      'are sequence 1,4,9,16,25 and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in the workspace and executed it with pyt',
+      'hon3, verifying that it printed the current working directory along with the squ',
+      'are sequence 1,4,9,16,25 and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.' },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.' },
+      { role: 'assistant', content: 'I created tmp/adhdev_cli_verify.py in the workspace and executed it with python3, verifying that it printed the current working directory along with the square sequence 1,4,9,16,25 and the matching JSON representation.' },
+    ],
+  );
+});
+
+test('hermes-cli parseOutput rejoins wrapped numeric/tool fragments without inserting spaces inside tokens', () => {
+  const result = parseOutput({
+    screenText: [
+      '● In one short paragraph, summarize what you just executed.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in the workspace, then ran it with python',
+      '3; the script printed the current working directory, the square sequence 1,4,9,1',
+      '6,25, and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● In one short paragraph, summarize what you just executed.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in the workspace, then ran it with python',
+      '3; the script printed the current working directory, the square sequence 1,4,9,1',
+      '6,25, and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed.' },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed.' },
+      { role: 'assistant', content: 'I created tmp/adhdev_cli_verify.py in the workspace, then ran it with python3; the script printed the current working directory, the square sequence 1,4,9,16,25, and the matching JSON representation.' },
+    ],
+  );
+});
+
+test('hermes-cli parseOutput trims wrap-induced spaces before punctuation in assistant prose', () => {
+  const result = parseOutput({
+    screenText: [
+      '● In one short paragraph, summarize what you just executed.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in this workspace and ran it with python3',
+      '; the script printed the current working directory, the square sequence 1,4,9,16',
+      ',25, and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● In one short paragraph, summarize what you just executed.',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created tmp/adhdev_cli_verify.py in this workspace and ran it with python3',
+      '; the script printed the current working directory, the square sequence 1,4,9,16',
+      ',25, and the matching JSON representation.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed.' },
+    ],
+  });
+
+  assert.deepEqual(
+    toMessages(result),
+    [
+      { role: 'user', content: 'In one short paragraph, summarize what you just executed.' },
+      { role: 'assistant', content: 'I created tmp/adhdev_cli_verify.py in this workspace and ran it with python3; the script printed the current working directory, the square sequence 1,4,9,16,25, and the matching JSON representation.' },
+    ],
+  );
+});
+
 test('hermes-cli parseOutput merges a soft-wrapped visible user turn instead of duplicating the sent prompt', () => {
   const fullUserMessage = '현재 터미널모드와 터미널모드가 아닐때 높이가 다르고 터미널모드는 항상 인풋창이 켜져있는데 이부분 채팅모드와 동일하게 사용해야함.';
   const result = parseOutput({
@@ -222,6 +416,45 @@ test('hermes-cli parseOutput upgrades a repeated assistant prefix instead of app
       { role: 'assistant', content: third },
     ],
   );
+});
+
+test('hermes-cli parseOutput treats wrapped and reflowed assistant prose as the same message and keeps the more complete version', () => {
+  const wrapped = [
+    'I created and executed tmp/adhdev_cli_verify.py, a small Python script that',
+    'printed the current working directory, the square sequence 1,4,9,16,25, and a co',
+    'mpact JSON representation of those same square values.',
+  ].join('\n');
+  const reflowed = 'I created and executed tmp/adhdev_cli_verify.py, a small Python script that printed the current working directory, the square sequence 1,4,9,16,25, and a compact JSON representation of those same square values.';
+
+  const result = parseOutput({
+    screenText: [
+      '● follow-up prompt',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created and executed tmp/adhdev_cli_verify.py, a small Python script that',
+      'printed the current working directory, the square sequence 1,4,9,16,25, and a co',
+      'mpact JSON representation of those same square values.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● follow-up prompt',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'I created and executed tmp/adhdev_cli_verify.py, a small Python script that',
+      'printed the current working directory, the square sequence 1,4,9,16,25, and a co',
+      'mpact JSON representation of those same square values.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: 'follow-up prompt' },
+      { role: 'assistant', content: wrapped },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: 'follow-up prompt' },
+    { role: 'assistant', content: reflowed },
+  ]);
 });
 
 test('hermes-cli parseOutput surfaces dangerous-command approval as a visible system bubble', () => {
@@ -507,14 +740,20 @@ test('hermes-cli parseOutput keeps status generating when a stale startup prompt
     'Welcome to Hermes Agent! Type your message or /help for commands.',
     '❯',
   ].join('\n');
+  const tail = [
+    `● ${prompt}`,
+    '┊ 📋 plan 2 task(s) 0.0s',
+    '⚕ ❯ type a message + Enter to interrupt, Ctrl+C to cancel',
+  ].join('\n');
 
   const result = parseOutput({
     screenText,
     buffer: screenText,
+    tail,
+    recentBuffer: tail,
     messages: [
       { role: 'user', content: prompt },
     ],
-    isWaitingForResponse: true,
   });
 
   assert.equal(result.status, 'generating');

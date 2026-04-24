@@ -50,6 +50,221 @@ test('claude-cli parse_output keeps full prior transcript instead of slicing to 
   ]);
 });
 
+test('claude-cli parse_output keeps a multiline numbered user prompt as one user turn instead of emitting stray numeric prompt fragments', () => {
+  const prompt = [
+    'Please do all of the following in this workspace:',
+    '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+    ' CWD=<current working directory>',
+    ' SQUARES=1,4,9,16,25',
+    ' JSON={"squares":[1,4,9,16,25]}',
+    '2. Run python3 tmp/adhdev_cli_verify.py.',
+    '3. Respond with a short summary.',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: [
+      '❯ Please do all of the following in this workspace:',
+      '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+      ' CWD=<current working directory>',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '2. Run python3 tmp/adhdev_cli_verify.py.',
+      '3. Respond with a short summary.',
+      '',
+      '⏺ I created the file and ran it.',
+      '',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '❯ Please do all of the following in this workspace:',
+      '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+      ' CWD=<current working directory>',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '2. Run python3 tmp/adhdev_cli_verify.py.',
+      '3. Respond with a short summary.',
+      '',
+      '⏺ I created the file and ran it.',
+      '',
+      '❯',
+    ].join('\n'),
+    messages: [],
+  });
+
+  assert.deepEqual(
+    toMessages(result).map(({ role, content }) => ({ role, content })),
+    [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: 'I created the file and ran it.' },
+    ],
+  );
+});
+
+test('claude-cli parse_output ignores a bare numeric approval-selection echo prompt while assistant output is still continuing', () => {
+  const prompt = [
+    'Please do all of the following in this workspace:',
+    '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+    ' CWD=<current working directory>',
+    ' SQUARES=1,4,9,16,25',
+    ' JSON={"squares":[1,4,9,16,25]}',
+    '2. Run python3 tmp/adhdev_cli_verify.py.',
+    '3. Respond with:',
+    ' - a one-sentence summary',
+    ' - a markdown table for the numbers and squares',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: [
+      '❯ Please do all of the following in this workspace:',
+      '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+      ' CWD=<current working directory>',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '2. Run python3 tmp/adhdev_cli_verify.py.',
+      '3. Respond with:',
+      ' - a one-sentence summary',
+      ' - a markdown table for the numbers and squares',
+      '',
+      '⏺ Bash(python3 tmp/adhdev_cli_verify.py)',
+      ' ⎿  CWD=/private/tmp/adhdev-cli-verify-claude-cli',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '',
+      '⏺ The script runs correctly, printing the working directory, squares of 1–5, and',
+      ' a JSON object.',
+      '',
+      ' ┌────────┬────────┐',
+      ' │ Number │ Square │',
+      ' ├────────┼────────┤',
+      ' │ 1 │ 1 │',
+      ' ├────────┼────────┤',
+      ' │ 2 │ 4 │',
+      ' ├────────┼────────┤',
+      ' │ 3 │ 9 │',
+      ' └────────┴────────┘',
+      '',
+      '❯ 1',
+      '➜ adhdev-cli-verify-claude-cli gi… Update available! Run: brew upgrade cla…',
+      '⏵⏵ accept edits on (shift+tab to',
+    ].join('\n'),
+    buffer: '',
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.ok(assistant);
+  assert.match(assistant.content, /\| Number \| Square \|/);
+  assert.equal(result.messages.filter((message) => message.role === 'user').length, 1);
+});
+
+test('claude-cli parse_output strips a leading numeric approval-selection residue from the next visible prompt', () => {
+  const previousPrompt = 'Please do all of the following in this workspace:\n1. Create tmp/adhdev_cli_verify.py';
+  const followupPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
+
+  const result = parseOutput({
+    screenText: [
+      '⏺ Prior answer',
+      '',
+      '❯ 1In one short paragraph, summarize what you just executed. You must mention',
+      'tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.',
+      '',
+      '⏺ I ran tmp/adhdev_cli_verify.py and verified the square sequence 1,4,9,16,25.',
+      '',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    promptText: followupPrompt,
+    messages: [
+      { role: 'user', content: previousPrompt },
+      { role: 'assistant', content: 'Prior answer' },
+    ],
+  });
+
+  const userMessages = result.messages.filter((message) => message.role === 'user').map((message) => message.content);
+  assert.deepEqual(userMessages, [previousPrompt, followupPrompt]);
+});
+
+test('claude-cli parse_output preserves markdown table, fenced python block, and exact output block from the visible assistant reply', () => {
+  const prompt = [
+    'Please do all of the following in this workspace:',
+    '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+    '   CWD=<current working directory>',
+    '   SQUARES=1,4,9,16,25',
+    '   JSON={"squares":[1,4,9,16,25]}',
+    '2. Run python3 tmp/adhdev_cli_verify.py.',
+    '3. Respond with:',
+    '   - a one-sentence summary',
+    '   - a markdown table for the numbers and squares',
+    '   - a fenced python code block containing the script',
+    '   - a fenced text block containing the exact command output',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: [
+      '❯ Please do all of the following in this workspace:',
+      '1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines:',
+      ' CWD=<current working directory>',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '2. Run python3 tmp/adhdev_cli_verify.py.',
+      '3. Respond with:',
+      ' - a one-sentence summary',
+      ' - a markdown table for the numbers and squares',
+      ' - a fenced python code block containing the script',
+      ' - a fenced text block containing the exact command output',
+      '',
+      '⏺ Bash(python3 tmp/adhdev_cli_verify.py)',
+      ' ⎿  CWD=/private/tmp/adhdev-cli-verify-claude-cli',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '',
+      '⏺ The script prints the current working directory, a comma-separated list of',
+      ' squares, and a JSON representation of those squares.',
+      '',
+      ' ┌────────┬────────┐',
+      ' │ Number │ Square │',
+      ' ├────────┼────────┤',
+      ' │ 1 │ 1 │',
+      ' ├────────┼────────┤',
+      ' │ 2 │ 4 │',
+      ' ├────────┼────────┤',
+      ' │ 3 │ 9 │',
+      ' ├────────┼────────┤',
+      ' │ 4 │ 16 │',
+      ' ├────────┼────────┤',
+      ' │ 5 │ 25 │',
+      ' └────────┴────────┘',
+      '',
+      ' import os',
+      ' import json',
+      '',
+      ' cwd = os.getcwd()',
+      ' numbers = [1, 2, 3, 4, 5]',
+      ' squares = [n * n for n in numbers]',
+      '',
+      ' print(f"CWD={cwd}")',
+      ' print(f"SQUARES={",".join(str(s) for s in squares)}")',
+      ' print(f"JSON={json.dumps({"squares": squares}, separators=(",", ":"))}")',
+      '',
+      ' CWD=/private/tmp/adhdev-cli-verify-claude-cli',
+      ' SQUARES=1,4,9,16,25',
+      ' JSON={"squares":[1,4,9,16,25]}',
+      '',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.ok(assistant);
+  assert.match(assistant.content, /\| Number \| Square \|/);
+  assert.match(assistant.content, /```python/);
+  assert.match(assistant.content, /SQUARES=1,4,9,16,25/);
+  assert.match(assistant.content, /JSON=\{"squares":\[1,4,9,16,25\]\}/);
+});
+
 test('claude-cli parse_output surfaces visible tool activity and assistant progress bubbles during generation', () => {
   const screenText = [
     '❯ Use bash to print pwd and then explain the result.',

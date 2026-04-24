@@ -96,9 +96,48 @@ function parsePromptLine(line) {
     const trimmed = sanitizeLine(line).trim();
     const match = trimmed.match(/^[❯›>]\s*(.*)$/);
     if (!match) return null;
-    const body = match[1].trim();
+    let body = match[1].trim();
     if (/^\d+[.)]\s+/.test(body)) return null;
+    if (/^\d+$/.test(body)) return null;
+    body = body.replace(/^\d+(?=[A-Z])/u, '');
     return body;
+}
+
+function isPromptContinuationLine(line) {
+    const sanitized = sanitizeLine(line);
+    const trimmed = sanitized.trim();
+    if (!trimmed) return true;
+    if (/^\s*⏺\s+/.test(sanitized)) return false;
+    if (parsePromptLine(sanitized) !== null) return false;
+    if (isFooterLine(trimmed)) return false;
+    if (isHorizontalSeparatorLine(trimmed)) return false;
+    return /^\s+\S/.test(sanitized)
+        || /^\d+[.)]\s+/.test(trimmed)
+        || /^[-*+]\s+/.test(trimmed);
+}
+
+function collectPromptText(lines, promptIndex) {
+    if (!Array.isArray(lines) || promptIndex < 0 || promptIndex >= lines.length) {
+        return { text: '', endIndex: promptIndex };
+    }
+
+    const firstPrompt = parsePromptLine(lines[promptIndex]);
+    if (!firstPrompt) return { text: '', endIndex: promptIndex };
+
+    const parts = [firstPrompt];
+    let endIndex = promptIndex;
+    for (let i = promptIndex + 1; i < lines.length; i += 1) {
+        if (!isPromptContinuationLine(lines[i])) break;
+        endIndex = i;
+        const continuation = sanitizeLine(lines[i]).replace(/\s+$/g, '');
+        if (!continuation.trim()) continue;
+        parts.push(continuation);
+    }
+
+    return {
+        text: parts.join('\n').trim(),
+        endIndex,
+    };
 }
 
 function isBoxLine(trimmed) {
@@ -447,25 +486,17 @@ function extractVisibleTurn(text) {
         const end = emptyPromptIndex >= 0 ? emptyPromptIndex - 1 : lines.length - 1;
         for (let i = end; i >= 0; i -= 1) {
             const prompt = parsePromptLine(lines[i]);
-            if (prompt) return { index: i, text: prompt };
+            if (prompt) {
+                const collected = collectPromptText(lines, i);
+                return { index: i, text: collected.text, endIndex: collected.endIndex };
+            }
         }
-        return { index: -1, text: '' };
+        return { index: -1, text: '', endIndex: -1 };
     })();
 
-    const linesAfterVisiblePrompt = lastVisiblePrompt.index >= 0
-        ? linesBelowPrompt({
-            ...screen,
-            promptLineIndex: lastVisiblePrompt.index,
-            linesBelowPrompt: screen.lines.slice(lastVisiblePrompt.index + 1),
-        }).map(line => line.text)
-        : lines;
-    const assistantSliceLength = emptyPromptIndex >= 0 && lastVisiblePrompt.index >= 0
-        ? Math.max(0, emptyPromptIndex - lastVisiblePrompt.index - 1)
-        : linesAfterVisiblePrompt.length;
-    const assistantRegion = trimBottom(
-        linesAfterVisiblePrompt,
-        Math.max(0, linesAfterVisiblePrompt.length - assistantSliceLength),
-    );
+    const contentStartIndex = lastVisiblePrompt.endIndex >= 0 ? lastVisiblePrompt.endIndex + 1 : 0;
+    const contentEndIndex = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
+    const assistantRegion = trimBottom(lines.slice(contentStartIndex, contentEndIndex), 0);
     const assistantBlocks = extractAssistantBlocks(assistantRegion);
     const assistantText = (() => {
         if (assistantBlocks.length > 0) return assistantBlocks.join('\n\n').trim();
@@ -491,47 +522,37 @@ function getVisibleAssistantRegion(text) {
         return -1;
     })();
 
-    const lastVisiblePromptIndex = (() => {
+    const lastVisiblePrompt = (() => {
         const end = emptyPromptIndex >= 0 ? emptyPromptIndex - 1 : lines.length - 1;
         for (let i = end; i >= 0; i -= 1) {
             const prompt = parsePromptLine(lines[i]);
-            if (prompt) return i;
+            if (prompt) return collectPromptText(lines, i);
         }
-        return -1;
+        return { text: '', endIndex: -1 };
     })();
 
-    const linesAfterVisiblePrompt = lastVisiblePromptIndex >= 0
-        ? linesBelowPrompt({
-            ...screen,
-            promptLineIndex: lastVisiblePromptIndex,
-            linesBelowPrompt: screen.lines.slice(lastVisiblePromptIndex + 1),
-        }).map(line => line.text)
-        : lines;
-    const assistantSliceLength = emptyPromptIndex >= 0 && lastVisiblePromptIndex >= 0
-        ? Math.max(0, emptyPromptIndex - lastVisiblePromptIndex - 1)
-        : linesAfterVisiblePrompt.length;
-    return trimBottom(
-        linesAfterVisiblePrompt,
-        Math.max(0, linesAfterVisiblePrompt.length - assistantSliceLength),
-    );
+    const contentStartIndex = lastVisiblePrompt.endIndex >= 0 ? lastVisiblePrompt.endIndex + 1 : 0;
+    const contentEndIndex = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
+    return trimBottom(lines.slice(contentStartIndex, contentEndIndex), 0);
 }
 
 function getTranscriptAssistantRegion(text, promptText) {
     const lines = splitLines(typeof text === 'string' ? text : String(text || ''));
     if (lines.length === 0) return [];
 
-    let promptIndex = -1;
+    let promptInfo = null;
     for (let i = lines.length - 1; i >= 0; i -= 1) {
         const parsedPrompt = parsePromptLine(lines[i]);
         if (!parsedPrompt) continue;
-        if (!promptText || looksLikeSamePrompt(parsedPrompt, promptText)) {
-            promptIndex = i;
+        const collected = collectPromptText(lines, i);
+        if (!promptText || looksLikeSamePrompt(collected.text, promptText)) {
+            promptInfo = collected;
             break;
         }
     }
 
-    if (promptIndex < 0) return [];
-    const trailing = lines.slice(promptIndex + 1);
+    if (!promptInfo) return [];
+    const trailing = lines.slice(promptInfo.endIndex + 1);
     const emptyPromptIndex = trailing.findIndex((line) => parsePromptLine(line) === '');
     return emptyPromptIndex >= 0 ? trailing.slice(0, emptyPromptIndex) : trailing;
 }

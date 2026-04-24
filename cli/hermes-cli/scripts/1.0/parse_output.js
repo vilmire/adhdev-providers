@@ -74,20 +74,57 @@ function isLikelyTruncatedDuplicate(longer, shorter, options = {}) {
   return longer.startsWith(shorter) || longer.includes(shorter);
 }
 
+function getComparableContent(message) {
+  const normalized = normalizeMessage(message);
+  const rawContent = String(normalized.content || '').trim();
+  if (!rawContent) return '';
+
+  if (normalized.role === 'assistant' && normalized.kind === 'standard') {
+    const contentLines = rawContent
+      .split(/\r?\n/)
+      .map(normalize)
+      .filter(Boolean);
+    const prose = shouldReflowAssistantLines(contentLines)
+      ? joinWrappedAssistantLines(contentLines)
+      : contentLines.join('\n');
+    return prose.replace(/\s+/g, ' ').trim();
+  }
+
+  return rawContent.replace(/\s+/g, ' ').trim();
+}
+
 function messagesMatch(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
   if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
+  const aComparable = getComparableContent(a);
+  const bComparable = getComparableContent(b);
   const duplicateMinLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 48;
-  return a.content === b.content
-    || isLikelyTruncatedDuplicate(a.content, b.content, { minLength: duplicateMinLength })
-    || isLikelyTruncatedDuplicate(b.content, a.content, { minLength: duplicateMinLength });
+  return aComparable === bComparable
+    || isLikelyTruncatedDuplicate(aComparable, bComparable, { minLength: duplicateMinLength })
+    || isLikelyTruncatedDuplicate(bComparable, aComparable, { minLength: duplicateMinLength });
 }
 
 function chooseMoreCompleteMessage(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
-  const preferred = b.content.length > a.content.length ? b : a;
+  const aComparable = getComparableContent(a);
+  const bComparable = getComparableContent(b);
+
+  if (aComparable && aComparable === bComparable) {
+    const aNewlines = (a.content.match(/\n/g) || []).length;
+    const bNewlines = (b.content.match(/\n/g) || []).length;
+    const preferred = bNewlines < aNewlines ? b : a;
+    const fallback = preferred === a ? b : a;
+    return {
+      role: preferred.role,
+      kind: preferred.kind || fallback.kind,
+      senderName: preferred.senderName || fallback.senderName,
+      content: preferred.content,
+    };
+  }
+
+  const preferred = bComparable.length > aComparable.length ? b : a;
   const fallback = preferred === a ? b : a;
   return {
     role: preferred.role,
@@ -95,6 +132,51 @@ function chooseMoreCompleteMessage(left, right) {
     senderName: preferred.senderName || fallback.senderName,
     content: preferred.content,
   };
+}
+
+const COMMON_WRAP_WORDS = new Set([
+  'a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'is', 'it', 'of', 'on', 'or', 'that', 'the', 'their', 'then', 'this', 'to', 'was', 'with',
+]);
+
+function shouldReflowAssistantLines(lines) {
+  return Array.isArray(lines)
+    && lines.length > 1
+    && lines.slice(0, -1).every((line) => String(line || '').trim().length >= 48)
+    && !lines.some((line) => /^```/.test(line))
+    && !lines.some((line) => /^\|/.test(line))
+    && !lines.some((line) => /^\s*(?:[-*+] |\d+\.\s)/.test(line));
+}
+
+function normalizeReflowedAssistantText(text) {
+  return String(text || '')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/(\d)\s+,/g, '$1,');
+}
+
+function joinWrappedAssistantLines(lines) {
+  const joined = lines.reduce((acc, line) => {
+    const next = String(line || '').trim();
+    if (!next) return acc;
+    if (!acc) return next;
+
+    if (/[,\d]$/.test(acc) && /^\d/.test(next)) {
+      return `${acc}${next}`;
+    }
+
+    if (/[A-Za-z]$/.test(acc) && /^\d/.test(next)) {
+      return `${acc}${next}`;
+    }
+
+    const fragmentMatch = acc.match(/([A-Za-z]{1,4})$/);
+    const fragment = fragmentMatch ? fragmentMatch[1].toLowerCase() : '';
+    if (/^[a-z]/.test(next) && fragment && !COMMON_WRAP_WORDS.has(fragment)) {
+      return `${acc}${next}`;
+    }
+
+    return `${acc} ${next}`;
+  }, '');
+
+  return normalizeReflowedAssistantText(joined);
 }
 
 function looksLikeApprovalActivity(body) {
@@ -191,6 +273,46 @@ function mergeMessageHistories(baseMessages, currentMessages) {
   return dedupeMessages(merged);
 }
 
+function trimMessagesForHistoryState(messages, historyState) {
+  const normalized = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+
+  const historyMessageCount = Number.isFinite(historyState?.historyMessageCount)
+    ? Math.max(0, Number(historyState.historyMessageCount))
+    : null;
+
+  if (historyState?.sessionEvent === 'new_session' || historyMessageCount === 0) {
+    return [];
+  }
+
+  if (historyState?.sessionEvent === 'undo' && historyMessageCount !== null) {
+    return normalized.slice(0, historyMessageCount);
+  }
+
+  return normalized;
+}
+
+function hasMessageOverlap(baseMessages, currentMessages) {
+  const base = (Array.isArray(baseMessages) ? baseMessages : []).map(normalizeMessage).filter((message) => message.content);
+  const current = (Array.isArray(currentMessages) ? currentMessages : []).map(normalizeMessage).filter((message) => message.content);
+  if (base.length === 0 || current.length === 0) return false;
+  return current.some((message) => base.some((candidate) => messagesMatch(candidate, message)));
+}
+
+function shouldPreferRawMessages({
+  baseMessages,
+  rawMessages,
+  transcriptMessages,
+  screenMessages,
+}) {
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) return false;
+  if (hasMessageOverlap(baseMessages, rawMessages)) return false;
+  const transcriptCount = Array.isArray(transcriptMessages) ? transcriptMessages.length : 0;
+  const screenCount = Array.isArray(screenMessages) ? screenMessages.length : 0;
+  return transcriptCount > screenCount || rawMessages.length >= 4;
+}
+
 function parseMessages(text) {
   const lines = cleanAnsi(text).split(/\r?\n/);
   const messages = [];
@@ -200,10 +322,12 @@ function parseMessages(text) {
   let userLines = [];
 
   const flushAssistant = () => {
-    const content = assistantLines
+    const contentLines = assistantLines
       .map(normalize)
-      .filter((line) => !isNoise(line))
-      .join('\n')
+      .filter((line) => !isNoise(line));
+    const content = (shouldReflowAssistantLines(contentLines)
+      ? joinWrappedAssistantLines(contentLines)
+      : contentLines.join('\n'))
       .trim();
     if (content) {
       messages.push({ role: 'assistant', content });
@@ -312,32 +436,58 @@ module.exports = function parseOutput(input) {
     tail: input?.recentBuffer || input?.tail || '',
   });
 
-  const baseMessages = Array.isArray(input?.messages)
-    ? input.messages
-        .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
-        .map((message) => ({
-          role: message.role,
-          kind: message.kind,
-          senderName: message.senderName,
-          content: String(message.content || ''),
-        }))
-    : [];
-  const transcriptMessages = parseMessages(transcript || '')
-    .map((message) => ({
-      role: message.role,
-      kind: message.kind,
-      senderName: message.senderName,
-      content: String(message.content || ''),
-    }));
-  const screenMessages = parseMessages(screenText || '')
-    .map((message) => ({
-      role: message.role,
-      kind: message.kind,
-      senderName: message.senderName,
-      content: String(message.content || ''),
-    }));
-  const currentMessages = screenMessages.length > 0 ? screenMessages : transcriptMessages;
-  const messages = mergeMessageHistories(baseMessages, currentMessages);
+  const historyState = extractHistoryState(transcript || screenText);
+  const baseMessages = trimMessagesForHistoryState(
+    Array.isArray(input?.messages)
+      ? input.messages
+          .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
+          .map((message) => ({
+            role: message.role,
+            kind: message.kind,
+            senderName: message.senderName,
+            content: String(message.content || ''),
+          }))
+      : [],
+    historyState,
+  );
+  const transcriptMessages = trimMessagesForHistoryState(
+    parseMessages(transcript || '')
+      .map((message) => ({
+        role: message.role,
+        kind: message.kind,
+        senderName: message.senderName,
+        content: String(message.content || ''),
+      })),
+    historyState,
+  );
+  const screenMessages = trimMessagesForHistoryState(
+    parseMessages(screenText || '')
+      .map((message) => ({
+        role: message.role,
+        kind: message.kind,
+        senderName: message.senderName,
+        content: String(message.content || ''),
+      })),
+    historyState,
+  );
+  const primaryRawMessages = transcriptMessages.length >= screenMessages.length
+    ? transcriptMessages
+    : screenMessages;
+  const secondaryRawMessages = primaryRawMessages === transcriptMessages
+    ? screenMessages
+    : transcriptMessages;
+  const rawMessages = mergeMessageHistories(primaryRawMessages, secondaryRawMessages);
+  const messages = trimMessagesForHistoryState(
+    shouldPreferRawMessages({
+      baseMessages,
+      rawMessages,
+      transcriptMessages,
+      screenMessages,
+    })
+      ? rawMessages
+      : mergeMessageHistories(baseMessages, rawMessages),
+    historyState,
+  );
   const activeModal = parsedApproval || null;
   const effectiveStatus = activeModal ? 'waiting_approval' : status;
   const finalMessages = activeModal
@@ -345,7 +495,6 @@ module.exports = function parseOutput(input) {
     : messages;
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
-  const historyState = extractHistoryState(transcript || screenText);
 
   return {
     id: 'cli_session',

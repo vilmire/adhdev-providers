@@ -66,10 +66,22 @@ function getScreen(input) {
     : buildScreenSnapshot(input?.screenText || '');
 }
 
+function getBufferScreen(input) {
+  return input?.bufferScreen && Array.isArray(input.bufferScreen.lines)
+    ? input.bufferScreen
+    : buildScreenSnapshot(input?.buffer || '');
+}
+
+function getTailScreen(input) {
+  return input?.tailScreen && Array.isArray(input.tailScreen.lines)
+    ? input.tailScreen
+    : buildScreenSnapshot(input?.tail || input?.recentBuffer || '');
+}
+
 function buildFromBufferFallback(input) {
   const screen = getScreen(input);
   if (screen && screen.lineCount > 0) return screen;
-  return buildScreenSnapshot(input?.buffer || input?.tail || '');
+  return getBufferScreen(input);
 }
 
 function toText(lines, options = {}) {
@@ -85,6 +97,8 @@ module.exports = {
   normalizeLineText,
   buildScreenSnapshot,
   getScreen,
+  getBufferScreen,
+  getTailScreen,
   buildFromBufferFallback,
   toText,
 };

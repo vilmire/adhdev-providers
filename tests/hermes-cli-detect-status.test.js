@@ -121,13 +121,27 @@ test('hermes-cli stays generating when startup text is still in the 20-line wind
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
-test('hermes-cli keeps generating when only the startup prompt is visible but the adapter still thinks a response is in flight', () => {
+test('hermes-cli keeps generating when only the startup prompt is visible but recent buffer still shows an active turn', () => {
+  const screenText = [
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+  ].join('\n');
+  const tail = [
+    '● Please do all of the following in this workspace: (+11 lines)',
+    '┊ 💻 $ pwd 0.5s',
+    '⚕ ❯ type a message + Enter to interrupt, Ctrl+C to cancel',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail }), 'generating');
+});
+
+test('hermes-cli reports idle for a startup prompt-only screen when no raw buffer evidence shows an active turn', () => {
   const screenText = [
     'Welcome to Hermes Agent! Type your message or /help for commands.',
     '❯',
   ].join('\n');
 
-  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'generating');
+  assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
 
 test('hermes-cli ignores stale dangerous-command approval lines when a normal idle prompt appears after them', () => {
