@@ -1,7 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
+
+const CODEX_EXTENSION_SCRIPT_DIR = path.join(__dirname, '..', 'extension', 'codex', 'scripts', '1.0');
+const codexExtensionScript = (name) => path.join(CODEX_EXTENSION_SCRIPT_DIR, name);
 
 function createElement({
   tagName = 'DIV',
@@ -251,7 +255,7 @@ function createHostedCodexModeDocument() {
 test('codex list_models reads listbox-based model menus in hosted webviews', async () => {
   const { document, defaultView } = createHostedCodexModelDocument();
   const raw = await runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/codex/scripts/1.0/list_models.js',
+    codexExtensionScript('list_models.js'),
     { document, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -263,7 +267,7 @@ test('codex list_models reads listbox-based model menus in hosted webviews', asy
 test('codex set_model selects listbox-based model menus in hosted webviews', async () => {
   const { document, defaultView, modelOptions } = createHostedCodexModelDocument();
   const raw = await runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/codex/scripts/1.0/set_model.js',
+    codexExtensionScript('set_model.js'),
     { document, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -276,7 +280,7 @@ test('codex set_model selects listbox-based model menus in hosted webviews', asy
 test('codex list_modes works when hosted controls live in the outer webview document', async () => {
   const { document, defaultView } = createHostedCodexModeDocument();
   const raw = await runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/codex/scripts/1.0/list_modes.js',
+    codexExtensionScript('list_modes.js'),
     { document, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -288,7 +292,7 @@ test('codex list_modes works when hosted controls live in the outer webview docu
 test('codex set_mode works when hosted controls live in the outer webview document', async () => {
   const { document, defaultView, modeOptions } = createHostedCodexModeDocument();
   const raw = await runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/codex/scripts/1.0/set_mode.js',
+    codexExtensionScript('set_mode.js'),
     { document, window: defaultView },
   );
   const parsed = JSON.parse(raw);

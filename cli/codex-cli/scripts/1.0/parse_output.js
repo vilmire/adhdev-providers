@@ -81,7 +81,7 @@ function isApprovalLine(l) {
 }
 
 function isInputLine(l) {
-    return /^▌\s*/.test(l) || /^>\s*$/.test(l);
+    return /^▌\s*/.test(l) || /^>\s*$/.test(l) || /^[›❯]\s*(?:$|\S.*$)/.test(l);
 }
 
 function isPlaceholderLine(l) {
@@ -263,73 +263,159 @@ function sliceAfterPrompt(text, promptText) {
 
 // ─── Assistant text extraction ──────────────────
 
-function collectAssistantText(text) {
+function normalizeMessage(message) {
+    const role = message?.role === 'user' ? 'user' : 'assistant';
+    const kind = typeof message?.kind === 'string' && message.kind ? message.kind : 'standard';
+    const senderName = typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined;
+    return {
+        role,
+        kind,
+        ...(senderName ? { senderName } : {}),
+        content: typeof message?.content === 'string' ? message.content.trim() : String(message?.content || '').trim(),
+        timestamp: message?.timestamp,
+    };
+}
+
+function comparableText(message) {
+    return normalizeForCompare(normalizeMessage(message).content).toLowerCase();
+}
+
+function messagesMatch(left, right) {
+    const a = normalizeMessage(left);
+    const b = normalizeMessage(right);
+    if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
+    const ac = comparableText(a);
+    const bc = comparableText(b);
+    if (ac === bc) return true;
+    const minLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 32;
+    return (ac.length >= minLength && bc.includes(ac)) || (bc.length >= minLength && ac.includes(bc));
+}
+
+function chooseMoreCompleteMessage(left, right) {
+    const a = normalizeMessage(left);
+    const b = normalizeMessage(right);
+    const preferred = b.content.length > a.content.length ? b : a;
+    const fallback = preferred === a ? b : a;
+    return {
+        role: preferred.role,
+        kind: preferred.kind || fallback.kind || 'standard',
+        ...(preferred.senderName || fallback.senderName ? { senderName: preferred.senderName || fallback.senderName } : {}),
+        content: preferred.content,
+        timestamp: preferred.timestamp || fallback.timestamp,
+    };
+}
+
+function dedupeMessages(messages) {
+    const out = [];
+    for (const raw of Array.isArray(messages) ? messages : []) {
+        const message = normalizeMessage(raw);
+        if (!message.content) continue;
+        const prev = out[out.length - 1];
+        if (prev && messagesMatch(prev, message)) {
+            out[out.length - 1] = chooseMoreCompleteMessage(prev, message);
+            continue;
+        }
+        out.push(message);
+    }
+    return out;
+}
+
+function mergeMessageHistories(baseMessages, currentMessages) {
+    const merged = dedupeMessages(baseMessages);
+    const current = dedupeMessages(currentMessages);
+    if (merged.length === 0) return current;
+    let cursor = 0;
+    for (const message of current) {
+        let matchIndex = -1;
+        for (let i = cursor; i < merged.length; i += 1) {
+            if (messagesMatch(merged[i], message)) {
+                matchIndex = i;
+                break;
+            }
+        }
+        if (matchIndex >= 0) {
+            merged[matchIndex] = chooseMoreCompleteMessage(merged[matchIndex], message);
+            cursor = matchIndex + 1;
+            continue;
+        }
+        const prev = merged[merged.length - 1];
+        if (prev && messagesMatch(prev, message)) {
+            merged[merged.length - 1] = chooseMoreCompleteMessage(prev, message);
+        } else {
+            merged.push(message);
+        }
+        cursor = merged.length;
+    }
+    return dedupeMessages(merged);
+}
+
+function classifyCodexLead(line, content) {
+    if (/^>\s+/.test(line)) return { kind: 'standard' };
+    const body = String(content || '').trim();
+    if (/^(?:Ran|Run)\s+/i.test(body)) return { kind: 'terminal', senderName: 'Terminal' };
+    if (/^(?:Explored|Read|Reading|Listed|Searched|Opened|Added|Edited|Updated|Deleted|Created|Modified|Patched|Wrote|Checked)\b/i.test(body)) {
+        return { kind: 'tool', senderName: 'Tool' };
+    }
+    return { kind: 'standard' };
+}
+
+function cleanActivityContinuation(rawLine) {
+    const line = normalize(rawLine);
+    if (!line || isNoise(line) || isInputLine(line)) return '';
+    return line.replace(/^\s*│\s*/, '').trim();
+}
+
+function collectVisibleMessages(text) {
     const lines = splitLines(text);
-    const blocks = [];
+    const messages = [];
     let current = null;
-    let collecting = false;
+
+    const flush = () => {
+        if (!current) return;
+        const content = current.lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        if (content && !shouldSuppress(content)) {
+            messages.push({
+                role: 'assistant',
+                kind: current.kind || 'standard',
+                ...(current.senderName ? { senderName: current.senderName } : {}),
+                content,
+            });
+        }
+        current = null;
+    };
 
     for (const rawLine of lines) {
         const line = normalize(rawLine);
-
-        if (!line) {
-            if (collecting && current && current.lines.length > 0 && current.lines[current.lines.length - 1] !== '') {
-                current.lines.push('');
-            }
+        if (!line) continue;
+        if (isWelcomeLine(line) || isPlaceholderLine(line) || isHeaderLine(line) || isFooterLine(line) || BOX_RE.test(line)) {
             continue;
         }
-
-        if (isWelcomeLine(line) || isPlaceholderLine(line)) {
-            collecting = false;
-            current = null;
-            continue;
-        }
-
-        // A bare `>` during active collection is a paragraph break, not an input reset.
-        // Only `▌` (cursor input marker) truly resets the collection.
         if (isInputLine(line)) {
-            if (collecting && /^>\s*$/.test(line)) {
-                // Treat as paragraph separator
-                if (current && current.lines.length > 0 && current.lines[current.lines.length - 1] !== '') {
-                    current.lines.push('');
-                }
-                continue;
-            }
-            collecting = false;
-            current = null;
+            flush();
             continue;
         }
-
         if (isAssistantLead(line)) {
+            flush();
             const stripped = cleanLine(stripLead(line));
-            const kind = /^>\s+/.test(line) ? 'assistant' : 'tool';
-            // Continue existing block if same kind, else start new
-            if (!collecting || !current || current.kind !== kind) {
-                current = { kind, lines: [] };
-                blocks.push(current);
-            }
-            collecting = true;
-            if (stripped && current.lines[current.lines.length - 1] !== stripped) {
-                current.lines.push(stripped);
-            }
+            if (!stripped || /^W(?:o(?:r(?:k(?:i(?:n(?:g)?)?)?)?)?)?$/i.test(stripped)) continue;
+            const classification = classifyCodexLead(line, stripped);
+            current = { ...classification, lines: [stripped] };
             continue;
         }
-
-        if (!collecting) continue;
-        const cleaned = cleanLine(rawLine);
+        if (!current) continue;
+        const cleaned = cleanActivityContinuation(rawLine);
         if (!cleaned) continue;
-        if (current && current.lines[current.lines.length - 1] !== cleaned) {
-            current.lines.push(cleaned);
-        }
+        if (current.lines[current.lines.length - 1] !== cleaned) current.lines.push(cleaned);
     }
+    flush();
+    return dedupeMessages(messages);
+}
 
-    // Prefer the last "assistant" block with content, else any block with content
-    const preferred = [...blocks].reverse().find(b => b.kind === 'assistant' && b.lines.some(Boolean))
-        || [...blocks].reverse().find(b => b.lines.some(Boolean));
-    const result = preferred ? preferred.lines.slice() : [];
-    while (result[0] === '') result.shift();
-    while (result[result.length - 1] === '') result.pop();
-    return result.join('\n').trim();
+function collectAssistantText(text) {
+    const messages = collectVisibleMessages(text).filter(m => m.role === 'assistant');
+    const standard = [...messages].reverse().find(m => m.kind === 'standard' && m.content);
+    const preferred = standard || [...messages].reverse().find(m => m.content);
+    return preferred ? preferred.content : '';
 }
 
 // ─── Suppress detection ─────────────────────────
@@ -342,46 +428,47 @@ function shouldSuppress(text) {
 
 // ─── Message building ───────────────────────────
 
-function buildMessages(previousMessages, assistantText) {
+function createApprovalMessage(activeModal) {
+    const message = String(activeModal?.message || '').trim();
+    const buttons = Array.isArray(activeModal?.buttons)
+        ? activeModal.buttons.map(button => String(button || '').trim()).filter(Boolean)
+        : [];
+    const lines = ['Approval requested'];
+    if (message) lines.push(message);
+    if (buttons.length > 0) lines.push(buttons.map(label => `[${label}]`).join(' '));
+    return {
+        role: 'assistant',
+        kind: 'system',
+        senderName: 'System',
+        content: lines.join('\n'),
+    };
+}
+
+function buildMessages(previousMessages, currentMessagesOrText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
             .filter(m => m && (m.role === 'user' || m.role === 'assistant'))
-            .map(m => ({
-                role: m.role,
-                content: typeof m.content === 'string' ? m.content : String(m.content || ''),
-                timestamp: m.timestamp,
-            }))
+            .map(normalizeMessage)
         : [];
 
-    if (!assistantText || shouldSuppress(assistantText)) return base;
+    const currentMessages = Array.isArray(currentMessagesOrText)
+        ? currentMessagesOrText
+        : (currentMessagesOrText && !shouldSuppress(currentMessagesOrText)
+            ? [{ role: 'assistant', kind: 'standard', content: currentMessagesOrText }]
+            : []);
 
-    const last = base[base.length - 1];
-    if (last && last.role === 'assistant') {
-        // Update existing assistant message if content is richer
-        const newNorm = normalizeForCompare(assistantText);
-        const oldNorm = normalizeForCompare(last.content);
-        if (newNorm !== oldNorm) {
-            // Keep the longer/richer version
-            if (assistantText.length >= last.content.length || assistantText.split('\n').length > last.content.split('\n').length) {
-                last.content = assistantText;
-            }
-        }
-    } else {
-        base.push({ role: 'assistant', content: assistantText });
-    }
-    return base;
+    return mergeMessageHistories(base, currentMessages);
 }
 
 function toMessageObjects(messages, status) {
-    return messages.slice(-50).map((m, i, arr) => ({
+    return dedupeMessages(messages).map((m, i, arr) => ({
         id: `msg_${i}`,
         role: m.role,
-        content: typeof m.content === 'string' && m.content.length > 6000
-            ? `${m.content.slice(0, 6000)}\n[... truncated]`
-            : m.content,
+        content: m.content,
         index: i,
-        kind: 'standard',
-        ...(status === 'generating' && i === arr.length - 1 && m.role === 'assistant'
+        kind: m.kind || 'standard',
+        ...(m.senderName ? { senderName: m.senderName } : {}),
+        ...(status === 'generating' && i === arr.length - 1 && m.role === 'assistant' && (m.kind || 'standard') === 'standard'
             ? { meta: { streaming: true } }
             : {}),
     }));
@@ -404,13 +491,16 @@ function parseOutput(input) {
         ? parseApproval({ screenText, buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
         : null;
 
-    // During approval or pre-prompt startup, return current messages unchanged
+    // During approval or pre-prompt startup, return current messages unchanged except for a visible approval bubble.
     if (status === 'waiting_approval' || (!hasUserPrompt && isStartupScreen(transcript))) {
+        const visibleMessages = activeModal
+            ? buildMessages(previousMessages, [createApprovalMessage(activeModal)])
+            : buildMessages(previousMessages, []);
         return {
             id: 'cli_session',
             status,
             title: 'Codex CLI',
-            messages: toMessageObjects(previousMessages, status),
+            messages: toMessageObjects(visibleMessages, status),
             activeModal,
             providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
         };
@@ -420,10 +510,16 @@ function parseOutput(input) {
     const scopedScreen = sliceAfterPrompt(screenText, promptScope);
     const scopedBuffer = sliceAfterPrompt(buffer, promptScope);
 
-    // Extract assistant text from both sources and pick richer
+    // Extract assistant messages from both sources and pick the richer transcript for unstructured prose fallback.
+    const screenMessages = collectVisibleMessages(scopedScreen || screenText);
+    const bufferMessages = collectVisibleMessages(scopedBuffer || buffer);
+    const currentMessages = screenMessages.length >= bufferMessages.length ? screenMessages : bufferMessages;
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
     const assistantText = rehydrateRenderedSections((fromScreen.length >= fromBuffer.length ? fromScreen : fromBuffer) || fromScreen || fromBuffer);
+    const visibleAssistantText = currentMessages.some(m => m.kind === 'standard')
+        ? ''
+        : assistantText;
 
     // Final startup guard
     if (!hasUserPrompt && isStartupScreen(assistantText)) {
@@ -436,7 +532,9 @@ function parseOutput(input) {
         };
     }
 
-    const messages = buildMessages(previousMessages, assistantText);
+    const messages = buildMessages(previousMessages, currentMessages.length > 0
+        ? currentMessages
+        : visibleAssistantText);
 
     return {
         id: 'cli_session',

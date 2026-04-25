@@ -326,7 +326,7 @@ test('codex parse_output keeps status generating for a partial working turn inst
 
   assert.equal(result.status, 'generating');
   assert.equal(result.messages.at(-1)?.role, 'assistant');
-  assert.match(result.messages.at(-1)?.content || '', /Creating tmp\/adhdev_cli_verify\.py/);
+  assert.ok(result.messages.some(message => /Creating tmp\/adhdev_cli_verify\.py/.test(message.content || '')));
 });
 
 test('codex rehydrates fenced python/text blocks from a rendered script section', () => {
@@ -361,4 +361,81 @@ JSON={"squares":[1,4,9,16,25]}
   const assistant = parseOutput.rehydrateRenderedSections(renderedAssistant);
   assert.match(assistant, /```python[\s\S]*def main\(\) -> None:[\s\S]*```/);
   assert.match(assistant, /```text[\s\S]*SQUARES=1,4,9,16,25[\s\S]*```/);
+});
+
+test('codex parse_output keeps full prior transcript when conversation exceeds 50 messages', () => {
+  const priorMessages = Array.from({ length: 60 }, (_, index) => ({
+    role: index % 2 === 0 ? 'user' : 'assistant',
+    content: `codex-turn-${index + 1}`,
+  }));
+
+  const result = parseOutput({
+    screenText: [
+      '›',
+      'gpt-5.4 low · /tmp/codex-quality',
+    ].join('\n'),
+    buffer: '',
+    messages: priorMessages,
+  });
+
+  assert.equal(result.messages.length, 60);
+  assert.deepEqual(result.messages.slice(0, 2).map(m => m.content), ['codex-turn-1', 'codex-turn-2']);
+  assert.deepEqual(result.messages.slice(-2).map(m => m.content), ['codex-turn-59', 'codex-turn-60']);
+});
+
+test('codex parse_output surfaces approval as a visible system bubble', () => {
+  const screenText = [
+    'Allow Codex to run this command?',
+    '1. Approve and run now',
+    '2. Always approve this session',
+    '3. Deny',
+    'Press Enter to confirm',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: 'Run rm -rf /tmp/nope' },
+    ],
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.equal(result.activeModal?.buttons.length, 3);
+  assert.equal(result.messages.at(-1)?.kind, 'system');
+  assert.match(result.messages.at(-1)?.content || '', /Approval requested/);
+  assert.match(result.messages.at(-1)?.content || '', /\[Approve and run now\]/);
+});
+
+test('codex parse_output preserves visible tool activity as typed bubbles instead of folding it into prose', () => {
+  const screenText = [
+    '› Run pwd, read package.json, then summarize briefly.',
+    '• Ran pwd',
+    ' └ /tmp/codex-quality',
+    '',
+    '• Read package.json',
+    ' └ { "name": "demo" }',
+    '',
+    '• I checked the working directory and package metadata.',
+    '',
+    '›',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: 'Run pwd, read package.json, then summarize briefly.' },
+    ],
+  });
+
+  assert.deepEqual(
+    result.messages.map(m => ({ role: m.role, kind: m.kind, senderName: m.senderName, content: m.content })),
+    [
+      { role: 'user', kind: 'standard', senderName: undefined, content: 'Run pwd, read package.json, then summarize briefly.' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: 'Ran pwd\n└ /tmp/codex-quality' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'Read package.json\n└ { "name": "demo" }' },
+      { role: 'assistant', kind: 'standard', senderName: undefined, content: 'I checked the working directory and package metadata.' },
+    ],
+  );
 });
