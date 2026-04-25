@@ -907,3 +907,200 @@ test('hermes-cli parseOutput keeps status generating when a stale startup prompt
     },
   ]);
 });
+
+test('hermes-cli parseOutput reconstructs fenced code blocks from plain python/text sections in assistant boxes', () => {
+  const prompt = 'Create tmp/adhdev_cli_verify.py, run it, and show the script plus output.';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${prompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '스크립트를 생성하고 실행했습니다.',
+      '| Number | Square |',
+      '|---:|---:|',
+      '| 1 | 1 |',
+      '| 2 | 4 |',
+      'python',
+      'import json',
+      'print(json.dumps({"ok": True}))',
+      'text',
+      'CWD=/tmp/demo',
+      'JSON={"ok":true}',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      `● ${prompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '스크립트를 생성하고 실행했습니다.',
+      '| Number | Square |',
+      '|---:|---:|',
+      '| 1 | 1 |',
+      '| 2 | 4 |',
+      'python',
+      'import json',
+      'print(json.dumps({"ok": True}))',
+      'text',
+      'CWD=/tmp/demo',
+      'JSON={"ok":true}',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+  });
+
+  assert.match(result.messages[1].content, /```python\nimport json\nprint\(json\.dumps\({"ok": True}\)\)\n```/);
+  assert.match(result.messages[1].content, /```text\nCWD=\/tmp\/demo\nJSON=\{"ok":true\}\n```/);
+});
+
+test('hermes-cli parseOutput ignores transient analyzing suffixes appended to the visible follow-up prompt', () => {
+  const fullPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
+
+  const result = parseOutput({
+    screenText: [
+      '● In one short paragraph, summarize what you just executed. You must mention ٩(๑❛ᴗ❛๑)۶ analyzing...',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● In one short paragraph, summarize what you just executed. You must mention ٩(๑❛ᴗ❛๑)۶ analyzing...',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: fullPrompt },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: fullPrompt },
+  ]);
+});
+
+test('hermes-cli parseOutput treats wrapped Hangul assistant prose as the same message and keeps the more complete version', () => {
+  const fullPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
+  const reflowed = 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확인했습니다.';
+  const wrapped = 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리\n를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확\n인했습니다.';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${fullPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리',
+      '를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확',
+      '인했습니다.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      `● ${fullPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리',
+      '를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확',
+      '인했습니다.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: fullPrompt },
+      { role: 'assistant', content: reflowed },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: fullPrompt },
+    { role: 'assistant', content: reflowed },
+  ]);
+});
+
+test('hermes-cli parseOutput collapses a polluted follow-up history into one prior answer and one final answer', () => {
+  const initialPrompt = 'Please do all of the following in this workspace: 1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines: ... (+8 more lines) - a fenced text block containing the exact command output If you need permission to write the file or run the command, request it.';
+  const followupPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
+  const pollutedFollowupPrompt = 'In one short paragraph, summarize what you just executed. You must mention ٩(๑❛ᴗ❛๑)۶ analyzing...';
+  const priorAnswer = '요청하신 대로 /Users/vilmire/Work/remote_vs/tmp/adhdev_cli_verify.py를 생성하고 python3로 실행해 출력까지 확인했습니다.\n| Number | Square |\n|---|---:|\n| 1 | 1 |\n| 2 | 4 |\n| 3 | 9 |\n| 4 | 16 |\n| 5 | 25 |\n```python\nfrom pathlib import Path\nimport json\nsquares = [n * n for n in range(1, 6)]\ncwd = Path.cwd()\nprint(f\"CWD={cwd}\")\nprint(\"SQUARES=\" + \",\".join(str(n) for n in squares))\nprint(\"JSON=\" + json.dumps({\"squares\": squares}, separators=(\",\", \":\")))\n```\n```text\nCWD=/Users/vilmire/Work/remote_vs\nSQUARES=1,4,9,16,25\nJSON={\"squares\":[1,4,9,16,25]}\n```';
+  const wrappedPriorAnswer = '요청하신 대로 /Users/vilmire/Work/remote_vs/tmp/adhdev_cli_verify.py를 생성\n하고 python3로 실행해 출력까지 확인했습니다.\n| Number | Square |\n|---|---:|\n| 1 | 1 |\n| 2 | 4 |\n| 3 | 9 |\n| 4 | 16 |\n| 5 | 25 |\n```python\nfrom pathlib import Path\nimport json\nsquares = [n * n for n in range(1, 6)]\ncwd = Path.cwd()\nprint(f\"CWD={cwd}\")\nprint(\"SQUARES=\" + \",\".join(str(n) for n in squares))\nprint(\"JSON=\" + json.dumps({\"squares\": squares}, separators=(\",\", \":\")))\n```\n```text\nCWD=/Users/vilmire/Work/remote_vs\nSQUARES=1,4,9,16,25\nJSON={\"squares\":[1,4,9,16,25]}\n```';
+  const finalAnswer = 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확인했습니다.';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${initialPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '요청하신 대로 /Users/vilmire/Work/remote_vs/tmp/adhdev_cli_verify.py를 생성',
+      '하고 python3로 실행해 출력까지 확인했습니다.',
+      '| Number | Square |',
+      '|---|---:|',
+      '| 1 | 1 |',
+      '| 2 | 4 |',
+      '| 3 | 9 |',
+      '| 4 | 16 |',
+      '| 5 | 25 |',
+      'python',
+      'from pathlib import Path',
+      'import json',
+      'squares = [n * n for n in range(1, 6)]',
+      'cwd = Path.cwd()',
+      'print(f"CWD={cwd}")',
+      'print("SQUARES=" + ",".join(str(n) for n in squares))',
+      'print("JSON=" + json.dumps({"squares": squares}, separators=(",", ":")))',
+      'text',
+      'CWD=/Users/vilmire/Work/remote_vs',
+      'SQUARES=1,4,9,16,25',
+      'JSON={"squares":[1,4,9,16,25]}',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${followupPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리',
+      '를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확',
+      '인했습니다.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      `● ${initialPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '요청하신 대로 /Users/vilmire/Work/remote_vs/tmp/adhdev_cli_verify.py를 생성',
+      '하고 python3로 실행해 출력까지 확인했습니다.',
+      '| Number | Square |',
+      '|---|---:|',
+      '| 1 | 1 |',
+      '| 2 | 4 |',
+      '| 3 | 9 |',
+      '| 4 | 16 |',
+      '| 5 | 25 |',
+      'python',
+      'from pathlib import Path',
+      'import json',
+      'squares = [n * n for n in range(1, 6)]',
+      'cwd = Path.cwd()',
+      'print(f"CWD={cwd}")',
+      'print("SQUARES=" + ",".join(str(n) for n in squares))',
+      'print("JSON=" + json.dumps({"squares": squares}, separators=(",", ":")))',
+      'text',
+      'CWD=/Users/vilmire/Work/remote_vs',
+      'SQUARES=1,4,9,16,25',
+      'JSON={"squares":[1,4,9,16,25]}',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${followupPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리',
+      '를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확',
+      '인했습니다.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: initialPrompt },
+      { role: 'assistant', content: priorAnswer },
+      { role: 'assistant', content: wrappedPriorAnswer },
+      { role: 'user', content: followupPrompt },
+      { role: 'user', content: pollutedFollowupPrompt },
+      { role: 'assistant', content: wrappedPriorAnswer },
+      { role: 'user', content: followupPrompt },
+      { role: 'assistant', content: finalAnswer },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: initialPrompt },
+    { role: 'assistant', content: priorAnswer },
+    { role: 'user', content: followupPrompt },
+    { role: 'assistant', content: finalAnswer },
+  ]);
+});

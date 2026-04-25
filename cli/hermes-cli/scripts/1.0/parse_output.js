@@ -57,12 +57,113 @@ function extractHistoryState(text) {
   return {};
 }
 
+const CODE_FENCE_LABELS = new Set([
+  'bash', 'console', 'diff', 'javascript', 'js', 'json', 'markdown', 'md', 'python', 'shell', 'sh', 'sql', 'text', 'ts', 'tsx', 'typescript', 'yaml', 'yml',
+]);
+
+function looksLikeFenceBodyStart(label, nextLine) {
+  const line = String(nextLine || '').trim();
+  if (!line || /^```/.test(line)) return false;
+  switch (label) {
+    case 'python':
+      return /^(?:from\s+|import\s+|def\s+|class\s+|print\(|if\s+|for\s+|while\s+|with\s+|try:|except\b|return\b|[A-Za-z_][A-Za-z0-9_]*\s*=)/.test(line);
+    case 'bash':
+    case 'shell':
+    case 'sh':
+      return /^(?:\$\s+|[#~./A-Za-z_][^\n]*)$/.test(line);
+    case 'json':
+      return /^[\[{]/.test(line);
+    case 'text':
+      return /^(?:[A-Z][A-Z0-9_]*=|\$\s+|[~/]|JSON=|CWD=|\{|\[)/.test(line);
+    default:
+      return /^(?:[A-Za-z_][A-Za-z0-9_]*\s*=|from\s+|import\s+|\{|\[|\$\s+)/.test(line);
+  }
+}
+
+function restoreAssistantCodeFences(text) {
+  const source = String(text || '').trim();
+  if (!source || /```/.test(source)) return source;
+
+  const lines = source.split(/\r?\n/);
+  const restored = [];
+  let openFence = null;
+  let changed = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = String(lines[index] || '');
+    const trimmed = line.trim();
+    const label = trimmed.toLowerCase();
+    const nextLine = index + 1 < lines.length ? lines[index + 1] : '';
+    const startsFence = CODE_FENCE_LABELS.has(label) && looksLikeFenceBodyStart(label, nextLine);
+
+    if (startsFence) {
+      if (openFence) restored.push('```');
+      restored.push(`\`\`\`${label}`);
+      openFence = label;
+      changed = true;
+      continue;
+    }
+
+    restored.push(line);
+  }
+
+  if (openFence) restored.push('```');
+  return changed ? restored.join('\n').trim() : source;
+}
+
+function stripTransientPromptSuffix(text) {
+  const source = String(text || '').trim();
+  if (!source) return '';
+
+  const lower = source.toLowerCase();
+  const transientMarkers = [
+    'analyzing...',
+    'ruminating...',
+    'reasoning...',
+    'thinking...',
+    'processing...',
+    'working...',
+  ];
+
+  let cutIndex = -1;
+  for (const marker of transientMarkers) {
+    const idx = lower.lastIndexOf(marker);
+    if (idx > cutIndex) cutIndex = idx;
+  }
+  if (cutIndex < 0) return source;
+
+  const preludeMarkers = [
+    'window too small...',
+  ];
+  for (const marker of preludeMarkers) {
+    const idx = lower.lastIndexOf(marker, cutIndex);
+    if (idx >= 0) {
+      cutIndex = idx;
+      break;
+    }
+  }
+
+  const stripped = source.slice(0, cutIndex).trim();
+  const tokens = stripped.split(/\s+/).filter(Boolean);
+  while (tokens.length > 0 && !/[A-Za-z0-9\u00C0-\u024F\u0400-\u04FF\u3040-\u30FF\u3400-\u9FFF\uAC00-\uD7AF]/u.test(tokens[tokens.length - 1])) {
+    tokens.pop();
+  }
+  return tokens.join(' ').trim();
+}
+
 function normalizeMessage(message) {
+  const role = message?.role === 'user' ? 'user' : 'assistant';
+  const rawContent = String(message?.content || '').trim();
+  const normalizedContent = role === 'user'
+    ? stripTransientPromptSuffix(rawContent)
+    : rawContent;
   return {
-    role: message?.role === 'user' ? 'user' : 'assistant',
+    role,
     kind: typeof message?.kind === 'string' && message.kind ? message.kind : 'standard',
     senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
-    content: String(message?.content || '').trim(),
+    content: role === 'assistant' && (typeof message?.kind !== 'string' || message.kind === 'standard')
+      ? restoreAssistantCodeFences(normalizedContent)
+      : normalizedContent,
   };
 }
 
@@ -93,16 +194,27 @@ function getComparableContent(message) {
   return rawContent.replace(/\s+/g, ' ').trim();
 }
 
+function getCompactComparableContent(message) {
+  return getComparableContent(message).replace(/\s+/g, '');
+}
+
+function comparableContentsMatch(left, right, minLength) {
+  return left === right
+    || isLikelyTruncatedDuplicate(left, right, { minLength })
+    || isLikelyTruncatedDuplicate(right, left, { minLength });
+}
+
 function messagesMatch(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
   if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
+  const duplicateMinLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 48;
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
-  const duplicateMinLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 48;
-  return aComparable === bComparable
-    || isLikelyTruncatedDuplicate(aComparable, bComparable, { minLength: duplicateMinLength })
-    || isLikelyTruncatedDuplicate(bComparable, aComparable, { minLength: duplicateMinLength });
+  if (comparableContentsMatch(aComparable, bComparable, duplicateMinLength)) return true;
+  const aCompactComparable = getCompactComparableContent(a);
+  const bCompactComparable = getCompactComparableContent(b);
+  return comparableContentsMatch(aCompactComparable, bCompactComparable, duplicateMinLength);
 }
 
 function chooseMoreCompleteMessage(left, right) {
@@ -110,8 +222,10 @@ function chooseMoreCompleteMessage(left, right) {
   const b = normalizeMessage(right);
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
+  const aCompactComparable = getCompactComparableContent(a);
+  const bCompactComparable = getCompactComparableContent(b);
 
-  if (aComparable && aComparable === bComparable) {
+  if ((aComparable && aComparable === bComparable) || (aCompactComparable && aCompactComparable === bCompactComparable)) {
     const aNewlines = (a.content.match(/\n/g) || []).length;
     const bNewlines = (b.content.match(/\n/g) || []).length;
     const preferred = bNewlines < aNewlines ? b : a;
@@ -270,8 +384,12 @@ function dedupeMessages(messages) {
 }
 
 function mergeMessageHistories(baseMessages, currentMessages) {
-  const merged = (Array.isArray(baseMessages) ? baseMessages : []).map(normalizeMessage).filter((message) => message.content);
-  const current = (Array.isArray(currentMessages) ? currentMessages : []).map(normalizeMessage).filter((message) => message.content);
+  const merged = dedupeMessages(Array.isArray(baseMessages) ? baseMessages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const current = dedupeMessages(Array.isArray(currentMessages) ? currentMessages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
   if (merged.length === 0) return dedupeMessages(current);
   if (current.length === 0) return dedupeMessages(merged);
 
@@ -325,6 +443,38 @@ function hasMessageOverlap(baseMessages, currentMessages) {
   return current.some((message) => base.some((candidate) => messagesMatch(candidate, message)));
 }
 
+function mergeCoveredTranscript(baseMessages, rawMessages) {
+  const base = dedupeMessages(Array.isArray(baseMessages) ? baseMessages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const raw = dedupeMessages(Array.isArray(rawMessages) ? rawMessages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  if (base.length <= raw.length || raw.length < 2) return null;
+
+  const matchedIndices = [];
+  let cursor = 0;
+  for (const message of raw) {
+    let matchIndex = -1;
+    for (let i = cursor; i < base.length; i += 1) {
+      if (messagesMatch(base[i], message)) {
+        matchIndex = i;
+        break;
+      }
+    }
+    if (matchIndex < 0) return null;
+    matchedIndices.push(matchIndex);
+    cursor = matchIndex + 1;
+  }
+
+  const firstMatch = matchedIndices[0];
+  const lastMatch = matchedIndices[matchedIndices.length - 1];
+  const hasInterleavedBaseNoise = matchedIndices.some((matchIndex, index) => index > 0 && matchIndex - matchedIndices[index - 1] > 1);
+  if (!(firstMatch === 0 && lastMatch === base.length - 1 && hasInterleavedBaseNoise)) return null;
+
+  return dedupeMessages(raw.map((message, index) => chooseMoreCompleteMessage(base[matchedIndices[index]], message)));
+}
+
 function shouldPreferRawMessages({
   baseMessages,
   rawMessages,
@@ -332,10 +482,12 @@ function shouldPreferRawMessages({
   screenMessages,
 }) {
   if (!Array.isArray(rawMessages) || rawMessages.length === 0) return false;
-  if (hasMessageOverlap(baseMessages, rawMessages)) return false;
-  const transcriptCount = Array.isArray(transcriptMessages) ? transcriptMessages.length : 0;
-  const screenCount = Array.isArray(screenMessages) ? screenMessages.length : 0;
-  return transcriptCount > screenCount || rawMessages.length >= 4;
+  if (!hasMessageOverlap(baseMessages, rawMessages)) {
+    const transcriptCount = Array.isArray(transcriptMessages) ? transcriptMessages.length : 0;
+    const screenCount = Array.isArray(screenMessages) ? screenMessages.length : 0;
+    return transcriptCount > screenCount || rawMessages.length >= 4;
+  }
+  return Boolean(mergeCoveredTranscript(baseMessages, rawMessages));
 }
 
 function parseStructuralInputPromptLine(lines, index) {
@@ -547,6 +699,8 @@ module.exports = function parseOutput(input) {
     ? screenMessages
     : transcriptMessages;
   const rawMessages = mergeMessageHistories(primaryRawMessages, secondaryRawMessages);
+  const coveredRawMessages = mergeCoveredTranscript(baseMessages, rawMessages);
+  const preferredRawMessages = coveredRawMessages || rawMessages;
   const messages = trimMessagesForHistoryState(
     shouldPreferRawMessages({
       baseMessages,
@@ -554,7 +708,7 @@ module.exports = function parseOutput(input) {
       transcriptMessages,
       screenMessages,
     })
-      ? rawMessages
+      ? preferredRawMessages
       : mergeMessageHistories(baseMessages, rawMessages),
     historyState,
   );
