@@ -604,11 +604,14 @@ function wrapSimplePythonBlock(text) {
     if (/```python[\s\S]*```/.test(text)) return text;
     const lines = splitLines(text);
     const isPythonLine = (line) => /^(import\s+\w+|from\s+\w+\s+import\s+|[A-Za-z_][A-Za-z0-9_]*\s*=|print\(|for\s+.+\s+in\s+.+:|if\s+.+:)/.test(line.trim());
+    const isDefinitePythonLine = (line) => /^(import\s+\w+|from\s+\w+\s+import\s+|print\(|for\s+.+\s+in\s+.+:|if\s+.+:)/.test(line.trim());
     const start = lines.findIndex((line) => isPythonLine(line));
     if (start < 0) return text;
     let end = start;
     while (end < lines.length && lines[end].trim() && isPythonLine(lines[end])) end += 1;
-    const block = lines.slice(start, end).join('\n').trim();
+    const blockLines = lines.slice(start, end);
+    if (!blockLines.some(isDefinitePythonLine)) return text;
+    const block = blockLines.join('\n').trim();
     if (!block) return text;
     return [
         ...lines.slice(0, start),

@@ -115,6 +115,42 @@ test('claude-cli parse_output keeps full prior transcript instead of slicing to 
   ]);
 });
 
+test('claude-cli preserves raw verify output without wrapping uppercase marker lines as python', () => {
+  const screenText = [
+    '❯ raw verify prompt',
+    '',
+    '⏺ RAW VERIFY RESULT',
+    'Command run:',
+    'python3 tmp/adhdev_cli_verify.py',
+    'Exact output:',
+    'CWD=/tmp/adhdev-cli-verify-claude-raw',
+    'SQUARES=1,4,9,16,25',
+    'JSON={"squares":[1,4,9,16,25],"ok":true}',
+    'UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧',
+    'GLYPHS=⏺ ⎿ ✢ ◆ ◇ ↳ ✓ ⚠ ❌ 🜁 𓂀 한글',
+    'PIPE_ROW=left|middle|right',
+    'LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19',
+    '20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END',
+    '',
+    'The file tmp/adhdev_cli_verify.py was created and executed successfully.',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: 'raw verify prompt' }],
+    promptText: 'raw verify prompt',
+  });
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.ok(assistant, 'assistant message should be present');
+  assert.equal(assistant.content.includes('```python'), false);
+  assert.equal(assistant.content.includes('```'), false);
+  assert.match(assistant.content.replace(/\s+/g, ' '), /LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END/);
+});
+
+
 test('claude-cli parse_output keeps a multiline numbered user prompt as one user turn instead of emitting stray numeric prompt fragments', () => {
   const prompt = [
     'Please do all of the following in this workspace:',
