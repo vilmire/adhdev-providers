@@ -553,6 +553,18 @@ function parseStructuralInputPromptLine(lines, index) {
   return match[1].trim();
 }
 
+function hasTranscriptOutputAfterStructuralPrompt(lines, index) {
+  if (!Array.isArray(lines)) return false;
+  for (let nextIndex = index + 2; nextIndex < lines.length; nextIndex += 1) {
+    const rawLine = lines[nextIndex];
+    const line = normalize(rawLine);
+    if (!line || /^[-─━═]{8,}$/.test(line)) continue;
+    if (/^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(line) || /^●\s+/.test(line)) return false;
+    if (/^╭─\s*⚕\s*Hermes/i.test(line) || parseActivityHead(rawLine)) return true;
+  }
+  return false;
+}
+
 function parseMessages(text) {
   const lines = cleanAnsi(text).split(/\r?\n/);
   const messages = [];
@@ -602,7 +614,7 @@ function parseMessages(text) {
     const structuralPrompt = !inAssistantBox ? parseStructuralInputPromptLine(lines, index) : null;
     if (structuralPrompt !== null) {
       if (inUserMessage) flushUser();
-      if (structuralPrompt) {
+      if (structuralPrompt && hasTranscriptOutputAfterStructuralPrompt(lines, index)) {
         inUserMessage = true;
         userLines = [structuralPrompt];
       }

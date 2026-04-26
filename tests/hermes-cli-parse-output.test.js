@@ -34,6 +34,32 @@ test('hermes-cli treats a separator-bounded > row as the live input prompt regio
   assert.equal(detectStatus({ screenText, screen }), 'idle');
 });
 
+test('hermes-cli parseOutput does not surface the current live input prompt as a submitted user bubble', () => {
+  const screenText = [
+    '● earlier prompt',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Earlier assistant answer.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> currently typed user input',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: 'earlier prompt' },
+      { role: 'assistant', content: 'Earlier assistant answer.' },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: 'earlier prompt' },
+    { role: 'assistant', content: 'Earlier assistant answer.' },
+  ]);
+});
+
 test('hermes-cli treats interrupt copy inside the live input prompt as generating', () => {
   const screenText = [
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
