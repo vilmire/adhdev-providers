@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 function createElement({
@@ -300,7 +301,7 @@ function runScript(filePath, { document: doc, window: win, replacements = {} }) 
   }, { filename: filePath });
 }
 
-const base = '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode';
+const base = path.resolve(__dirname, '../extension/claude-code-vscode');
 
 test('claude-code-vscode list_models fails closed on a host-only Antigravity shell surface', async () => {
   const { doc, defaultView } = createCurrentShellDocument();

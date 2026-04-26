@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 function runScript(filePath, { document: doc, window: win, replacements = {} }) {
@@ -215,7 +216,7 @@ function createSessionControlsDocument({ currentModel = 'Default (recommended)',
   return { doc, defaultView, state };
 }
 
-const base = '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode';
+const base = path.resolve(__dirname, '../extension/claude-code-vscode');
 
 test('claude-code-vscode list_models enumerates child-frame command-menu model options', async () => {
   const { doc, defaultView } = createSessionControlsDocument();

@@ -24,6 +24,10 @@
   "versionCommand": "cursor agent --version",
   "sendDelayMs": 500,
   "submitStrategy": "wait_for_echo",
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
   "spawn": {
     "command": "cursor",
     "args": [

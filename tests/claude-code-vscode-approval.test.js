@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 function createElement({
@@ -136,13 +137,15 @@ function runScript(filePath, { document: doc, window: win, replacements = {} }) 
   return vm.runInNewContext(code, context, { filename: filePath });
 }
 
+const base = path.resolve(__dirname, '../extension/claude-code-vscode');
+
 test('claude-code-vscode read_chat detects approval from visible approval buttons', () => {
   const allowButton = createElement({ tagName: 'BUTTON', text: 'Allow for this session' });
   const denyButton = createElement({ tagName: 'BUTTON', text: 'Deny' });
   const { doc, defaultView } = createDocument({ approvalTargets: [allowButton, denyButton] });
 
   const raw = runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    `${base}/scripts/1.0/read_chat.js`,
     { document: doc, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -158,7 +161,7 @@ test('claude-code-vscode read_chat suppresses welcome empty-state text as a real
   });
 
   const raw = runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    `${base}/scripts/1.0/read_chat.js`,
     { document: doc, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -172,7 +175,7 @@ test('claude-code-vscode read_chat does not resurrect stale cached mode when no 
   const { doc, defaultView } = createDocument({ initialCache: { mode: 'Edit automatically' } });
 
   const raw = runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    `${base}/scripts/1.0/read_chat.js`,
     { document: doc, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -185,7 +188,7 @@ test('claude-code-vscode read_chat reports live mode text when the footer mode c
   const { doc, defaultView } = createDocument({ modeText: 'Ask before edits' });
 
   const raw = runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/read_chat.js',
+    `${base}/scripts/1.0/read_chat.js`,
     { document: doc, window: defaultView },
   );
   const parsed = JSON.parse(raw);
@@ -208,7 +211,7 @@ test('claude-code-vscode resolve_action clicks exact matching role=button approv
   const { doc, defaultView } = createDocument({ approvalTargets: [allowButton, denyButton] });
 
   const raw = await runScript(
-    '/Users/vilmire/Work/adhdev_public/adhdev-providers/extension/claude-code-vscode/scripts/1.0/resolve_action.js',
+    `${base}/scripts/1.0/resolve_action.js`,
     {
       document: doc,
       window: defaultView,

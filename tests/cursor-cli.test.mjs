@@ -16,6 +16,14 @@ test('cursor-cli provider launches via `cursor agent` and uses a non-interactive
   assert.equal(provider.versionCommand, 'cursor agent --version')
 })
 
+test('cursor-cli provider uses Hermes-style echo submit and settle debounce', () => {
+  assert.equal(provider.submitStrategy, 'wait_for_echo')
+  assert.deepEqual(provider.timeouts, {
+    idleFinishConfirm: 5000,
+    statusActivityHold: 5000,
+  })
+})
+
 test('cursor-cli provider exposes resume metadata compatible with UUID chat ids', () => {
   assert.equal(provider.resume?.supported, true)
   assert.equal(provider.resume?.sessionIdFormat, 'uuid')

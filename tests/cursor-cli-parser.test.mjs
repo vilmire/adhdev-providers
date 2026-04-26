@@ -8,6 +8,15 @@ const cursorScriptsDir = path.resolve(import.meta.dirname, '../cli/cursor-cli/sc
 const detectStatus = require(path.join(cursorScriptsDir, 'detect_status.js'))
 const parseOutput = require(path.join(cursorScriptsDir, 'parse_output.js'))
 
+function toDetailedMessages(result) {
+  return result.messages.map((message) => ({
+    role: message.role,
+    kind: message.kind,
+    senderName: message.senderName,
+    content: message.content,
+  }))
+}
+
 const generatingScreen = `
   Cursor Agent
   v2026.04.17-787b533
@@ -234,6 +243,191 @@ test('cursor ignores stale trust chrome once the main interactive prompt is visi
   assert.equal(parsed.activeModal, null)
 })
 
+test('cursor parse_output surfaces approvals as visible system bubbles', () => {
+  const parsed = parseOutput({
+    screenText: runApprovalScreen,
+    buffer: runApprovalScreen,
+    recentBuffer: runApprovalScreen,
+    messages: [
+      { role: 'user', content: 'Create tmp/adhdev_cli_verify.py and run it.' },
+    ],
+  })
+
+  assert.equal(parsed.status, 'waiting_approval')
+  assert.equal(parsed.messages.at(-1)?.kind, 'system')
+  assert.match(parsed.messages.at(-1)?.content || '', /Approval requested/)
+  assert.match(parsed.messages.at(-1)?.content || '', /Run this command\? Not in allowlist/)
+  assert.match(parsed.messages.at(-1)?.content || '', /\[Run \(once\)\]/)
+})
+
+test('cursor parse_output keeps full prior transcript when the conversation already exceeds 50 messages', () => {
+  const priorMessages = Array.from({ length: 60 }, (_, index) => ({
+    role: index % 2 === 0 ? 'user' : 'assistant',
+    content: `turn-${index + 1}`,
+  }))
+
+  const parsed = parseOutput({
+    screenText: [
+      'Cursor Agent',
+      'turn-61',
+      '',
+      'turn-62',
+      '',
+      '→ Add a follow-up',
+      'Composer 2 Fast',
+      '/private/tmp/adhdev-cursor-cli-long-history',
+    ].join('\n'),
+    buffer: [
+      'Cursor Agent',
+      'turn-61',
+      '',
+      'turn-62',
+      '',
+      '→ Add a follow-up',
+      'Composer 2 Fast',
+      '/private/tmp/adhdev-cursor-cli-long-history',
+    ].join('\n'),
+    recentBuffer: '→ Add a follow-up',
+    messages: priorMessages,
+  })
+
+  assert.equal(parsed.status, 'idle')
+  assert.equal(parsed.messages.length, 62)
+  assert.deepEqual(parsed.messages.slice(0, 4).map((message) => ({ role: message.role, content: message.content })), [
+    { role: 'user', content: 'turn-1' },
+    { role: 'assistant', content: 'turn-2' },
+    { role: 'user', content: 'turn-3' },
+    { role: 'assistant', content: 'turn-4' },
+  ])
+  assert.deepEqual(parsed.messages.slice(-4).map((message) => ({ role: message.role, content: message.content })), [
+    { role: 'user', content: 'turn-59' },
+    { role: 'assistant', content: 'turn-60' },
+    { role: 'user', content: 'turn-61' },
+    { role: 'assistant', content: 'turn-62' },
+  ])
+})
+
+const liveToolActivityScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+Use the shell to print pwd and then echo TOOLCHECK123.
+
+I'll run the command now.
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ $ pwd && echo TOOLCHECK123                                                │
+└────────────────────────────────────────────────────────────────────────────┘
+
+/private/tmp/adhdev-cursor-cli-tool-activity
+TOOLCHECK123
+
+Done.
+
+→ Add a follow-up
+Composer 2 Fast · 4.7%
+/private/tmp/adhdev-cursor-cli-tool-activity
+`
+
+test('cursor parse_output separates visible shell tool calls into terminal bubbles', () => {
+  const parsed = parseOutput({
+    screenText: liveToolActivityScreen,
+    buffer: liveToolActivityScreen,
+    recentBuffer: liveToolActivityScreen,
+    messages: [
+      { role: 'user', content: 'Use the shell to print pwd and then echo TOOLCHECK123.' },
+    ],
+  })
+
+  assert.deepEqual(toDetailedMessages(parsed), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Use the shell to print pwd and then echo TOOLCHECK123.',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: "I'll run the command now.",
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: '$ pwd && echo TOOLCHECK123',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: '/private/tmp/adhdev-cursor-cli-tool-activity\nTOOLCHECK123\nDone.',
+    },
+  ])
+})
+
+const wrappedToolActivityScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+Create and run the verification script.
+
+I'll run it now.
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│ $ cd /private/tmp/adhdev-cursor-cli-tool-activity && python3              │
+│ tmp/adhdev_cli_verify.py in .                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+
+CWD=/private/tmp/adhdev-cursor-cli-tool-activity
+SQUARES=1,4,9,16,25
+
+→ Add a follow-up
+Composer 2 Fast · 4.7% · 1 file edited
+/private/tmp/adhdev-cursor-cli-tool-activity · main
+`
+
+test('cursor parse_output rejoins wrapped shell command boxes into one terminal bubble', () => {
+  const parsed = parseOutput({
+    screenText: wrappedToolActivityScreen,
+    buffer: wrappedToolActivityScreen,
+    recentBuffer: wrappedToolActivityScreen,
+    messages: [
+      { role: 'user', content: 'Create and run the verification script.' },
+    ],
+  })
+
+  assert.deepEqual(toDetailedMessages(parsed), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Create and run the verification script.',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: "I'll run it now.",
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: '$ cd /private/tmp/adhdev-cursor-cli-tool-activity && python3 tmp/adhdev_cli_verify.py',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: '```text\nCWD=/private/tmp/adhdev-cursor-cli-tool-activity\nSQUARES=1,4,9,16,25\n```',
+    },
+  ])
+})
+
 test('cursor detect_status prefers the visible idle prompt over stale composing tail', () => {
   assert.equal(
     detectStatus({ tail: staleComposingTail, screenText: staleComposingScreen, buffer: staleComposingScreen }),
@@ -350,12 +544,15 @@ test('cursor parse_output ignores shell-command/footer noise and rehydrates tabl
 
   const messages = parsed.messages.map((message) => ({ role: message.role, content: message.content }))
   assert.equal(parsed.status, 'idle')
-  assert.deepEqual(messages.map((message) => message.role), ['user', 'assistant'])
+  assert.deepEqual(parsed.messages.map((message) => message.role), ['user', 'assistant', 'assistant', 'assistant'])
   assert.doesNotMatch(messages[0].content, /^\$ python3/m)
   assert.match(messages[1].content, /\| Number \| Square \|/)
-  assert.match(messages[1].content, /```python[\s\S]*def main\(\) -> None:[\s\S]*```/)
-  assert.match(messages[1].content, /```text[\s\S]*SQUARES=1,4,9,16,25[\s\S]*```/)
-  assert.doesNotMatch(messages[1].content, /Auto · 6\.6%|ctrl\+r to review edits/)
+  assert.match(messages[1].content, /```python[\s\S]*def main\(\) -> None:[\s\S]*main\(\)[\s\S]*```/)
+  assert.equal(parsed.messages[2].kind, 'terminal')
+  assert.equal(parsed.messages[2].senderName, 'Terminal')
+  assert.match(parsed.messages[2].content, /^\$ python3 "tmp\/adhdev_cli_verify\.py"/)
+  assert.match(messages[3].content, /```text[\s\S]*SQUARES=1,4,9,16,25[\s\S]*```/)
+  assert.ok(!parsed.messages.some((message) => /Auto · 6\.6%|ctrl\+r to review edits/.test(message.content || '')))
 })
 
 test('cursor parse_output appends a follow-up assistant reply without injecting synthetic user/footer messages', () => {

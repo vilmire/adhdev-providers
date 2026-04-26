@@ -122,7 +122,7 @@ function looksLikeCodeLine(line) {
     const trimmed = sanitize(line).trim();
     if (!trimmed) return false;
     if (isRawOutputLine(trimmed)) return false;
-    return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed);
+    return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed);
 }
 
 function rehydrateAssistantSections(text) {
@@ -186,6 +186,117 @@ function rehydrateAssistantSections(text) {
     return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function createApprovalMessage(activeModal) {
+    const message = String(activeModal?.message || '').trim();
+    const buttons = Array.isArray(activeModal?.buttons)
+        ? activeModal.buttons.map((button) => String(button || '').trim()).filter(Boolean)
+        : [];
+    const lines = ['Approval requested'];
+    if (message) lines.push(message);
+    if (buttons.length > 0) lines.push(buttons.map((label) => `[${label}]`).join(' '));
+    return {
+        role: 'assistant',
+        kind: 'system',
+        senderName: 'System',
+        content: lines.join('\n'),
+    };
+}
+
+function createAssistantMessage(content, kind = 'standard', senderName) {
+    const trimmed = String(content || '').trim();
+    if (!trimmed) return null;
+    return {
+        role: 'assistant',
+        kind,
+        ...(senderName ? { senderName } : {}),
+        content: trimmed,
+    };
+}
+
+function extractBoxBody(line) {
+    const trimmed = sanitize(line).trim();
+    const boxed = trimmed.match(/^[│┃]\s*(.*?)\s*[│┃]$/);
+    return boxed ? boxed[1].trim() : null;
+}
+
+function normalizeTerminalCommandText(text) {
+    return String(text || '')
+        .replace(/\s+\d+(?:\.\d+)?s(?:\s+in\s+.+)?$/i, '')
+        .replace(/\s+in\s+(?:\.|current dir)$/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function parseTerminalCommandLine(line) {
+    const trimmed = sanitize(line).trim();
+    if (!trimmed) return '';
+    const body = extractBoxBody(trimmed) ?? trimmed;
+    if (!/^\$\s+/.test(body)) return '';
+    return normalizeTerminalCommandText(body);
+}
+
+function cleanAssistantSegmentLine(line) {
+    const trimmed = sanitize(line).trim();
+    if (!trimmed || isBoxLine(trimmed) || isApprovalLine(trimmed)) return '';
+    if (parsePromptLine(trimmed) !== null) return '';
+    if (parseTerminalCommandLine(trimmed)) return '';
+    if (isStatusLine(trimmed)) return '';
+    if (isBoxTableRow(trimmed)) return trimmed;
+    if (isFooterLine(trimmed)) {
+        if (/^\/(?:private\/)?(?:tmp|Users)\//.test(trimmed) && !/[·]/.test(trimmed)) return trimmed;
+        return '';
+    }
+    if (/^[│┃].*[│┃]$/.test(trimmed)) {
+        const body = trimmed.slice(1, -1).trim();
+        if (!body || parseTerminalCommandLine(body)) return '';
+        return body.replace(/^[⏺•]\s+/, '').trim();
+    }
+    return trimmed.replace(/^[⏺•]\s+/, '').trim();
+}
+
+function buildAssistantMessagesFromRawLines(lines) {
+    const messages = [];
+    const standardLines = [];
+    const sourceLines = Array.isArray(lines) ? lines : [];
+    const flushStandard = () => {
+        const content = rehydrateAssistantSections(standardLines.join('\n').trim());
+        standardLines.length = 0;
+        const message = createAssistantMessage(content);
+        if (message) messages.push(message);
+    };
+
+    for (let index = 0; index < sourceLines.length; index += 1) {
+        const rawLine = sourceLines[index];
+        const command = parseTerminalCommandLine(rawLine);
+        if (command) {
+            const commandParts = [command];
+            if (extractBoxBody(rawLine) !== null) {
+                for (let next = index + 1; next < sourceLines.length; next += 1) {
+                    const body = extractBoxBody(sourceLines[next]);
+                    if (body === null || parseTerminalCommandLine(sourceLines[next])) break;
+                    if (!body || isApprovalLine(body) || isFooterLine(body)) break;
+                    commandParts.push(body);
+                    index = next;
+                }
+            }
+            flushStandard();
+            messages.push({
+                role: 'assistant',
+                kind: 'terminal',
+                senderName: 'Terminal',
+                content: normalizeTerminalCommandText(commandParts.join(' ')),
+            });
+            continue;
+        }
+        const cleaned = cleanAssistantSegmentLine(rawLine);
+        if (!cleaned) continue;
+        if (standardLines[standardLines.length - 1] !== cleaned) standardLines.push(cleaned);
+    }
+
+    flushStandard();
+    return messages;
+}
+
 function collectMeaningfulLines(lines) {
     const out = [];
     for (const rawLine of lines) {
@@ -241,24 +352,27 @@ function extractVisibleTurn(text, previousMessages) {
             while (assistantStart < lines.length && sanitize(lines[assistantStart]).trim()) assistantStart += 1;
             while (assistantStart < lines.length && !sanitize(lines[assistantStart]).trim()) assistantStart += 1;
             const end = emptyPromptIndex >= assistantStart ? emptyPromptIndex : lines.length;
-            const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
+            const assistantRegion = lines.slice(assistantStart, end);
+            const assistantLines = collectMeaningfulLines(assistantRegion);
             if (assistantLines.length > 0) {
                 return {
                     promptText: '',
                     assistantText: rehydrateAssistantSections(assistantLines.join('\n').trim()),
+                    assistantMessages: buildAssistantMessagesFromRawLines(assistantRegion),
                 };
             }
         }
 
+        const canRecoverAssistantForPendingUser = previousMessages[previousMessages.length - 1]?.role === 'user';
         const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
-        const rawVerifyLines = extractRawVerifySection(lines, end);
+        const rawVerifyLines = canRecoverAssistantForPendingUser ? extractRawVerifySection(lines, end) : [];
         if (rawVerifyLines.length > 0) {
             return {
                 promptText: '',
                 assistantText: rehydrateAssistantSections(rawVerifyLines.join('\n').trim()),
             };
         }
-        const responseBlockLines = extractLastResponseBlock(lines, end);
+        const responseBlockLines = canRecoverAssistantForPendingUser ? extractLastResponseBlock(lines, end) : [];
         if (responseBlockLines.length > 0) {
             return {
                 promptText: '',
@@ -304,7 +418,8 @@ function extractVisibleTurn(text, previousMessages) {
     }
 
     const end = fallbackEmptyPromptIndex >= 0 ? fallbackEmptyPromptIndex : lines.length;
-    const assistantLines = collectMeaningfulLines(lines.slice(assistantStart, end));
+    const assistantRegion = lines.slice(assistantStart, end);
+    const assistantLines = collectMeaningfulLines(assistantRegion);
 
     if (!promptLines.length) {
         const visibleLines = collectMeaningfulLines(lines.slice(0, end));
@@ -319,53 +434,80 @@ function extractVisibleTurn(text, previousMessages) {
     return {
         promptText: promptLines.join(' ').trim(),
         assistantText: rehydrateAssistantSections(assistantLines.join('\n').trim()),
+        assistantMessages: buildAssistantMessagesFromRawLines(assistantRegion),
     };
 }
 
-function buildMessages(previousMessages, promptText, assistantText, partialText) {
+function normalizeMessageObject(message) {
+    const role = message?.role === 'user' ? 'user' : 'assistant';
+    const kind = typeof message?.kind === 'string' && message.kind ? message.kind : 'standard';
+    const senderName = typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined;
+    return {
+        role,
+        kind,
+        ...(senderName ? { senderName } : {}),
+        content: typeof message?.content === 'string' ? message.content : String(message?.content || ''),
+        timestamp: message?.timestamp,
+    };
+}
+
+function messageKey(message) {
+    const normalized = normalizeMessageObject(message);
+    return `${normalized.role}:${normalized.kind}:${normalized.senderName || ''}`;
+}
+
+function appendAssistantMessage(base, candidate) {
+    const message = normalizeMessageObject(candidate);
+    const normalizedContent = normalize(message.content);
+    if (!normalizedContent) return;
+    const last = base[base.length - 1];
+    if (last && messageKey(last) === messageKey(message)) {
+        if (normalize(last.content) !== normalizedContent) last.content = message.content;
+        if (message.senderName) last.senderName = message.senderName;
+        last.kind = message.kind;
+        return;
+    }
+    base.push(message);
+}
+
+function buildMessages(previousMessages, promptText, assistantText, partialText, assistantMessages = []) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
             .filter(message => message && (message.role === 'user' || message.role === 'assistant'))
-            .map(message => ({
-                role: message.role,
-                content: typeof message.content === 'string' ? message.content : String(message.content || ''),
-                timestamp: message.timestamp,
-            }))
+            .map(normalizeMessageObject)
         : [];
 
     if (promptText) {
         const normalizedPrompt = normalize(promptText);
         const last = base[base.length - 1];
         if (!last || last.role !== 'user' || normalize(last.content) !== normalizedPrompt) {
-            base.push({ role: 'user', content: promptText });
+            base.push({ role: 'user', kind: 'standard', content: promptText });
         }
+    }
+
+    const typedAssistantMessages = Array.isArray(assistantMessages) ? assistantMessages.filter(Boolean) : [];
+    if (typedAssistantMessages.length > 0) {
+        for (const message of typedAssistantMessages) appendAssistantMessage(base, message);
+        return base;
     }
 
     const candidateAssistant = assistantText || partialText;
     if (!candidateAssistant) return base;
 
-    const normalizedAssistant = normalize(candidateAssistant);
-    if (!normalizedAssistant) return base;
-
-    const last = base[base.length - 1];
-    if (last && last.role === 'assistant') {
-        if (normalize(last.content) !== normalizedAssistant) last.content = candidateAssistant;
-    } else {
-        base.push({ role: 'assistant', content: candidateAssistant });
-    }
-
+    appendAssistantMessage(base, { role: 'assistant', content: candidateAssistant });
     return base;
 }
 
 function toMessageObjects(messages, status) {
-    return messages.slice(-50).map((message, index, slice) => ({
+    return messages.map((message, index, slice) => ({
         id: `msg_${index}`,
         role: message.role,
         content: typeof message.content === 'string' && message.content.length > 6000
             ? `${message.content.slice(0, 6000)}\n[... truncated]`
             : message.content,
         index,
-        kind: 'standard',
+        kind: message.kind || 'standard',
+        ...(message.senderName ? { senderName: message.senderName } : {}),
         ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'
             ? { meta: { streaming: true } }
             : {}),
@@ -383,9 +525,10 @@ module.exports = function parseOutput(input) {
         ? parseApproval({ buffer: transcript, tail, screenText, rawBuffer: input?.rawBuffer || '' })
         : null;
 
-    const { promptText, assistantText } = status === 'waiting_approval'
-        ? { promptText: '', assistantText: '' }
+    const extractedTurn = status === 'waiting_approval'
+        ? { promptText: '', assistantText: '', assistantMessages: activeModal ? [createApprovalMessage(activeModal)] : [] }
         : extractVisibleTurn(transcript, previousMessages);
+    const { promptText, assistantText, assistantMessages } = extractedTurn;
     const partialText = status === 'generating'
         ? collectMeaningfulLines(splitLines(String(input?.partialResponse || ''))).join('\n').trim()
         : '';
@@ -394,7 +537,7 @@ module.exports = function parseOutput(input) {
         id: 'cli_session',
         status,
         title: 'Cursor CLI',
-        messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText, partialText), status),
+        messages: toMessageObjects(buildMessages(previousMessages, promptText, assistantText, partialText, assistantMessages), status),
         activeModal,
     };
 };
