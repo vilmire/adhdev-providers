@@ -38,7 +38,7 @@ function normalizeForCompare(text) {
 
 // ─── Line classifiers ───────────────────────────
 
-const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
+const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+(?:\s*(?:\d+|W|Wo|W\s+Wo|Working))?$/;
 const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
 
 function isHeaderLine(l) {
@@ -51,7 +51,15 @@ function isFooterLine(l) {
     return /⏎\s+send/i.test(l)
         || /⌃[JTC]\s+/i.test(l)
         || /\b\d+(?:\.\d+)?[KM]?\s+tokens used\b/i.test(l)
-        || /\b\d+% (?:context )?left\b/i.test(l);
+        || /\b\d+% (?:context )?left\b/i.test(l)
+        || /^(?:[›❯]\s*)?gpt-[^\n]*?·\s*\/?\S+/i.test(l);
+}
+
+function isWorkingFragmentLine(l) {
+    const value = String(l || '').trim();
+    if (!value || value === '•') return true;
+    const body = value.replace(/^•\s*/, '').trim();
+    return /^(?:\d{1,2}|W|Wo|Wor|Work|Worki|Workin|Working|orking|rking|king|ing|ng|g)$/i.test(body);
 }
 
 function isWelcomeLine(l) {
@@ -69,7 +77,8 @@ function isWelcomeLine(l) {
 }
 
 function isStatusLine(l) {
-    return /Esc to interrupt/i.test(l)
+    return isWorkingFragmentLine(l)
+        || /Esc to interrupt/i.test(l)
         || /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i.test(l)
         || /^[⠁-⣿]+$/.test(l);
 }
@@ -95,6 +104,25 @@ function isNoise(l) {
         || /^…\s+\+\d+\s+lines\b/i.test(l);
 }
 
+function stripTrailingFooterChrome(line) {
+    return String(line || '')
+        .replace(/\s*[›❯]\s*tab to queue message.*$/i, '')
+        .replace(/\s+[›❯]\s*gpt-[^\n]*?·\s*\/?\S+.*$/i, '')
+        .replace(/\s+gpt-[^\n]*?·\s*\/?\S+.*$/i, '')
+        .trim();
+}
+
+function stripInlineStatusResidue(line) {
+    return stripTrailingFooterChrome(line)
+        .replace(/(LONG_SEQUENCE=.*?\bEND)\s+(?:\d+|W|Wo|W\s+Wo|[•·]?\s*Wor\b.*)$/i, '$1')
+        .replace(/([.!?])\s+(?:W|Wo|Wor|Work|Worki|Workin|Working)$/i, '$1')
+        .replace(/([.!?])\s+\d+$/i, '$1')
+        .replace(/\s+g\s+\d+$/i, '')
+        .replace(/\s+\d+\s+W\s+Wo\s+[•·]?\s*Wor\b.*$/i, '')
+        .replace(/\s+[•·]\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)\b.*$/i, '')
+        .trim();
+}
+
 function isAssistantLead(l) {
     return (/^>\s+/.test(l) || /^•\s+/.test(l))
         && !/^>\s+You are in\b/i.test(l)
@@ -109,9 +137,9 @@ function stripLead(l) {
 // ─── Content cleaning ───────────────────────────
 
 function cleanLine(rawLine) {
-    const l = normalize(rawLine);
+    const l = stripInlineStatusResidue(normalize(rawLine));
     if (!l || isNoise(l)) return '';
-    return l
+    return stripInlineStatusResidue(l
         .replace(/^✔\s+/, '')
         .replace(/^\s*│\s*/, '')
         .replace(/▌.*$/g, '')
@@ -120,7 +148,8 @@ function cleanLine(rawLine) {
         .replace(/\b\d+% (?:context )?left\b.*$/i, '')
         .replace(/\b(?:Working|Thinking|Planning|Searching|Reading|Analyzing|Inspecting|Responding)[^.!?]*$/i, '')
         .replace(/Write tests for @filename.*$/i, '')
-        .trim();
+        .replace(/(LONG_SEQUENCE=.*?\bEND)\s+\d+$/i, '$1')
+        .trim());
 }
 
 function looksLikeCodeLine(line) {
@@ -360,9 +389,11 @@ function classifyCodexLead(line, content) {
 }
 
 function cleanActivityContinuation(rawLine) {
-    const line = normalize(rawLine);
+    const line = stripInlineStatusResidue(normalize(rawLine));
     if (!line || isNoise(line) || isInputLine(line)) return '';
-    return line.replace(/^\s*│\s*/, '').trim();
+    const withoutBranch = stripInlineStatusResidue(line.replace(/^\s*[│└]\s*/, '').trim());
+    if (!withoutBranch || isNoise(withoutBranch)) return '';
+    return stripInlineStatusResidue(line.replace(/^\s*│\s*/, '').trim());
 }
 
 function collectVisibleMessages(text) {
@@ -416,6 +447,24 @@ function collectAssistantText(text) {
     const standard = [...messages].reverse().find(m => m.kind === 'standard' && m.content);
     const preferred = standard || [...messages].reverse().find(m => m.content);
     return preferred ? preferred.content : '';
+}
+
+function messageSetScore(messages) {
+    return (Array.isArray(messages) ? messages : []).reduce((score, message) => {
+        const content = String(message?.content || '');
+        const kindBonus = message?.kind === 'standard' ? 20 : 5;
+        return score + content.length + kindBonus;
+    }, 0);
+}
+
+function chooseRicherMessages(...sets) {
+    return sets.reduce((best, current) => {
+        if (!Array.isArray(current) || current.length === 0) return best;
+        if (!Array.isArray(best) || best.length === 0) return current;
+        if (current.length > best.length) return current;
+        if (current.length === best.length && messageSetScore(current) > messageSetScore(best)) return current;
+        return best;
+    }, []);
 }
 
 // ─── Suppress detection ─────────────────────────
@@ -510,13 +559,19 @@ function parseOutput(input) {
     const scopedScreen = sliceAfterPrompt(screenText, promptScope);
     const scopedBuffer = sliceAfterPrompt(buffer, promptScope);
 
-    // Extract assistant messages from both sources and pick the richer transcript for unstructured prose fallback.
+    // Extract assistant messages from all available views. Prefer the richer source; the
+    // live screen can contain truncated rows or model footer chrome, while recentBuffer
+    // often has the fully rendered final assistant line.
     const screenMessages = collectVisibleMessages(scopedScreen || screenText);
     const bufferMessages = collectVisibleMessages(scopedBuffer || buffer);
-    const currentMessages = screenMessages.length >= bufferMessages.length ? screenMessages : bufferMessages;
+    const recentMessages = collectVisibleMessages(sliceAfterPrompt(tail, promptScope) || tail);
+    const currentMessages = chooseRicherMessages(screenMessages, bufferMessages, recentMessages);
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
-    const assistantText = rehydrateRenderedSections((fromScreen.length >= fromBuffer.length ? fromScreen : fromBuffer) || fromScreen || fromBuffer);
+    const fromRecent = collectAssistantText(sliceAfterPrompt(tail, promptScope) || tail);
+    const assistantText = rehydrateRenderedSections(
+        [fromScreen, fromBuffer, fromRecent].sort((a, b) => String(b || '').length - String(a || '').length)[0] || '',
+    );
     const visibleAssistantText = currentMessages.some(m => m.kind === 'standard')
         ? ''
         : assistantText;

@@ -439,3 +439,84 @@ test('codex parse_output preserves visible tool activity as typed bubbles instea
     ],
   );
 });
+
+test('codex parse_output drops spinner fragments and model footer from completed turns', () => {
+  const prompt = 'Confirm the previous raw verification in one short paragraph. You must mention tmp/adhdev_cli_verify.py, UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, and the square sequence 1,4,9,16,25 without changing the glyphs.';
+  const previous = [
+    { role: 'user', content: 'Initial raw verification task.' },
+    { role: 'assistant', content: 'Ran python3 tmp/adhdev_cli_verify.py\n└ CWD=/tmp/adhdev-cli-verify-codex-cli\nSQUARES=1,4,9,16,25', kind: 'terminal', senderName: 'Terminal' },
+    { role: 'user', content: prompt },
+  ];
+  const screenText = [
+    '› ' + prompt,
+    'gpt-5.4 high · /private/tmp/adhdev-cli-verify-codex-cli',
+    '',
+    '•',
+    '',
+    '• I confirmed that tmp/adhdev_cli_verify.py was created and executed',
+    ' successfully, and its raw output included UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧',
+    ' gpt-5.4 high · /private/tmp/adhdev-cli-verify-codex-cli',
+  ].join('\n');
+  const recentBuffer = [
+    '•Working( • esc to interrupt)›tab to queue message96% context left • ng g 1 W Wo • Wor •Work Worki • Workin • Working',
+    '',
+    '• I confirmed that tmp/adhdev_cli_verify.py was created and executed',
+    '',
+    'successfully, and its raw output included UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧',
+    '',
+    'and the square sequence 1,4,9,16,25 exactly as specified. › gpt-5.4 high · /private/tmp/adhdev-cli-verify-codex-cli',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    recentBuffer,
+    messages: previous,
+  });
+  const contents = result.messages.map(m => m.content);
+  const last = result.messages.at(-1);
+
+  assert.equal(result.status, 'idle');
+  assert.equal(last.role, 'assistant');
+  assert.match(last.content, /tmp\/adhdev_cli_verify\.py/);
+  assert.match(last.content, /UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧/);
+  assert.match(last.content, /1,4,9,16,25/);
+  assert.doesNotMatch(last.content, /gpt-5\.4 high/);
+  assert.doesNotMatch(last.content, /tab to queue message/);
+  assert.ok(!contents.includes('ing'));
+  assert.ok(!contents.includes('3'));
+  assert.ok(!contents.includes('6'));
+});
+
+test('codex parse_output strips inline working residue attached to completed messages', () => {
+  const screenText = [
+    '› Verify raw output.',
+    '• The file is in place. Running the exact command now and preserving the output literally for the final transcript. •Work Worki • Workin • Working •Working 3 •Working Working • orking • rking •king ing • ng g · 1 background terminal running · /ps to vie…',
+    '• The file contents already match the requested source exactly, so I’m leaving it unchanged and running the exact command now. g 6',
+    '',
+    '• Ran python3 tmp/adhdev_cli_verify.py',
+    ' └ LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 END 4 W Wo • Wor •Work Worki • Workin • Working •Working 5 Working',
+    ' └ LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 END W Wo',
+    ' └ ──────────────────────────────────────────────────────────────── W Wo',
+    '',
+    '• RAW VERIFY RESULT ›tab to queue message96% context left',
+    'COMMAND',
+    'python3 tmp/adhdev_cli_verify.py',
+    'OUTPUT',
+    'LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 END',
+    'The file was created and executed successfully. 5',
+    'The previous raw verification succeeded exactly as specified. Working',
+    '›',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: 'Verify raw output.' }],
+  });
+  const joined = result.messages.map(m => m.content).join('\n\n');
+
+  assert.match(joined, /The file is in place\. Running the exact command now/);
+  assert.match(joined, /LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 END/);
+  assert.doesNotMatch(joined, /•Work|Worki|Working Working|tab to queue message|background terminal running|\. g 6|END W Wo|successfully\. 5|specified\. Working|────────────────/);
+});

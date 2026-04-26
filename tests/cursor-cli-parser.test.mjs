@@ -377,3 +377,123 @@ test('cursor parse_output appends a follow-up assistant reply without injecting 
   assert.match(messages[3].content, /tmp\/adhdev_cli_verify\.py/)
   assert.match(messages[3].content, /1,4,9,16,25/)
 })
+
+const rawVerifyCollapsedPromptScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+[Pasted text #1 +19 lines]utput lines, copied literally
+- a short sentence saying whether the file was created and executed
+Do not replace |, braces, quotes, Unicode markers, or the 01..40
+sequence with prettier formatting.
+If you need permission to write the file or run the command, request
+it.
+
+스크립트를 생성한 뒤 python3 tmp/adhdev_cli_verify.py를 실행합니다.
+
+$ cd /private/tmp/adhdev-cursor-cli-quality-verify && python3
+tmp/adhdev_cli_verify.py 1.4s
+CWD=/tmp/adhdev-cursor-cli-quality-verify
+SQUARES=1,4,9,16,25
+… truncated (6 more lines) · ctrl+o to expand
+
+RAW VERIFY RESULT
+
+실행한 명령(그대로)
+python3 tmp/adhdev_cli_verify.py
+(작업 디렉터리: /private/tmp/adhdev-cursor-cli-quality-verify)
+
+명령 표준출력(그대로 복사)
+
+CWD=/tmp/adhdev-cursor-cli-quality-verify
+SQUARES=1,4,9,16,25
+JSON={"squares":[1,4,9,16,25],"ok":true}
+UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧
+GLYPHS=⏺ ⎿ ✢ ◆ ◇ ↳ ✓ ⚠ ❌ 🜁 𓂀 한글
+PIPE_ROW=left|middle|right
+LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18
+19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END
+
+상태
+tmp/adhdev_cli_verify.py를 지정한 소스로 생성했고, 위 명령으로 실행해 종료
+코드 0으로 끝났습니다.
+
+→ Add a follow-up
+
+Composer 2 Fast · 4.7% · 1 file edited
+ctrl+r to review edits
+/private/tmp/adhdev-cursor-cli-quality-verify · main
+`
+
+test('cursor parse_output recovers raw verify result when Cursor collapses the pasted prompt', () => {
+  const parsed = parseOutput({
+    screenText: rawVerifyCollapsedPromptScreen,
+    buffer: rawVerifyCollapsedPromptScreen,
+    recentBuffer: rawVerifyCollapsedPromptScreen,
+    messages: [
+      {
+        role: 'user',
+        content: 'Please verify raw CLI transcript fidelity in this workspace.\nDo not beautify, simplify, summarize away, convert to a presentation layout, or normalize glyphs.',
+      },
+    ],
+  })
+
+  const messages = parsed.messages.map((message) => ({ role: message.role, content: message.content }))
+  assert.equal(parsed.status, 'idle')
+  assert.deepEqual(messages.map((message) => message.role), ['user', 'assistant'])
+  assert.match(messages[1].content, /CWD=\/tmp\/adhdev-cursor-cli-quality-verify/)
+  assert.match(messages[1].content, /JSON=\{"squares":\[1,4,9,16,25\],"ok":true\}/)
+  assert.match(messages[1].content, /UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧/)
+  assert.match(messages[1].content, /GLYPHS=⏺ ⎿ ✢ ◆ ◇ ↳ ✓ ⚠ ❌ 🜁 𓂀 한글/)
+  assert.match(messages[1].content.replace(/\s+/g, ' '), /LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END/)
+  assert.doesNotMatch(messages[0].content, /코드 0으로 끝났습니다/)
+})
+
+const followupWithStaleComposingScreen = `
+Cursor Agent
+v2026.04.17-787b533
+hint: /auto-run to skip all approvals
+
+Confirm the previous raw verification in one short paragraph. You must
+mention tmp/adhdev_cli_verify.py,
+UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, and the square sequence
+1,4,9,16,25 without changing the glyphs.
+
+의도한 raw CLI 사본 검
+⠜⠃ Composing 51 tokens
+⠜⠃ Composing 57 tokens
+⠰⠃ Composing 57 tokens
+이전 점검을 요약하면, tmp/adhdev_cli_verify.py를 만들어 python3
+tmp/adhdev_cli_verify.py로 돌렸을 때
+UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧가 그대로 출력됐고, 정사각 수 열
+SQUARES=1,4,9,16,25와 JSON 쪽 1,4,9,16,25도 그 문자 그대로 나왔으며, 이는
+의도한 raw CLI 사본 검증이었습니다.
+
+→ Add a follow-up
+
+Composer 2 Fast · 4.7% · 1 file edited
+ctrl+r to review edits
+/private/tmp/adhdev-cursor-cli-quality-verify · main
+`
+
+test('cursor parse_output drops stale composing spinner lines from completed follow-up replies', () => {
+  const parsed = parseOutput({
+    screenText: followupWithStaleComposingScreen,
+    buffer: followupWithStaleComposingScreen,
+    recentBuffer: followupWithStaleComposingScreen,
+    messages: [
+      { role: 'user', content: 'Please verify raw CLI transcript fidelity in this workspace.' },
+      { role: 'assistant', content: 'RAW VERIFY RESULT\nUNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧' },
+      { role: 'user', content: 'Confirm the previous raw verification in one short paragraph. You must mention tmp/adhdev_cli_verify.py, UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, and the square sequence 1,4,9,16,25 without changing the glyphs.' },
+    ],
+  })
+
+  const messages = parsed.messages.map((message) => ({ role: message.role, content: message.content }))
+  assert.equal(parsed.status, 'idle')
+  assert.deepEqual(messages.map((message) => message.role), ['user', 'assistant', 'user', 'assistant'])
+  assert.match(messages[3].content, /tmp\/adhdev_cli_verify\.py/)
+  assert.match(messages[3].content, /UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧/)
+  assert.match(messages[3].content, /1,4,9,16,25/)
+  assert.doesNotMatch(messages[3].content, /Composing \d+ tokens/)
+})

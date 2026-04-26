@@ -34,9 +34,13 @@ function lineMatchesPrompt(line, promptText) {
     const normalizedPrompt = normalize(promptText).toLowerCase();
     if (!normalizedLine || !normalizedPrompt) return false;
     if (normalizedLine === normalizedPrompt) return true;
-    const tokens = tokenizePrompt(promptText);
-    const matches = tokens.filter((token) => normalizedLine.includes(token)).length;
-    return matches >= Math.min(tokens.length, 3);
+    if (normalizedLine.length >= 24 && normalizedPrompt.startsWith(normalizedLine)) return true;
+    const promptTokens = tokenizePrompt(promptText);
+    const lineTokens = tokenizePrompt(line);
+    if (lineTokens.length === 0 || promptTokens.length === 0) return false;
+    const promptTokenSet = new Set(promptTokens);
+    const matches = lineTokens.filter((token) => promptTokenSet.has(token)).length;
+    return matches >= 4 && matches / lineTokens.length >= 0.75;
 }
 
 function parsePromptLine(line) {
@@ -77,7 +81,11 @@ function isStatusLine(trimmed) {
     return !trimmed
         || /^[\u2800-\u28ff\s]+$/.test(trimmed)
         || /esc to (cancel|interrupt|stop)/i.test(trimmed)
-        || /(thinking|processing|generating|working|analyzing|planning|reading|searching|inspecting)/i.test(trimmed);
+        || /(thinking|processing|generating|working|analyzing|planning|reading|searching|inspecting|composing)/i.test(trimmed);
+}
+
+function isRawOutputLine(trimmed) {
+    return /^[A-Z][A-Z0-9_]*=/.test(trimmed);
 }
 
 function isApprovalLine(trimmed) {
@@ -113,7 +121,7 @@ function toMarkdownTable(lines) {
 function looksLikeCodeLine(line) {
     const trimmed = sanitize(line).trim();
     if (!trimmed) return false;
-    if (/^(?:CWD=|SQUARES=|JSON=)/.test(trimmed)) return false;
+    if (isRawOutputLine(trimmed)) return false;
     return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed);
 }
 
@@ -154,11 +162,16 @@ function rehydrateAssistantSections(text) {
             continue;
         }
 
-        if (/^(?:CWD=|SQUARES=|JSON=)/.test(trimmed)) {
+        if (isRawOutputLine(trimmed)) {
             const outputLines = [];
-            while (index < lines.length && (!sanitize(lines[index]).trim() || /^(?:CWD=|SQUARES=|JSON=)/.test(sanitize(lines[index]).trim()))) {
-                outputLines.push(sanitize(lines[index]));
-                index += 1;
+            while (index < lines.length) {
+                const current = sanitize(lines[index]).trim();
+                if (!current || isRawOutputLine(current) || (/^\d/.test(current) && outputLines.length > 0)) {
+                    outputLines.push(sanitize(lines[index]));
+                    index += 1;
+                    continue;
+                }
+                break;
             }
             out.push('```text');
             out.push(...outputLines);
@@ -182,6 +195,25 @@ function collectMeaningfulLines(lines) {
         if (out[out.length - 1] !== cleaned) out.push(cleaned);
     }
     return out;
+}
+
+function extractRawVerifySection(lines, end) {
+    for (let i = end - 1; i >= 0; i--) {
+        const trimmed = sanitize(lines[i]).trim();
+        if (/^RAW VERIFY RESULT$/i.test(trimmed)) {
+            const assistantLines = collectMeaningfulLines(lines.slice(i, end));
+            if (assistantLines.length > 0) return assistantLines;
+        }
+    }
+    return [];
+}
+
+function extractLastResponseBlock(lines, end) {
+    let blockEnd = end;
+    while (blockEnd > 0 && !sanitize(lines[blockEnd - 1]).trim()) blockEnd -= 1;
+    let blockStart = blockEnd;
+    while (blockStart > 0 && sanitize(lines[blockStart - 1]).trim()) blockStart -= 1;
+    return collectMeaningfulLines(lines.slice(blockStart, blockEnd));
 }
 
 function extractVisibleTurn(text, previousMessages) {
@@ -216,6 +248,22 @@ function extractVisibleTurn(text, previousMessages) {
                     assistantText: rehydrateAssistantSections(assistantLines.join('\n').trim()),
                 };
             }
+        }
+
+        const end = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
+        const rawVerifyLines = extractRawVerifySection(lines, end);
+        if (rawVerifyLines.length > 0) {
+            return {
+                promptText: '',
+                assistantText: rehydrateAssistantSections(rawVerifyLines.join('\n').trim()),
+            };
+        }
+        const responseBlockLines = extractLastResponseBlock(lines, end);
+        if (responseBlockLines.length > 0) {
+            return {
+                promptText: '',
+                assistantText: rehydrateAssistantSections(responseBlockLines.join('\n').trim()),
+            };
         }
     }
 

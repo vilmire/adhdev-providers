@@ -117,6 +117,7 @@ module.exports = function detectStatus(input) {
     if (hasApproval(lines)) return 'waiting_approval';
     if (hasGenerating(lines, recentRaw)) return 'generating';
     if (hasIdle(screen || tail)) return 'idle';
+    if (tail && hasIdle(tail)) return 'idle';
 
     // Tail-only fallbacks
     if (GENERATING_ESC_RE.test(tail)) return 'generating';
