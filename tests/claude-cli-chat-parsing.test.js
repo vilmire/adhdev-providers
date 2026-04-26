@@ -1143,3 +1143,41 @@ test('claude-cli parse_output normalizes simple box tables and wraps trailing py
   assert.match(assistant.content, /\| Number \| Square \|\n\| --- \| --- \|\n\| 1 \| 1 \|\n\| 2 \| 4 \|/);
   assert.match(assistant.content, /```python\nimport json\nimport os\nnums = \[1, 2, 3, 4, 5\]/);
 });
+
+test('claude-cli parse_output drops wrapped command-output suffix fragments without dropping the final answer', () => {
+  const screenText = [
+    'rowUp|ArrowDown|ArrowLeft|ArrowRight\'',
+    '/tmp/adhdev-live-snake-claude/src/snake.js && echo "arrow keys:',
+    '… +64 lines (ctrl+o to expand)',
+    '⏺ Now validating the files exist and have content:',
+    '⏺ Bash(for f in /tmp/adhdev-live-snake-claude/index.html',
+    '/tmp/adhdev-live-snake-claude/src/snake.js',
+    '/tmp/adhdev-live-snake-claude/README.md; do',
+    'echo "=== $f ($(wc -l < "$f") lines) ==="',
+    'done)',
+    '⎿  === /tmp/adhdev-live-snake-claude/index.html (72 lines) ===',
+    '72',
+    's) ===',
+    '⏺ All files created and validated.',
+    'SNAKE_GAME_DONE',
+    'FILES=index.html,src/snake.js,README.md',
+    'GLYPHS=⏺ ⎿ ⚠ ❌ 𓂀 한글',
+    '',
+    '❯',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: 'Create a tiny browser Snake game.' }],
+  });
+
+  const messages = toMessages(result);
+  const text = messages.map((message) => message.content).join('\n');
+  assert.match(text, /SNAKE_GAME_DONE/);
+  assert.match(text, /FILES=index\.html,src\/snake\.js,README\.md/);
+  assert.match(text, /GLYPHS=⏺ ⎿ ⚠ ❌ 𓂀 한글/);
+  assert.doesNotMatch(text, /\ns\) ===\n/);
+});

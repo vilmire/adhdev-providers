@@ -383,6 +383,54 @@ function dedupeMessages(messages) {
   }));
 }
 
+function isStableAssistantAnswer(message) {
+  const normalized = normalizeMessage(message);
+  return normalized.role === 'assistant'
+    && normalized.kind === 'standard'
+    && String(normalized.content || '').length >= 80;
+}
+
+function isAssistantReplayAfterStableAssistant(merged, cursor, message) {
+  const normalized = normalizeMessage(message);
+  if (normalized.role !== 'assistant') return false;
+  if (!Array.isArray(merged) || cursor <= 0) return false;
+
+  // Hermes' terminal viewport can replay older activity rows after a completed
+  // assistant answer when the scrollback reflows. Once a substantial standard
+  // assistant answer is already the latest matched message, any further
+  // assistant-only rows before the next user turn are stale viewport replay,
+  // not a new user-visible turn. Real repeated commands after a new user turn
+  // are still preserved because the previous merged row is then the user
+  // message, not the stable assistant.
+  return isStableAssistantAnswer(merged[cursor - 1]);
+}
+
+function collapseReplayedAssistantHistory(messages) {
+  const source = dedupeMessages(Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const collapsed = [];
+  let afterStableAssistant = false;
+
+  for (const message of source) {
+    const normalized = normalizeMessage(message);
+    if (normalized.role === 'user') {
+      collapsed.push(normalized);
+      afterStableAssistant = false;
+      continue;
+    }
+
+    if (afterStableAssistant && normalized.role === 'assistant') {
+      continue;
+    }
+
+    collapsed.push(normalized);
+    afterStableAssistant = isStableAssistantAnswer(normalized);
+  }
+
+  return dedupeMessages(collapsed);
+}
+
 function mergeMessageHistories(baseMessages, currentMessages) {
   const merged = dedupeMessages(Array.isArray(baseMessages) ? baseMessages : [])
     .map(normalizeMessage)
@@ -406,6 +454,10 @@ function mergeMessageHistories(baseMessages, currentMessages) {
     if (matchIndex >= 0) {
       merged[matchIndex] = chooseMoreCompleteMessage(merged[matchIndex], message);
       cursor = matchIndex + 1;
+      continue;
+    }
+
+    if (isAssistantReplayAfterStableAssistant(merged, cursor, message)) {
       continue;
     }
 
@@ -659,7 +711,7 @@ module.exports = function parseOutput(input) {
   });
 
   const historyState = extractHistoryState(transcript || screenText);
-  const baseMessages = trimMessagesForHistoryState(
+  const baseMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     Array.isArray(input?.messages)
       ? input.messages
           .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
@@ -671,8 +723,8 @@ module.exports = function parseOutput(input) {
           }))
       : [],
     historyState,
-  );
-  const transcriptMessages = trimMessagesForHistoryState(
+  ));
+  const transcriptMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     parseMessages(transcript || '')
       .map((message) => ({
         role: message.role,
@@ -681,8 +733,8 @@ module.exports = function parseOutput(input) {
         content: String(message.content || ''),
       })),
     historyState,
-  );
-  const screenMessages = trimMessagesForHistoryState(
+  ));
+  const screenMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     parseMessages(screenText || '')
       .map((message) => ({
         role: message.role,
@@ -691,7 +743,7 @@ module.exports = function parseOutput(input) {
         content: String(message.content || ''),
       })),
     historyState,
-  );
+  ));
   const primaryRawMessages = transcriptMessages.length >= screenMessages.length
     ? transcriptMessages
     : screenMessages;
@@ -715,15 +767,15 @@ module.exports = function parseOutput(input) {
   const activeModal = parsedApproval || null;
   const effectiveStatus = activeModal ? 'waiting_approval' : status;
   const finalMessages = activeModal
-    ? dedupeMessages([...messages, createApprovalMessage(activeModal)])
-    : messages;
+    ? dedupeMessages([...collapseReplayedAssistantHistory(messages), createApprovalMessage(activeModal)])
+    : collapseReplayedAssistantHistory(messages);
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
 
   return {
     id: 'cli_session',
     title: 'Hermes Agent',
-    status,
+    status: effectiveStatus,
     model,
     messages: finalMessages,
     activeModal,

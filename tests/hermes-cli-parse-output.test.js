@@ -1104,3 +1104,50 @@ test('hermes-cli parseOutput collapses a polluted follow-up history into one pri
     { role: 'assistant', content: finalAnswer },
   ]);
 });
+
+test('hermes-cli parseOutput does not append replayed activity rows after a stable assistant answer', () => {
+  const finalAnswer = [
+    'Created the tiny browser Snake game in this workspace:',
+    '/tmp/adhdev-live-snake-hermes/index.html',
+    '/tmp/adhdev-live-snake-hermes/src/snake.js',
+    '/tmp/adhdev-live-snake-hermes/README.md',
+    'Validation command:',
+    "python3 - <<'PY'",
+    'print(\'validation ok\')',
+    'PY',
+    'Exact output:',
+    'validation ok',
+    'SNAKE_GAME_DONE',
+    'FILES=index.html,src/snake.js,README.md',
+    'GLYPHS=⏺ ⎿ ⚠ ❌ 𓂀 한글',
+  ].join('\n');
+  const validationCommand = "$ python3 - <<'PY'";
+  const baseMessages = [
+    { role: 'user', content: 'Create a tiny browser Snake game in THIS workspace. ... (+9 more lines)' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: validationCommand },
+    { role: 'assistant', content: finalAnswer },
+  ];
+  const buffer = [
+    '┊ 💻 $ python3 - <<\'PY\'',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    finalAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '┊ 💻 $ python3 - <<\'PY\'',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    finalAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: buffer,
+    buffer,
+    messages: baseMessages,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: 'Create a tiny browser Snake game in THIS workspace. ... (+9 more lines)' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: validationCommand },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
+  ]);
+});

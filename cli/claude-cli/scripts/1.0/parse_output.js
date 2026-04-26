@@ -230,6 +230,7 @@ function isNoiseLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return false;
     if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
+    if (/^[a-z]\)\s*=+\s*$/i.test(trimmed)) return true;
     if (/^(?:Levitating|Metamorphosing|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
     if (/^[A-Za-z]$/.test(trimmed)) return true;
     if (/^[·•✻✶✳✢✽…]$/.test(trimmed)) return true;
