@@ -299,7 +299,13 @@ function messagesMatch(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
   if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
-  const duplicateMinLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 48;
+  // Hermes can expose the same submitted prompt through three sources at once:
+  // committed adapter history, truncated terminal scrollback, and a fuller visible
+  // screen prompt. Use the same short-prefix tolerance as assistant prose for
+  // standard user prompts so those variants merge into the most complete prompt.
+  const duplicateMinLength = a.kind === 'standard'
+    ? (a.role === 'assistant' || a.role === 'user' ? 8 : 48)
+    : 48;
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
   if (comparableContentsMatch(aComparable, bComparable, duplicateMinLength)) return true;

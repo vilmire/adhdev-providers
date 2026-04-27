@@ -157,6 +157,39 @@ test('hermes-cli parseOutput recognizes separator-bounded > rows as user prompt 
   ]);
 });
 
+test('hermes-cli parseOutput collapses committed and viewport variants of the same multiline starting prompt', () => {
+  const firstLine = '현재 여러 기기에서 동시접속 시 문제될만한 사항이 있는지 점검필요.';
+  const secondLine = '스탠드얼론이나 p2p 모든경로 확인필요';
+  const fullPrompt = `${firstLine} ${secondLine}`;
+  const assistantBox = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    '확인하겠습니다.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+  const screenText = [
+    '──────────────────────────────────────────────────────────────────────────────',
+    `> ${fullPrompt}`,
+    '──────────────────────────────────────────────────────────────────────────────',
+    assistantBox,
+  ].join('\n');
+  const buffer = [
+    `● ${firstLine}`,
+    assistantBox,
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer,
+    messages: [{ role: 'user', content: fullPrompt }],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: fullPrompt },
+    { role: 'assistant', content: '확인하겠습니다.' },
+  ]);
+});
+
 test('hermes-cli parseOutput preserves prior transcript messages when the current turn buffer only contains the new turn', () => {
   const screenText = [
     '● Please do all of the following in this workspace: (+11 lines)',
