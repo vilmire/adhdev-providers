@@ -425,6 +425,18 @@ function normalizeActivityBody(parts) {
   return stripActivityTransientSuffix(joinActivityParts(parts));
 }
 
+const ACTIVITY_SOFT_WRAP_MIN_COLUMNS = 64;
+
+function isLikelySoftWrappedActivityPhysicalLine(rawLine) {
+  const line = cleanAnsi(rawLine).replace(/\s+$/u, '');
+  if (!line) return false;
+  // Hermes activity continuation support is for terminal soft-wraps: the prior
+  // physical row should have reached close to the terminal edge. Do not attach
+  // arbitrary prose after a short completed activity row; otherwise a final
+  // answer can be swallowed into the preceding terminal bubble.
+  return line.length >= ACTIVITY_SOFT_WRAP_MIN_COLUMNS;
+}
+
 function parseActivityMessage(line, continuationLines = []) {
   const head = parseActivityHead(line);
   if (!head) return null;
@@ -485,6 +497,43 @@ function isStableAssistantAnswer(message) {
     && String(normalized.content || '').length >= 80;
 }
 
+function compactIndexToRawIndex(rawText, compactIndex) {
+  const source = String(rawText || '');
+  let compactCursor = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    if (/\s/u.test(source[index])) continue;
+    if (compactCursor === compactIndex) return index;
+    compactCursor += 1;
+  }
+  return -1;
+}
+
+function trimStableAssistantTextFromActivityMessage(message, stableAssistant) {
+  const normalized = normalizeMessage(message);
+  const kind = normalized.kind || 'standard';
+  if (normalized.role !== 'assistant' || (kind !== 'terminal' && kind !== 'tool') || !isStableAssistantAnswer(stableAssistant)) {
+    return normalized;
+  }
+
+  const stableCompact = getCompactComparableContent(stableAssistant);
+  if (stableCompact.length < 16) return normalized;
+
+  const rawContent = String(normalized.content || '');
+  const rawCompact = rawContent.replace(/\s+/g, '');
+  const compactIndex = rawCompact.indexOf(stableCompact);
+  if (compactIndex <= 0) return normalized;
+
+  const rawIndex = compactIndexToRawIndex(rawContent, compactIndex);
+  if (rawIndex <= 0) return normalized;
+
+  const trimmedContent = stripActivityTransientSuffix(rawContent.slice(0, rawIndex));
+  if (!trimmedContent) return normalized;
+  return {
+    ...normalized,
+    content: trimmedContent,
+  };
+}
+
 function buildReplayMessageSignature(message) {
   const normalized = normalizeMessage(message);
   const content = getComparableContent(normalized) || getCompactComparableContent(normalized);
@@ -528,7 +577,7 @@ function collapseReplayedAssistantHistory(messages) {
   const seenAssistantSignatures = new Set();
 
   for (const message of source) {
-    const normalized = normalizeMessage(message);
+    let normalized = normalizeMessage(message);
     if (normalized.role === 'user') {
       collapsed.push(normalized);
       stableAssistant = null;
@@ -536,6 +585,7 @@ function collapseReplayedAssistantHistory(messages) {
       continue;
     }
 
+    normalized = trimStableAssistantTextFromActivityMessage(normalized, stableAssistant);
     const replaySignature = normalized.role === 'assistant' ? buildReplayMessageSignature(normalized) : '';
     if (
       stableAssistant
@@ -784,7 +834,11 @@ function parseMessages(text) {
       while (nextIndex < lines.length) {
         const nextRawLine = lines[nextIndex];
         const nextLine = normalize(nextRawLine);
+        const previousActivityPhysicalLine = continuationLines.length > 0
+          ? continuationLines[continuationLines.length - 1]
+          : rawLine;
         if (!nextLine) break;
+        if (!isLikelySoftWrappedActivityPhysicalLine(previousActivityPhysicalLine)) break;
         if (parseActivityHead(nextRawLine)
           || /^\p{Emoji}\uFE0F?\s+/u.test(nextRawLine.trimStart())
           || /^●\s+/.test(nextLine)

@@ -865,6 +865,104 @@ test('hermes-cli parseOutput surfaces live tool activity and progress bubbles du
   assert.deepEqual(toDetailedMessages(staleBufferResult), expectedMessages);
 });
 
+test('hermes-cli parseOutput does not absorb a bare final answer into the previous short terminal activity row', () => {
+  const prompt = 'Summarize the just-completed work.';
+  const finalAnswer = [
+    '작업 반영 완료했습니다.',
+    '',
+    '변경 요약:',
+    '- Dockview 탭을 드래그하면 floating panel로 전환됩니다.',
+    '',
+    '검증 완료:',
+    '- npm run test -w oss/packages/web-core',
+  ].join('\n');
+  const screenText = [
+    `● ${prompt}`,
+    ' ┊ 💻 npm run test -w oss/packages/web-core',
+    '작업 반영 완료했습니다.',
+    '변경 요약:',
+    '- Dockview 탭을 드래그하면 floating panel로 전환됩니다.',
+    '검증 완료:',
+    '- npm run test -w oss/packages/web-core',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: finalAnswer },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: finalAnswer,
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: 'npm run test -w oss/packages/web-core',
+    },
+  ]);
+});
+
+test('hermes-cli parseOutput trims already-retained final-answer text from a polluted terminal activity bubble', () => {
+  const prompt = 'Summarize the just-completed work.';
+  const finalAnswer = [
+    '작업 반영 완료했습니다.',
+    '',
+    '변경 요약:',
+    '- Dockview 탭을 드래그하면 floating panel로 전환됩니다.',
+    '',
+    '검증 완료:',
+    '- npm run test -w oss/packages/web-core',
+  ].join('\n');
+  const pollutedTerminal = 'npm run test -w oss/packages/web-core작업 반영 완료했습니다.변경 요약:- Dockview 탭을 드래그하면 floating panel로 전환됩니다.검증 완료:- npm run test -w oss/packages/web-core';
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: finalAnswer },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: pollutedTerminal },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: finalAnswer,
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: 'npm run test -w oss/packages/web-core',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput rejoins wrapped activity rows before classifying tool bubbles', () => {
   const screenText = [
     '● Check repo status.',
