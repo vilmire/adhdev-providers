@@ -1,6 +1,6 @@
 'use strict';
 
-const { buildFromBufferFallback } = require('./screen_helpers.js');
+const { getScreen, buildFromBufferFallback } = require('./screen_helpers.js');
 
 const LEGACY_BUTTONS = [
   'Allow once',
@@ -30,7 +30,11 @@ function normalizeLine(line) {
 }
 
 function getVisibleLines(input) {
-  const screen = buildFromBufferFallback(input);
+  // Approval detection must only use the current visible screen.
+  // Falling back to the buffer risks false positives from old resolved
+  // approval dialogs that are still present in the terminal scrollback.
+  const screen = getScreen(input);
+  if (!screen || screen.lineCount === 0) return [];
   const lines = Array.isArray(screen?.lines) ? screen.lines : [];
   return lines
     .map((line) => normalizeLine(line?.text || line?.trimmed || line || ''))
