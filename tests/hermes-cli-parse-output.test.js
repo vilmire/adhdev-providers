@@ -46,6 +46,34 @@ test('hermes-cli parseOutput handles long tool-heavy histories without re-normal
 });
 
 
+test('hermes-cli parseOutput does not drop a distinct final assistant answer after a long interim bubble', () => {
+  const interim = 'Need also maybe adhdev-release? no. Need check status/diff. Also need if skill patch changed? '.repeat(2).trim();
+  const final = [
+    '커밋까지 완료했습니다.',
+    '',
+    '생성된 커밋:',
+    '- OSS submodule: 6b24cd5 fix(daemon-core): keep chat tail hot on committed output',
+    '- Top/cloud repo: c3e752a9 fix(cloud): update oss chat tail hot metadata',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '커밋까지 진행해둬' },
+      { role: 'assistant', content: interim },
+      { role: 'assistant', content: final },
+      { role: 'assistant', content: final },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '커밋까지 진행해둬' },
+    { role: 'assistant', content: interim },
+    { role: 'assistant', content: final },
+  ]);
+});
+
 test('hermes-cli treats a separator-bounded > row as the live input prompt region', () => {
   const screenText = [
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',

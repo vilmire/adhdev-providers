@@ -485,19 +485,38 @@ function isStableAssistantAnswer(message) {
     && String(normalized.content || '').length >= 80;
 }
 
-function isAssistantReplayAfterStableAssistant(merged, cursor, message) {
+function buildReplayMessageSignature(message) {
   const normalized = normalizeMessage(message);
-  if (normalized.role !== 'assistant') return false;
-  if (!Array.isArray(merged) || cursor <= 0) return false;
+  const content = getComparableContent(normalized) || getCompactComparableContent(normalized);
+  if (!content) return '';
+  return [
+    normalized.role || '',
+    normalized.kind || 'standard',
+    normalized.senderName || '',
+    content,
+  ].join('\u0000');
+}
 
-  // Hermes' terminal viewport can replay older activity rows after a completed
-  // assistant answer when the scrollback reflows. Once a substantial standard
-  // assistant answer is already the latest matched message, any further
-  // assistant-only rows before the next user turn are stale viewport replay,
-  // not a new user-visible turn. Real repeated commands after a new user turn
-  // are still preserved because the previous merged row is then the user
-  // message, not the stable assistant.
-  return isStableAssistantAnswer(merged[cursor - 1]);
+function isReplayedAssistantAnswerAfterStableAssistant(message, stableAnswer) {
+  const normalized = normalizeMessage(message);
+  const stable = normalizeMessage(stableAnswer);
+  if (normalized.role !== 'assistant' || stable.role !== 'assistant') return false;
+  if ((normalized.kind || 'standard') !== 'standard' || (stable.kind || 'standard') !== 'standard') return false;
+
+  const content = getComparableContent(normalized);
+  const stableContent = getComparableContent(stable);
+  if (!content || !stableContent) return false;
+  if (content === stableContent) return true;
+
+  const shorterLength = Math.min(content.length, stableContent.length);
+  return shorterLength >= 80 && (content.startsWith(stableContent) || stableContent.startsWith(content));
+}
+
+function isAssistantReplayAfterStableAssistant(merged, cursor, message) {
+  if (!Array.isArray(merged) || cursor <= 0) return false;
+  const stable = merged[cursor - 1];
+  if (!isStableAssistantAnswer(stable)) return false;
+  return isReplayedAssistantAnswerAfterStableAssistant(message, stable);
 }
 
 function collapseReplayedAssistantHistory(messages) {
@@ -505,22 +524,34 @@ function collapseReplayedAssistantHistory(messages) {
     .map(normalizeMessage)
     .filter((message) => message.content);
   const collapsed = [];
-  let afterStableAssistant = false;
+  let stableAssistant = null;
+  const seenAssistantSignatures = new Set();
 
   for (const message of source) {
     const normalized = normalizeMessage(message);
     if (normalized.role === 'user') {
       collapsed.push(normalized);
-      afterStableAssistant = false;
+      stableAssistant = null;
+      seenAssistantSignatures.clear();
       continue;
     }
 
-    if (afterStableAssistant && normalized.role === 'assistant') {
+    const replaySignature = normalized.role === 'assistant' ? buildReplayMessageSignature(normalized) : '';
+    if (
+      stableAssistant
+      && (
+        isReplayedAssistantAnswerAfterStableAssistant(normalized, stableAssistant)
+        || (replaySignature && seenAssistantSignatures.has(replaySignature))
+      )
+    ) {
       continue;
     }
 
     collapsed.push(normalized);
-    afterStableAssistant = isStableAssistantAnswer(normalized);
+    if (replaySignature) seenAssistantSignatures.add(replaySignature);
+    if (isStableAssistantAnswer(normalized)) {
+      stableAssistant = normalized;
+    }
   }
 
   return dedupeMessages(collapsed);
