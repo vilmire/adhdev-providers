@@ -18,6 +18,33 @@ function toDetailedMessages(result) {
 }
 
 
+test('hermes-cli parseOutput handles long tool-heavy histories without re-normalizing quadratically', () => {
+  const priorMessages = Array.from({ length: 2600 }, (_, index) => ({
+    role: 'assistant',
+    kind: 'tool',
+    senderName: 'Tool',
+    content: `tool output line `.repeat(40) + `(cached) reasoning... ${index}`,
+  }));
+  const screenText = [
+    '🔧 tool output line '.repeat(40) + '(cached) reasoning... 2600',
+    '❯',
+  ].join('\n');
+
+  const started = process.hrtime.bigint();
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: priorMessages,
+  });
+  const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+
+  assert.equal(result.messages.length, 2600);
+  assert.ok(
+    elapsedMs < 750,
+    `expected long-history parse to stay under 750ms, took ${elapsedMs.toFixed(1)}ms`,
+  );
+});
+
 
 test('hermes-cli treats a separator-bounded > row as the live input prompt region', () => {
   const screenText = [

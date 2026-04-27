@@ -122,6 +122,13 @@ const TRANSIENT_STATUS_WORDS = [
 ];
 
 const TRANSIENT_STATUS_PATTERN = TRANSIENT_STATUS_WORDS.join('|');
+const ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE = new RegExp(`\\s*\\([^\\n()]{1,32}\\)\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu');
+const ACTIVITY_TRANSIENT_SECONDS_WORD_RE = new RegExp(`\\s+\\d+(?:\\.\\d+)?s\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu');
+const ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE = /\s+\d+(?:\.\d+)?s\s*$/u;
+const ACTIVITY_TRAILING_DIVIDER_RE = /\s*[│┊]\s*$/u;
+const normalizedMessageCache = new WeakMap();
+const comparableContentCache = new WeakMap();
+const compactComparableContentCache = new WeakMap();
 
 function stripTransientPromptSuffix(text) {
   const source = String(text || '').trim();
@@ -161,16 +168,26 @@ function stripActivityTransientSuffix(text) {
   if (!source) return '';
 
   source = source
-    .replace(new RegExp(`\\s*\\([^\\n()]{1,32}\\)\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu'), '')
-    .replace(new RegExp(`\\s+\\d+(?:\\.\\d+)?s\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu'), '')
-    .replace(/\s+\d+(?:\.\d+)?s\s*$/u, '')
-    .replace(/\s*[│┊]\s*$/u, '')
+    .replace(ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE, '')
+    .replace(ACTIVITY_TRANSIENT_SECONDS_WORD_RE, '')
+    .replace(ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE, '')
+    .replace(ACTIVITY_TRAILING_DIVIDER_RE, '')
     .trim();
 
   return source;
 }
 
 function normalizeMessage(message) {
+  if (message && typeof message === 'object') {
+    const cached = normalizedMessageCache.get(message);
+    if (cached
+      && cached.role === message.role
+      && cached.kind === message.kind
+      && cached.senderName === message.senderName
+      && cached.content === message.content) {
+      return cached.normalized;
+    }
+  }
   const role = message?.role === 'user' ? 'user' : 'assistant';
   const kind = typeof message?.kind === 'string' && message.kind ? message.kind : 'standard';
   const rawContent = String(message?.content || '').trim();
@@ -179,7 +196,7 @@ function normalizeMessage(message) {
     : (role === 'assistant' && (kind === 'tool' || kind === 'terminal')
         ? stripActivityTransientSuffix(rawContent)
         : rawContent);
-  return {
+  const normalized = {
     role,
     kind,
     senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
@@ -187,6 +204,16 @@ function normalizeMessage(message) {
       ? restoreAssistantCodeFences(normalizedContent)
       : normalizedContent,
   };
+  if (message && typeof message === 'object') {
+    normalizedMessageCache.set(message, {
+      role: message.role,
+      kind: message.kind,
+      senderName: message.senderName,
+      content: message.content,
+      normalized,
+    });
+  }
+  return normalized;
 }
 
 function isLikelyTruncatedDuplicate(longer, shorter, options = {}) {
@@ -198,10 +225,21 @@ function isLikelyTruncatedDuplicate(longer, shorter, options = {}) {
 }
 
 function getComparableContent(message) {
+  if (message && typeof message === 'object') {
+    const cached = comparableContentCache.get(message);
+    if (cached
+      && cached.role === message.role
+      && cached.kind === message.kind
+      && cached.senderName === message.senderName
+      && cached.content === message.content) {
+      return cached.comparable;
+    }
+  }
   const normalized = normalizeMessage(message);
   const rawContent = String(normalized.content || '').trim();
   if (!rawContent) return '';
 
+  let comparable;
   if (normalized.role === 'assistant' && normalized.kind === 'standard') {
     const contentLines = rawContent
       .split(/\r?\n/)
@@ -210,14 +248,45 @@ function getComparableContent(message) {
     const prose = shouldReflowAssistantLines(contentLines)
       ? joinWrappedAssistantLines(contentLines)
       : contentLines.join('\n');
-    return prose.replace(/\s+/g, ' ').trim();
+    comparable = prose.replace(/\s+/g, ' ').trim();
+  } else {
+    comparable = rawContent.replace(/\s+/g, ' ').trim();
   }
 
-  return rawContent.replace(/\s+/g, ' ').trim();
+  if (message && typeof message === 'object') {
+    comparableContentCache.set(message, {
+      role: message.role,
+      kind: message.kind,
+      senderName: message.senderName,
+      content: message.content,
+      comparable,
+    });
+  }
+  return comparable;
 }
 
 function getCompactComparableContent(message) {
-  return getComparableContent(message).replace(/\s+/g, '');
+  if (message && typeof message === 'object') {
+    const cached = compactComparableContentCache.get(message);
+    if (cached
+      && cached.role === message.role
+      && cached.kind === message.kind
+      && cached.senderName === message.senderName
+      && cached.content === message.content) {
+      return cached.compactComparable;
+    }
+  }
+  const compactComparable = getComparableContent(message).replace(/\s+/g, '');
+  if (message && typeof message === 'object') {
+    compactComparableContentCache.set(message, {
+      role: message.role,
+      kind: message.kind,
+      senderName: message.senderName,
+      content: message.content,
+      compactComparable,
+    });
+  }
+  return compactComparable;
 }
 
 function comparableContentsMatch(left, right, minLength) {
@@ -234,6 +303,7 @@ function messagesMatch(left, right) {
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
   if (comparableContentsMatch(aComparable, bComparable, duplicateMinLength)) return true;
+  if (a.kind !== 'standard' || b.kind !== 'standard') return false;
   const aCompactComparable = getCompactComparableContent(a);
   const bCompactComparable = getCompactComparableContent(b);
   return comparableContentsMatch(aCompactComparable, bCompactComparable, duplicateMinLength);
