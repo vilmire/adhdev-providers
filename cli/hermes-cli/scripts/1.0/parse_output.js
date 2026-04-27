@@ -111,19 +111,24 @@ function restoreAssistantCodeFences(text) {
   return changed ? restored.join('\n').trim() : source;
 }
 
+const TRANSIENT_STATUS_WORDS = [
+  'analyzing',
+  'ruminating',
+  'reasoning',
+  'thinking',
+  'processing',
+  'working',
+  'contemplating',
+];
+
+const TRANSIENT_STATUS_PATTERN = TRANSIENT_STATUS_WORDS.join('|');
+
 function stripTransientPromptSuffix(text) {
   const source = String(text || '').trim();
   if (!source) return '';
 
   const lower = source.toLowerCase();
-  const transientMarkers = [
-    'analyzing...',
-    'ruminating...',
-    'reasoning...',
-    'thinking...',
-    'processing...',
-    'working...',
-  ];
+  const transientMarkers = TRANSIENT_STATUS_WORDS.map((word) => `${word}...`);
 
   let cutIndex = -1;
   for (const marker of transientMarkers) {
@@ -151,17 +156,34 @@ function stripTransientPromptSuffix(text) {
   return tokens.join(' ').trim();
 }
 
+function stripActivityTransientSuffix(text) {
+  let source = String(text || '').trim();
+  if (!source) return '';
+
+  source = source
+    .replace(new RegExp(`\\s*\\([^\\n()]{1,32}\\)\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu'), '')
+    .replace(new RegExp(`\\s+\\d+(?:\\.\\d+)?s\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu'), '')
+    .replace(/\s+\d+(?:\.\d+)?s\s*$/u, '')
+    .replace(/\s*[│┊]\s*$/u, '')
+    .trim();
+
+  return source;
+}
+
 function normalizeMessage(message) {
   const role = message?.role === 'user' ? 'user' : 'assistant';
+  const kind = typeof message?.kind === 'string' && message.kind ? message.kind : 'standard';
   const rawContent = String(message?.content || '').trim();
   const normalizedContent = role === 'user'
     ? stripTransientPromptSuffix(rawContent)
-    : rawContent;
+    : (role === 'assistant' && (kind === 'tool' || kind === 'terminal')
+        ? stripActivityTransientSuffix(rawContent)
+        : rawContent);
   return {
     role,
-    kind: typeof message?.kind === 'string' && message.kind ? message.kind : 'standard',
+    kind,
     senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
-    content: role === 'assistant' && (typeof message?.kind !== 'string' || message.kind === 'standard')
+    content: role === 'assistant' && kind === 'standard'
       ? restoreAssistantCodeFences(normalizedContent)
       : normalizedContent,
   };
@@ -324,10 +346,7 @@ function joinActivityParts(parts) {
 }
 
 function normalizeActivityBody(parts) {
-  return joinActivityParts(parts)
-    .replace(/\s+\d+(?:\.\d+)?s$/u, '')
-    .replace(/\s*[│┊]\s*$/u, '')
-    .trim();
+  return stripActivityTransientSuffix(joinActivityParts(parts));
 }
 
 function parseActivityMessage(line, continuationLines = []) {

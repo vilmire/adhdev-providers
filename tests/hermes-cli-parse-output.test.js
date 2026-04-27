@@ -829,6 +829,41 @@ test('hermes-cli parseOutput rejoins wrapped activity rows before classifying to
   ]);
 });
 
+test('hermes-cli parseOutput canonicalizes in-flight activity status suffixes before merging history', () => {
+  const prompt = 'Find JSONL transcript files.';
+  const screenText = [
+    `● ${prompt}`,
+    '┊ 🔎 find *.jsonl 0.1s(⌐■_■) contemplating...',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'find *.jsonl 0.1s' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'find *.jsonl 0.1s(⌐■_■) thinking...' },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'find *.jsonl',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput ignores startup update warnings so the live user turn is not duplicated', () => {
   const prompt = 'Run pwd, then reply with the working directory. Use tools if needed and keep it short.';
   const screenText = [
