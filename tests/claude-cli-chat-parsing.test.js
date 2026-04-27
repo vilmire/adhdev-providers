@@ -544,6 +544,59 @@ test('claude-cli parse_output keeps generating and surfaces live tool lines from
   ]);
 });
 
+test('claude-cli parse_output treats literal generating spinner text as status chrome, not assistant content', () => {
+  const prompt = 'Do something briefly.';
+  for (const spinnerText of ['· Generating…', '⏺ Generating…', '· Noodling…', '⏺ Pollinating…']) {
+    const screenText = [
+      `❯ ${prompt}`,
+      spinnerText,
+      '',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '❯ ',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '  ⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt',
+    ].join('\n');
+
+    const result = parseOutput({
+      screenText,
+      buffer: screenText,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    assert.equal(result.status, 'generating', `${spinnerText} should keep status generating`);
+    assert.deepEqual(
+      toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })),
+      [
+        {
+          role: 'user',
+          kind: 'standard',
+          senderName: undefined,
+          content: prompt,
+        },
+      ],
+      `${spinnerText} should not be emitted as an assistant message`,
+    );
+  }
+});
+
+test('claude-cli parse_output preserves real assistant prose that starts with a spinner verb but is not status chrome', () => {
+  const prompt = 'Say one sentence about code generation.';
+  const screenText = [
+    `❯ ${prompt}`,
+    '⏺ Generating code is easier when requirements are clear.',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.messages.at(-1)?.content, 'Generating code is easier when requirements are clear.');
+});
+
 test('claude-cli parse_output suppresses repeated thinking metric bubbles while preserving tool activity', () => {
   const prompt = 'Inspect the oss diff and summarize what changed.';
   const screenText = [

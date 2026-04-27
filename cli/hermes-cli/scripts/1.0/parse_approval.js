@@ -65,6 +65,20 @@ function isStructuralApprovalLine(line) {
     || line === '[object Object]';
 }
 
+function isResolvedApprovalOutcomeLine(line) {
+  const text = String(line || '').trim();
+  return /\b(?:timeout|timed out)\b.*\bdenying\b/i.test(text)
+    || /\bdenying\s+command\b/i.test(text)
+    || /\b(?:command|request|approval)\s+denied\b/i.test(text)
+    || /\bdenied\s+(?:command|request|approval)\b/i.test(text);
+}
+
+function hasResolvedApprovalOutcome(lines, startIndex, endIndex) {
+  return lines
+    .slice(Math.max(0, startIndex), Math.min(lines.length, endIndex + 1))
+    .some(isResolvedApprovalOutcomeLine);
+}
+
 function hasNormalPromptAfter(lines, startIndex) {
   const trailing = lines.slice(startIndex + 1);
   const promptIndex = trailing.findIndex((line) => (
@@ -89,6 +103,7 @@ function buildLegacyApproval(lines) {
 
   const titleIndex = findLastIndex(lines.slice(0, lastButtonIndex + 1), (line) => /Dangerous Command/i.test(line));
   if (titleIndex < 0 || titleIndex < (lastButtonIndex - 16)) return null;
+  if (hasResolvedApprovalOutcome(lines, titleIndex, lastButtonIndex)) return null;
   if (hasNormalPromptAfter(lines, lastButtonIndex)) return null;
 
   const region = lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 4));
@@ -116,6 +131,7 @@ function buildModernApproval(lines) {
     .findIndex((line) => /requires approval|approve the delete\?/i.test(line));
   if (titleRelativeIndex < 0) return null;
   const titleIndex = titleSearchStart + titleRelativeIndex;
+  if (hasResolvedApprovalOutcome(lines, titleIndex, lastButtonIndex)) return null;
 
   const region = lines.slice(titleIndex, Math.min(lines.length, lastButtonIndex + 3));
   const buttons = [];

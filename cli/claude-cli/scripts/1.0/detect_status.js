@@ -116,10 +116,10 @@ function isSpinnerLine(line) {
     if (isSpinnerMetricLine(trimmed)) return true;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/^(?:[✻✶✳✢✽·•]\s+)?(?:Nesting|Considering|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\b.*(?:…|\.\.\.)?/iu.test(trimmed)) return true;
+    if (/^(?:[⏺✻✶✳✢✽·•]\s+)?(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Nesting|Considering|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\b.*(?:…|\.\.\.)/iu.test(trimmed)) return true;
     if (/^[✻✶✳✢✽]\s+[A-Z][A-Za-z-]{3,}ing\b.*(?:…|\.{3})/u.test(trimmed)) return true;
-    if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/i.test(trimmed)) return true;
-    return /^[A-Z][a-z]+ing\u2026?$/.test(trimmed);
+    if (/(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)(?:…|\.\.\.)$/i.test(trimmed)) return true;
+    return /^[A-Z][a-z]+ing(?:…|\.\.\.)$/.test(trimmed);
 }
 
 function isToolLine(line) {
@@ -256,7 +256,7 @@ module.exports = function detectStatus(input) {
         if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
         if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
         if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
-        if (/(?:Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\u2026?$/im.test(tail)) return 'generating';
+        if (/(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)(?:…|\.\.\.)$/im.test(tail)) return 'generating';
         if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
     }
 

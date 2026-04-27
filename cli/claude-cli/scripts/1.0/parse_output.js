@@ -196,7 +196,8 @@ function isStatusLine(trimmed) {
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
     if (/^[⠂⠐⠒⠓⠦⠴⠶⠷⠿]\s+/.test(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
+    if (/^(?:[⏺✻✶✳✢✽·•]\s+)?(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting)\b.*(?:…|\.\.\.)$/iu.test(trimmed)) return true;
+    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)(?:…|\.\.\.)$/i.test(trimmed)) return true;
     return isApprovalLine(trimmed);
 }
 
@@ -231,7 +232,7 @@ function isNoiseLine(line) {
     if (!trimmed) return false;
     if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
     if (/^[a-z]\)\s*=+\s*$/i.test(trimmed)) return true;
-    if (/^(?:Levitating|Metamorphosing|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?$/i.test(trimmed)) return true;
+    if (/^(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)(?:…|\.\.\.)$/i.test(trimmed)) return true;
     if (/^[A-Za-z]$/.test(trimmed)) return true;
     if (/^[·•✻✶✳✢✽…]$/.test(trimmed)) return true;
     if (isToolSummaryLine(trimmed)) return true;
@@ -399,6 +400,7 @@ function extractAssistantBlocks(lines) {
 function isSpinnerResidueLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return false;
+    if (/^[·•]\s+(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting)\b.*(?:…|\.\.\.)$/iu.test(trimmed)) return true;
     if (/^[·•]\s+(?:[A-Za-z]\s+){1,6}[A-Za-z…]$/u.test(trimmed)) return true;
     if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?$/i.test(trimmed)) return true;
     if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;

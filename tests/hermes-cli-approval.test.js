@@ -41,6 +41,22 @@ function buildLegacyNumberedApprovalScreen() {
   ].join('\n');
 }
 
+function buildTimedOutLegacyApprovalScreen() {
+  return [
+    '╭────────────────────────────────────────────────╮',
+    '│ ⚠️  Dangerous Command                          │',
+    '│                                                │',
+    '│ curl -fsS http://127.0.0.1:19280/api/cli/debug │',
+    '│                                                │',
+    '│ ⏱ Timeout — denying command                   │',
+    '│ ACTION REQUIRED                               │',
+    '│ ❯ Allow once                                  │',
+    '│   Allow for this session                      │',
+    '│   Copy                                        │',
+    '╰────────────────────────────────────────────────╯',
+  ].join('\n');
+}
+
 test('hermes-cli detects modern approval prompt as waiting_approval', () => {
   const screenText = buildApprovalScreen();
   assert.equal(detectStatus({ screenText }), 'waiting_approval');
@@ -65,4 +81,10 @@ test('hermes-cli parses numbered dangerous-command approval prompt buttons', () 
     message: '⚠️ Dangerous Command python3 -c "print(123)" script execution via -e/-c flag',
     buttons: ['Allow once', 'Allow for this session', 'Add to permanent allowlist', 'Deny'],
   });
+});
+
+test('hermes-cli ignores timed-out dangerous-command approval as resolved', () => {
+  const screenText = buildTimedOutLegacyApprovalScreen();
+  assert.equal(parseApproval({ screenText }), null);
+  assert.notEqual(detectStatus({ screenText }), 'waiting_approval');
 });

@@ -768,6 +768,34 @@ test('hermes-cli parseOutput ignores stale dangerous-command approval scrollback
   assert.ok(!result.messages.some((message) => /Approval requested|Dangerous Command/.test(message.content || '')));
 });
 
+test('hermes-cli parseOutput does not keep a timed-out dangerous-command dialog as actionable approval', () => {
+  const screenText = [
+    '╭────────────────────────────────────────────────────────────╮',
+    '│ ⚠️ Dangerous Command                                      │',
+    '│                                                            │',
+    '│ curl -fsS http://127.0.0.1:19280/api/cli/debug/claude-cli │',
+    '│ | python3 - ...                                           │',
+    '│                                                            │',
+    '│ ⏱ Timeout — denying command                               │',
+    '│ ACTION REQUIRED                                           │',
+    '│ ❯ Allow once                                               │',
+    '│   Allow for this session                                   │',
+    '│   Copy                                                     │',
+    '╰────────────────────────────────────────────────────────────╯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.notEqual(result.status, 'waiting_approval');
+  assert.equal(result.activeModal, null);
+  assert.ok(!result.messages.some((message) => /Approval requested|ACTION REQUIRED|Allow once/.test(message.content || '')));
+  assert.notEqual(detectStatus({ screenText, buffer: screenText }), 'waiting_approval');
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',
