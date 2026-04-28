@@ -154,7 +154,7 @@ function buildMessages(previousMessages, promptText, assistantText, partialText)
 }
 
 function toMessageObjects(messages, status) {
-    return messages.slice(-50).map((message, index, slice) => ({
+    return messages.map((message, index, slice) => ({
         id: `msg_${index}`,
         role: message.role,
         content: typeof message.content === 'string' && message.content.length > 6000

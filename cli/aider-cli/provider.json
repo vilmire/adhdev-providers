@@ -41,5 +41,10 @@
     "controls": {
       "typedResults": false
     }
+  },
+  "submitStrategy": "wait_for_echo",
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
   }
 }

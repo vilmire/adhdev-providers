@@ -107,7 +107,7 @@ function splitTurns(buffer) {
         }
     }
 
-    return messages.length > 50 ? messages.slice(-50) : messages;
+    return messages;
 }
 
 function mergeMessages(priorMessages, parsedMessages, status) {

@@ -54,7 +54,49 @@ function splitTurns(buffer) {
             messages.push({ id: `msg_${msgIndex}`, role: currentRole, content: text.slice(0, 6000), index: msgIndex, kind: 'standard' });
         }
     }
-    return messages.length > 50 ? messages.slice(-50) : messages;
+    return messages;
+}
+
+function toMessageObjects(messages, status) {
+    return messages.map((message, index, slice) => ({
+        id: `msg_${index}`,
+        role: message.role,
+        content: typeof message.content === 'string' && message.content.length > 6000
+            ? `${message.content.slice(0, 6000)}
+[... truncated]`
+            : String(message.content || ''),
+        index,
+        kind: message.kind || 'standard',
+        ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'
+            ? { meta: { streaming: true } }
+            : {}),
+    }));
+}
+
+function mergeMessages(priorMessages, parsedMessages, status) {
+    const base = Array.isArray(priorMessages)
+        ? priorMessages
+            .filter(message => message && (message.role === 'user' || message.role === 'assistant'))
+            .map(message => ({
+                role: message.role,
+                content: typeof message.content === 'string' ? message.content : String(message.content || ''),
+                kind: message.kind || 'standard',
+                timestamp: message.timestamp,
+            }))
+        : [];
+    const parsed = Array.isArray(parsedMessages) ? parsedMessages : [];
+    if (parsed.length === 0) return toMessageObjects(base, status);
+    if (base.length === 0) return toMessageObjects(parsed, status);
+
+    const latestAssistant = [...parsed].reverse().find(message => message.role === 'assistant' && message.content);
+    if (!latestAssistant) return toMessageObjects(base, status);
+    const last = base[base.length - 1];
+    if (last && last.role === 'assistant') {
+        last.content = latestAssistant.content;
+    } else {
+        base.push({ role: 'assistant', content: latestAssistant.content, kind: 'standard' });
+    }
+    return toMessageObjects(base, status);
 }
 
 module.exports = function parseOutput(input) {
@@ -66,8 +108,9 @@ module.exports = function parseOutput(input) {
     const activeModal = status === 'waiting_approval'
         ? parseApproval({ buffer: transcript, screenText, tail, rawBuffer: input?.rawBuffer || '' })
         : null;
-    const messages = splitTurns(buffer);
-    if (status === 'generating' && partialResponse && partialResponse.trim().length > 2) {
+    const parsedMessages = splitTurns(buffer);
+    const messages = mergeMessages(input?.messages, parsedMessages, status);
+    if (status === 'generating' && partialResponse && partialResponse.trim().length > 2 && messages.length === 0) {
         messages.push({ id: 'msg_partial', role: 'assistant', content: partialResponse.trim().slice(0, 6000), index: messages.length, kind: 'standard', meta: { streaming: true } });
     }
     return { id: 'cli_session', status, title: 'Gemini CLI', messages, activeModal };
