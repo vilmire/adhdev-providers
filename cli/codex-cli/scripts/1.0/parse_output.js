@@ -17,15 +17,21 @@ const parseApproval = require('./parse_approval.js');
 
 // ─── Helpers ─────────────────────────────────────
 
+const ANSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
+
+function stripAnsi(text) {
+    return String(text || '').replace(ANSI_RE, '');
+}
+
 function splitLines(text) {
-    return String(text || '')
+    return stripAnsi(text)
         .replace(/\u0007/g, '')
         .split(/\r?\n/)
         .map(l => l.replace(/\s+$/, ''));
 }
 
 function normalize(line) {
-    return String(line || '')
+    return stripAnsi(line)
         .replace(/\u0007/g, '')
         .replace(/^\d+;/, '')
         .replace(/\s+/g, ' ')
@@ -39,6 +45,7 @@ function normalizeForCompare(text) {
 // ─── Line classifiers ───────────────────────────
 
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+(?:\s*(?:\d+|W|Wo|W\s+Wo|Working))?$/;
+const HORIZONTAL_STATUS_RESIDUE_RE = /^[─═-]{10,}\s*(?:\d+|W|Wo|Wor|Work|Worki|Workin|Working|[•·]\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)|orking|rking|king|ing|ng|g)\b.*$/i;
 const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
 
 function isHeaderLine(l) {
@@ -77,7 +84,8 @@ function isWelcomeLine(l) {
 }
 
 function isStatusLine(l) {
-    return isWorkingFragmentLine(l)
+    return HORIZONTAL_STATUS_RESIDUE_RE.test(l)
+        || isWorkingFragmentLine(l)
         || /Esc to interrupt/i.test(l)
         || /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i.test(l)
         || /^[⠁-⣿]+$/.test(l);
@@ -114,6 +122,9 @@ function stripTrailingFooterChrome(line) {
 
 function stripInlineStatusResidue(line) {
     return stripTrailingFooterChrome(line)
+        .replace(HORIZONTAL_STATUS_RESIDUE_RE, '')
+        .replace(/\s*[•·]\s*esc to interr?upt\)?(?:\s+[A-Za-z]+)*.*$/i, '')
+        .replace(/\s+\d+\s+[•·]\s*(?:Explored|Read(?:ing)?|Listed|Searched|Opened|Ran|Run)\b.*(?:Working\(?|W(?:o(?:r(?:k(?:i(?:n(?:g)?)?)?)?)?)?|$).*$/i, '')
         .replace(/(LONG_SEQUENCE=.*?\bEND)\s+(?:\d+|W|Wo|W\s+Wo|[•·]?\s*Wor\b.*)$/i, '$1')
         .replace(/([.!?])\s+(?:W|Wo|Wor|Work|Worki|Workin|Working)$/i, '$1')
         .replace(/([.!?])\s+\d+$/i, '$1')

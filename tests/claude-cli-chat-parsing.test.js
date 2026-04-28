@@ -79,6 +79,59 @@ test('claude-cli does not treat an unbounded > content line as the input prompt 
   assert.equal(screen.promptLineIndex, -1);
 });
 
+test('claude-cli parse_output drops Claude completion footer from final assistant bubble', () => {
+  const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
+  const screenText = [
+    '❯ ' + prompt,
+    '',
+    '⏺ 생성 파일: game_369.py',
+    '실행 명령: python3 game_369.py --self-test',
+    'self-test 실제 출력 마지막 줄: ADHDEV_369_DONE_CLAUDE_CLI',
+    '',
+    'Brewed for 16s',
+    '',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.ok(assistant);
+  assert.match(assistant.content, /ADHDEV_369_DONE_CLAUDE_CLI/);
+  assert.doesNotMatch(assistant.content, /Brewed for \d+s/i);
+});
+
+test('claude-cli parse_output drops Churned completion footer variants from final assistant bubble', () => {
+  const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
+  const screenText = [
+    '❯ ' + prompt,
+    '',
+    '⏺ - 생성 파일: game_369.py',
+    '- 실행 명령: python3 game_369.py --self-test',
+    '- 마지막 marker: ADHDEV_369_DONE_CLAUDE_CLI',
+    'Churned for 14s',
+    '❯ 1',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.ok(assistant);
+  assert.match(assistant.content, /ADHDEV_369_DONE_CLAUDE_CLI/);
+  assert.doesNotMatch(assistant.content, /Churned for \d+s/i);
+  assert.doesNotMatch(assistant.content, /^❯/m);
+});
+
 test('claude-cli parse_output keeps full prior transcript instead of slicing to the last 50 messages', () => {
   const priorMessages = Array.from({ length: 60 }, (_, index) => ({
     role: index % 2 === 0 ? 'user' : 'assistant',

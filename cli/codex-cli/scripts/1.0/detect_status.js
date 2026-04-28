@@ -8,8 +8,14 @@
 
 // ─── Helpers ─────────────────────────────────────
 
+const ANSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
+
+function stripAnsi(value) {
+    return String(value || '').replace(ANSI_RE, '');
+}
+
 function text(input, key) {
-    return String((input && input[key]) || '');
+    return stripAnsi((input && input[key]) || '');
 }
 
 function tailLines(input, count) {
@@ -76,6 +82,13 @@ function hasGenerating(lines, raw) {
     return false;
 }
 
+function hasReadyPrompt(raw) {
+    const rawText = String(raw || '');
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const recent = lines.slice(-8);
+    return recent.some(line => IDLE_SEND_RE.test(line) || IDLE_PROMPT_LINE_RE.test(line));
+}
+
 function hasIdle(raw) {
     const rawText = String(raw || '');
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -115,6 +128,7 @@ module.exports = function detectStatus(input) {
     const recentRaw = tail || screen;
 
     if (hasApproval(lines)) return 'waiting_approval';
+    if (screen && hasReadyPrompt(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
     if (hasIdle(screen || tail)) return 'idle';
     if (tail && hasIdle(tail)) return 'idle';

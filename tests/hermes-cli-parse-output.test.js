@@ -158,6 +158,63 @@ test('hermes-cli treats a separator-bounded > row as the live input prompt regio
   assert.equal(detectStatus({ screenText, screen }), 'idle');
 });
 
+test('hermes-cli parseOutput merges terminal-elided copies of a long submitted prompt into the full committed user bubble', () => {
+  const fullPrompt = [
+    '이 세션은 ADHDev self-hosted isolated quality test입니다. 현재 작업 디렉터리 안에 Python 콘솔 3,6,9 게임을 실제로 만들어 주세요.',
+    '필수 요구:',
+    '1. 파일명은 정확히 game_369.py 하나를 만듭니다.',
+    '2. 실행: python3 game_369.py 로 플레이 가능해야 합니다. 1부터 차례로 입력하면 3/6/9가 들어간 숫자는 digit 개수만큼 짝을 입력해야 하는 게임입니다.',
+    '3. --self-test 옵션을 구현하고, python3 game_369.py --self-test 실행 시 마지막 줄에 정확히 ADHDEV_369_DONE_HERMES_CLI 를 출력하게 하세요.',
+    '4. 직접 python3 game_369.py --self-test 를 실행해서 결과를 확인하세요.',
+    '5. 최종 답변은 한국어로 짧게: 생성 파일, 실행 명령, self-test 실제 출력 마지막 줄(ADHDEV_369_DONE_HERMES_CLI)을 포함하세요.',
+    '6. 파일을 못 만들었거나 실행을 못 했으면 성공처럼 말하지 말고 실패 사유를 그대로 말하세요.',
+  ].join('\n');
+  const terminalElidedPrompt = '이 세션은 ADHDev self-hosted isolated quality test입니다. 현재 작업 디렉터리 안에 Python 콘솔 3,6,9 게임을 실제로 만들어 주세요. 필수 요구: ... (+4 more lines) 5. 최종 답변은 한국어로 짧게: 생성 파일, 실행 명령, self-test 실제 출력 마지막 줄(ADHDEV_369_DONE_HERMES_CLI)을 포함하세요. 6. 파일을 못 만들었거나 실행을 못 했으면 성공처럼 말하지 말고 실패 사유를 그대로 말하세요.';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${terminalElidedPrompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '생성 파일: game_369.py',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [{ role: 'user', content: fullPrompt }],
+  });
+
+  const users = toMessages(result).filter((message) => message.role === 'user');
+  assert.deepEqual(users, [{ role: 'user', content: fullPrompt }]);
+});
+
+test('hermes-cli parseOutput drops transient footer/status lines and collapses duplicate final bubbles', () => {
+  const noisyFinal = [
+    '생성 파일명: game_369.py',
+    '실행한 명령: python3 game_369.py --self-test',
+    '.1K/ │ [█ ░░] 7% │ │ ⏱',
+    'self-test 마지막 marker 줄: ADHDEV_369_DONE_HERMES_CLI',
+  ].join('\n');
+  const cleanFinal = [
+    '생성 파일명: game_369.py',
+    '실행한 명령: python3 game_369.py --self-test',
+    'self-test 마지막 marker 줄: ADHDEV_369_DONE_HERMES_CLI',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '3,6,9 게임을 만들고 self-test marker를 출력하세요.' },
+      { role: 'assistant', content: noisyFinal },
+      { role: 'assistant', content: cleanFinal },
+    ],
+  });
+
+  const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.equal(standardAssistants.length, 1);
+  assert.equal(standardAssistants[0].content, cleanFinal);
+});
+
 test('hermes-cli parseOutput does not surface the current live input prompt as a submitted user bubble', () => {
   const screenText = [
     '● earlier prompt',

@@ -488,6 +488,102 @@ test('codex parse_output drops spinner fragments and model footer from completed
   assert.ok(!contents.includes('6'));
 });
 
+test('codex detect_status trusts the active idle prompt over stale recentBuffer working fragments', () => {
+  const screenText = [
+    '• Ran python3 game_369.py --self-test',
+    '  └ self-test passed',
+    '    ADHDEV_369_DONE_CODEX_CLI',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '',
+    '• 생성 파일: game_369.py',
+    '',
+    '  실행 명령:',
+    '  - python3 game_369.py',
+    '  - python3 game_369.py --self-test',
+    '',
+    '  python3 game_369.py --self-test를 직접 실행해 확인했고, 실제 출력 마지막 줄은',
+    '  아래와 같습니다.',
+    '  - ADHDEV_369_DONE_CODEX_CLI',
+    '',
+    '›',
+    '',
+    'gpt-5.4 high · /private/tmp/adhdev-cli-quality-workspaces/codex-cli',
+  ].join('\n');
+  const staleRecentBuffer = [
+    'Ran python3 game_369.py --self-test',
+    '└ self-test passed',
+    'ADHDEV_369_DONE_CODEX_CLI',
+    '──────────────────────────────────────────────────────────────────────────────── Working • orking • rking •king ing • ng g',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: staleRecentBuffer }), 'idle');
+});
+
+test('codex detect_status trusts the active ANSI idle prompt over stale recentBuffer working fragments', () => {
+  const screenText = [
+    '\x1b[32;1;22m•\x1b[0m \x1b[1mRan\x1b[0m \x1b[38;2;137;180;250mpython3\x1b[38;2;205;214;244m game_369.py\x1b[38;2;147;153;178m --\x1b[38;2;235;160;172mself-test',
+    '\x1b[39;2m  └ self-test passed',
+    '\x1b[0m    \x1b[2mADHDEV_369_DONE_CODEX_CLI',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '',
+    '• \x1b[0m생성 파일: \x1b[36mgame_369.py',
+    '',
+    '\x1b[39;1m›',
+    '',
+    '\x1b[22;2m  gpt-5.4 high · /private/tmp/adhdev-cli-quality-workspaces/codex-cli\x1b[0m\x1b[30;3H',
+  ].join('\n');
+  const staleRecentBuffer = '──────────────────────────────────────────────────────────────────────────────── Working • orking • rking •king ing • ng g';
+
+  assert.equal(detectStatus({ screenText, tail: staleRecentBuffer }), 'idle');
+});
+
+test('codex parse_output clears streaming and drops spinner residue when idle prompt is visible after completion', () => {
+  const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
+  const screenText = [
+    '› ' + prompt,
+    '• 작업 디렉터리는 비어 있습니다. 이제 game_369.py를 생성해서 게임 로직과 --self-test를 한 파일에 넣겠습니다. • esc to interupt) W Wo',
+    '• Ran python3 game_369.py --self-test',
+    '  └ self-test passed',
+    '    ADHDEV_369_DONE_CODEX_CLI',
+    '',
+    '──────────────────────────────────────────────────────────────────────────────── Working • orking • rking •king ing • ng g',
+    '',
+    '• 생성 파일: game_369.py',
+    '  실행 명령:',
+    '  - python3 game_369.py',
+    '  - python3 game_369.py --self-test',
+    '  python3 game_369.py --self-test를 직접 실행해 확인했고, 실제 출력 마지막 줄은',
+    '  아래와 같습니다.',
+    '  - ADHDEV_369_DONE_CODEX_CLI',
+    '',
+    '›',
+    'gpt-5.4 high · /private/tmp/adhdev-cli-quality-workspaces/codex-cli',
+  ].join('\n');
+  const recentBuffer = [
+    '• Working( • esc to interrupt)›tab to queue message96% context left • ng g 1 W Wo • Wor •Work Worki • Workin • Working',
+    '• 생성 파일: game_369.py',
+    '  - ADHDEV_369_DONE_CODEX_CLI › gpt-5.4 high · /private/tmp/adhdev-cli-quality-workspaces/codex-cli',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    recentBuffer,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const combined = result.messages.map(message => message.content).join('\n');
+  const last = result.messages.at(-1);
+
+  assert.equal(result.status, 'idle');
+  assert.equal(last?.role, 'assistant');
+  assert.equal(last?.meta?.streaming, undefined);
+  assert.match(last?.content || '', /ADHDEV_369_DONE_CODEX_CLI/);
+  assert.doesNotMatch(combined, /esc to interupt|esc to interrupt/i);
+  assert.doesNotMatch(combined, /Working • orking|•Work Worki|rking •king|ing • ng g/i);
+});
+
 test('codex parse_output strips inline working residue attached to completed messages', () => {
   const screenText = [
     '› Verify raw output.',
@@ -519,4 +615,30 @@ test('codex parse_output strips inline working residue attached to completed mes
   assert.match(joined, /The file is in place\. Running the exact command now/);
   assert.match(joined, /LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 END/);
   assert.doesNotMatch(joined, /•Work|Worki|Working Working|tab to queue message|background terminal running|\. g 6|END W Wo|successfully\. 5|specified\. Working|────────────────/);
+});
+
+test('codex parse_output strips overprinted tool/status residue appended to terminal output lines', () => {
+  const screenText = [
+    '› 3,6,9 게임을 만들고 self-test marker를 출력하세요.',
+    '• Ran pwd',
+    ' └ /tmp/adhdev-cli-quality-live-verify/codex-cli 96 •Explored └ Listrg--files•Working(',
+    '',
+    '• Explored',
+    ' └ List rg --files',
+    '',
+    '• 생성 파일명: game_369.py',
+    '실행한 명령: python3 game_369.py --self-test',
+    'self-test 마지막 marker 줄: ADHDEV_369_DONE_CODEX_CLI',
+    '›',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: '3,6,9 게임을 만들고 self-test marker를 출력하세요.' }],
+  });
+  const joined = result.messages.map(m => m.content).join('\n\n');
+
+  assert.match(joined, /\/tmp\/adhdev-cli-quality-live-verify\/codex-cli/);
+  assert.doesNotMatch(joined, /96\s+•Explored|Listrg--files|Working\(/i);
 });

@@ -166,6 +166,8 @@ function isFooterLine(trimmed) {
         || /^●\s+How is Claude doing this session\?/i.test(trimmed)
         || /^How is Claude doing this session\?/i.test(trimmed)
         || /^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)
+        || /^[❯›>]\s*\d+\s*$/i.test(trimmed)
+        || /^(?:Brewed|Baked|Cooked|Churned)\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)\b/i.test(trimmed)
         || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
         || /^⏵⏵\s+accept edits on/i.test(trimmed)

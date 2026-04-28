@@ -14,13 +14,35 @@ function normalize(line) {
     .trim();
 }
 
+function isTransientAssistantFooterLine(line) {
+  const value = normalize(line);
+  if (!value) return false;
+  return /gpt-5\.\d/i.test(value)
+    || /ctx --/i.test(value)
+    || /\b\d+(?:\.\d+)?K\/\d+(?:\.\d+)?[KM]?\b/i.test(value)
+    || /(?:^|\s)\d*(?:\.\d+)?K\/\s*[│|].*\[[█░\s]+\]\s*\d+%/iu.test(value)
+    || /\[[█░\s]+\]\s*\d+%/iu.test(value)
+    || /(?:^|\s)[│|]\s*[│|]?\s*[⏱⏲]\b/u.test(value)
+    || /(?:^|\s)\d+(?:\.\d+)?[smh]\s*[│|]\s*[⏱⏲]\b/u.test(value);
+}
+
+function stripAssistantFooterNoise(text) {
+  return String(text || '')
+    .split(/\r?\n/)
+    .map((line) => String(line || '').trimEnd())
+    .filter((line) => !isTransientAssistantFooterLine(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function isNoise(line) {
   return !line
     || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
     || /^\d+$/.test(line)
     || /Hermes Agent v[0-9]/i.test(line)
     || /Available Tools|Available Skills/i.test(line)
-    || /gpt-5\.4|ctx --|\d+(?:\.\d+)?K\/\d+(?:\.\d+)?M|\[\S+\]\s*\d+%/i.test(line)
+    || isTransientAssistantFooterLine(line)
     || /Type your message or \/help for commands/i.test(line)
     || /Tip: hermes sessions prune/i.test(line)
     || /Enter to interrupt, Ctrl\+C to cancel/i.test(line)
@@ -233,7 +255,7 @@ function normalizeMessage(message) {
     kind,
     senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
     content: role === 'assistant' && kind === 'standard'
-      ? restoreAssistantCodeFences(normalizedContent)
+      ? restoreAssistantCodeFences(stripAssistantFooterNoise(normalizedContent))
       : normalizedContent,
   };
   if (typeof message?.id === 'string' && message.id) normalized.id = message.id;
@@ -335,10 +357,33 @@ function getCompactComparableContent(message) {
   return compactComparable;
 }
 
+const LINE_ELISION_MARKER_RE = /\s*\.{3}\s*\(\+\d+\s*more\s*lines\)\s*/iu;
+
+function isLikelyLineElidedDuplicate(longer, shorter, options = {}) {
+  if (!longer || !shorter) return false;
+  if (longer.length <= shorter.length) return false;
+  const minLength = typeof options.minLength === 'number' ? options.minLength : 48;
+  if (shorter.length < minLength) return false;
+
+  const parts = String(shorter).split(LINE_ELISION_MARKER_RE);
+  if (parts.length < 2) return false;
+  const prefix = parts[0].trim();
+  const suffix = parts.slice(1).join(' ').trim();
+  const edgeMinLength = Math.min(32, Math.max(12, Math.floor(minLength / 2)));
+  if (prefix.length < edgeMinLength || suffix.length < edgeMinLength) return false;
+
+  const prefixIndex = String(longer).indexOf(prefix);
+  if (prefixIndex < 0) return false;
+  const suffixIndex = String(longer).indexOf(suffix, prefixIndex + prefix.length);
+  return suffixIndex >= 0;
+}
+
 function comparableContentsMatch(left, right, minLength) {
   return left === right
     || isLikelyTruncatedDuplicate(left, right, { minLength })
-    || isLikelyTruncatedDuplicate(right, left, { minLength });
+    || isLikelyTruncatedDuplicate(right, left, { minLength })
+    || isLikelyLineElidedDuplicate(left, right, { minLength })
+    || isLikelyLineElidedDuplicate(right, left, { minLength });
 }
 
 function messagesMatch(left, right) {
@@ -708,7 +753,8 @@ function collapseReplayedAssistantHistory(messages) {
   const canUseReplaySignatureSet = source.length < 1000
     || source.some((message) => message.role === 'user' || (message.kind || 'standard') === 'standard');
 
-  for (const message of source) {
+  for (let index = 0; index < source.length; index += 1) {
+    const message = source[index];
     let normalized = normalizeMessage(message);
     if (normalized.role === 'user') {
       collapsed.push(normalized);
