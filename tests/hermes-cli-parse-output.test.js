@@ -17,6 +17,75 @@ function toDetailedMessages(result) {
   }));
 }
 
+function toIdentityMessages(result) {
+  return result.messages.map((message) => ({
+    role: message.role,
+    kind: message.kind,
+    content: message.content,
+    id: message.id,
+    bubbleId: message.bubbleId,
+    providerUnitKey: message.providerUnitKey,
+    bubbleState: message.bubbleState,
+    turnKey: message._turnKey,
+  }));
+}
+
+
+test('hermes-cli parseOutput assigns provider-owned stable identities to canonical bubbles', () => {
+  const prompt = '리드챗탓하지 않게 provider가 canonical transcript를 소유해';
+  const partial = 'provider script 쪽에서 canonical transcript identity를 잡겠습니다.';
+  const final = 'provider script 쪽에서 canonical transcript identity를 잡겠습니다. partial과 final은 같은 assistant bubble로 갱신되어야 합니다.';
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ adhdev runtime list --json --limit 50' },
+      { role: 'assistant', content: partial },
+      { role: 'assistant', content: final },
+    ],
+  });
+
+  const messages = toIdentityMessages(result);
+  assert.equal(messages.length, 3);
+  assert.equal(messages[0].role, 'user');
+  assert.equal(messages[1].kind, 'terminal');
+  assert.equal(messages[2].content, final);
+
+  for (const message of messages) {
+    assert.match(message.id, /^hermes_/);
+    assert.equal(message.bubbleId, message.id);
+    assert.match(message.providerUnitKey, /^hermes-cli:/);
+    assert.match(message.turnKey, /^turn_/);
+  }
+
+  assert.equal(messages[0].turnKey, messages[1].turnKey);
+  assert.equal(messages[1].turnKey, messages[2].turnKey);
+  assert.notEqual(messages[1].providerUnitKey, messages[2].providerUnitKey);
+});
+
+test('hermes-cli parseOutput marks the active assistant bubble as streaming with the same provider identity', () => {
+  const prompt = '지금 이 답변도 여러개로 보이면 안됨';
+  const partial = 'provider가 active assistant bubble identity를 고정합니다';
+  const result = parseOutput({
+    screenText: 'type a message + Enter to interrupt, Ctrl+C to cancel',
+    buffer: '',
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: partial },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  const assistant = result.messages.find((message) => message.role === 'assistant');
+  assert.ok(assistant);
+  assert.match(assistant.id, /^hermes_/);
+  assert.equal(assistant.bubbleId, assistant.id);
+  assert.match(assistant.providerUnitKey, /^hermes-cli:/);
+  assert.equal(assistant.bubbleState, 'streaming');
+  assert.equal(assistant.meta?.streaming, true);
+});
 
 test('hermes-cli parseOutput handles long tool-heavy histories without re-normalizing quadratically', () => {
   const priorMessages = Array.from({ length: 2600 }, (_, index) => ({
@@ -796,6 +865,93 @@ test('hermes-cli parseOutput does not keep a timed-out dangerous-command dialog 
   assert.notEqual(detectStatus({ screenText, buffer: screenText }), 'waiting_approval');
 });
 
+test('hermes-cli parseOutput collapses redrawn in-flight skill activity text into one tool bubble', () => {
+  const screenText = [
+    '● Validate the global daemon with the known skill.',
+    ' ┊ 📚 skill global-daemon-validation•skill global-daemon-validationskill global-daemon-validation•@skill global-daemon-validation',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Validate the global daemon with the known skill.',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'skill global-daemon-validation',
+    },
+  ]);
+});
+
+test('hermes-cli parseOutput collapses redrawn skill activity text when the first prefix is lost', () => {
+  const screenText = [
+    '● Validate the live transcript plumbing with the known skill.',
+    ' ┊ 📚 provider-live-transcript-plumbingskill provider-live-transcript-plumbing.skill provider-live-transcript-plumbingskill provider-live-transcript-plumbing• skill provider-live-transcript-plumbingskill provider-live-transcript-plumbing• skill provider-live-transcript-plumbing• skill provider-live-transcript-plumbing',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Validate the live transcript plumbing with the known skill.',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'skill provider-live-transcript-plumbing',
+    },
+  ]);
+});
+
+test('hermes-cli parseOutput does not collapse skill activity text when durable words are present', () => {
+  const screenText = [
+    '● Validate the global daemon with the known skill.',
+    ' ┊ 📚 skill global-daemon-validation completed skill global-daemon-validation',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Validate the global daemon with the known skill.',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'skill global-daemon-validation completed skill global-daemon-validation',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput surfaces live tool activity and progress bubbles during a turn', () => {
   const screenText = [
     '● Use the terminal tool to run pwd and then echo TOOLCHECK123. As you work, show progress.',
@@ -1498,6 +1654,122 @@ test('hermes-cli parseOutput collapses a polluted follow-up history into one pri
     { role: 'assistant', content: priorAnswer },
     { role: 'user', content: followupPrompt },
     { role: 'assistant', content: finalAnswer },
+  ]);
+});
+
+test('hermes-cli parseOutput collapses repeated full-turn replays of the same user prompt and answer', () => {
+  const prompt = '지금 다른 채팅에도 적용되고 있는건지?';
+  const command = '$ adhdev runtime list --json --limit 50';
+  const readCommandFile = 'read /Users/moltbot/.openclaw/workspace/projects/adhdev/packages/daemon-cloud/src/cli/daemon-commands.ts';
+  const finalAnswer = '네. 방금 다른 활성 Hermes 채팅들도 직접 확인했습니다. 현재 global daemon의 active hermes-cli runtime 3개 모두 dirty skill tool bubble이 0개입니다. global daemon이 쓰는 hermes-cli provider parser가 reload된 상태라, 특정 채팅 하나에만 적용되는 게 아니라 hermes-cli provider 전체에 적용됩니다. read_chat 기준으로는 active 채팅 3개 모두 dirty tool bubble이 0개입니다.';
+  const wrappedFinalAnswer = finalAnswer.replace('특정 채팅 하나에만', '특정 채 팅 하나에만').replace('dirty tool', 'dirty too l');
+  const trailingFinalAnswer = `${finalAnswer} 단, 사용자가 붙여넣은 예시 텍스트는 일반 메시지로 보존됩니다.`;
+  const replayedTurn = (answer) => [
+    { role: 'user', content: prompt },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', content: answer },
+  ];
+
+  const result = parseOutput({
+    screenText: [
+      `● ${prompt}`,
+      `┊ 📖 ${readCommandFile}`,
+      `┊ 💻 ${command}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${prompt}`,
+      `┊ 📖 ${readCommandFile}`,
+      `┊ 💻 ${command}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [
+      ...replayedTurn(wrappedFinalAnswer),
+      ...replayedTurn(finalAnswer),
+      ...replayedTurn(trailingFinalAnswer),
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: prompt },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: wrappedFinalAnswer },
+  ]);
+});
+
+test('hermes-cli parseOutput collapses full-turn replay when a retained user prompt is truncated or has transient status copy', () => {
+  const prompt = '아니 내가 보기에는 지금 데몬에 이걸 맡기는게 맞는지가 궁금한데? 데몬이 처리해야되는 부분 맞는지? 데몬은 최대한 얇은부분만 담당하고 프로바이더가 전체를 핸들링할 수 있도록 최대한 작업해왔는데 여전히 이런 부분이 남아있는건지?';
+  const truncatedPrompt = '아니 내가 보기에는 지금 데몬에 이걸 맡기는게 맞는지가 궁금한데? 데몬이';
+  const transientPrompt = `${prompt} Window too small... (¬‿¬) brainstorming...`;
+  const command = '$ adhdev runtime list --json --limit 50';
+  const finalAnswer = '맞아요. 그 질문이 핵심이고, 제 이전 방향은 너무 빨리 daemon read_chat collapse 쪽으로 기울었습니다. Hermes-specific 의미 dedupe는 provider가 맡고 daemon은 provider가 준 stable identity를 얇게 존중해야 합니다.';
+  const replayedTurn = (userContent) => [
+    { role: 'user', content: userContent },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', content: finalAnswer },
+  ];
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      ...replayedTurn(prompt),
+      ...replayedTurn(truncatedPrompt),
+      ...replayedTurn(transientPrompt),
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: prompt },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
+  ]);
+});
+
+test('hermes-cli parseOutput collapses repeated in-turn activity rows before the final answer', () => {
+  const command = '$ adhdev runtime list --json --limit 50';
+  const readCommandFile = 'read /Users/moltbot/.openclaw/workspace/projects/adhdev/packages/daemon-cloud/src/cli/daemon-commands.ts';
+  const finalAnswer = '확인 결과 active Hermes 채팅들에도 동일 provider parser가 적용되고 있고, dirty skill tool bubble은 0개입니다.';
+
+  const result = parseOutput({
+    screenText: [
+      '● 지금 다른 채팅에도 적용되고 있는건지?',
+      `┊ 💻 ${command}`,
+      `┊ 📖 ${readCommandFile}`,
+      `┊ 💻 ${command}`,
+      `┊ 📖 ${readCommandFile}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `┊ 💻 ${command}`,
+      `┊ 📖 ${readCommandFile}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [
+      { role: 'user', content: '지금 다른 채팅에도 적용되고 있는건지?' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
+      { role: 'assistant', content: finalAnswer },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '지금 다른 채팅에도 적용되고 있는건지?' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
   ]);
 });
 

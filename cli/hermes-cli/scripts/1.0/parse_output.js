@@ -119,6 +119,7 @@ const TRANSIENT_STATUS_WORDS = [
   'processing',
   'working',
   'contemplating',
+  'brainstorming',
 ];
 
 const TRANSIENT_STATUS_PATTERN = TRANSIENT_STATUS_WORDS.join('|');
@@ -163,6 +164,31 @@ function stripTransientPromptSuffix(text) {
   return tokens.join(' ').trim();
 }
 
+function collapseRepeatedSkillActivity(text) {
+  const source = String(text || '').trim();
+  if (!source) return '';
+  if (!/\bskill\s+/iu.test(source)) return source;
+
+  // Hermes redraw artifacts can lose the leading "skill " prefix from the
+  // first visible copy, leaving forms such as:
+  //   provider-live-transcript-plumbingskill provider-live-transcript-plumbing
+  // Treat bare slug copies as redraw fragments only when every parsed token is
+  // the same slug and the remaining characters are just redraw separators.
+  const repeatedSkillRe = /(?:@?skill\s+)?([A-Za-z0-9][A-Za-z0-9_-]*?)(?=$|[•.\s@]|skill\s)/giu;
+  const matches = Array.from(source.matchAll(repeatedSkillRe))
+    .map((match) => String(match[1] || '').trim())
+    .filter(Boolean);
+  if (matches.length < 2) return source;
+
+  const [first] = matches;
+  if (!first || !matches.every((value) => value === first)) return source;
+
+  const nonSkillRemainder = source.replace(repeatedSkillRe, '').replace(/[•.\s@]+/gu, '');
+  if (nonSkillRemainder) return source;
+
+  return `skill ${first}`;
+}
+
 function stripActivityTransientSuffix(text) {
   let source = String(text || '').trim();
   if (!source) return '';
@@ -174,7 +200,7 @@ function stripActivityTransientSuffix(text) {
     .replace(ACTIVITY_TRAILING_DIVIDER_RE, '')
     .trim();
 
-  return source;
+  return collapseRepeatedSkillActivity(source);
 }
 
 function normalizeMessage(message) {
@@ -184,7 +210,13 @@ function normalizeMessage(message) {
       && cached.role === message.role
       && cached.kind === message.kind
       && cached.senderName === message.senderName
-      && cached.content === message.content) {
+      && cached.content === message.content
+      && cached.id === message.id
+      && cached.bubbleId === message.bubbleId
+      && cached.providerUnitKey === message.providerUnitKey
+      && cached._turnKey === message._turnKey
+      && cached.bubbleState === message.bubbleState
+      && cached.meta === message.meta) {
       return cached.normalized;
     }
   }
@@ -204,12 +236,26 @@ function normalizeMessage(message) {
       ? restoreAssistantCodeFences(normalizedContent)
       : normalizedContent,
   };
+  if (typeof message?.id === 'string' && message.id) normalized.id = message.id;
+  if (typeof message?.bubbleId === 'string' && message.bubbleId) normalized.bubbleId = message.bubbleId;
+  if (typeof message?.providerUnitKey === 'string' && message.providerUnitKey) normalized.providerUnitKey = message.providerUnitKey;
+  if (typeof message?._turnKey === 'string' && message._turnKey) normalized._turnKey = message._turnKey;
+  if (typeof message?.bubbleState === 'string' && message.bubbleState) normalized.bubbleState = message.bubbleState;
+  if (message?.meta && typeof message.meta === 'object' && !Array.isArray(message.meta)) {
+    normalized.meta = { ...message.meta };
+  }
   if (message && typeof message === 'object') {
     normalizedMessageCache.set(message, {
       role: message.role,
       kind: message.kind,
       senderName: message.senderName,
       content: message.content,
+      id: message.id,
+      bubbleId: message.bubbleId,
+      providerUnitKey: message.providerUnitKey,
+      _turnKey: message._turnKey,
+      bubbleState: message.bubbleState,
+      meta: message.meta,
       normalized,
     });
   }
@@ -315,6 +361,22 @@ function messagesMatch(left, right) {
   return comparableContentsMatch(aCompactComparable, bCompactComparable, duplicateMinLength);
 }
 
+function withMergedMessageIdentity(preferred, fallback) {
+  const result = {
+    role: preferred.role,
+    kind: preferred.kind || fallback.kind,
+    senderName: preferred.senderName || fallback.senderName,
+    content: preferred.content,
+  };
+  for (const key of ['id', 'bubbleId', 'providerUnitKey', '_turnKey', 'bubbleState']) {
+    if (preferred[key]) result[key] = preferred[key];
+    else if (fallback[key]) result[key] = fallback[key];
+  }
+  if (preferred.meta && typeof preferred.meta === 'object') result.meta = { ...preferred.meta };
+  else if (fallback.meta && typeof fallback.meta === 'object') result.meta = { ...fallback.meta };
+  return result;
+}
+
 function chooseMoreCompleteMessage(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
@@ -328,22 +390,12 @@ function chooseMoreCompleteMessage(left, right) {
     const bNewlines = (b.content.match(/\n/g) || []).length;
     const preferred = bNewlines < aNewlines ? b : a;
     const fallback = preferred === a ? b : a;
-    return {
-      role: preferred.role,
-      kind: preferred.kind || fallback.kind,
-      senderName: preferred.senderName || fallback.senderName,
-      content: preferred.content,
-    };
+    return withMergedMessageIdentity(preferred, fallback);
   }
 
   const preferred = bComparable.length > aComparable.length ? b : a;
   const fallback = preferred === a ? b : a;
-  return {
-    role: preferred.role,
-    kind: preferred.kind || fallback.kind,
-    senderName: preferred.senderName || fallback.senderName,
-    content: preferred.content,
-  };
+  return withMergedMessageIdentity(preferred, fallback);
 }
 
 const COMMON_WRAP_WORDS = new Set([
@@ -506,12 +558,17 @@ function dedupeMessages(messages) {
     next.push(message);
   }
   return next.map((message, index) => ({
-    id: `msg_${index}`,
+    ...(message.id ? { id: message.id } : { id: `msg_${index}` }),
     role: message.role,
     content: message.content,
     index,
     kind: message.kind || 'standard',
     ...(message.senderName ? { senderName: message.senderName } : {}),
+    ...(message.bubbleId ? { bubbleId: message.bubbleId } : {}),
+    ...(message.providerUnitKey ? { providerUnitKey: message.providerUnitKey } : {}),
+    ...(message._turnKey ? { _turnKey: message._turnKey } : {}),
+    ...(message.bubbleState ? { bubbleState: message.bubbleState } : {}),
+    ...(message.meta && typeof message.meta === 'object' ? { meta: { ...message.meta } } : {}),
   }));
 }
 
@@ -571,6 +628,33 @@ function buildReplayMessageSignature(message) {
   ].join('\u0000');
 }
 
+function buildTurnPromptFingerprint(message) {
+  const normalized = normalizeMessage(message);
+  const compact = getCompactComparableContent(normalized) || getComparableContent(normalized);
+  if (!compact) return '';
+  return compact.slice(0, 24);
+}
+
+function buildReplayTurnMessageSignature(message) {
+  const normalized = normalizeMessage(message);
+  const kind = normalized.kind || 'standard';
+  let content = normalized.role === 'user'
+    ? buildTurnPromptFingerprint(normalized)
+    : (getComparableContent(normalized) || getCompactComparableContent(normalized));
+  if (!content) return '';
+
+  if (normalized.role === 'assistant' && kind === 'standard' && content.length >= 160) {
+    content = getCompactComparableContent(normalized).slice(0, 180);
+  }
+
+  return [
+    normalized.role || '',
+    kind,
+    normalized.senderName || '',
+    content,
+  ].join('\u0000');
+}
+
 function isReplayedAssistantAnswerAfterStableAssistant(message, stableAnswer) {
   const normalized = normalizeMessage(message);
   const stable = normalizeMessage(stableAnswer);
@@ -600,6 +684,8 @@ function collapseReplayedAssistantHistory(messages) {
   const collapsed = [];
   let stableAssistant = null;
   const seenAssistantSignatures = new Set();
+  const canUseReplaySignatureSet = source.length < 1000
+    || source.some((message) => message.role === 'user' || (message.kind || 'standard') === 'standard');
 
   for (const message of source) {
     let normalized = normalizeMessage(message);
@@ -611,14 +697,14 @@ function collapseReplayedAssistantHistory(messages) {
     }
 
     normalized = trimStableAssistantTextFromActivityMessage(normalized, stableAssistant);
-    const replaySignature = normalized.role === 'assistant' ? buildReplayMessageSignature(normalized) : '';
-    if (
-      stableAssistant
-      && (
-        isReplayedAssistantAnswerAfterStableAssistant(normalized, stableAssistant)
-        || (replaySignature && seenAssistantSignatures.has(replaySignature))
-      )
-    ) {
+    const replaySignature = canUseReplaySignatureSet && normalized.role === 'assistant'
+      ? buildReplayMessageSignature(normalized)
+      : '';
+    if (replaySignature && seenAssistantSignatures.has(replaySignature)) {
+      continue;
+    }
+
+    if (stableAssistant && isReplayedAssistantAnswerAfterStableAssistant(normalized, stableAssistant)) {
       continue;
     }
 
@@ -627,6 +713,50 @@ function collapseReplayedAssistantHistory(messages) {
     if (isStableAssistantAnswer(normalized)) {
       stableAssistant = normalized;
     }
+  }
+
+  return collapseRepeatedTurnReplays(dedupeMessages(collapsed));
+}
+
+function collapseRepeatedTurnReplays(messages) {
+  const source = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  if (source.length < 2) return dedupeMessages(source);
+
+  const collapsed = [];
+  const seenTurnSignatures = new Set();
+  let index = 0;
+
+  while (index < source.length) {
+    const message = source[index];
+    if (message.role !== 'user') {
+      collapsed.push(message);
+      index += 1;
+      continue;
+    }
+
+    let nextIndex = index + 1;
+    while (nextIndex < source.length && source[nextIndex].role !== 'user') {
+      nextIndex += 1;
+    }
+
+    const turnMessages = source.slice(index, nextIndex);
+    const hasReplayProneActivity = turnMessages.some((turnMessage) => (
+      turnMessage.role === 'assistant'
+      && turnMessage.kind
+      && turnMessage.kind !== 'standard'
+    ));
+    const signature = hasReplayProneActivity
+      ? turnMessages.map(buildReplayTurnMessageSignature).filter(Boolean).join('\u0002')
+      : '';
+
+    if (!signature || !seenTurnSignatures.has(signature)) {
+      collapsed.push(...turnMessages);
+      if (signature) seenTurnSignatures.add(signature);
+    }
+
+    index = nextIndex;
   }
 
   return dedupeMessages(collapsed);
@@ -639,8 +769,8 @@ function mergeMessageHistories(baseMessages, currentMessages) {
   const current = dedupeMessages(Array.isArray(currentMessages) ? currentMessages : [])
     .map(normalizeMessage)
     .filter((message) => message.content);
-  if (merged.length === 0) return dedupeMessages(current);
-  if (current.length === 0) return dedupeMessages(merged);
+  if (merged.length === 0) return current;
+  if (current.length === 0) return merged;
 
   let cursor = 0;
   for (const message of current) {
@@ -666,7 +796,114 @@ function mergeMessageHistories(baseMessages, currentMessages) {
     cursor = merged.length;
   }
 
-  return dedupeMessages(merged);
+  return collapseRepeatedTurnReplays(dedupeMessages(merged));
+}
+
+function stableHash(value) {
+  const input = String(value || '');
+  let hash = 2166136261;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function identityComparableContent(message) {
+  const normalized = normalizeMessage(message);
+  const compact = getCompactComparableContent(normalized);
+  return compact || getComparableContent(normalized) || String(normalized.content || '').trim();
+}
+
+function buildProviderMessageId(providerUnitKey) {
+  return `hermes_${stableHash(providerUnitKey)}`;
+}
+
+function assignProviderOwnedTranscriptIdentity(messages, status) {
+  const source = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const result = [];
+  const turnCounts = new Map();
+  let currentTurnKey = '';
+  let currentTurnAssistantStandardOrdinal = 0;
+  let currentTurnUserPrompt = '';
+  const unitCountsByTurn = new Map();
+
+  const ensureFallbackTurn = () => {
+    if (currentTurnKey) return currentTurnKey;
+    currentTurnKey = 'turn_orphan';
+    currentTurnAssistantStandardOrdinal = 0;
+    currentTurnUserPrompt = '';
+    if (!unitCountsByTurn.has(currentTurnKey)) unitCountsByTurn.set(currentTurnKey, new Map());
+    return currentTurnKey;
+  };
+
+  for (const message of source) {
+    if (message.role === 'user') {
+      const promptComparable = buildTurnPromptFingerprint(message) || identityComparableContent(message);
+      const promptHash = stableHash(promptComparable).slice(0, 12);
+      const promptCount = (turnCounts.get(promptHash) || 0) + 1;
+      turnCounts.set(promptHash, promptCount);
+      currentTurnKey = `turn_${promptCount}_${promptHash}`;
+      currentTurnAssistantStandardOrdinal = 0;
+      currentTurnUserPrompt = promptComparable;
+      if (!unitCountsByTurn.has(currentTurnKey)) unitCountsByTurn.set(currentTurnKey, new Map());
+    } else {
+      ensureFallbackTurn();
+    }
+
+    const turnKey = ensureFallbackTurn();
+    const unitCounts = unitCountsByTurn.get(turnKey) || new Map();
+    let unitStem;
+    if (message.role === 'user') {
+      unitStem = `user:${stableHash(currentTurnUserPrompt).slice(0, 12)}`;
+    } else if ((message.kind || 'standard') === 'standard') {
+      const ordinal = currentTurnAssistantStandardOrdinal;
+      currentTurnAssistantStandardOrdinal += 1;
+      unitStem = `assistant:standard:${ordinal}`;
+    } else {
+      const kind = message.kind || 'standard';
+      const contentHash = stableHash(identityComparableContent(message)).slice(0, 12);
+      const baseStem = `assistant:${kind}:${contentHash}`;
+      const occurrence = (unitCounts.get(baseStem) || 0) + 1;
+      unitCounts.set(baseStem, occurrence);
+      unitStem = occurrence > 1 ? `${baseStem}:${occurrence}` : baseStem;
+    }
+    unitCountsByTurn.set(turnKey, unitCounts);
+
+    const providerUnitKey = `hermes-cli:${turnKey}:${unitStem}`;
+    const id = buildProviderMessageId(providerUnitKey);
+    const next = {
+      ...message,
+      id,
+      bubbleId: id,
+      providerUnitKey,
+      _turnKey: turnKey,
+      bubbleState: 'final',
+    };
+    result.push(next);
+  }
+
+  const streamLikeStatus = status === 'generating' || status === 'streaming' || status === 'long_generating';
+  if (streamLikeStatus) {
+    for (let index = result.length - 1; index >= 0; index -= 1) {
+      const message = result[index];
+      if (message.role === 'assistant' && (message.kind || 'standard') === 'standard') {
+        result[index] = {
+          ...message,
+          bubbleState: 'streaming',
+          meta: {
+            ...(message.meta && typeof message.meta === 'object' ? message.meta : {}),
+            streaming: true,
+          },
+        };
+        break;
+      }
+    }
+  }
+
+  return result;
 }
 
 function trimMessagesForHistoryState(messages, historyState) {
@@ -960,11 +1197,17 @@ module.exports = function parseOutput(input) {
     Array.isArray(input?.messages)
       ? input.messages
           .filter((message) => message && (message.role === 'user' || message.role === 'assistant'))
-          .map((message) => ({
+          .map((message) => normalizeMessage({
             role: message.role,
             kind: message.kind,
             senderName: message.senderName,
             content: String(message.content || ''),
+            id: message.id,
+            bubbleId: message.bubbleId,
+            providerUnitKey: message.providerUnitKey,
+            _turnKey: message._turnKey,
+            bubbleState: message.bubbleState,
+            meta: message.meta,
           }))
       : [],
     historyState,
@@ -1014,6 +1257,7 @@ module.exports = function parseOutput(input) {
   const finalMessages = activeModal
     ? dedupeMessages([...collapseReplayedAssistantHistory(messages), createApprovalMessage(activeModal)])
     : collapseReplayedAssistantHistory(messages);
+  const identifiedMessages = assignProviderOwnedTranscriptIdentity(finalMessages, effectiveStatus);
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
 
@@ -1022,9 +1266,10 @@ module.exports = function parseOutput(input) {
     title: 'Hermes Agent',
     status: effectiveStatus,
     model,
-    messages: finalMessages,
+    messages: identifiedMessages,
     activeModal,
     providerSessionId,
+    currentTurnId: identifiedMessages.length > 0 ? identifiedMessages[identifiedMessages.length - 1]._turnKey : undefined,
     ...historyState,
   };
 };
