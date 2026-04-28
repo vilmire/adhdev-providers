@@ -635,24 +635,45 @@ function buildTurnPromptFingerprint(message) {
   return compact.slice(0, 24);
 }
 
-function buildReplayTurnMessageSignature(message) {
-  const normalized = normalizeMessage(message);
-  const kind = normalized.kind || 'standard';
-  let content = normalized.role === 'user'
-    ? buildTurnPromptFingerprint(normalized)
-    : (getComparableContent(normalized) || getCompactComparableContent(normalized));
-  if (!content) return '';
+function replayComparableContentsMatch(left, right, minLength) {
+  if (!left || !right) return false;
+  if (left === right) return true;
+  const shorter = left.length <= right.length ? left : right;
+  const longer = left.length > right.length ? left : right;
+  return shorter.length >= minLength && longer.startsWith(shorter);
+}
 
-  if (normalized.role === 'assistant' && kind === 'standard' && content.length >= 160) {
-    content = getCompactComparableContent(normalized).slice(0, 180);
+function replayTurnMessagesMatch(leftTurnMessages, rightTurnMessages) {
+  if (!Array.isArray(leftTurnMessages) || !Array.isArray(rightTurnMessages)) return false;
+  if (leftTurnMessages.length !== rightTurnMessages.length) return false;
+
+  for (let index = 0; index < leftTurnMessages.length; index += 1) {
+    const left = normalizeMessage(leftTurnMessages[index]);
+    const right = normalizeMessage(rightTurnMessages[index]);
+    const leftKind = left.kind || 'standard';
+    const rightKind = right.kind || 'standard';
+    if (left.role !== right.role || leftKind !== rightKind || (left.senderName || '') !== (right.senderName || '')) {
+      return false;
+    }
+
+    const leftComparable = getCompactComparableContent(left) || getComparableContent(left);
+    const rightComparable = getCompactComparableContent(right) || getComparableContent(right);
+    if (!leftComparable || !rightComparable) return false;
+
+    if (left.role === 'user') {
+      if (!replayComparableContentsMatch(leftComparable, rightComparable, 24)) return false;
+      continue;
+    }
+
+    if (left.role === 'assistant' && leftKind === 'standard') {
+      if (!replayComparableContentsMatch(leftComparable, rightComparable, 80)) return false;
+      continue;
+    }
+
+    if (leftComparable !== rightComparable) return false;
   }
 
-  return [
-    normalized.role || '',
-    kind,
-    normalized.senderName || '',
-    content,
-  ].join('\u0000');
+  return true;
 }
 
 function isReplayedAssistantAnswerAfterStableAssistant(message, stableAnswer) {
@@ -725,7 +746,7 @@ function collapseRepeatedTurnReplays(messages) {
   if (source.length < 2) return dedupeMessages(source);
 
   const collapsed = [];
-  const seenTurnSignatures = new Set();
+  const seenReplayTurns = [];
   let index = 0;
 
   while (index < source.length) {
@@ -747,13 +768,12 @@ function collapseRepeatedTurnReplays(messages) {
       && turnMessage.kind
       && turnMessage.kind !== 'standard'
     ));
-    const signature = hasReplayProneActivity
-      ? turnMessages.map(buildReplayTurnMessageSignature).filter(Boolean).join('\u0002')
-      : '';
+    const isReplayDuplicate = hasReplayProneActivity
+      && seenReplayTurns.some((seenTurnMessages) => replayTurnMessagesMatch(seenTurnMessages, turnMessages));
 
-    if (!signature || !seenTurnSignatures.has(signature)) {
+    if (!isReplayDuplicate) {
       collapsed.push(...turnMessages);
-      if (signature) seenTurnSignatures.add(signature);
+      if (hasReplayProneActivity) seenReplayTurns.push(turnMessages);
     }
 
     index = nextIndex;

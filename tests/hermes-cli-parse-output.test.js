@@ -1703,6 +1703,37 @@ test('hermes-cli parseOutput collapses repeated full-turn replays of the same us
   ]);
 });
 
+test('hermes-cli parseOutput preserves distinct turns that only share prompt and answer prefixes', () => {
+  const sharedPrefix = '이 작업을 provider-first 방식으로 처리해야 하는지 확인해줘. ';
+  const firstPrompt = `${sharedPrefix}첫 번째 실제 요청은 canonical identity 회귀를 검증하는 케이스야.`;
+  const secondPrompt = `${sharedPrefix}두 번째 실제 요청은 같은 앞부분을 갖지만 별도 턴으로 보존돼야 해.`;
+  const command = '$ adhdev runtime list --json --limit 50';
+  const firstAnswer = '검증 결과를 설명합니다. provider-owned identity가 유지되어 partial/final replay는 하나의 logical bubble로 정규화됩니다. 첫 번째 요청에 대한 결론입니다.';
+  const secondAnswer = '검증 결과를 설명합니다. provider-owned identity가 유지되어 partial/final replay는 하나의 logical bubble로 정규화됩니다. 두 번째 요청에 대한 별도 결론입니다.';
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: firstPrompt },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+      { role: 'assistant', content: firstAnswer },
+      { role: 'user', content: secondPrompt },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+      { role: 'assistant', content: secondAnswer },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: firstPrompt },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: firstAnswer },
+    { role: 'user', kind: 'standard', senderName: undefined, content: secondPrompt },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: secondAnswer },
+  ]);
+});
+
 test('hermes-cli parseOutput collapses full-turn replay when a retained user prompt is truncated or has transient status copy', () => {
   const prompt = '아니 내가 보기에는 지금 데몬에 이걸 맡기는게 맞는지가 궁금한데? 데몬이 처리해야되는 부분 맞는지? 데몬은 최대한 얇은부분만 담당하고 프로바이더가 전체를 핸들링할 수 있도록 최대한 작업해왔는데 여전히 이런 부분이 남아있는건지?';
   const truncatedPrompt = '아니 내가 보기에는 지금 데몬에 이걸 맡기는게 맞는지가 궁금한데? 데몬이';
