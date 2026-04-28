@@ -437,6 +437,31 @@ function isLikelySoftWrappedActivityPhysicalLine(rawLine) {
   return line.length >= ACTIVITY_SOFT_WRAP_MIN_COLUMNS;
 }
 
+const KNOWN_INLINE_TOOL_LABELS = new Set([
+  'browser_console',
+]);
+
+function parseInlineToolLabelLeak(line) {
+  const head = parseActivityHead(line);
+  if (!head) return null;
+  const body = normalizeActivityBody([head.body]);
+  if (!body) return null;
+  for (const label of KNOWN_INLINE_TOOL_LABELS) {
+    if (body === label) {
+      return { label, content: '' };
+    }
+    if (!body.startsWith(label)) continue;
+    const rest = body.slice(label.length);
+    // Real activity rows use a delimiter after the tool name, e.g.
+    // "browser_console expression=...". A line like
+    // "browser_console현재 ..." means the rendered tool label leaked into
+    // assistant prose and must not become a separate tool bubble.
+    if (!rest || /^\s/.test(rest) || /^[=:({[]/.test(rest)) continue;
+    return { label, content: rest.trimStart() };
+  }
+  return null;
+}
+
 function parseActivityMessage(line, continuationLines = []) {
   const head = parseActivityHead(line);
   if (!head) return null;
@@ -827,8 +852,36 @@ function parseMessages(text) {
       continue;
     }
 
+    if (inAssistantBox) {
+      assistantLines.push(line);
+      continue;
+    }
+
     const activityHead = parseActivityHead(rawLine);
     if (activityHead) {
+      const inlineLeak = parseInlineToolLabelLeak(rawLine);
+      if (inlineLeak) {
+        const contentLines = [inlineLeak.content];
+        let nextIndex = index + 1;
+        while (nextIndex < lines.length) {
+          const nextLeak = parseInlineToolLabelLeak(lines[nextIndex]);
+          if (!nextLeak || nextLeak.label !== inlineLeak.label) break;
+          contentLines.push(nextLeak.content);
+          nextIndex += 1;
+        }
+        const content = contentLines.join('\n').trim();
+        if (content) {
+          if (inUserMessage) flushUser();
+          if (inAssistantBox) {
+            flushAssistant();
+            inAssistantBox = false;
+          }
+          messages.push({ role: 'assistant', content });
+        }
+        index = nextIndex - 1;
+        continue;
+      }
+
       const continuationLines = [];
       let nextIndex = index + 1;
       while (nextIndex < lines.length) {

@@ -991,6 +991,127 @@ test('hermes-cli parseOutput trims already-retained final-answer text from a pol
   ]);
 });
 
+test('hermes-cli parseOutput collapses browser_console label leaks back into one assistant bubble', () => {
+  const prompt = '검증 결과 알려줘';
+  const assistant = [
+    '현재 standalone HMR에서 실제 브라우저 검증까지 진행한 상태입니다.',
+    '',
+    '진행한 것:',
+    '- dashboard 접근 확인',
+    '- runtime snapshot 확인',
+  ].join('\n');
+  const screenText = [
+    `● ${prompt}`,
+    ' ┊ 🖥️ browser_console현재 standalone HMR에서 실제 브라우저 검증까지 진행한 상태입니다.',
+    ' ┊ 🖥️ browser_console',
+    ' ┊ 🖥️ browser_console진행한 것:',
+    ' ┊ 🖥️ browser_console- dashboard 접근 확인',
+    ' ┊ 🖥️ browser_console- runtime snapshot 확인',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: assistant,
+    },
+  ]);
+});
+
+test('hermes-cli parseOutput keeps assistant-box content after literal activity-like examples', () => {
+  const prompt = '검증 결과 알려줘';
+  const assistant = [
+    '완료 보고.',
+    '원인:',
+    '- 최종 assistant prose가 이런 형태로 들어온 경우:',
+    '┊ 🖥️ browser_console현재 standalone HMR에서 ...',
+    '┊ 🖥️ browser_console- dashboard 접근 확인',
+    'parser가 이것을 진짜 browser_console tool activity로 오인했습니다.',
+    '수정:',
+    '- 채팅 버블이 여기까지 끝까지 보여야 합니다.',
+  ].join('\n');
+  const screenText = [
+    `● ${prompt}`,
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    '완료 보고.',
+    '',
+    '원인:',
+    '- 최종 assistant prose가 이런 형태로 들어온 경우:',
+    '',
+    '  ┊ 🖥️ browser_console현재 standalone HMR에서 ...',
+    '  ┊ 🖥️ browser_console- dashboard 접근 확인',
+    '',
+    '  parser가 이것을 진짜 browser_console tool activity로 오인했습니다.',
+    '',
+    '수정:',
+    '- 채팅 버블이 여기까지 끝까지 보여야 합니다.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: assistant,
+    },
+  ]);
+  assert.match(result.messages.at(-1).content, /채팅 버블이 여기까지 끝까지 보여야 합니다/);
+});
+
+test('hermes-cli parseOutput preserves real browser_console activity rows with delimiters', () => {
+  const screenText = [
+    '● Check browser state.',
+    ' ┊ 🖥️ browser_console expression=document.title 0.2s',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Done.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Check browser state.',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'browser_console expression=document.title',
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Done.',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput rejoins wrapped activity rows before classifying tool bubbles', () => {
   const screenText = [
     '● Check repo status.',
