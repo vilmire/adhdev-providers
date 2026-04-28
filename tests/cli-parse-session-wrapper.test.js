@@ -49,8 +49,29 @@ test('parse_session normalizes parse_output into daemon-core ParsedSession shape
     const session = parseSession(input);
 
     assert.equal(session.status, output.status || 'idle', `${type} status`);
-    assert.deepEqual(session.messages, Array.isArray(output.messages) ? output.messages : [], `${type} messages`);
+    assert.equal(session.messages.length, Array.isArray(output.messages) ? output.messages.length : 0, `${type} message length`);
+    assert.deepEqual(session.messages.map(message => message.content), (output.messages || []).map(message => message.content), `${type} message content`);
     assert.deepEqual(session.modal, output.activeModal || output.modal || null, `${type} modal`);
     assert.equal(session.parsedStatus, output.status || null, `${type} parsedStatus`);
+  }
+});
+
+test('parse_session assigns stable provider-owned bubble identity to every CLI message', () => {
+  for (const type of cliProviders) {
+    const parseSession = require(scriptPath(type, 'parse_session.js'));
+    const first = parseSession(sampleInput());
+    const second = parseSession(sampleInput());
+
+    assert.ok(first.messages.length > 0, `${type} should return sample messages`);
+    for (let index = 0; index < first.messages.length; index += 1) {
+      const message = first.messages[index];
+      const again = second.messages[index];
+      assert.equal(typeof message.providerUnitKey, 'string', `${type} message ${index} providerUnitKey`);
+      assert.equal(typeof message.bubbleId, 'string', `${type} message ${index} bubbleId`);
+      assert.equal(typeof message._turnKey, 'string', `${type} message ${index} _turnKey`);
+      assert.equal(typeof message.bubbleState, 'string', `${type} message ${index} bubbleState`);
+      assert.equal(message.providerUnitKey, again.providerUnitKey, `${type} message ${index} providerUnitKey should be stable`);
+      assert.equal(message.bubbleId, again.bubbleId, `${type} message ${index} bubbleId should be stable`);
+    }
   }
 });
