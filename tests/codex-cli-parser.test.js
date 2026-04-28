@@ -617,6 +617,65 @@ test('codex parse_output strips inline working residue attached to completed mes
   assert.doesNotMatch(joined, /•Work|Worki|Working Working|tab to queue message|background terminal running|\. g 6|END W Wo|successfully\. 5|specified\. Working|────────────────/);
 });
 
+test('codex parse_output strips live no-counter tool/status residue and partial fragments', () => {
+  const screenText = [
+    '› Create game_369.py.',
+    '• Ran pwd',
+    ' └ /tmp/adhdev-quality-codex-cli •Explored └ Listrg--files•Working(',
+    '',
+    '• Added game_369.py (+23 -0)',
+    ' 1 +import sys',
+    ' 2 +if __name__ == "__main__":',
+    ' 3 +    main() Worki',
+    '',
+    '• The script is in place. Running the exact command now. •7',
+    '›',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: 'Create game_369.py.' }],
+  });
+  const joined = result.messages.map(m => m.content).join('\n\n');
+
+  assert.match(joined, /\/tmp\/adhdev-quality-codex-cli/);
+  assert.match(joined, /main\(\)/);
+  assert.match(joined, /The script is in place\. Running the exact command now\./);
+  assert.doesNotMatch(joined, /•Explored|Listrg--files|Working\(|Worki\b|\s•7\b/);
+});
+
+test('codex parse_output strips live self-test spinner residue from marker terminal and final bubbles', () => {
+  const prompt = 'Create game_369.py and print ADHDEV_369_DONE_CODEX_CLI.';
+  const screenText = [
+    '› ' + prompt,
+    '• Ran python3 game_369.py --self-test',
+    ' └ ADHDEV_369_DONE_CODEX_CLI •king ing • ng g',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '',
+    '• ADHDEV_369_DONE_CODEX_CLI 9',
+    '',
+    '›',
+    '',
+    'gpt-5.4 high · /private/tmp/adhdev-quality-codex-cli',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const joined = result.messages.map(m => m.content).join('\n\n');
+  const terminal = result.messages.find(m => m.kind === 'terminal');
+  const standard = [...result.messages].reverse().find(m => m.kind === 'standard' && m.role === 'assistant');
+
+  assert.equal(result.status, 'idle');
+  assert.equal(terminal?.content, 'Ran python3 game_369.py --self-test\n└ ADHDEV_369_DONE_CODEX_CLI');
+  assert.equal(standard?.content, 'ADHDEV_369_DONE_CODEX_CLI');
+  assert.doesNotMatch(joined, /•king|\bing\b\s*•\s*ng|\bng\b\s+g|CODEX_CLI 9/);
+});
+
 test('codex parse_output strips overprinted tool/status residue appended to terminal output lines', () => {
   const screenText = [
     '› 3,6,9 게임을 만들고 self-test marker를 출력하세요.',

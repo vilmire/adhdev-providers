@@ -1204,6 +1204,74 @@ test('hermes-cli parseOutput trims already-retained final-answer text from a pol
   ]);
 });
 
+test('hermes-cli parseOutput strips repeated read activity labels from a retained standard answer replay', () => {
+  const prompt = '품질 점검 결과 정리해줘';
+  const finalAnswer = [
+    '점검 결과 요약:',
+    '1. Parser regression 테스트',
+    '- 실행:',
+    '- node --test tests/codex-cli-parser.test.js tests/codex-controls.test.js tests/claude-cli-chat-parsing.test.js tests/claude-cli-controls.test.js',
+    '- 결과:',
+    '- 65개 전부 통과',
+    '- fail 0',
+    '',
+    '추가로 Codex live artifact에서 보였던 잔여 noise 케이스를 regression으로 보강했고, 관련 parser cleanup도 패치했습니다.',
+  ].join('\n');
+  const readLabel = [
+    '📖 /Users/moltbot/.openclaw/workspace/projects/adhdev-providers/tests/codex-c',
+    'l',
+    'i-parser.test.js',
+  ].join('\n');
+  const pollutedAnswer = [
+    readLabel,
+    '점검 결과 요약:',
+    readLabel,
+    readLabel,
+    '1. Parser regression 테스트',
+    readLabel,
+    '- 실행:',
+    readLabel,
+    '- node --test tests/codex-cli-parser.test.js tests/codex-controls.test.js tests/claude-cli-chat-parsing.test.js tests/claude-cli-controls.test.js',
+    readLabel,
+    '- 결과:',
+    readLabel,
+    '- 65개 전부 통과',
+    readLabel,
+    '- fail 0',
+    readLabel,
+    '',
+    readLabel,
+    '추가로 Codex live artifact에서 보였던 잔여 noise 케이스를 regression으로 보강했고, 관련 parser cleanup도 패치했습니다.',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: finalAnswer },
+      { role: 'assistant', content: pollutedAnswer },
+    ],
+  });
+
+  const messages = toDetailedMessages(result);
+  assert.deepEqual(messages, [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: prompt,
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: finalAnswer,
+    },
+  ]);
+  assert.equal(JSON.stringify(messages).includes('📖 /Users/moltbot'), false);
+});
+
 test('hermes-cli parseOutput collapses browser_console label leaks back into one assistant bubble', () => {
   const prompt = '검증 결과 알려줘';
   const assistant = [

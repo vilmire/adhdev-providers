@@ -124,12 +124,14 @@ function stripInlineStatusResidue(line) {
     return stripTrailingFooterChrome(line)
         .replace(HORIZONTAL_STATUS_RESIDUE_RE, '')
         .replace(/\s*[•·]\s*esc to interr?upt\)?(?:\s+[A-Za-z]+)*.*$/i, '')
-        .replace(/\s+\d+\s+[•·]\s*(?:Explored|Read(?:ing)?|Listed|Searched|Opened|Ran|Run)\b.*(?:Working\(?|W(?:o(?:r(?:k(?:i(?:n(?:g)?)?)?)?)?)?|$).*$/i, '')
+        .replace(/\s+(?:\d+\s+)?[•·]\s*(?:Explored|Read(?:ing)?|Listed|Searched|Opened|Ran|Run)\b.*(?:Working\(?|W(?:o(?:r(?:k(?:i(?:n(?:g)?)?)?)?)?)?|$).*$/i, '')
         .replace(/(LONG_SEQUENCE=.*?\bEND)\s+(?:\d+|W|Wo|W\s+Wo|[•·]?\s*Wor\b.*)$/i, '$1')
         .replace(/([.!?])\s+(?:W|Wo|Wor|Work|Worki|Workin|Working)$/i, '$1')
-        .replace(/([.!?])\s+\d+$/i, '$1')
+        .replace(/([.!?])\s+(?:[•·]\s*)?\d+$/i, '$1')
         .replace(/\s+g\s+\d+$/i, '')
-        .replace(/\s+\d+\s+W\s+Wo\s+[•·]?\s*Wor\b.*$/i, '')
+        .replace(/(\bADHDEV_[A-Z0-9_]+)\s+\d+$/g, '$1')
+        .replace(/\s+(?:[•·]?\s*(?:W|Wo|Wor|Work|Worki|Workin|Working|orking|rking|king|ing|ng|g)\s*){2,}$/i, '')
+        .replace(/\s+(?:W|Wo|Wor|Work|Worki|Workin|orking|rking|king|ing|ng|g)\(?$/i, '')
         .replace(/\s+[•·]\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)\b.*$/i, '')
         .trim();
 }

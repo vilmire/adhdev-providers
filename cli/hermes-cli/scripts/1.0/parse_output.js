@@ -225,6 +225,79 @@ function stripActivityTransientSuffix(text) {
   return collapseRepeatedSkillActivity(source);
 }
 
+const STANDARD_ACTIVITY_PREFIX_RE = /^(?:📖|💻|🔎|📚|📋|✏️|📝|🔧|🛠️|⚙️)\s+(.+)$/u;
+
+function isLikelyActivityPrefixContinuation(line) {
+  const trimmed = String(line || '').trim();
+  if (!trimmed) return false;
+  if (STANDARD_ACTIVITY_PREFIX_RE.test(trimmed)) return false;
+  if (/\s/u.test(trimmed)) return false;
+  if (/\p{Script=Hangul}/u.test(trimmed)) return false;
+  if (trimmed.length > 96) return false;
+  // Wrapped activity labels are usually path/command fragments such as
+  // "l" + "i-parser.test.js" after "📖 .../codex-c". Do not treat
+  // ordinary prose/list items as label continuations.
+  return /^[\w./:@+%=-]+$/u.test(trimmed);
+}
+
+function parseStandardActivityPrefixBlock(lines, index) {
+  const first = String(lines[index] || '').trim();
+  const match = first.match(STANDARD_ACTIVITY_PREFIX_RE);
+  if (!match) return null;
+
+  const parts = [first];
+  let nextIndex = index + 1;
+  while (nextIndex < lines.length && isLikelyActivityPrefixContinuation(lines[nextIndex])) {
+    parts.push(String(lines[nextIndex] || '').trim());
+    nextIndex += 1;
+  }
+
+  return {
+    label: parts.join(''),
+    nextIndex,
+  };
+}
+
+function stripRepeatedStandardActivityPrefixBlocks(text) {
+  const source = String(text || '').trim();
+  if (!source) return '';
+  const lines = source.split(/\r?\n/);
+  if (lines.length < 4) return source;
+
+  const counts = new Map();
+  for (let index = 0; index < lines.length; index += 1) {
+    const block = parseStandardActivityPrefixBlock(lines, index);
+    if (!block) continue;
+    counts.set(block.label, (counts.get(block.label) || 0) + 1);
+    index = block.nextIndex - 1;
+  }
+
+  const repeatedLabels = new Set([...counts.entries()]
+    .filter(([, count]) => count >= 3)
+    .map(([label]) => label));
+  if (repeatedLabels.size === 0) return source;
+
+  const stripped = [];
+  let removed = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    const block = parseStandardActivityPrefixBlock(lines, index);
+    if (block && repeatedLabels.has(block.label)) {
+      removed += 1;
+      index = block.nextIndex - 1;
+      continue;
+    }
+    stripped.push(lines[index]);
+  }
+
+  const next = stripped.join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  // Guard against removing legitimate content: only apply when this was a
+  // repeated label artifact and substantial assistant prose remains.
+  if (removed < 3 || next.length < 80) return source;
+  return next;
+}
+
 function normalizeMessage(message) {
   if (message && typeof message === 'object') {
     const cached = normalizedMessageCache.get(message);
@@ -255,7 +328,7 @@ function normalizeMessage(message) {
     kind,
     senderName: typeof message?.senderName === 'string' && message.senderName ? message.senderName : undefined,
     content: role === 'assistant' && kind === 'standard'
-      ? restoreAssistantCodeFences(stripAssistantFooterNoise(normalizedContent))
+      ? restoreAssistantCodeFences(stripAssistantFooterNoise(stripRepeatedStandardActivityPrefixBlocks(normalizedContent)))
       : normalizedContent,
   };
   if (typeof message?.id === 'string' && message.id) normalized.id = message.id;
