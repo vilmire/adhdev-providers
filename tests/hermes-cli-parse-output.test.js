@@ -1521,17 +1521,66 @@ test('hermes-cli parseOutput does not absorb a bare final answer into the previo
     },
     {
       role: 'assistant',
-      kind: 'standard',
-      senderName: undefined,
-      content: finalAnswer,
-    },
-    {
-      role: 'assistant',
       kind: 'terminal',
       senderName: 'Terminal',
       content: 'npm run test -w oss/packages/web-core',
     },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: finalAnswer,
+    },
   ]);
+});
+
+test('hermes-cli parseOutput keeps screen activity rows before the committed final answer', () => {
+  const prompt = '현재 작업 검증하고 요약해줘';
+  const finalAnswer = '검증 끝. 테스트와 diff 확인까지 완료했습니다.';
+  const screenText = [
+    `● ${prompt}`,
+    ' ┊ 📖 read /tmp/example.ts',
+    ' ┊ 💻 npm test -- --runInBand',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    '검증 끝. 테스트와 diff 확인까지 완료했습니다.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: prompt },
+      { role: 'assistant', content: finalAnswer },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: prompt },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /tmp/example.ts' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: 'npm test -- --runInBand' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
+  ]);
+});
+
+test('hermes-cli parseOutput ignores orphan activity-only viewport rows without a turn anchor', () => {
+  const screenText = [
+    ' ┊ 🔎 grep browser_console|Activity \\(|activity rows|activity row',
+    ' ┊ 💻 node /tmp/adhdev_parse_hermes_snapshot.js',
+    ' ┊ 📝 write /tmp/adhdev_parse_hermes_snapshot.js',
+    ' ⚕ gpt-5.5 │ 71.7K/272K │ [███░░░░░░░] 26% │ 30m │ ⏱ 4m 12s',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⚕ ❯ type a message + Enter to interrupt, Ctrl+C to cancel',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), []);
 });
 
 test('hermes-cli parseOutput trims already-retained final-answer text from a polluted terminal activity bubble', () => {

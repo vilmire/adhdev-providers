@@ -670,6 +670,16 @@ function collapseRepeatedTurnReplays(messages) {
   return dedupeMessages(collapsed);
 }
 
+function findActivityInsertionBeforeFinalAssistant(messages, cursor) {
+  if (!Array.isArray(messages) || cursor < 0) return -1;
+  for (let index = Math.max(0, cursor); index < messages.length; index += 1) {
+    const message = normalizeMessage(messages[index]);
+    if (message.role === 'user') return -1;
+    if (message.role === 'assistant' && (message.kind || 'standard') === 'standard') return index;
+  }
+  return -1;
+}
+
 function mergeMessageHistories(baseMessages, currentMessages) {
   const merged = dedupeMessages(Array.isArray(baseMessages) ? baseMessages : [])
     .map(normalizeMessage)
@@ -698,6 +708,15 @@ function mergeMessageHistories(baseMessages, currentMessages) {
 
     if (isAssistantReplayAfterStableAssistant(merged, cursor, message)) {
       continue;
+    }
+
+    if (isActivityTranscriptMessage(message)) {
+      const insertionIndex = findActivityInsertionBeforeFinalAssistant(merged, cursor);
+      if (insertionIndex >= 0) {
+        merged.splice(insertionIndex, 0, message);
+        cursor = insertionIndex + 1;
+        continue;
+      }
     }
 
     merged.push(message);
@@ -873,6 +892,18 @@ function mergeCoveredTranscript(baseMessages, rawMessages) {
   return dedupeMessages(raw.map((message, index) => chooseMoreCompleteMessage(base[matchedIndices[index]], message)));
 }
 
+function shouldDropOrphanActivityOnlyMessages(messages) {
+  const source = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  if (source.length === 0) return false;
+  return source.every(isActivityTranscriptMessage);
+}
+
+function dropOrphanActivityOnlyMessages(messages) {
+  return shouldDropOrphanActivityOnlyMessages(messages) ? [] : messages;
+}
+
 function shouldPreferRawMessages({
   baseMessages,
   rawMessages,
@@ -926,25 +957,25 @@ module.exports = function parseOutput(input) {
     historyState,
   ));
   const tokenizerOptions = { dedupeMessages };
-  const parsedTranscriptMessages = parseMessages(transcript || '', tokenizerOptions)
+  const parsedTranscriptMessages = dropOrphanActivityOnlyMessages(parseMessages(transcript || '', tokenizerOptions)
     .map((message) => ({
       role: message.role,
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
-    }));
+    })));
   const transcriptCandidates = toCandidates('buffer', parsedTranscriptMessages);
   const transcriptMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     candidatesToLegacyMessages(transcriptCandidates),
     historyState,
   ));
-  const parsedScreenMessages = parseMessages(screenText || '', tokenizerOptions)
+  const parsedScreenMessages = dropOrphanActivityOnlyMessages(parseMessages(screenText || '', tokenizerOptions)
     .map((message) => ({
       role: message.role,
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
-    }));
+    })));
   const screenCandidates = toCandidates('screen', parsedScreenMessages);
   const screenMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     candidatesToLegacyMessages(screenCandidates),
