@@ -109,6 +109,11 @@
       "--last"
     ]
   },
+  "canonicalHistory": {
+    "format": "codex-jsonl",
+    "watchPath": "~/.codex/sessions/**/*.jsonl",
+    "mode": "native-source"
+  },
   "compatibility": [
     {
       "ideVersion": ">=0.42.0",
@@ -134,7 +139,47 @@
       ]
     },
     "controls": {
-      "typedResults": false
+      "typedResults": true
     }
-  }
+  },
+  "controls": [
+    {
+      "id": "model",
+      "type": "display",
+      "label": "Model",
+      "icon": "\ud83e\udd16",
+      "placement": "bar",
+      "order": 10,
+      "readFrom": "model"
+    },
+    {
+      "id": "reasoning",
+      "type": "display",
+      "label": "Reasoning",
+      "icon": "\ud83e\udde0",
+      "placement": "bar",
+      "order": 20,
+      "readFrom": "reasoning"
+    },
+    {
+      "id": "fast",
+      "type": "toggle",
+      "label": "Fast",
+      "icon": "\u26a1",
+      "placement": "bar",
+      "order": 30,
+      "defaultValue": false,
+      "setScript": "setFast",
+      "readFrom": "fast"
+    },
+    {
+      "id": "model_picker",
+      "type": "action",
+      "label": "Model",
+      "icon": "\u2318",
+      "placement": "bar",
+      "order": 40,
+      "invokeScript": "openModelPicker"
+    }
+  ]
 }

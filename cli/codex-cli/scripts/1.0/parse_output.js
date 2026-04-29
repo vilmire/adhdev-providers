@@ -14,6 +14,7 @@
 
 const detectStatus = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
+const { extractControlValues } = require('./control_helpers.js');
 
 // ─── Helpers ─────────────────────────────────────
 
@@ -548,6 +549,8 @@ function parseOutput(input) {
     const promptScope = lastUser?.content || '';
     const hasUserPrompt = !!promptScope;
 
+    const controlValues = extractControlValues(screenText, buffer, input?.recentBuffer || '', input?.rawBuffer || '');
+
     const status = detectStatus({ tail, screenText, rawBuffer: input?.rawBuffer || '' });
     const activeModal = status === 'waiting_approval'
         ? parseApproval({ screenText, buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
@@ -564,6 +567,7 @@ function parseOutput(input) {
             title: 'Codex CLI',
             messages: toMessageObjects(visibleMessages, status),
             activeModal,
+            ...(controlValues ? { controlValues } : {}),
             providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
         };
     }
@@ -597,6 +601,7 @@ function parseOutput(input) {
             title: 'Codex CLI',
             messages: toMessageObjects(previousMessages, status),
             activeModal,
+            ...(controlValues ? { controlValues } : {}),
         };
     }
 
@@ -610,6 +615,7 @@ function parseOutput(input) {
         title: 'Codex CLI',
         messages: toMessageObjects(messages, status),
         activeModal,
+        ...(controlValues ? { controlValues } : {}),
         providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
     };
 }

@@ -9,3 +9,6 @@ function loadModule(name) { try { return require(path.join(DIR, name)); } catch 
 module.exports.parseOutput   = (input) => { const m = loadModule('parse_output.js'); return m ? m(input) : null; };
 module.exports.detectStatus  = (input) => { const m = loadModule('detect_status.js'); return m ? m(input) : null; };
 module.exports.parseApproval = (input) => { const m = loadModule('parse_approval.js'); return m ? m(input) : null; };
+module.exports.listModels = (input) => { const m = loadModule('list_models.js'); return m ? m(input) : null; };
+module.exports.setFast = (input) => { const m = loadModule('set_fast.js'); return m ? m(input) : null; };
+module.exports.openModelPicker = (input) => { const m = loadModule('open_model_picker.js'); return m ? m(input) : null; };
