@@ -339,6 +339,31 @@ test('claude-cli parse_output strips a leading numeric approval-selection residu
   assert.deepEqual(userMessages, [previousPrompt, followupPrompt]);
 });
 
+test('claude-cli parse_output preserves Bash output even when the command header is line-wrapped', () => {
+  const prompt = 'Create game_369.py, run self-test, and include marker.';
+  const marker = 'ADHDEV_CLAUDE_RAW_MARKER_42';
+  const result = parseOutput({
+    screenText: [
+      '❯ ' + prompt,
+      '',
+      '⏺ Bash(python3 /private/tmp/adhdev-claude-raw-1777430732/claude-cli/game_369.py',
+      ' ⎿  ' + marker,
+      '',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const terminal = result.messages.find((message) => message.role === 'assistant' && message.kind === 'terminal');
+  assert.ok(terminal);
+  assert.match(terminal.content, /\$ python3 \/private\/tmp\/adhdev-claude-raw-1777430732\/claude-cli\/game_369\.py/);
+  assert.match(terminal.content, new RegExp(marker));
+  assert.equal(result.messages.some((message) => message.role === 'assistant' && message.kind === 'standard' && !message.content.trim()), false);
+});
+
+
 test('claude-cli parse_output preserves markdown table, fenced python block, and exact output block from the visible assistant reply', () => {
   const prompt = [
     'Please do all of the following in this workspace:',
@@ -454,7 +479,7 @@ test('claude-cli parse_output surfaces visible tool activity and assistant progr
       role: 'assistant',
       kind: 'terminal',
       senderName: 'Terminal',
-      content: '$ pwd',
+      content: '$ pwd\n/Users/vilmire/Work/remote_vs',
     },
     {
       role: 'assistant',
@@ -732,14 +757,14 @@ test('claude-cli parse_output splits visible assistant prose at each ⏺ boundar
         role: 'assistant',
         kind: 'terminal',
         senderName: 'Terminal',
-        content: '$ pwd',
+        content: '$ pwd\n/Users/moltbot/.openclaw/workspace/projects/adhdev',
       },
       {
         role: 'assistant',
         kind: 'standard',
         senderName: undefined,
         content: 'Finally I will summarize the findings.',
-      },
+      }
     ],
   );
 });

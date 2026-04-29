@@ -41,6 +41,7 @@ const KNOWN_PROVIDER_FIELDS = new Set([
   'patterns',
   'cleanOutput',
   'resume',
+  'canonicalHistory',
   'sessionProbe',
   'approvalPositiveHints',
   'scripts',

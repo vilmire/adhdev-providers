@@ -268,5 +268,10 @@
     "controls": {
       "typedResults": true
     }
+  },
+  "canonicalHistory": {
+    "format": "claude-jsonl",
+    "watchPath": "~/.claude/projects/**/*.jsonl",
+    "mode": "native-source"
   }
 }

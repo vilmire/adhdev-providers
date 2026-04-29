@@ -666,11 +666,16 @@ function createApprovalMessage(activeModal) {
 }
 
 function parseBashInvocation(header) {
-    const match = String(header || '').match(/^Bash\((.*)\)$/);
-    if (!match) return null;
-    const command = String(match[1] || '').trim();
-    if (!command) return null;
-    return command;
+    const value = String(header || '').trim();
+    const closed = value.match(/^Bash\((.*)\)$/);
+    if (closed) {
+        const command = String(closed[1] || '').trim();
+        return command || null;
+    }
+    const wrapped = value.match(/^Bash\((.+)$/);
+    if (!wrapped) return null;
+    const command = String(wrapped[1] || '').trim();
+    return command || null;
 }
 
 function isToolActivitySummary(text) {
@@ -698,6 +703,22 @@ function buildVisibleMessages(lines, promptText = '') {
     let currentAssistant = [];
     let skippingToolBlock = false;
     let captureDetailBlock = false;
+    let activeTerminalToolIndex = -1;
+
+    const appendToActiveTerminal = (line) => {
+        if (activeTerminalToolIndex < 0) return false;
+        const cleanedLine = String(line || '').trim();
+        if (!cleanedLine) return true;
+        if (/^(?:Running|Queued|Waiting)(?:…|\.\.\.)?$/i.test(cleanedLine)) return true;
+        const message = messages[activeTerminalToolIndex];
+        if (!message || message.kind !== 'terminal') return false;
+        message.content = `${String(message.content || '').replace(/\s+$/u, '')}\n${cleanedLine}`;
+        return true;
+    };
+
+    const clearActiveTool = () => {
+        activeTerminalToolIndex = -1;
+    };
 
     const flushAssistant = () => {
         const text = cleanupAssistantText(
@@ -733,6 +754,7 @@ function buildVisibleMessages(lines, promptText = '') {
         if (!cleaned || isLeadingPromptFragment) {
             skippingToolBlock = false;
             captureDetailBlock = false;
+            clearActiveTool();
             if (!isLeadingPromptFragment && currentAssistant.length > 0 && currentAssistant[currentAssistant.length - 1] !== '') {
                 currentAssistant.push('');
             }
@@ -744,6 +766,7 @@ function buildVisibleMessages(lines, promptText = '') {
             if (bashCommand) {
                 flushAssistant();
                 messages.push(createToolMessage(`$ ${bashCommand}`, { kind: 'terminal', senderName: 'Terminal' }));
+                activeTerminalToolIndex = messages.length - 1;
                 skippingToolBlock = true;
                 captureDetailBlock = false;
                 continue;
@@ -752,11 +775,13 @@ function buildVisibleMessages(lines, promptText = '') {
                 flushAssistant();
                 skippingToolBlock = false;
                 captureDetailBlock = false;
+                clearActiveTool();
                 continue;
             }
             if (isToolActivitySummary(cleaned)) {
                 flushAssistant();
                 messages.push(createToolMessage(cleaned, { kind: 'tool', senderName: 'Tool' }));
+                clearActiveTool();
                 skippingToolBlock = true;
                 captureDetailBlock = false;
                 continue;
@@ -764,6 +789,7 @@ function buildVisibleMessages(lines, promptText = '') {
             if (isToolHeader(cleaned)) {
                 flushAssistant();
                 messages.push(createToolMessage(cleaned, { kind: 'tool', senderName: 'Tool' }));
+                clearActiveTool();
                 skippingToolBlock = true;
                 captureDetailBlock = false;
                 continue;
@@ -771,19 +797,24 @@ function buildVisibleMessages(lines, promptText = '') {
 
             flushAssistant();
             skippingToolBlock = false;
+            clearActiveTool();
             captureDetailBlock = /^(?:Exact output|Output|Result):/i.test(cleaned);
             currentAssistant.push(cleaned);
             continue;
         }
 
         if (/^\s*⎿\s+/.test(sanitized)) {
+            if (appendToActiveTerminal(cleaned)) continue;
             if (captureDetailBlock && !/^…\s+\+\d+\s+lines\b/i.test(cleaned)) {
                 currentAssistant.push(cleaned);
             }
             continue;
         }
 
-        if (skippingToolBlock && !captureDetailBlock) continue;
+        if (skippingToolBlock && !captureDetailBlock) {
+            appendToActiveTerminal(cleaned);
+            continue;
+        }
         currentAssistant.push(isBoxLine(trimmed) ? sanitized : cleaned);
     }
 

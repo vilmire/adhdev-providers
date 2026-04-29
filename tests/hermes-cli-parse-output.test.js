@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const parseOutput = require('../cli/hermes-cli/scripts/1.0/parse_output.js');
 const detectStatus = require('../cli/hermes-cli/scripts/1.0/detect_status.js');
 const { buildScreenSnapshot } = require('../cli/hermes-cli/scripts/1.0/screen_helpers.js');
+const { toCandidates, candidatesToLegacyMessages } = require('../cli/hermes-cli/scripts/1.0/source_classifier.js');
 
 function toMessages(result) {
   return result.messages.map((message) => ({ role: message.role, content: message.content }));
@@ -29,6 +30,45 @@ function toIdentityMessages(result) {
     turnKey: message._turnKey,
   }));
 }
+
+
+test('hermes-cli source classifier labels committed, buffer, and screen candidates before legacy merge', () => {
+  const committed = toCandidates('committed', [
+    { role: 'user', content: 'already committed prompt' },
+    { role: 'assistant', content: 'already committed final' },
+  ]);
+  assert.deepEqual(committed.map((candidate) => ({
+    source: candidate.source,
+    confidence: candidate.confidence,
+    provenance: candidate.provenance,
+    turnBoundary: candidate.turnBoundary,
+  })), [
+    { source: 'committed', confidence: 'canonical', provenance: 'history', turnBoundary: 'before-current-user' },
+    { source: 'committed', confidence: 'canonical', provenance: 'history', turnBoundary: 'before-current-user' },
+  ]);
+
+  const screen = toCandidates('screen', [
+    { role: 'assistant', content: 'prior final visible in scrollback' },
+    { role: 'user', content: 'current follow up prompt' },
+    { role: 'assistant', content: 'current visible answer' },
+  ]);
+  assert.deepEqual(screen.map((candidate) => ({
+    source: candidate.source,
+    confidence: candidate.confidence,
+    provenance: candidate.provenance,
+    turnBoundary: candidate.turnBoundary,
+  })), [
+    { source: 'screen', confidence: 'artifact', provenance: 'viewport', turnBoundary: 'before-current-user' },
+    { source: 'screen', confidence: 'candidate', provenance: 'current-turn', turnBoundary: 'current-user' },
+    { source: 'screen', confidence: 'candidate', provenance: 'current-turn', turnBoundary: 'after-current-user' },
+  ]);
+
+  assert.deepEqual(candidatesToLegacyMessages(screen), [
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: 'prior final visible in scrollback' },
+    { role: 'user', kind: 'standard', senderName: undefined, content: 'current follow up prompt' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: 'current visible answer' },
+  ]);
+});
 
 
 test('hermes-cli parseOutput assigns provider-owned stable identities to canonical bubbles', () => {
@@ -187,6 +227,99 @@ test('hermes-cli parseOutput merges terminal-elided copies of a long submitted p
   assert.deepEqual(users, [{ role: 'user', content: fullPrompt }]);
 });
 
+test('hermes-cli parseOutput collapses replayed final answers with tiny terminal residue', () => {
+  const cleanFinal = [
+    '점검 완료.',
+    '결론:',
+    '- Claude Code CLI: 정상',
+    '- Codex CLI: 정상, 단 codex 자체가 시작 시 아래 warning을 계속 냄',
+    '- WARNING: failed to clean up stale arg0 temp dirs: Permission denied (os error 13)',
+    '- 실행 자체는 성공했고 ADHDev detect도 버전 파싱 정상',
+    '확인한 것:',
+    '1. 글로벌 ADHDev daemon 상태',
+    '- adhdev 버전: 0.9.44',
+    '- 실행 daemon PID: 33883',
+    '요약하면 지금 기준으로는:',
+    '- 설치/detect OK',
+    '- provider root/loaded-latest OK',
+    '- 직접 CLI runnable OK',
+    '- parser regression OK',
+    'Codex warning은 별도 청소/권한 이슈로 보이는데, 현재 기능 실패로 이어지진 않았어.',
+  ].join('\n');
+  const residueFinal = cleanFinal.replace(
+    'Codex warning은 별도 청소/권한 이슈로 보이는데',
+    '7 3\nCodex warning은 별도 청소/권한 이슈로 보이는데',
+  );
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '좋아 지금 클로드코드 cli, 코덱스 cli 한번 더 점검해' },
+      { role: 'assistant', content: cleanFinal },
+      { role: 'assistant', content: residueFinal },
+    ],
+  });
+
+  const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.equal(standardAssistants.length, 1);
+  assert.equal(standardAssistants[0].content, cleanFinal);
+});
+
+test('hermes-cli parseOutput drops a prior final answer replayed after a follow-up user prompt', () => {
+  const final = [
+    '점검 완료.',
+    '결론:',
+    '- Claude Code CLI: 정상',
+    '- Codex CLI: 정상, 단 codex 자체가 시작 시 아래 warning을 계속 냄',
+    '- WARNING: failed to clean up stale arg0 temp dirs: Permission denied (os error 13)',
+    '- 실행 자체는 성공했고 ADHDev detect도 버전 파싱 정상',
+    '확인한 것:',
+    '1. 글로벌 ADHDev daemon 상태',
+    '- adhdev 버전: 0.9.44',
+    '- 실행 daemon PID: 33883',
+    '요약하면 지금 기준으로는:',
+    '- 설치/detect OK',
+    '- provider root/loaded-latest OK',
+    '- 직접 CLI runnable OK',
+    '- parser regression OK',
+    'Codex warning은 별도 청소/권한 이슈로 보이는데, 현재 기능 실패로 이어지진 않았어.',
+  ].join('\n');
+  const followUp = '지금 이 대화 최종 메세지 두개로 보이는데';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${followUp}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      final,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${followUp}`,
+      '┊ 🔧 skill adhdev-hermes-cli-duplicate-bubble-triage',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      `● ${followUp}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      final,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${followUp}`,
+      '┊ 🔧 skill adhdev-hermes-cli-duplicate-bubble-triage',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: '좋아 지금 클로드코드 cli, 코덱스 cli 한번 더 점검해' },
+      { role: 'assistant', content: final },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '좋아 지금 클로드코드 cli, 코덱스 cli 한번 더 점검해' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: final },
+    { role: 'user', kind: 'standard', senderName: undefined, content: followUp },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill adhdev-hermes-cli-duplicate-bubble-triage' },
+  ]);
+});
+
 test('hermes-cli parseOutput drops transient footer/status lines and collapses duplicate final bubbles', () => {
   const noisyFinal = [
     '생성 파일명: game_369.py',
@@ -341,6 +474,152 @@ test('hermes-cli parseOutput collapses committed and viewport variants of the sa
   assert.deepEqual(toMessages(result), [
     { role: 'user', content: fullPrompt },
     { role: 'assistant', content: '확인하겠습니다.' },
+  ]);
+});
+
+test('hermes-cli parseOutput scopes raw replay after the last committed user prompt', () => {
+  const priorAnswer = 'Earlier structural parser plan answer that should stay committed once.';
+  const currentPrompt = '좋아 이어서 진행해';
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    priorAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '──────────────────────────────────────────────────────────────────────────────',
+    `> ${currentPrompt}`,
+    '──────────────────────────────────────────────────────────────────────────────',
+    '┊ 🔧 terminal test command',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'Current phase two work is running.',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: '이전 요청' },
+      { role: 'assistant', content: priorAnswer },
+      { role: 'user', content: currentPrompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '이전 요청' },
+    { role: 'assistant', content: priorAnswer },
+    { role: 'user', content: currentPrompt },
+    { role: 'assistant', content: 'terminal test command' },
+    { role: 'assistant', content: 'Current phase two work is running.' },
+  ]);
+});
+
+test('hermes-cli parseOutput drops a prior final replay after current-turn tool activity', () => {
+  const priorAnswer = 'Earlier structural parser plan answer that should not become the current final answer.';
+  const currentPrompt = '좋아 이어서 진행해';
+  const screenText = [
+    '──────────────────────────────────────────────────────────────────────────────',
+    `> ${currentPrompt}`,
+    '──────────────────────────────────────────────────────────────────────────────',
+    '┊ 🔧 terminal test command',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    priorAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [
+      { role: 'user', content: '이전 요청' },
+      { role: 'assistant', content: priorAnswer },
+      { role: 'user', content: currentPrompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '이전 요청' },
+    { role: 'assistant', content: priorAnswer },
+    { role: 'user', content: currentPrompt },
+    { role: 'assistant', content: 'terminal test command' },
+  ]);
+});
+
+test('hermes-cli parseOutput ignores non-monotonic raw history before the current committed prompt', () => {
+  const firstAnswer = 'First committed assistant answer that should not be appended again from raw history.';
+  const secondAnswer = 'Second committed assistant answer that should remain canonical once.';
+  const currentPrompt = '좋아 이어서 진행해';
+  const buffer = [
+    '● 중간 요청',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    secondAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    firstAnswer,
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '──────────────────────────────────────────────────────────────────────────────',
+    `> ${currentPrompt}`,
+    '──────────────────────────────────────────────────────────────────────────────',
+    '┊ 🔧 current validation command',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: buffer,
+    buffer,
+    messages: [
+      { role: 'user', content: '처음 요청' },
+      { role: 'assistant', content: firstAnswer },
+      { role: 'user', content: '중간 요청' },
+      { role: 'assistant', content: secondAnswer },
+      { role: 'user', content: currentPrompt },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '처음 요청' },
+    { role: 'assistant', content: firstAnswer },
+    { role: 'user', content: '중간 요청' },
+    { role: 'assistant', content: secondAnswer },
+    { role: 'user', content: currentPrompt },
+    { role: 'assistant', content: 'current validation command' },
+  ]);
+});
+
+test('hermes-cli parseOutput drops a line-wrapped final replay after current-turn tools', () => {
+  const cleanFinal = [
+    '진행 상황 요약.',
+    '1. Phase2 verify는 통과했어.',
+    '- tracked provider tests 통과',
+    '- diff whitespace 통과',
+    '현재 결론: source first current-turn scoped merge로 이동했고 live 검증을 이어가면 된다.',
+  ].join('\n');
+  const wrappedFinal = [
+    '진행 상황 요약.',
+    '1. Phase2 verify는 통과했어.',
+    '- tracked provider tests 통과',
+    '- diff whitespace 통과',
+    '현재 결론: source first current-turn scoped merge로 이동했고 live 검증을 이어가면 된',
+    '다.',
+  ].join('\n');
+  const result = parseOutput({
+    screenText: '',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '좋아 이어서 진행해' },
+      { role: 'assistant', content: cleanFinal },
+      { role: 'assistant', kind: 'terminal', content: 'adhdev provider reload' },
+      { role: 'assistant', kind: 'tool', content: 'skill systematic-debugging' },
+      { role: 'assistant', content: wrappedFinal },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '좋아 이어서 진행해' },
+    { role: 'assistant', content: cleanFinal },
+    { role: 'assistant', content: 'adhdev provider reload' },
+    { role: 'assistant', content: 'skill systematic-debugging' },
   ]);
 });
 

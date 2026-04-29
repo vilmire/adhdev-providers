@@ -56,5 +56,7 @@ module.exports = function parseSession(input) {
         messages,
         modal: output?.activeModal || output?.modal || null,
         parsedStatus: status || null,
+        transcriptAuthority: 'provider',
+        coverage: 'tail',
     };
 };

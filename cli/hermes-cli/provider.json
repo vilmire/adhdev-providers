@@ -2,6 +2,8 @@
   "type": "hermes-cli",
   "name": "Hermes Agent",
   "category": "cli",
+  "transcriptAuthority": "provider",
+  "transcriptContext": "tail",
   "aliases": [
     "hermes",
     "hermes-agent"
@@ -330,5 +332,10 @@
     "controls": {
       "typedResults": true
     }
+  },
+  "canonicalHistory": {
+    "format": "hermes-json",
+    "watchPath": "~/.hermes/sessions/session_{{sessionId}}.json",
+    "mode": "native-source"
   }
 }
