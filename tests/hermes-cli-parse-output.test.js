@@ -266,6 +266,57 @@ test('hermes-cli parseOutput collapses replayed final answers with tiny terminal
   assert.equal(standardAssistants[0].content, cleanFinal);
 });
 
+test('hermes-cli parseOutput collapses a replayed final answer with residue after activity rows', () => {
+  const cleanFinal = [
+    '실제로 standalone isolate로 Claude CLI 점검 끝냈어.',
+    '검증 환경:',
+    '- standalone isolated runtime:',
+    '- ADHDEV_SESSION_HOST_NAME=adhdev-standalone-verify-$$',
+    '- port 3867',
+    '- dev API 19280',
+    '- command: node oss/packages/daemon-standalone/dist/index.js --port 3867 --no-open --dev',
+    '- workspace:',
+    '- /tmp/adhdev-claude-standalone-7turn',
+    '- Claude CLI:',
+    '- 2.1.122 (Claude Code)',
+    '- global/default daemon은 안 죽였고 안 교체함.',
+    '- 기존에 열려 있던 3857은 그대로 놔둠.',
+    '실행한 검증:',
+    '1. daemon-core, daemon-standalone rebuild',
+    '2. isolated standalone launch/readiness 확인',
+    '3. verifier + 7-turn side-effect 검증',
+    '다음에 이어서 한다면 바로 할 작업은 이거야:',
+    '- adhdev-providers/cli/claude-cli 쪽 parser regression test 추가',
+    '- Crunched for Ns, Sautéed for Ns 제거',
+    '- wrapped command artifact python3 | tmp/file.py) 제거/복원',
+    '- provider script에서 고치고, daemon-core는 얇게 유지.',
+  ].join('\n');
+  const replayedWithResidue = cleanFinal
+    .replace('--no-open --dev', '-\n-no-open --dev')
+    .replace('- provider script에서 고치고', '5 9\n- provider script에서 고치고');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '실제로 스탠드얼론 아이솔레이트로 클로드 cli 점검해봐' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+      { role: 'assistant', content: cleanFinal },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'grep launch_cli|send_chat|read_chat' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch && git log -1 --oneline' },
+      { role: 'assistant', content: replayedWithResidue },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '실제로 스탠드얼론 아이솔레이트로 클로드 cli 점검해봐' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: cleanFinal },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'grep launch_cli|send_chat|read_chat' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch && git log -1 --oneline' },
+  ]);
+});
+
 test('hermes-cli parseOutput drops a prior final answer replayed after a follow-up user prompt', () => {
   const final = [
     '점검 완료.',

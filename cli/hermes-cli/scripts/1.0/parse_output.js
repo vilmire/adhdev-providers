@@ -471,6 +471,7 @@ function isReplayedAssistantAnswerAfterStableAssistant(message, stableAnswer) {
   if (!content || !stableContent) return false;
   if (content === stableContent) return true;
   if (compactContent && stableCompactContent && compactContent === stableCompactContent) return true;
+  if (assistantStandardContentsLooselyMatch(normalized, stable)) return true;
 
   const shorterLength = Math.min(content.length, stableContent.length);
   if (shorterLength >= 80 && (content.startsWith(stableContent) || stableContent.startsWith(content))) return true;
