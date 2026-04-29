@@ -272,6 +272,10 @@
   "canonicalHistory": {
     "format": "claude-jsonl",
     "watchPath": "~/.claude/projects/**/*.jsonl",
-    "mode": "native-source"
+    "mode": "native-source",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   }
 }

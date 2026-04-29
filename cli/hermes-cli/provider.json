@@ -336,6 +336,10 @@
   "canonicalHistory": {
     "format": "hermes-json",
     "watchPath": "~/.hermes/sessions/session_{{sessionId}}.json",
-    "mode": "native-source"
+    "mode": "native-source",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   }
 }

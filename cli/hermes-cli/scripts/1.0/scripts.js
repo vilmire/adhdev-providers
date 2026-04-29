@@ -1,6 +1,7 @@
 'use strict';
 const path = require('path');
 const DIR = __dirname;
+const nativeHistory = require('../../../_shared/native_history.js');
 
 function loadModule(name) {
   try {
@@ -22,6 +23,9 @@ module.exports.parseApproval = (input) => {
   const mod = loadModule('parse_approval.js');
   return mod ? mod(input) : null;
 };
+
+module.exports.readNativeHistory = nativeHistory.readHermesNativeHistory;
+module.exports.listNativeHistory = nativeHistory.listHermesNativeHistory;
 
 module.exports.setProvider = (input) => {
   const mod = loadModule('set_provider.js');

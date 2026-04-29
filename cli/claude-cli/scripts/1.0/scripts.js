@@ -22,6 +22,7 @@
 const fs   = require('fs');
 const path = require('path');
 const DIR  = __dirname;
+const nativeHistory = require('../../../_shared/native_history.js');
 
 function loadModule(name) {
     try { return require(path.join(DIR, name)); }
@@ -47,6 +48,9 @@ module.exports.parseApproval = (input) => {
     const mod = loadModule('parse_approval.js');
     return mod ? mod(input) : null;
 };
+
+module.exports.readNativeHistory = nativeHistory.readClaudeNativeHistory;
+module.exports.listNativeHistory = nativeHistory.listClaudeNativeHistory;
 
 // ─── Controls ───
 

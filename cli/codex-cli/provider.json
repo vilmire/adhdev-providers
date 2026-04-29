@@ -112,7 +112,11 @@
   "canonicalHistory": {
     "format": "codex-jsonl",
     "watchPath": "~/.codex/sessions/**/*.jsonl",
-    "mode": "native-source"
+    "mode": "native-source",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   },
   "compatibility": [
     {
