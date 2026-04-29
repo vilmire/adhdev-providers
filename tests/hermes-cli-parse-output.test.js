@@ -1436,6 +1436,51 @@ test('hermes-cli parseOutput surfaces live tool activity and progress bubbles du
   assert.deepEqual(toDetailedMessages(staleBufferResult), expectedMessages);
 });
 
+test('hermes-cli parseOutput compacts long consecutive activity bursts without hiding details', () => {
+  const result = parseOutput({
+    screenText: 'type a message + Enter to interrupt, Ctrl+C to cancel',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '진행해' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill test-driven-development' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill systematic-debugging' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /tmp/adhdev_inspect_hermes_dups.js' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ node /tmp/adhdev_inspect_hermes_activity.js' },
+      { role: 'assistant', content: '중간 점검: activity row는 보존하되 긴 연속 burst는 한 bubble로 줄입니다.' },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: '진행해',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Activity',
+      content: [
+        'Activity (5 events)',
+        '- Tool: skill test-driven-development',
+        '- Tool: skill systematic-debugging',
+        '- Terminal: $ git status --short --branch',
+        '- Tool: read /tmp/adhdev_inspect_hermes_dups.js',
+        '- Terminal: $ node /tmp/adhdev_inspect_hermes_activity.js',
+      ].join('\n'),
+    },
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: '중간 점검: activity row는 보존하되 긴 연속 burst는 한 bubble로 줄입니다.',
+    },
+  ]);
+});
+
 test('hermes-cli parseOutput does not absorb a bare final answer into the previous short terminal activity row', () => {
   const prompt = 'Summarize the just-completed work.';
   const finalAnswer = [

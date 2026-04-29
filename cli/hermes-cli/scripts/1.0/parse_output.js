@@ -306,6 +306,69 @@ function createApprovalMessage(activeModal) {
   };
 }
 
+function isStreamLikeStatus(status) {
+  return status === 'generating' || status === 'streaming' || status === 'long_generating';
+}
+
+function isActivityTranscriptMessage(message) {
+  const normalized = normalizeMessage(message);
+  const kind = normalized.kind || 'standard';
+  return normalized.role === 'assistant' && (kind === 'tool' || kind === 'terminal') && Boolean(normalized.content);
+}
+
+function formatActivitySummaryLine(message) {
+  const normalized = normalizeMessage(message);
+  const kind = normalized.kind || 'tool';
+  const label = normalized.senderName || (kind === 'terminal' ? 'Terminal' : 'Tool');
+  const content = String(normalized.content || '').replace(/\s*\n\s*/g, ' ').trim();
+  return `- ${label}: ${content}`;
+}
+
+const ACTIVITY_BURST_COMPACT_MIN_MESSAGES = 4;
+
+function compactActivityBursts(messages, options = {}) {
+  const source = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const minBurst = Number.isFinite(options.minBurst)
+    ? Math.max(2, Number(options.minBurst))
+    : ACTIVITY_BURST_COMPACT_MIN_MESSAGES;
+  const result = [];
+  let burst = [];
+
+  const flushBurst = () => {
+    if (burst.length >= minBurst) {
+      result.push({
+        role: 'assistant',
+        kind: 'tool',
+        senderName: 'Activity',
+        content: [
+          `Activity (${burst.length} events)`,
+          ...burst.map(formatActivitySummaryLine),
+        ].join('\n'),
+        meta: {
+          activityBurst: true,
+          eventCount: burst.length,
+        },
+      });
+    } else {
+      result.push(...burst);
+    }
+    burst = [];
+  };
+
+  for (const message of source) {
+    if (isActivityTranscriptMessage(message)) {
+      burst.push(message);
+      continue;
+    }
+    flushBurst();
+    result.push(message);
+  }
+  flushBurst();
+  return result;
+}
+
 function dedupeMessages(messages) {
   const next = [];
   for (const rawMessage of messages) {
@@ -730,7 +793,7 @@ function assignProviderOwnedTranscriptIdentity(messages, status) {
     result.push(next);
   }
 
-  const streamLikeStatus = status === 'generating' || status === 'streaming' || status === 'long_generating';
+  const streamLikeStatus = isStreamLikeStatus(status);
   if (streamLikeStatus) {
     for (let index = result.length - 1; index >= 0; index -= 1) {
       const message = result[index];
@@ -925,7 +988,10 @@ module.exports = function parseOutput(input) {
   const finalMessages = activeModal
     ? dedupeMessages([...collapseReplayedAssistantHistory(messages), createApprovalMessage(activeModal)])
     : collapseReplayedAssistantHistory(messages);
-  const identifiedMessages = assignProviderOwnedTranscriptIdentity(finalMessages, effectiveStatus);
+  const displayMessages = isStreamLikeStatus(effectiveStatus)
+    ? compactActivityBursts(finalMessages)
+    : finalMessages;
+  const identifiedMessages = assignProviderOwnedTranscriptIdentity(displayMessages, effectiveStatus);
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
 
