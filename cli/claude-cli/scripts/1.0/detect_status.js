@@ -100,13 +100,29 @@ function hasStartupTrustPrompt(lines) {
     return hasCue && (hasButtons || hasEnterConfirm);
 }
 
+function hasStatusPrefix(trimmed) {
+    return /^[⏺✻✶✳✢✽·•]\s+/.test(trimmed);
+}
+
+function isBrailleSpinnerLine(trimmed) {
+    return /^[⠂⠐⠒⠓⠦⠴⠶⠷⠿](?:\s+|$)/.test(trimmed);
+}
+
+function isEllipsisStatusChrome(trimmed) {
+    if (!hasStatusPrefix(trimmed)) return false;
+    const body = trimmed.replace(/^[⏺✻✶✳✢✽·•]\s+/, '').trim();
+    if (!body || body.length > 96) return false;
+    if (!/(?:…|\.\.\.)(?:\s*\([^)]*\))?\s*$/u.test(body)) return false;
+    if (/^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit|Exact output)(?:\(|:)/.test(body)) return false;
+    return true;
+}
+
 function isSpinnerMetricLine(line) {
     const trimmed = normalize(line);
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    const hasMetricParens = /\([^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\btokens?\b[^)]*\)$/iu.test(trimmed)
-        || /\([^)]*\btokens?\b[^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\)$/iu.test(trimmed);
-    if (!hasMetricParens) return false;
+    const metricBlock = trimmed.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
+    if (!/(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(metricBlock)) return false;
     return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
 }
 
@@ -115,11 +131,9 @@ function isSpinnerLine(line) {
     if (!trimmed || isShellChrome(trimmed)) return false;
     if (isSpinnerMetricLine(trimmed)) return true;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
+    if (isBrailleSpinnerLine(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/^(?:[⏺✻✶✳✢✽·•]\s+)?(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Nesting|Considering|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)\b.*(?:…|\.\.\.)/iu.test(trimmed)) return true;
-    if (/^[✻✶✳✢✽]\s+[A-Z][A-Za-z-]{3,}ing\b.*(?:…|\.{3})/u.test(trimmed)) return true;
-    if (/(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)(?:…|\.\.\.)$/i.test(trimmed)) return true;
-    return /^[A-Z][a-z]+ing(?:…|\.\.\.)$/.test(trimmed);
+    return isEllipsisStatusChrome(trimmed);
 }
 
 function isToolLine(line) {
@@ -256,7 +270,7 @@ module.exports = function detectStatus(input) {
         if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
         if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
         if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
-        if (/(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Running|Percolating|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching|Tinkering)(?:…|\.\.\.)$/im.test(tail)) return 'generating';
+        if (nonEmpty(tail.split(/\r?\n/u)).some(isSpinnerLine)) return 'generating';
         if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
     }
 

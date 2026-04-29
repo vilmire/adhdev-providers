@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const parseOutput = require('../cli/claude-cli/scripts/1.0/parse_output.js');
 const detectStatus = require('../cli/claude-cli/scripts/1.0/detect_status.js');
@@ -15,6 +17,38 @@ function toMessages(result) {
   }));
 }
 
+function readClaudeProviderSource(fileName) {
+  return fs.readFileSync(path.join(__dirname, '..', 'cli', 'claude-cli', 'scripts', '1.0', fileName), 'utf8');
+}
+
+test('claude-cli parser/status avoid hard-coded whimsical spinner verb vocabulary', () => {
+  const providerSource = [
+    readClaudeProviderSource('parse_output.js'),
+    readClaudeProviderSource('detect_status.js'),
+  ].join('\n');
+  const forbiddenSpinnerVerbs = [
+    'Noodling',
+    'Pollinating',
+    'Levitating',
+    'Metamorphosing',
+    'Transmuting',
+    'Beaming',
+    'Effecting',
+    'Nesting',
+    'Considering',
+    'Percolating',
+    'Finagling',
+    'Scurrying',
+    'Bloviating',
+    'Whatchamacallit',
+    'Hatching',
+    'Tinkering',
+  ];
+
+  for (const verb of forbiddenSpinnerVerbs) {
+    assert.doesNotMatch(providerSource, new RegExp(`\\b${verb}\\b`, 'i'), `${verb} should not be hard-coded as spinner vocabulary`);
+  }
+});
 
 
 test('claude-cli treats a separator-bounded > row as the live input prompt region', () => {
@@ -557,7 +591,7 @@ test('claude-cli detect_status returns idle when a completed assistant reply is 
   assert.equal(status, 'idle');
 });
 
-test('claude-cli parse_output keeps generating and surfaces live tool lines from a real runtime snapshot with a trailing prompt', () => {
+test('claude-cli parse_output keeps generating and surfaces live tool lines while suppressing status chrome with a trailing prompt', () => {
   const screenText = [
     '           Claude Code v2.1.114',
     '▗ ▗   ▖ ▖  Opus 4.7 with xhigh effort · Claude Pro',
@@ -613,18 +647,47 @@ test('claude-cli parse_output keeps generating and surfaces live tool lines from
       senderName: 'Tool',
       content: 'Reading 1 file… (ctrl+o to expand)',
     },
-    {
-      role: 'assistant',
-      kind: 'standard',
-      senderName: undefined,
-      content: '· Considering…',
-    },
   ]);
 });
 
 test('claude-cli parse_output treats literal generating spinner text as status chrome, not assistant content', () => {
   const prompt = 'Do something briefly.';
   for (const spinnerText of ['· Generating…', '⏺ Generating…', '· Noodling…', '⏺ Pollinating…']) {
+    const screenText = [
+      `❯ ${prompt}`,
+      spinnerText,
+      '',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '❯ ',
+      '────────────────────────────────────────────────────────────────────────────────',
+      '  ⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt',
+    ].join('\n');
+
+    const result = parseOutput({
+      screenText,
+      buffer: screenText,
+      messages: [{ role: 'user', content: prompt }],
+    });
+
+    assert.equal(result.status, 'generating', `${spinnerText} should keep status generating`);
+    assert.deepEqual(
+      toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })),
+      [
+        {
+          role: 'user',
+          kind: 'standard',
+          senderName: undefined,
+          content: prompt,
+        },
+      ],
+      `${spinnerText} should not be emitted as an assistant message`,
+    );
+  }
+});
+
+test('claude-cli parse_output suppresses arbitrary glyph-prefixed ellipsis status chrome without verb vocabulary', () => {
+  const prompt = 'Do something briefly.';
+  for (const spinnerText of ['⏺ Fizzle-faddling…', '✽ Reticulating splines…', '· Mumble-fluxing…']) {
     const screenText = [
       `❯ ${prompt}`,
       spinnerText,

@@ -189,17 +189,35 @@ function isHorizontalSeparatorLine(trimmed) {
     return /^[-─═]{20,}$/.test(trimmed);
 }
 
+function hasStatusPrefix(trimmed) {
+    return /^[⏺✻✶✳✢✽·•]\s+/.test(trimmed);
+}
+
+function isBrailleSpinnerLine(trimmed) {
+    return /^[⠂⠐⠒⠓⠦⠴⠶⠷⠿](?:\s+|$)/.test(trimmed);
+}
+
+function isEllipsisStatusChrome(trimmed) {
+    if (!hasStatusPrefix(trimmed)) return false;
+    const body = trimmed.replace(/^[⏺✻✶✳✢✽·•]\s+/, '').trim();
+    if (!body || body.length > 96) return false;
+    if (!/(?:…|\.\.\.)(?:\s*\([^)]*\))?\s*$/u.test(body)) return false;
+    if (/^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)(?:\(|:)/.test(body)) return false;
+    return true;
+}
+
 function isOscResidueLine(trimmed) {
-    return /^\d+;\s*(?:[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿·]\s+)?(?:Claude Code|Brief|Working|Thinking|Processing|Searching|Reading|Writing)\b/i.test(trimmed);
+    return /^\d+;\s*(?:Claude Code|Brief)\b/i.test(trimmed)
+        || /^\d+;\s*(?:[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿·]\s+)?[^()\n]*(?:…|\.\.\.)(?:\s*\([^)]*\))?$/u.test(trimmed);
 }
 
 function isStatusLine(trimmed) {
     if (!trimmed) return true;
     if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
-    if (/^[⠂⠐⠒⠓⠦⠴⠶⠷⠿]\s+/.test(trimmed)) return true;
+    if (isBrailleSpinnerLine(trimmed)) return true;
     if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (/^(?:[⏺✻✶✳✢✽·•]\s+)?(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting)\b.*(?:…|\.\.\.)$/iu.test(trimmed)) return true;
-    if (/(?:Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)(?:…|\.\.\.)$/i.test(trimmed)) return true;
+    if (isThinkingMetricStatusLine(trimmed)) return true;
+    if (isEllipsisStatusChrome(trimmed)) return true;
     return isApprovalLine(trimmed);
 }
 
@@ -234,7 +252,6 @@ function isNoiseLine(line) {
     if (!trimmed) return false;
     if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
     if (/^[a-z]\)\s*=+\s*$/i.test(trimmed)) return true;
-    if (/^(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?|Hatching|Tinkering|Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)(?:…|\.\.\.)$/i.test(trimmed)) return true;
     if (/^[A-Za-z]$/.test(trimmed)) return true;
     if (/^[·•✻✶✳✢✽…]$/.test(trimmed)) return true;
     if (isToolSummaryLine(trimmed)) return true;
@@ -302,6 +319,7 @@ function collectAssistantLines(lines) {
         if (isFooterLine(trimmed)) break;
 
         const cleaned = stripAssistantPrefix(sanitized).trim();
+        if (isStatusLine(sanitized)) continue;
         if (!cleaned) {
             skippingToolBlock = false;
             if (out.length > 0 && out[out.length - 1] !== '') out.push('');
@@ -373,6 +391,11 @@ function extractAssistantBlocks(lines) {
                 inToolContent = true;
                 continue;
             }
+            if (isStatusLine(sanitized)) {
+                flushText();
+                inToolContent = false;
+                continue;
+            }
             inToolContent = false;
             if (cleaned) currentText.push(cleaned);
             continue;
@@ -402,12 +425,9 @@ function extractAssistantBlocks(lines) {
 function isSpinnerResidueLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return false;
-    if (/^[·•]\s+(?:Generating|Noodling|Pollinating|Levitating|Metamorphosing|Transmuting|Beaming|Effecting)\b.*(?:…|\.\.\.)$/iu.test(trimmed)) return true;
+    if (isStatusLine(trimmed)) return true;
     if (/^[·•]\s+(?:[A-Za-z]\s+){1,6}[A-Za-z…]$/u.test(trimmed)) return true;
-    if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?$/i.test(trimmed)) return true;
-    if (/^(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;
     if (/^[A-Za-z]{1,8}\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;
-    if (/^[·•]\s+(?:[A-Za-z]+ing|[A-Za-z]+ating|[A-Za-z]+izing|[A-Za-z]+orphosing)\u2026?$/i.test(trimmed)) return false;
     if (/^[A-Za-z]\s+[A-Za-z…]$/u.test(trimmed)) return true;
     if (/^[A-Za-z]{1,2}\s+[A-Za-z]{1,2}$/u.test(trimmed)) return true;
     if (/^[A-Za-z]{1,4}$/u.test(trimmed) && /^[A-Z]/.test(trimmed) === false) return true;
@@ -424,7 +444,7 @@ function looksLikeExactAnswerLine(line) {
 
 function isInlineSpinnerProgressLine(line) {
     const trimmed = sanitizeLine(line).trim();
-    return /^(?:·|•)\s+[A-Z][a-z]+ing(?:…|\.\.\.)?$/u.test(trimmed);
+    return isEllipsisStatusChrome(trimmed);
 }
 
 function cleanupAssistantText(text, promptText = '') {
@@ -471,7 +491,7 @@ function extractLastAssistantHeader(text) {
         const sanitized = sanitizeLine(rawLine);
         if (!/^\s*⏺\s+/.test(sanitized)) continue;
         const cleaned = stripAssistantPrefix(sanitized).trim();
-        if (!cleaned || isToolHeader(cleaned) || isNoiseLine(cleaned) || isApprovalLine(cleaned)) continue;
+        if (!cleaned || isStatusLine(sanitized) || isToolHeader(cleaned) || isNoiseLine(cleaned) || isApprovalLine(cleaned)) continue;
         candidate = cleaned;
     }
     return candidate;
@@ -692,9 +712,8 @@ function isThinkingMetricStatusLine(text) {
     const trimmed = String(text || '').trim();
     if (!trimmed) return false;
     if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    const hasMetricParens = /\([^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\btokens?\b[^)]*\)$/iu.test(trimmed)
-        || /\([^)]*\btokens?\b[^)]*\b\d+(?:\.\d+)?(?:ms|s|m|h)\b[^)]*\)$/iu.test(trimmed);
-    if (!hasMetricParens) return false;
+    const metricBlock = trimmed.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
+    if (!/(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(metricBlock)) return false;
     return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
 }
 
@@ -794,6 +813,13 @@ function buildVisibleMessages(lines, promptText = '') {
                 captureDetailBlock = false;
                 continue;
             }
+            if (isStatusLine(sanitized)) {
+                flushAssistant();
+                skippingToolBlock = false;
+                captureDetailBlock = false;
+                clearActiveTool();
+                continue;
+            }
 
             flushAssistant();
             skippingToolBlock = false;
@@ -831,7 +857,8 @@ function shouldPreferTranscriptMessages(visibleMessages, transcriptMessages) {
     const transcriptAssistant = standardAssistant(transcriptMessages);
     const visibleLast = String(visibleAssistant[visibleAssistant.length - 1]?.content || '').trim();
     const transcriptLast = String(transcriptAssistant[transcriptAssistant.length - 1]?.content || '').trim();
-    const looksPolluted = (text) => /\b(?:tokens?|Tip: Use \/memory|Wrote \d+ lines? to|Write\(|Meandering|Thinking|Processing|Working|Searching|Reading)\b/i.test(text)
+    const looksPolluted = (text) => splitLines(text).some((line) => isStatusLine(line.trim()))
+        || /\b(?:tokens?|Tip: Use \/memory|Wrote \d+ lines? to|Write\()\b/i.test(text)
         || /(?:^|\n)\/[a-z0-9][a-z0-9-]*(?:\b|$)/i.test(text)
         || /(?:^|\n)[✻✶✳✢✽]/u.test(text)
         || /(?:^|\n)\d+\s+[A-Z]\b/.test(text)
