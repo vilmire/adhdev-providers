@@ -135,6 +135,42 @@ module.exports.sendMessage = function sendMessage(params) {
 // ... more scripts
 ```
 
+### CLI provider script contract
+
+CLI providers are PTY-backed. Keep daemon-core as the thin runtime shell: it owns process lifecycle, cwd/env, submit/echo wait, approval resolution transport, transcript storage, and dashboard sync. Provider scripts own CLI-specific screen semantics.
+
+A CLI provider should place versioned scripts under `cli/<type>/scripts/1.0/`:
+
+```text
+parse_output.js      # turns screenText/buffer/messages into ReadChat-style messages
+parse_session.js     # canonical ParsedSession entrypoint used by daemon-core first
+detect_status.js     # idle | generating | waiting_approval | error
+parse_approval.js    # returns actionable modal buttons, or null
+scripts.js           # thin exports/loader for daemon-core
+```
+
+`parse_session.js` should normally be a thin wrapper around the shared helper:
+
+```js
+'use strict';
+
+const parseOutput = require('./parse_output.js');
+const { wrapParseOutputAsSession } = require('../../../_shared/parse_session.js');
+
+module.exports = wrapParseOutputAsSession(parseOutput);
+```
+
+The shared wrapper preserves provider-supplied identity fields and otherwise synthesizes stable `providerUnitKey`, `bubbleId`, `_turnKey`, and `bubbleState` values. Do not duplicate that identity logic in each provider.
+
+Provider scripts should surface visible CLI reality without daemon heuristics hiding failures:
+- preserve full committed history; do not clip with `messages.slice(-50)` or similar parser-owned caps
+- emit typed terminal/tool/activity bubbles when the CLI visibly shows user-meaningful rows
+- emit a visible approval/system bubble in addition to `activeModal` when waiting for approval
+- never return `waiting_approval` without an actionable modal with buttons
+- suppress spinner/footer/chrome residue in transcript bubbles while still using true live prompt/footer cues for status
+
+Regression tests for this contract live in `tests/cli-parse-session-wrapper.test.js` and `tests/legacy-cli-hermes-baseline.test.js`.
+
 ### CDP Ports Already In Use
 
 | Port | Provider |

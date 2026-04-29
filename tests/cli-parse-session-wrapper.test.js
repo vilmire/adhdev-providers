@@ -15,6 +15,10 @@ function scriptPath(type, name) {
   return path.join(cliRoot, type, 'scripts/1.0', name);
 }
 
+function parseSessionSource(type) {
+  return fs.readFileSync(scriptPath(type, 'parse_session.js'), 'utf8');
+}
+
 function sampleInput() {
   return {
     buffer: '',
@@ -37,6 +41,20 @@ test('every CLI provider exposes the common parse_session entrypoint', () => {
       true,
       `${type} should expose scripts/1.0/parse_session.js`,
     );
+  }
+});
+
+test('every CLI parse_session entrypoint delegates shared wrapper behavior to cli/_shared', () => {
+  const sharedPath = path.join(cliRoot, '_shared/parse_session.js');
+  assert.equal(fs.existsSync(sharedPath), true, 'cli/_shared/parse_session.js should exist');
+  const shared = require(sharedPath);
+  assert.equal(typeof shared.wrapParseOutputAsSession, 'function', 'shared wrapper factory');
+  assert.equal(typeof shared.normalizeMessageIdentity, 'function', 'shared identity normalizer');
+
+  for (const type of cliProviders) {
+    const source = parseSessionSource(type);
+    assert.match(source, /_shared\/parse_session\.js/, `${type} parse_session should require the shared wrapper`);
+    assert.doesNotMatch(source, /node:crypto|function\s+stableHash|function\s+normalizeMessageIdentity/, `${type} parse_session should not duplicate shared identity code`);
   }
 });
 

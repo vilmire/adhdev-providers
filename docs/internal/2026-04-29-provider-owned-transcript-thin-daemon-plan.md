@@ -41,8 +41,11 @@ Current Phase A files:
   - `oss/packages/daemon-core/src/commands/chat-commands.ts`
   - daemon-core tests under `oss/packages/daemon-core/test/...`
 - Providers:
+  - `cli/_shared/parse_session.js`
+  - `cli/*/scripts/1.0/parse_session.js`
   - `cli/hermes-cli/provider.json`
-  - `cli/hermes-cli/scripts/1.0/parse_session.js`
+  - `tests/cli-parse-session-wrapper.test.js`
+  - `tests/legacy-cli-hermes-baseline.test.js`
 
 Validation:
 - `npm run test -w oss/packages/daemon-core -- --run test/commands/read-chat-cli-live-parser.test.ts -t "provider-authoritative"`
