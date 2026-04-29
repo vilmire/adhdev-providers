@@ -171,6 +171,65 @@ Provider scripts should surface visible CLI reality without daemon heuristics hi
 
 Regression tests for this contract live in `tests/cli-parse-session-wrapper.test.js` and `tests/legacy-cli-hermes-baseline.test.js`.
 
+#### Provider-owned native history scripts
+
+When a CLI tool writes its own native transcript/session files, keep that provider-specific knowledge in provider scripts rather than daemon-core. The daemon should run the declared script entrypoints and only normalize/page/materialize the returned records.
+
+Declare the native history entrypoints in `provider.json`:
+
+```json
+{
+  "canonicalHistory": {
+    "format": "my-cli-native-jsonl",
+    "watchPath": "~/.my-cli/sessions/**/*.jsonl",
+    "mode": "native-source",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
+  }
+}
+```
+
+Export those functions from the versioned CLI script bundle:
+
+```js
+module.exports.readNativeHistory = function readNativeHistory(input) {
+  // input.sessionId and input.historySessionId identify the provider-native session.
+  // input.workspace is provided when workspace-specific discovery is needed.
+  return {
+    messages: [
+      { role: 'user', content: 'hello' },
+      { role: 'assistant', content: 'hi' }
+    ],
+    sourcePath: '/absolute/native/session/path.jsonl',
+    sourceMtimeMs: Date.now()
+  };
+};
+
+module.exports.listNativeHistory = function listNativeHistory(input) {
+  return {
+    sessions: [
+      {
+        historySessionId: 'native-session-id',
+        messageCount: 2,
+        preview: 'hello',
+        sourcePath: '/absolute/native/session/path.jsonl',
+        sourceMtimeMs: Date.now()
+      }
+    ]
+  };
+};
+```
+
+Rules:
+- `canonicalHistory.scripts.readSession` and `canonicalHistory.scripts.listSessions` must both be non-empty strings when `scripts` is declared.
+- `canonicalHistory.format` is an opaque provider-owned label. Do not rely on daemon-core knowing it.
+- Provider scripts own native path discovery, file parsing, role/kind conversion, and transcript fidelity cleanup.
+- Daemon-core should not silently fall back to a daemon parser when a declared provider-owned native history script is missing or invalid.
+
+Regression tests for this contract live in `tests/provider-native-history-scripts.test.js` and daemon-core `test/providers/provider-schema.test.ts` / `test/config/chat-history.test.ts`.
+
 ### CDP Ports Already In Use
 
 | Port | Provider |
