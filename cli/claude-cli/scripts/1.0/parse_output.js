@@ -49,6 +49,19 @@ function looksLikeSamePrompt(left, right) {
     if (looseA && looseB && looseA === looseB) return true;
     const minLength = Math.min(a.length, b.length);
     if (minLength < 24) return false;
+
+    const compactLooseA = looseA.replace(/\s+/g, '');
+    const compactLooseB = looseB.replace(/\s+/g, '');
+    if (compactLooseA && compactLooseB && Math.min(compactLooseA.length, compactLooseB.length) >= 24) {
+        if (compactLooseA === compactLooseB
+            || compactLooseA.startsWith(compactLooseB)
+            || compactLooseB.startsWith(compactLooseA)
+            || compactLooseA.includes(compactLooseB)
+            || compactLooseB.includes(compactLooseA)) {
+            return true;
+        }
+    }
+
     return a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a)
         || (looseA && looseB && (looseA.startsWith(looseB) || looseB.startsWith(looseA) || looseA.includes(looseB) || looseB.includes(looseA)));
 }

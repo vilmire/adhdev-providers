@@ -113,6 +113,48 @@ test('claude-cli does not treat an unbounded > content line as the input prompt 
   assert.equal(screen.promptLineIndex, -1);
 });
 
+test('claude-cli parse_output does not duplicate a completed soft-wrapped prompt from the visible screen', () => {
+  const prompt = 'Chat debug signal sent (chat-debug-20260430T182731031Z-f919c528-f19e-4117-857d-5f59536cf372-3e12c171); saved on daemon, locator copied.';
+  const previousMessages = [
+    { role: 'user', content: 'ㅇㅇ' },
+    { role: 'assistant', content: '네, 무엇을 도와드릴까요?\nWorked for 2s' },
+    { role: 'user', content: prompt },
+    { role: 'assistant', content: '확인됐네요. 이걸로 뭔가 작업이 필요하신가요, 아니면 그냥 공유하신 건가요?' },
+  ];
+  const screenText = [
+    '❯ ㅇㅇ',
+    '',
+    '⏺ 네, 무엇을 도와드릴까요?',
+    '',
+    '✻ Worked for 2s',
+    '',
+    '❯ Chat debug signal sent (chat-debug-20260430T182731031Z-f919c528-f19e-4117-857',
+    '  d-5f59536cf372-3e12c171); saved on daemon, locator copied.',
+    '',
+    '⏺ 확인됐네요. 이걸로 뭔가 작업이 필요하신가요, 아니면 그냥 공유하신 건가요?',
+    '',
+    '✻ Cooked for 5s',
+    '',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: previousMessages,
+  });
+
+  assert.deepEqual(toMessages(result), previousMessages.map((message) => ({
+    role: message.role,
+    kind: 'standard',
+    senderName: undefined,
+    content: message.content,
+    meta: undefined,
+  })));
+});
+
 test('claude-cli parse_output drops Claude completion footer from final assistant bubble', () => {
   const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
   const screenText = [
