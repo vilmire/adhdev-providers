@@ -140,7 +140,7 @@ test('claude-cli parse_output drops Claude completion footer from final assistan
   assert.doesNotMatch(assistant.content, /Brewed for \d+s/i);
 });
 
-test('claude-cli parse_output drops Churned completion footer variants from final assistant bubble', () => {
+test('claude-cli parse_output drops Churned/Crunched completion footer variants from final assistant bubble', () => {
   const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
   const screenText = [
     '❯ ' + prompt,
@@ -164,7 +164,83 @@ test('claude-cli parse_output drops Churned completion footer variants from fina
   assert.match(assistant.content, /ADHDEV_369_DONE_CLAUDE_CLI/);
   assert.doesNotMatch(assistant.content, /Churned for \d+s/i);
   assert.doesNotMatch(assistant.content, /^❯/m);
+
+  const crunched = parseOutput({
+    screenText: [
+      '❯ ' + prompt,
+      '',
+      '⏺ 완료했습니다.',
+      'Crunched for 2m 20s',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  assert.equal(crunched.messages.at(-1)?.content, '완료했습니다.');
+
+  const prose = parseOutput({
+    screenText: [
+      '❯ ' + prompt,
+      '',
+      '⏺ Crunched for 2 days to prepare this summary.',
+      'Crunched for 2m 20s to prepare this summary.',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  assert.match(prose.messages.at(-1)?.content || '', /Crunched for 2 days to prepare this summary\./);
+  assert.match(prose.messages.at(-1)?.content || '', /Crunched for 2m 20s to prepare this summary\./);
 });
+
+test('claude-cli parse_output preserves numbered assistant lists as prose, not approval noise', () => {
+  const prompt = '문서들 최신화 진행시켜';
+  const screenText = [
+    '❯ ' + prompt,
+    '',
+    '⏺ docs/ARCHITECTURE.md 업데이트 완료입니다. v0.9.35 → v0.9.47 기준으로 다음',
+    '내용을 반영했습니다:',
+    '',
+    '1. 버전 헤더/플랫폼 다이어그램/Last updated 버전 표기 갱신',
+    '2. P2P command_result 청킹: 60KB 초과 시 32KB 단위 command_result_chunk',
+    '메시지로 분할 전송 (섹션 5.4)',
+    '3. daemon auth rejection/reconnect 동작: 4001/4011 영구 중단, setup --force',
+    '복구 안내',
+    '4. DaemonConnectionDO auth-failed close guard: 미인증 stale socket close는',
+    'webhook/push/UserSession 이벤트를 트리거하지 않음',
+    '5. Provider-native saved history: provider.json canonicalHistory + provider script',
+    '기반 아키텍처 (native-source / materialized-mirror / disabled 모드)',
+    '6. Yes, this numbered prose item should stay in the assistant reply',
+    '7. No, this is not an approval choice outside a modal',
+    '8. Proceed carefully with context-aware parsing',
+    '',
+    'Crunched for 2m 20s',
+    '',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.ok(assistant);
+  assert.match(assistant.content, /1\. 버전 헤더/);
+  assert.match(assistant.content, /2\. P2P command_result 청킹/);
+  assert.match(assistant.content, /3\. daemon auth rejection/);
+  assert.match(assistant.content, /4\. DaemonConnectionDO auth-failed close guard/);
+  assert.match(assistant.content, /5\. Provider-native saved history/);
+  assert.match(assistant.content, /6\. Yes, this numbered prose item should stay/);
+  assert.match(assistant.content, /7\. No, this is not an approval choice/);
+  assert.match(assistant.content, /8\. Proceed carefully with context-aware parsing/);
+  assert.doesNotMatch(assistant.content, /Crunched for/);
+});
+
 
 test('claude-cli parse_output keeps full prior transcript instead of slicing to the last 50 messages', () => {
   const priorMessages = Array.from({ length: 60 }, (_, index) => ({

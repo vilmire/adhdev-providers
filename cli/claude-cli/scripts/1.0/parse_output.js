@@ -167,7 +167,7 @@ function isFooterLine(trimmed) {
         || /^How is Claude doing this session\?/i.test(trimmed)
         || /^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)
         || /^[❯›>]\s*\d+\s*$/i.test(trimmed)
-        || /^(?:Brewed|Baked|Cooked|Churned)\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)\b/i.test(trimmed)
+        || /^(?:Brewed|Baked|Cooked|Churned|Crunched)\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h))?\s*$/i.test(trimmed)
         || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
         || /^⏵⏵\s+accept edits on/i.test(trimmed)
@@ -181,7 +181,6 @@ function isFooterLine(trimmed) {
 function isApprovalLine(trimmed) {
     return /This command requires approval/i.test(trimmed)
         || /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
-        || /^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
         || /Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(trimmed);
 }
 

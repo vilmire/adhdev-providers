@@ -24,6 +24,7 @@ module.exports = function setFast(input = {}) {
     command: {
       type: 'pty_write',
       text: value ? '/fast on' : '/fast off',
+      enterCount: 2,
     },
   };
 };

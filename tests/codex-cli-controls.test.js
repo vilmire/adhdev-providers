@@ -93,19 +93,19 @@ test('codex-cli set_fast maps toggle values to deterministic /fast commands', ()
   assert.equal(on.ok, true);
   assert.equal(on.currentValue, true);
   assert.deepEqual(on.controlValues, { fast: true });
-  assert.deepEqual(on.command, { type: 'pty_write', text: '/fast on' });
+  assert.deepEqual(on.command, { type: 'pty_write', text: '/fast on', enterCount: 2 });
 
   const off = setFast({ args: { value: false } });
   assert.equal(off.ok, true);
   assert.equal(off.currentValue, false);
   assert.deepEqual(off.controlValues, { fast: false });
-  assert.deepEqual(off.command, { type: 'pty_write', text: '/fast off' });
+  assert.deepEqual(off.command, { type: 'pty_write', text: '/fast off', enterCount: 2 });
 });
 
 test('codex-cli model action sends only the documented native picker command', () => {
   assert.deepEqual(openModelPicker(), {
     ok: true,
-    command: { type: 'pty_write', text: '/model' },
+    command: { type: 'pty_write', text: '/model', enterCount: 2 },
     effects: [{ type: 'toast', toast: { level: 'info', message: 'Opened Codex model picker in the terminal.' } }],
   });
 });
