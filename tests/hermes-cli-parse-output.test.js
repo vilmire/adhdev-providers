@@ -127,6 +127,31 @@ test('hermes-cli parseOutput marks the active assistant bubble as streaming with
   assert.equal(assistant.meta?.streaming, true);
 });
 
+test('hermes-cli parseOutput keeps generating tool and terminal activity visible in chat', () => {
+  const result = parseOutput({
+    screenText: 'type a message + Enter to interrupt, Ctrl+C to cancel',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '생성 중에 툴 사용도 바로 보여줘' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read_file package.json' },
+      { role: 'assistant', content: '현재 확인 중입니다.' },
+    ],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '생성 중에 툴 사용도 바로 보여줘' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read_file package.json' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: '현재 확인 중입니다.' },
+  ]);
+
+  const streamingAssistant = result.messages[result.messages.length - 1];
+  assert.equal(streamingAssistant.bubbleState, 'streaming');
+  assert.equal(streamingAssistant.meta?.streaming, true);
+});
+
 test('hermes-cli parseOutput handles long tool-heavy histories without re-normalizing quadratically', () => {
   const priorMessages = Array.from({ length: 2600 }, (_, index) => ({
     role: 'assistant',
@@ -264,6 +289,50 @@ test('hermes-cli parseOutput collapses replayed final answers with tiny terminal
   const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
   assert.equal(standardAssistants.length, 1);
   assert.equal(standardAssistants[0].content, cleanFinal);
+});
+
+test('hermes-cli parseOutput collapses final answer redraws with repeated duration fragments', () => {
+  const partialFinal = [
+    '맞습니다. 재현했고 원인도 잡았습니다.',
+    '현재 세션에서 실제 상태:',
+    '1. 터미널 snapshot:',
+    '- 번호 1~7 리스트가 전부 보임',
+    '- Crunched for 20s는 Claude CLI footer/chrome',
+    '2. Claude native history jsonl:',
+    '- 마지막 assistant 메시지가 정상',
+    '3. ADHDev read_chat:',
+    '- Crunched for footer가 메시지 본문에 섞임',
+    '원인: Claude CLI provider parser에서 isApprovalLine()이 너무 넓었습니다.',
+    '이걸 전부 status/approval noise로 제거해서, Claude 답변의 numbered markdown list가 사라진 겁니다.',
+    '그리고 Crunched for footer/status chrome variant도 본문에 섞였습니다.',
+    '현재 실행 중인 global daemon binary는 방금 수정한 daemon-core self-heal 코드를 아직 포함하지 않습니다.',
+    '새 Claude 응답부터는 provider parser 수정이 적용되어 numbered list drop은 막힐 가능성이 높습니다.',
+    '현재 손상 bubble까지 자동 복구하려면 daemon-core 변경이 포함된 빌드/재시작/릴리즈가 필요합니다.',
+    'Provider parser tests는 통과했고 daemon-core targeted test도 통과했습니다.',
+    '하지만 live daemon verification은 아직 기존 binary와 committed tail 때문에 같은 결과를 반환할 수 있습니다.',
+    '이 보고는 dashboard/read_chat 표시와 terminal/native history를 분리해서 설명하기 위한 긴 최종 답변입니다.',
+    '참고로 root repo에 이미 있던 변경:',
+    '/Users/moltbot/.openclaw/workspace/projects/adhdev/.claude/settings.local.json',
+    '/Users/moltbot/.openclaw/workspace/projects/adhdev/docs/ARCHITECTURE.md',
+  ].join('\n');
+  const completeFinal = partialFinal
+    .replace('Crunched for 20s는', 'Crunched for 2m 20s는')
+    .replace('Crunched for footer가', 'Crunched for 2m 20s footer가')
+    .replace('Crunched for footer/status', 'Crunched for 2m 20s footer/status');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '현재 클로드 cli 세션에서 마지막 메세지 터미널과 너무 다르게 나왔음' },
+      { role: 'assistant', content: partialFinal },
+      { role: 'assistant', content: completeFinal },
+    ],
+  });
+
+  const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.equal(standardAssistants.length, 1);
+  assert.equal(standardAssistants[0].content, completeFinal);
 });
 
 test('hermes-cli parseOutput collapses a replayed final answer with residue after activity rows', () => {
@@ -1252,7 +1321,7 @@ test('hermes-cli parseOutput does not keep a timed-out dangerous-command dialog 
   assert.notEqual(detectStatus({ screenText, buffer: screenText }), 'waiting_approval');
 });
 
-test('hermes-cli parseOutput collapses redrawn in-flight skill activity text into one tool bubble', () => {
+test('hermes-cli parseOutput keeps redrawn in-flight skill activity text visible during generation', () => {
   const screenText = [
     '● Validate the global daemon with the known skill.',
     ' ┊ 📚 skill global-daemon-validation•skill global-daemon-validationskill global-daemon-validation•@skill global-daemon-validation',
@@ -1281,7 +1350,7 @@ test('hermes-cli parseOutput collapses redrawn in-flight skill activity text int
   ]);
 });
 
-test('hermes-cli parseOutput collapses redrawn skill activity text when the first prefix is lost', () => {
+test('hermes-cli parseOutput keeps redrawn skill activity text visible when the first prefix is lost', () => {
   const screenText = [
     '● Validate the live transcript plumbing with the known skill.',
     ' ┊ 📚 provider-live-transcript-plumbingskill provider-live-transcript-plumbing.skill provider-live-transcript-plumbingskill provider-live-transcript-plumbing• skill provider-live-transcript-plumbingskill provider-live-transcript-plumbing• skill provider-live-transcript-plumbing• skill provider-live-transcript-plumbing',
@@ -1310,7 +1379,7 @@ test('hermes-cli parseOutput collapses redrawn skill activity text when the firs
   ]);
 });
 
-test('hermes-cli parseOutput does not collapse skill activity text when durable words are present', () => {
+test('hermes-cli parseOutput keeps skill activity text visible even when durable words are present during streaming', () => {
   const screenText = [
     '● Validate the global daemon with the known skill.',
     ' ┊ 📚 skill global-daemon-validation completed skill global-daemon-validation',
@@ -1436,7 +1505,7 @@ test('hermes-cli parseOutput surfaces live tool activity and progress bubbles du
   assert.deepEqual(toDetailedMessages(staleBufferResult), expectedMessages);
 });
 
-test('hermes-cli parseOutput compacts long consecutive activity bursts without hiding details', () => {
+test('hermes-cli parseOutput keeps long consecutive activity bursts visible during streaming', () => {
   const result = parseOutput({
     screenText: 'type a message + Enter to interrupt, Ctrl+C to cancel',
     buffer: '',
@@ -1462,15 +1531,32 @@ test('hermes-cli parseOutput compacts long consecutive activity bursts without h
     {
       role: 'assistant',
       kind: 'tool',
-      senderName: 'Activity',
-      content: [
-        'Activity (5 events)',
-        '- Tool: skill test-driven-development',
-        '- Tool: skill systematic-debugging',
-        '- Terminal: $ git status --short --branch',
-        '- Tool: read /tmp/adhdev_inspect_hermes_dups.js',
-        '- Terminal: $ node /tmp/adhdev_inspect_hermes_activity.js',
-      ].join('\n'),
+      senderName: 'Tool',
+      content: 'skill test-driven-development',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'skill systematic-debugging',
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: '$ git status --short --branch',
+    },
+    {
+      role: 'assistant',
+      kind: 'tool',
+      senderName: 'Tool',
+      content: 'read /tmp/adhdev_inspect_hermes_dups.js',
+    },
+    {
+      role: 'assistant',
+      kind: 'terminal',
+      senderName: 'Terminal',
+      content: '$ node /tmp/adhdev_inspect_hermes_activity.js',
     },
     {
       role: 'assistant',

@@ -191,39 +191,91 @@ function comparableContentsMatch(left, right, minLength) {
 // Compatibility fallback only: source/turn scoping should prevent most replayed
 // final answers from reaching content comparison. Keep this narrow for terminal
 // redraw residue variants until the reconciler owns source boundaries.
-function isLikelySmallResidueDuplicate(left, right) {
+const SMALL_RESIDUE_RE = /^[\p{N}\p{P}\p{S}smhd]*$/iu;
+const DURATION_RESIDUE_RE = /\d+(?:\.\d+)?[smhd]/iu;
+
+function analyzeSmallResidueDuplicate(left, right) {
   const a = String(left || '').replace(/\s+/g, '');
   const b = String(right || '').replace(/\s+/g, '');
   const shorterLength = Math.min(a.length, b.length);
   const longerLength = Math.max(a.length, b.length);
-  if (shorterLength < 160 || longerLength === 0) return false;
+  if (shorterLength < 160 || longerLength === 0) return null;
 
-  let prefix = 0;
-  while (prefix < shorterLength && a[prefix] === b[prefix]) prefix += 1;
-  if (prefix === shorterLength && a.length === b.length) return true;
+  let indexA = 0;
+  let indexB = 0;
+  let commonLength = 0;
+  let residueA = '';
+  let residueB = '';
+  const maxTotalResidue = 24;
+  const maxResidueRun = 8;
 
-  let suffix = 0;
-  while (
-    suffix < shorterLength - prefix
-    && a[a.length - 1 - suffix] === b[b.length - 1 - suffix]
-  ) {
-    suffix += 1;
+  const appendResidue = (side, fragment) => {
+    if (!fragment || !SMALL_RESIDUE_RE.test(fragment)) return false;
+    if (side === 'a') residueA += fragment;
+    else residueB += fragment;
+    return residueA.length + residueB.length <= maxTotalResidue;
+  };
+
+  while (indexA < a.length && indexB < b.length) {
+    if (a[indexA] === b[indexB]) {
+      indexA += 1;
+      indexB += 1;
+      commonLength += 1;
+      continue;
+    }
+
+    let aligned = false;
+    for (let skip = 1; skip <= maxResidueRun && indexA + skip <= a.length; skip += 1) {
+      const fragment = a.slice(indexA, indexA + skip);
+      if (!SMALL_RESIDUE_RE.test(fragment)) break;
+      if (a[indexA + skip] === b[indexB] && appendResidue('a', fragment)) {
+        indexA += skip;
+        aligned = true;
+        break;
+      }
+    }
+    if (aligned) continue;
+
+    for (let skip = 1; skip <= maxResidueRun && indexB + skip <= b.length; skip += 1) {
+      const fragment = b.slice(indexB, indexB + skip);
+      if (!SMALL_RESIDUE_RE.test(fragment)) break;
+      if (a[indexA] === b[indexB + skip] && appendResidue('b', fragment)) {
+        indexB += skip;
+        aligned = true;
+        break;
+      }
+    }
+    if (!aligned) return null;
   }
 
-  const aResidue = a.slice(prefix, a.length - suffix);
-  const bResidue = b.slice(prefix, b.length - suffix);
-  const residueLength = aResidue.length + bResidue.length;
-  const commonLength = prefix + suffix;
-  return residueLength <= 16
-    && commonLength / longerLength >= 0.985
-    && (/^[\p{N}\p{P}\p{S}]*$/u.test(aResidue) || /^[\p{N}\p{P}\p{S}]*$/u.test(bResidue));
+  if (indexA < a.length && !appendResidue('a', a.slice(indexA))) return null;
+  if (indexB < b.length && !appendResidue('b', b.slice(indexB))) return null;
+
+  const residueLength = residueA.length + residueB.length;
+  if (residueLength === 0) return { prefer: 'shorter' };
+  if (residueLength > maxTotalResidue || commonLength / longerLength < 0.985) return null;
+
+  const onlyLeftHasResidue = Boolean(residueA) && !residueB;
+  const onlyRightHasResidue = Boolean(residueB) && !residueA;
+  const durationResidueSide = DURATION_RESIDUE_RE.test(residueA)
+    ? 'left'
+    : (DURATION_RESIDUE_RE.test(residueB) ? 'right' : '');
+  if (durationResidueSide === 'left' && onlyLeftHasResidue) return { prefer: 'left' };
+  if (durationResidueSide === 'right' && onlyRightHasResidue) return { prefer: 'right' };
+  return { prefer: 'shorter' };
+}
+
+function assistantStandardLooseMatchPreference(left, right) {
+  const aComparable = getComparableContent(left);
+  const bComparable = getComparableContent(right);
+  const comparableMatch = analyzeSmallResidueDuplicate(aComparable, bComparable);
+  if (comparableMatch) return comparableMatch.prefer;
+  const compactMatch = analyzeSmallResidueDuplicate(getCompactComparableContent(left), getCompactComparableContent(right));
+  return compactMatch ? compactMatch.prefer : '';
 }
 
 function assistantStandardContentsLooselyMatch(left, right) {
-  const aComparable = getComparableContent(left);
-  const bComparable = getComparableContent(right);
-  if (isLikelySmallResidueDuplicate(aComparable, bComparable)) return true;
-  return isLikelySmallResidueDuplicate(getCompactComparableContent(left), getCompactComparableContent(right));
+  return Boolean(assistantStandardLooseMatchPreference(left, right));
 }
 
 function messagesMatch(left, right) {
@@ -279,8 +331,14 @@ function chooseMoreCompleteMessage(left, right) {
     return withMergedMessageIdentity(preferred, fallback);
   }
 
-  if (a.role === 'assistant' && a.kind === 'standard' && assistantStandardContentsLooselyMatch(a, b)) {
-    const preferred = aComparable.length <= bComparable.length ? a : b;
+  const loosePreference = a.role === 'assistant' && a.kind === 'standard'
+    ? assistantStandardLooseMatchPreference(a, b)
+    : '';
+  if (loosePreference) {
+    let preferred;
+    if (loosePreference === 'left') preferred = a;
+    else if (loosePreference === 'right') preferred = b;
+    else preferred = aComparable.length <= bComparable.length ? a : b;
     const fallback = preferred === a ? b : a;
     return withMergedMessageIdentity(preferred, fallback);
   }
@@ -314,59 +372,6 @@ function isActivityTranscriptMessage(message) {
   const normalized = normalizeMessage(message);
   const kind = normalized.kind || 'standard';
   return normalized.role === 'assistant' && (kind === 'tool' || kind === 'terminal') && Boolean(normalized.content);
-}
-
-function formatActivitySummaryLine(message) {
-  const normalized = normalizeMessage(message);
-  const kind = normalized.kind || 'tool';
-  const label = normalized.senderName || (kind === 'terminal' ? 'Terminal' : 'Tool');
-  const content = String(normalized.content || '').replace(/\s*\n\s*/g, ' ').trim();
-  return `- ${label}: ${content}`;
-}
-
-const ACTIVITY_BURST_COMPACT_MIN_MESSAGES = 4;
-
-function compactActivityBursts(messages, options = {}) {
-  const source = (Array.isArray(messages) ? messages : [])
-    .map(normalizeMessage)
-    .filter((message) => message.content);
-  const minBurst = Number.isFinite(options.minBurst)
-    ? Math.max(2, Number(options.minBurst))
-    : ACTIVITY_BURST_COMPACT_MIN_MESSAGES;
-  const result = [];
-  let burst = [];
-
-  const flushBurst = () => {
-    if (burst.length >= minBurst) {
-      result.push({
-        role: 'assistant',
-        kind: 'tool',
-        senderName: 'Activity',
-        content: [
-          `Activity (${burst.length} events)`,
-          ...burst.map(formatActivitySummaryLine),
-        ].join('\n'),
-        meta: {
-          activityBurst: true,
-          eventCount: burst.length,
-        },
-      });
-    } else {
-      result.push(...burst);
-    }
-    burst = [];
-  };
-
-  for (const message of source) {
-    if (isActivityTranscriptMessage(message)) {
-      burst.push(message);
-      continue;
-    }
-    flushBurst();
-    result.push(message);
-  }
-  flushBurst();
-  return result;
 }
 
 function dedupeMessages(messages) {
@@ -1019,9 +1024,7 @@ module.exports = function parseOutput(input) {
   const finalMessages = activeModal
     ? dedupeMessages([...collapseReplayedAssistantHistory(messages), createApprovalMessage(activeModal)])
     : collapseReplayedAssistantHistory(messages);
-  const displayMessages = isStreamLikeStatus(effectiveStatus)
-    ? compactActivityBursts(finalMessages)
-    : finalMessages;
+  const displayMessages = finalMessages;
   const identifiedMessages = assignProviderOwnedTranscriptIdentity(displayMessages, effectiveStatus);
   const model = extractCurrentModel(screenText || transcript);
   const providerSessionId = extractProviderSessionId(transcript || screenText);
