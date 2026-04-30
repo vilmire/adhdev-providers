@@ -386,6 +386,33 @@ test('hermes-cli parseOutput collapses a replayed final answer with residue afte
   ]);
 });
 
+test('hermes-cli parseOutput drops replayed activity rows after a Hermes interrupt echo prompt', () => {
+  const activity = [
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill adhdev-chat-debug-bundle-planning' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+    { role: 'assistant', kind: 'tool', senderName: 'Plan', content: 'plan 3 task(s)' },
+  ];
+  const final = '완료했습니다. '.repeat(10).trim();
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '',
+    messages: [
+      { role: 'user', content: '} ٩(๑❛ᴗ❛๑)۶ synthesizing...' },
+      ...activity,
+      { role: 'assistant', content: final },
+      { role: 'user', content: "} ⚡ Sending after interrupt: '}'" },
+      ...activity,
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '}' },
+    ...activity,
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: final },
+  ]);
+});
+
 test('hermes-cli parseOutput drops a prior final answer replayed after a follow-up user prompt', () => {
   const final = [
     '점검 완료.',

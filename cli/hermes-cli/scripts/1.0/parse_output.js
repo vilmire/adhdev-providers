@@ -27,6 +27,21 @@ const normalizedMessageCache = new WeakMap();
 const comparableContentCache = new WeakMap();
 const compactComparableContentCache = new WeakMap();
 
+function stripUserPromptTransientSuffix(text) {
+  const source = String(text || '').trim();
+  if (!source) return '';
+
+  let stripped = source
+    .replace(/\s+[⚡✦✧*·•]?\s*Sending after interrupt:\s*(['"]).*?\1\s*$/iu, '')
+    .replace(/\s+[^\r\n]{0,64}(?:synthesizing|ruminating|reasoning|thinking|processing|working|contemplating|brainstorming)(?:\.\.\.|…)?\s*$/iu, '')
+    .trim();
+
+  const normalized = stripTransientPromptSuffix(stripped);
+  if (normalized) return normalized;
+  if (stripped && /^[^\p{L}\p{N}]+$/u.test(stripped)) return stripped;
+  return normalized;
+}
+
 function normalizeMessage(message) {
   if (message && typeof message === 'object') {
     const cached = normalizedMessageCache.get(message);
@@ -48,7 +63,7 @@ function normalizeMessage(message) {
   const kind = typeof message?.kind === 'string' && message.kind ? message.kind : 'standard';
   const rawContent = String(message?.content || '').trim();
   const normalizedContent = role === 'user'
-    ? stripTransientPromptSuffix(rawContent)
+    ? stripUserPromptTransientSuffix(rawContent)
     : (role === 'assistant' && (kind === 'tool' || kind === 'terminal')
         ? stripActivityTransientSuffix(rawContent)
         : rawContent);
