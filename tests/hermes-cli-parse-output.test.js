@@ -521,6 +521,34 @@ test('hermes-cli parseOutput does not surface the current live input prompt as a
   ]);
 });
 
+test('hermes-cli does not surface status-bar duration as a tool bubble or strip literal user 4s text', () => {
+  const result = parseOutput({
+    screenText: [
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      '이전 답변입니다.',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '────────────────────────────────────────',
+      '● 지금 이 대화 마지막에 4s 나옴',
+      '────────────────────────────────────────',
+      '│ ⏱ 4s',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      '● 지금 이 대화 마지막에 4s 나옴',
+      '│ ⏱ 4s',
+      '❯',
+    ].join('\n'),
+    messages: [
+      { role: 'user', content: '지금 이 대화 마지막에 4s 나옴' },
+    ],
+  });
+
+  const detailed = toDetailedMessages(result);
+  assert.equal(detailed.filter((message) => message.role === 'user' && message.content.includes('4s')).length, 1);
+  assert.equal(detailed.some((message) => message.role === 'user' && message.content === '지금 이 대화 마지막에 나옴'), false);
+  assert.equal(detailed.some((message) => message.role === 'assistant' && message.kind === 'tool' && /^4\s*s$/i.test(message.content)), false);
+});
+
 test('hermes-cli strips redraw kaomoji status suffixes from retained user and activity bubbles', () => {
   const result = parseOutput({
     screenText: '❯',

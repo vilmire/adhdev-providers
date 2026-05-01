@@ -18,8 +18,8 @@ function isTransientAssistantFooterLine(line) {
     || /\b\d+(?:\.\d+)?K\/\d+(?:\.\d+)?[KM]?\b/i.test(value)
     || /(?:^|\s)\d*(?:\.\d+)?K\/\s*[│|].*\[[█░\s]+\]\s*\d+%/iu.test(value)
     || /\[[█░\s]+\]\s*\d+%/iu.test(value)
-    || /(?:^|\s)[│|]\s*[│|]?\s*[⏱⏲]\b/u.test(value)
-    || /(?:^|\s)\d+(?:\.\d+)?[smh]\s*[│|]\s*[⏱⏲]\b/u.test(value);
+    || /(?:^|\s)[│|]\s*[│|]?\s*[⏱⏲](?:\s*\d+(?:\.\d+)?\s*(?:ms|s|m|h))?/u.test(value)
+    || /(?:^|\s)\d+(?:\.\d+)?[smh]\s*[│|]\s*[⏱⏲]/u.test(value);
 }
 
 function stripAssistantFooterNoise(text) {
@@ -36,6 +36,7 @@ function isNoise(line) {
   return !line
     || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
     || /^\d+$/.test(line)
+    || /^\d+(?:\.\d+)?\s*(?:ms|s|m|h)$/i.test(line)
     || /Hermes Agent v[0-9]/i.test(line)
     || /Available Tools|Available Skills/i.test(line)
     || isTransientAssistantFooterLine(line)
