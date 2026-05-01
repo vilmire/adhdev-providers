@@ -49,6 +49,7 @@
       "--continue"
     ]
   },
+  "defaultScriptDir": "scripts/1.0",
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",

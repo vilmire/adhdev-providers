@@ -32,6 +32,7 @@ function loadModule(name) {
 // ─── Core ───
 
 /** Parse full PTY output → ReadChatResult */
+module.exports.parseSession = (input) => { const m = loadModule('parse_session.js'); return m ? m(input) : null; };
 module.exports.parseOutput = (input) => {
     const mod = loadModule('parse_output.js');
     return mod ? mod(input) : null;

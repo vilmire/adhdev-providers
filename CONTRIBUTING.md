@@ -129,7 +129,8 @@ The `compatibility` array maps IDE versions to script directories:
 **Rules:**
 - Order matters: first match wins (most recent version first)
 - Version ranges use semver syntax: `>=1.0.0`, `<2.0.0`, `>=1.0.0 <1.5.0`
-- `defaultScriptDir`: used when IDE version is unknown or doesn't match any range
+- `defaultScriptDir`: required fallback when IDE/CLI version is unknown or doesn't match any range
+- CLI providers must also export `parseSession` from their versioned `scripts.js` when `parse_session.js` exists; daemon-core loads runtime hooks from `scripts.js`
 - Each script directory should be self-contained (all scripts for that version)
 
 **When to create a new version directory:**

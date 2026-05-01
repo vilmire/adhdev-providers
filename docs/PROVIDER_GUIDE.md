@@ -162,6 +162,17 @@ module.exports = wrapParseOutputAsSession(parseOutput);
 
 The shared wrapper preserves provider-supplied identity fields and otherwise synthesizes stable `providerUnitKey`, `bubbleId`, `_turnKey`, and `bubbleState` values. Do not duplicate that identity logic in each provider.
 
+`parse_session.js` must also be exported through the versioned `scripts.js` bundle, because daemon-core loads the runtime script contract from `scripts.js`:
+
+```js
+module.exports.parseSession = (input) => {
+  const m = loadModule('parse_session.js');
+  return m ? m(input) : null;
+};
+```
+
+For compatibility-format CLI providers, always set `"defaultScriptDir": "scripts/1.0"` in `provider.json`. Some daemon-core paths resolve providers without a detected version; without a default script directory, those versionless paths can load provider metadata without the CLI parser/session scripts.
+
 Provider scripts should surface visible CLI reality without daemon heuristics hiding failures:
 - preserve full committed history; do not clip with `messages.slice(-50)` or similar parser-owned caps
 - emit typed terminal/tool/activity bubbles when the CLI visibly shows user-meaningful rows

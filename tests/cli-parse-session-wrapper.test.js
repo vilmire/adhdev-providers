@@ -44,6 +44,25 @@ test('every CLI provider exposes the common parse_session entrypoint', () => {
   }
 });
 
+test('every compatibility CLI provider declares a default script directory for versionless loader resolution', () => {
+  for (const type of cliProviders) {
+    const provider = JSON.parse(fs.readFileSync(path.join(cliRoot, type, 'provider.json'), 'utf8'));
+    if (Array.isArray(provider.compatibility)) {
+      assert.equal(provider.defaultScriptDir, 'scripts/1.0', `${type} should provide defaultScriptDir for resolve(type) without a version`);
+    }
+  }
+});
+
+test('every CLI scripts.js exports the common parseSession runtime hook', () => {
+  for (const type of cliProviders) {
+    const scripts = require(scriptPath(type, 'scripts.js'));
+    assert.equal(typeof scripts.parseSession, 'function', `${type} scripts.js should export parseSession`);
+    const direct = require(scriptPath(type, 'parse_session.js'))(sampleInput());
+    const viaScripts = scripts.parseSession(sampleInput());
+    assert.deepEqual(viaScripts, direct, `${type} scripts.js parseSession should delegate to parse_session.js`);
+  }
+});
+
 test('every CLI parse_session entrypoint delegates shared wrapper behavior to cli/_shared', () => {
   const sharedPath = path.join(cliRoot, '_shared/parse_session.js');
   assert.equal(fs.existsSync(sharedPath), true, 'cli/_shared/parse_session.js should exist');
