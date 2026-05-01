@@ -23,14 +23,31 @@ function isHorizontalSeparatorLine(line) {
     return /^[-─━═]{8,}$/.test(normalizeLineText(line));
 }
 
-function hasOnlyStructuralPromptChromeBelow(lines, index) {
+function isConversationContinuationBelowPrompt(line) {
+    const trimmed = normalizeLineText(line);
+    if (!trimmed) return false;
+    return /^[⏺⎿]/u.test(trimmed)
+        || /^[❯›>]\s*\S/u.test(trimmed)
+        || /^\d+[.)]\s+/u.test(trimmed);
+}
+
+function hasStructuralPromptChromeBelow(lines, index) {
     const trailing = lines
         .slice(index + 1)
         .map(normalizeLineText)
         .filter(Boolean);
-    return trailing.length > 0
-        && trailing.length <= 2
-        && trailing.every(line => /^[-─━═]{8,}$/.test(line));
+    if (trailing.length === 0) return false;
+
+    const firstBoundaryIndex = trailing.findIndex(line => /^[-─━═]{8,}$/.test(line));
+    if (firstBoundaryIndex < 0) return false;
+
+    // Lines between the input row and its lower boundary belong to the active
+    // input footer/extension area, not to chat transcript.  After that boundary,
+    // reject only clear conversation continuations; arbitrary plugin footer text
+    // below the input must not make the active prompt invisible.
+    return trailing
+        .slice(firstBoundaryIndex + 1)
+        .every(line => /^[-─━═]{8,}$/.test(line) || !isConversationContinuationBelowPrompt(line));
 }
 
 function isInsideOpenBox(lines, index) {
@@ -48,8 +65,8 @@ function isStructuralInputPromptLine(lines, index) {
     const trimmed = normalizeLineText(lines[index]);
     if (!/^>\s*(?:$|\S.*)$/.test(trimmed)) return false;
     if (isInsideOpenBox(lines, index)) return false;
-    if (!hasOnlyStructuralPromptChromeBelow(lines, index)) return false;
-    return isHorizontalSeparatorLine(lines[index - 1]) && isHorizontalSeparatorLine(lines[index + 1]);
+    if (!hasStructuralPromptChromeBelow(lines, index)) return false;
+    return isHorizontalSeparatorLine(lines[index - 1]);
 }
 
 function isPromptLineAt(lines, index) {

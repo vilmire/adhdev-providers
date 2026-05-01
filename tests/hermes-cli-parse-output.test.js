@@ -521,6 +521,24 @@ test('hermes-cli parseOutput does not surface the current live input prompt as a
   ]);
 });
 
+test('hermes-cli strips redraw kaomoji status suffixes from retained user and activity bubbles', () => {
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '❯',
+    messages: [
+      { role: 'user', content: '내가 방금 말하니까 대화가 정상으로 보였음 모바일 인박스환경임 ◉_◉ cogitating...' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ npm run test -w oss/packages/web-core 7.0s(⊙_⊙) formulating...' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /tmp/example.json 1.3s⟳ compacting context…' },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: '내가 방금 말하니까 대화가 정상으로 보였음 모바일 인박스환경임' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ npm run test -w oss/packages/web-core' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /tmp/example.json' },
+  ]);
+});
+
 test('hermes-cli treats interrupt copy inside the live input prompt as generating', () => {
   const screenText = [
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',

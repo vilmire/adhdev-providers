@@ -182,6 +182,53 @@ test('claude-cli parse_output drops Claude completion footer from final assistan
   assert.doesNotMatch(assistant.content, /Brewed for \d+s/i);
 });
 
+test('claude-cli parse_output drops structurally matching new completion footer verbs', () => {
+  const prompt = '간단한 게임을 만들고 MARKER를 출력하세요.';
+  const screenText = [
+    '❯ ' + prompt,
+    '',
+    '⏺ 생성 파일: tiny_game.html',
+    'MARKER: ADHDEV_TINY_GAME_DONE',
+    '',
+    '✻ Sautéed for 10s',
+    '',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    promptText: prompt,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const assistant = result.messages.find((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.ok(assistant);
+  assert.match(assistant.content, /ADHDEV_TINY_GAME_DONE/);
+  assert.doesNotMatch(assistant.content, /Sautéed for \d+s/i);
+});
+
+test('claude-cli parse_output keeps current input footer/plugin chrome out of user bubbles', () => {
+  const screenText = [
+    '⏺ Earlier assistant answer.',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '> typed but not submitted user input',
+    'Plugin: review mode enabled under the input box',
+    '✻ Sautéed for 10s',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [],
+  });
+
+  assert.equal(screen.promptLine?.trimmed, '> typed but not submitted user input');
+  assert.equal(result.messages.some((message) => /typed but not submitted|Plugin: review mode/.test(message.content || '')), false);
+});
+
 test('claude-cli parse_output drops Churned/Crunched completion footer variants from final assistant bubble', () => {
   const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
   const screenText = [

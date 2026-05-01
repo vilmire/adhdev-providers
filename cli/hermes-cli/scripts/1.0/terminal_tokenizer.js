@@ -145,6 +145,28 @@ const ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE = new RegExp(`\\s*\\([^\\n()]{1,32}\\)\
 const ACTIVITY_TRANSIENT_SECONDS_WORD_RE = new RegExp(`\\s+\\d+(?:\\.\\d+)?s\\s*(?:${TRANSIENT_STATUS_PATTERN})(?:\\.\\.\\.|…)?\\s*$`, 'iu');
 const ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE = /\s+\d+(?:\.\d+)?s\s*$/u;
 const ACTIVITY_TRAILING_DIVIDER_RE = /\s*[│┊]\s*$/u;
+const STATUS_DURATION_TOKEN_RE = /\d+(?:\.\d+)?\s*(?:ms|s|m|h)/iu;
+const TRAILING_VISUAL_STATUS_RE = /\s+(?:(?<visual>[^\p{L}\p{M}\s]{1,32})\s+)?[\p{L}\p{M}][\p{L}\p{M}'’\-]{2,32}(?:\s+[\p{L}\p{M}][\p{L}\p{M}'’\-]{2,32}){0,2}(?:\.\.\.|…)\s*$/iu;
+const ACTIVITY_DURATION_STATUS_SUFFIX_RE = /\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s*[^\p{L}\p{N}\s]{1,16}|\s*\([^\n()]{1,32}\))?\s+[\p{L}\p{M}][\p{L}\p{M}'’\-]{2,32}(?:\s+[\p{L}\p{M}][\p{L}\p{M}'’\-]{2,32}){0,2}(?:\.\.\.|…)\s*$/iu;
+const ACTIVITY_DURATION_SUFFIX_RE = /\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)\s*$/iu;
+
+function stripTrailingVisualStatusSuffix(text) {
+  const source = String(text || '').trim();
+  if (!source) return '';
+  const match = source.match(TRAILING_VISUAL_STATUS_RE);
+  if (!match || typeof match.index !== 'number') return source;
+  const suffix = source.slice(match.index);
+  const prefix = source.slice(0, match.index).trim();
+  if (!prefix) return source;
+  // This is terminal redraw chrome only when the status phrase is introduced by
+  // a visual status glyph/kaomoji or by a duration token from an activity row.
+  // That keeps ordinary prose ending in "thinking..." intact.
+  if (match.groups?.visual || STATUS_DURATION_TOKEN_RE.test(suffix)) {
+    return prefix;
+  }
+  return source;
+}
+
 function stripTransientPromptSuffix(text) {
   const source = String(text || '').trim();
   if (!source) return '';
@@ -157,7 +179,9 @@ function stripTransientPromptSuffix(text) {
     const idx = lower.lastIndexOf(marker);
     if (idx > cutIndex) cutIndex = idx;
   }
-  if (cutIndex < 0) return source;
+  if (cutIndex < 0) {
+    return stripTrailingVisualStatusSuffix(source);
+  }
 
   const preludeMarkers = [
     'window too small...',
@@ -208,8 +232,10 @@ function stripActivityTransientSuffix(text) {
   if (!source) return '';
 
   source = source
+    .replace(ACTIVITY_DURATION_STATUS_SUFFIX_RE, '')
     .replace(ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE, '')
     .replace(ACTIVITY_TRANSIENT_SECONDS_WORD_RE, '')
+    .replace(ACTIVITY_DURATION_SUFFIX_RE, '')
     .replace(ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE, '')
     .replace(ACTIVITY_TRAILING_DIVIDER_RE, '')
     .trim();

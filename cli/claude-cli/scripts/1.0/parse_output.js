@@ -171,6 +171,15 @@ function normalizeAssistantBlockLine(line) {
     return withoutPrefix.trimEnd();
 }
 
+function isCompletionFooterLine(trimmed) {
+    const value = String(trimmed || '').trim();
+    if (!value) return false;
+    // Claude Code completion footers are a bare status-glyph/verb plus one or
+    // more durations, e.g. "✻ Sautéed for 10s" or "Crunched for 2m 20s".
+    // Match the structure instead of chasing Claude's rotating whimsical verbs.
+    return /^(?:[✻✶✳✢✽]\s*)?[\p{L}\p{M}][\p{L}\p{M}'’\-]{1,40}(?:\s+[\p{L}\p{M}][\p{L}\p{M}'’\-]{1,40}){0,2}\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h))*$/iu.test(value);
+}
+
 function isFooterLine(trimmed) {
     return /^➜\s+\S+/.test(trimmed)
         || /^Update available!/i.test(trimmed)
@@ -180,7 +189,7 @@ function isFooterLine(trimmed) {
         || /^How is Claude doing this session\?/i.test(trimmed)
         || /^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)
         || /^[❯›>]\s*\d+\s*$/i.test(trimmed)
-        || /^(?:Brewed|Baked|Cooked|Churned|Crunched)\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h))?\s*$/i.test(trimmed)
+        || isCompletionFooterLine(trimmed)
         || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
         || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
         || /^⏵⏵\s+accept edits on/i.test(trimmed)
@@ -534,6 +543,21 @@ function extractVisibleTurn(text) {
     const contentStartIndex = lastVisiblePrompt.endIndex >= 0 ? lastVisiblePrompt.endIndex + 1 : 0;
     const contentEndIndex = emptyPromptIndex >= 0 ? emptyPromptIndex : lines.length;
     const assistantRegion = trimBottom(lines.slice(contentStartIndex, contentEndIndex), 0);
+    const promptIsCurrentInputRegion = lastVisiblePrompt.index >= 0
+        && lastVisiblePrompt.index === screen.promptLineIndex
+        && emptyPromptIndex < 0
+        && !assistantRegion.some((line) => {
+            const sanitized = sanitizeLine(line);
+            const cleaned = stripAssistantPrefix(sanitized).trim();
+            return /^\s*[⏺⎿]/u.test(sanitized) || isToolHeader(cleaned) || isToolActivitySummary(cleaned);
+        });
+    if (promptIsCurrentInputRegion) {
+        return {
+            promptText: '',
+            assistantBlocks: [],
+            assistantText: '',
+        };
+    }
     const assistantBlocks = extractAssistantBlocks(assistantRegion);
     const assistantText = (() => {
         if (assistantBlocks.length > 0) return assistantBlocks.join('\n\n').trim();
