@@ -56,6 +56,13 @@ function normalizeOptionLine(line) {
     .trim();
 }
 
+function looksLikeClarifyQuestionLine(line) {
+  const text = normalizeOptionLine(line).replace(/\s+/g, ' ').trim();
+  if (!text) return false;
+  return /[?？]/.test(text)
+    || /(?:까요|나요|습니까|습니까요|할까요|될까요|인가요|있나요|없나요)(?:[.!。]?|[”"'）)\]]*)$/i.test(text);
+}
+
 function lineMatchesButton(line, label) {
   return normalizeOptionLine(line) === label;
 }
@@ -219,10 +226,18 @@ function buildClarifyChoiceApproval(lines) {
   const selectedIndex = region.findIndex((line) => /^❯\s*\S/.test(line));
   if (selectedIndex < 0) return null;
 
-  const buttons = uniqueNonEmptyStrings(region.slice(selectedIndex).map(normalizeOptionLine));
+  let firstChoiceIndex = selectedIndex;
+  for (let index = selectedIndex - 1; index >= 0; index -= 1) {
+    if (looksLikeClarifyQuestionLine(region[index])) {
+      firstChoiceIndex = index + 1;
+      break;
+    }
+  }
+
+  const buttons = uniqueNonEmptyStrings(region.slice(firstChoiceIndex).map(normalizeOptionLine));
   if (buttons.length === 0) return null;
 
-  const message = uniqueNonEmptyStrings(region.slice(0, selectedIndex))
+  const message = uniqueNonEmptyStrings(region.slice(0, firstChoiceIndex))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim() || 'Input required';
