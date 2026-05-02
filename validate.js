@@ -65,6 +65,7 @@ const KNOWN_PROVIDER_FIELDS = new Set([
   'sendDelayMs',
   'sendKey',
   'submitStrategy',
+  'requirePromptEchoBeforeSubmit',
   'allowInputDuringGeneration',
   'timeouts',
   'disableUpstream',

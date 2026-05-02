@@ -212,6 +212,7 @@
   "versionCommand": "hermes version",
   "sendDelayMs": 500,
   "sendKey": "\r",
+  "requirePromptEchoBeforeSubmit": true,
   "allowInputDuringGeneration": true,
   "spawn": {
     "command": "hermes",
