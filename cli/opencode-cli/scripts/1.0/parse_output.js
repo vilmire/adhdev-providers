@@ -378,9 +378,7 @@ function toMessageObjects(messages, status) {
     return messages.map((message, index, slice) => ({
         id: `msg_${index}`,
         role: message.role,
-        content: typeof message.content === 'string' && message.content.length > 6000
-            ? `${message.content.slice(0, 6000)}\n[... truncated]`
-            : message.content,
+        content: String(message.content || ''),
         index,
         kind: 'standard',
         ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'

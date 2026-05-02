@@ -18,6 +18,12 @@ function providerRoot(type) {
   return path.join(repoRoot, 'cli', type);
 }
 
+function cliProviderTypes() {
+  return fs.readdirSync(path.join(repoRoot, 'cli'))
+    .filter(type => fs.existsSync(path.join(providerRoot(type), 'scripts/1.0/parse_output.js')))
+    .sort();
+}
+
 function loadProviderJson(type) {
   return JSON.parse(fs.readFileSync(path.join(providerRoot(type), 'provider.json'), 'utf8'));
 }
@@ -67,5 +73,12 @@ test('legacy CLI parser source does not silently clip parser-owned transcripts t
   for (const type of legacyProviders) {
     const source = fs.readFileSync(path.join(providerRoot(type), 'scripts/1.0/parse_output.js'), 'utf8');
     assert.doesNotMatch(source, /slice\(-50\)|messages\.length\s*>\s*50/, `${type} parser has a hidden 50-message clip`);
+  }
+});
+
+test('CLI parser source does not destructively clip assistant content to 6000 characters', () => {
+  for (const type of cliProviderTypes()) {
+    const source = fs.readFileSync(path.join(providerRoot(type), 'scripts/1.0/parse_output.js'), 'utf8');
+    assert.doesNotMatch(source, /\.slice\(0,\s*6000\)|\[\.\.\. truncated\]/, `${type} parser has a hidden 6000-character content clip`);
   }
 });

@@ -24,7 +24,7 @@ function splitTurns(buffer) {
             if (currentRole && currentContent.length > 0) {
                 const text = currentContent.join('\n').trim();
                 if (text.length > 1) {
-                    messages.push({ id: `msg_${msgIndex}`, role: currentRole, content: text.slice(0, 6000), index: msgIndex, kind: 'standard' });
+                    messages.push({ id: `msg_${msgIndex}`, role: currentRole, content: text, index: msgIndex, kind: 'standard' });
                     msgIndex++;
                 }
             }
@@ -51,7 +51,7 @@ function splitTurns(buffer) {
     if (currentRole && currentContent.length > 0) {
         const text = currentContent.join('\n').trim();
         if (text.length > 1) {
-            messages.push({ id: `msg_${msgIndex}`, role: currentRole, content: text.slice(0, 6000), index: msgIndex, kind: 'standard' });
+            messages.push({ id: `msg_${msgIndex}`, role: currentRole, content: text, index: msgIndex, kind: 'standard' });
         }
     }
     return messages;
@@ -61,10 +61,7 @@ function toMessageObjects(messages, status) {
     return messages.map((message, index, slice) => ({
         id: `msg_${index}`,
         role: message.role,
-        content: typeof message.content === 'string' && message.content.length > 6000
-            ? `${message.content.slice(0, 6000)}
-[... truncated]`
-            : String(message.content || ''),
+        content: String(message.content || ''),
         index,
         kind: message.kind || 'standard',
         ...(status === 'generating' && index === slice.length - 1 && message.role === 'assistant'
@@ -111,7 +108,7 @@ module.exports = function parseOutput(input) {
     const parsedMessages = splitTurns(buffer);
     const messages = mergeMessages(input?.messages, parsedMessages, status);
     if (status === 'generating' && partialResponse && partialResponse.trim().length > 2 && messages.length === 0) {
-        messages.push({ id: 'msg_partial', role: 'assistant', content: partialResponse.trim().slice(0, 6000), index: messages.length, kind: 'standard', meta: { streaming: true } });
+        messages.push({ id: 'msg_partial', role: 'assistant', content: partialResponse.trim(), index: messages.length, kind: 'standard', meta: { streaming: true } });
     }
     return { id: 'cli_session', status, title: 'Gemini CLI', messages, activeModal };
 };
