@@ -78,6 +78,27 @@ test('claude-cli treats interrupt copy inside the live input prompt as generatin
   assert.equal(parseOutput({ screenText, buffer: screenText, messages: [] }).status, 'generating');
 });
 
+test('claude-cli treats an empty prompt with esc-to-interrupt footer as generating', () => {
+  const screenText = [
+    '⏺ 이제 현황이 명확합니다. 계획을 세울게요.',
+    '',
+    '  ---',
+    '  2, 3, 4 작업 계획',
+    '',
+    '  작업:',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '  ⏵⏵ accept edits on (shift+tab to cycle) · esc to interrupt',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  assert.equal(screen.promptLine?.trimmed, '❯');
+  assert.equal(detectStatus({ screenText, screen }), 'generating');
+  assert.equal(parseOutput({ screenText, buffer: screenText, messages: [] }).status, 'generating');
+});
+
 test('claude-cli does not treat interrupt copy outside the live input prompt as generating', () => {
   const screenText = [
     '⏺ Literal text: type a message + Enter to interrupt, Ctrl+C to cancel',

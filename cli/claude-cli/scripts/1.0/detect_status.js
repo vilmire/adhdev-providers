@@ -42,6 +42,11 @@ function hasInterruptInputPromptLine(screen) {
         || /Enter to interrupt, Ctrl\+C to cancel/i.test(promptText);
 }
 
+function hasEscInterruptFooter(lines) {
+    const window = takeLast(lines, 8);
+    return window.some(line => /\besc to (?:cancel|interrupt|stop)\b/i.test(normalize(line)));
+}
+
 function isShellChrome(line) {
     const trimmed = normalize(line);
     return /^➜\s+\S+/.test(trimmed)
@@ -255,6 +260,7 @@ module.exports = function detectStatus(input) {
     if (activeLines.length > 0) {
         if (hasActiveApproval(activeLines)) return 'waiting_approval';
         if (hasInterruptInputPromptLine(screen)) return 'generating';
+        if (hasEscInterruptFooter(activeLines)) return 'generating';
         if (hasPromptAdjacentGenerating(screen)) return 'generating';
         if (hasVisibleCompletedReply(activeLines)) return 'idle';
         if (hasActiveGenerating(activeLines)) return 'generating';
