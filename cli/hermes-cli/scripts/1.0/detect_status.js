@@ -135,10 +135,14 @@ module.exports = function detectStatus(input) {
     return 'idle';
   }
 
+  // When the current viewport shows a bare ❯ prompt with no active "Enter to interrupt",
+  // stale interrupt signals in the recent tail/buffer are scroll artifacts from the
+  // completed turn and must not keep the status in 'generating' indefinitely.
+  const currentConfirmsNoInterrupt = current.hasBarePrompt && !current.hasInterruptInputPrompt;
   const recentRawSignals = [tailScreen, bufferScreen]
     .map(buildStatusSignals)
     .some((signals) => signals.hasInitializing
-      || signals.hasInterruptInputPrompt
+      || (signals.hasInterruptInputPrompt && !currentConfirmsNoInterrupt)
       || signals.hasLiveTurnMarkers
       || signals.hasEllipsisStatusAbovePrompt
       || signals.hasOpenAssistantBox);
