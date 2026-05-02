@@ -57,6 +57,37 @@ function buildTimedOutLegacyApprovalScreen() {
   ].join('\n');
 }
 
+function buildClarifyChoiceScreen() {
+  return [
+    '● 이 깃 긴',
+    '╭─ Hermes needs your input ────────────────────────────────────────────────────╮',
+    '│ 문장이 끊긴 것 같아요. “이 깃 긴…” 뒤에 어떤 걸 확인/수정하면 될까요? │',
+    '│ ❯ 방금 고친 Git 기능을 더 자세히 설명해줘                                │',
+    '│ 로컬에서 실제 UI로 Git 기능을 검증해줘                                     │',
+    '│ 커밋들을 push해줘                                                         │',
+    '│ 남은 미커밋 변경도 확인해줘                                               │',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '↑/↓ to select, Enter to confirm ()',
+    '❯',
+  ].join('\n');
+}
+
+function buildClarifyDebugJsonScreen() {
+  return [
+    '● 이 깃 긴',
+    'functions.clarify {"question":"문장이 끊긴 것 같아요. “이 깃 긴…” 뒤에 어떤 걸 확인/수정하면 될까요?","choices_offered":["방금 고친 Git 기능을 더 자세히 설명해줘","로컬에서 실제 UI로 Git 기능을 검증해줘","커밋들을 push해줘","남은 미커밋 변경도 확인해줘"]}',
+    '↑/↓ to select, Enter to confirm ()',
+    '❯',
+  ].join('\n');
+}
+
+function buildAnsweredClarifyDebugJsonScreen() {
+  return [
+    'functions.clarify {"question":"문장이 끊긴 것 같아요.","choices_offered":["방금 고친 Git 기능을 더 자세히 설명해줘","로컬에서 실제 UI로 Git 기능을 검증해줘"],"user_response":"방금 고친 Git 기능을 더 자세히 설명해줘"}',
+    '❯',
+  ].join('\n');
+}
+
 test('hermes-cli detects modern approval prompt as waiting_approval', () => {
   const screenText = buildApprovalScreen();
   assert.equal(detectStatus({ screenText }), 'waiting_approval');
@@ -85,6 +116,40 @@ test('hermes-cli parses numbered dangerous-command approval prompt buttons', () 
 
 test('hermes-cli ignores timed-out dangerous-command approval as resolved', () => {
   const screenText = buildTimedOutLegacyApprovalScreen();
+  assert.equal(parseApproval({ screenText }), null);
+  assert.notEqual(detectStatus({ screenText }), 'waiting_approval');
+});
+
+test('hermes-cli parses live clarify choice prompt buttons', () => {
+  const screenText = buildClarifyChoiceScreen();
+  assert.deepEqual(parseApproval({ screenText }), {
+    message: '문장이 끊긴 것 같아요. “이 깃 긴…” 뒤에 어떤 걸 확인/수정하면 될까요?',
+    buttons: [
+      '방금 고친 Git 기능을 더 자세히 설명해줘',
+      '로컬에서 실제 UI로 Git 기능을 검증해줘',
+      '커밋들을 push해줘',
+      '남은 미커밋 변경도 확인해줘',
+    ],
+  });
+  assert.equal(detectStatus({ screenText }), 'waiting_approval');
+});
+
+test('hermes-cli parses clarify choices from debug JSON while waiting for selection', () => {
+  const screenText = buildClarifyDebugJsonScreen();
+  assert.deepEqual(parseApproval({ screenText }), {
+    message: '문장이 끊긴 것 같아요. “이 깃 긴…” 뒤에 어떤 걸 확인/수정하면 될까요?',
+    buttons: [
+      '방금 고친 Git 기능을 더 자세히 설명해줘',
+      '로컬에서 실제 UI로 Git 기능을 검증해줘',
+      '커밋들을 push해줘',
+      '남은 미커밋 변경도 확인해줘',
+    ],
+  });
+  assert.equal(detectStatus({ screenText }), 'waiting_approval');
+});
+
+test('hermes-cli does not keep answered clarify debug output as actionable approval', () => {
+  const screenText = buildAnsweredClarifyDebugJsonScreen();
   assert.equal(parseApproval({ screenText }), null);
   assert.notEqual(detectStatus({ screenText }), 'waiting_approval');
 });

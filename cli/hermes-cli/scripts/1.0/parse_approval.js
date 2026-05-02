@@ -62,7 +62,47 @@ function lineMatchesButton(line, label) {
 
 function isStructuralApprovalLine(line) {
   return /^(?:╭|╰)[─━═-]{4,}/.test(line)
+    || /^Hermes needs your input/i.test(line)
+    || /^↑\/↓ to select, Enter to confirm/i.test(line)
     || line === '[object Object]';
+}
+
+function isClarifySelectionHint(line) {
+  return /↑\/↓ to select|Enter to confirm/i.test(String(line || ''));
+}
+
+function hasClarifySelectionHint(lines, startIndex = 0) {
+  return lines.slice(Math.max(0, startIndex)).some(isClarifySelectionHint);
+}
+
+function uniqueNonEmptyStrings(values) {
+  const result = [];
+  const seen = new Set();
+  for (const value of values || []) {
+    const text = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!text || seen.has(text)) continue;
+    seen.add(text);
+    result.push(text);
+  }
+  return result;
+}
+
+function parseClarifyDebugJson(line) {
+  const text = String(line || '');
+  if (!/\bclarify\b|choices_offered|"choices"/.test(text)) return null;
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end <= start) return null;
+  try {
+    const parsed = JSON.parse(text.slice(start, end + 1));
+    const buttons = uniqueNonEmptyStrings(parsed?.choices_offered || parsed?.choices);
+    const answered = typeof parsed?.user_response === 'string' && parsed.user_response.trim().length > 0;
+    if (answered || buttons.length === 0) return null;
+    const message = String(parsed?.question || '').replace(/\s+/g, ' ').trim() || 'Input required';
+    return { message, buttons };
+  } catch (_error) {
+    return null;
+  }
 }
 
 function isResolvedApprovalOutcomeLine(line) {
@@ -157,8 +197,41 @@ function buildModernApproval(lines) {
   };
 }
 
+function buildClarifyChoiceApproval(lines) {
+  const debugIndex = findLastIndex(lines, (line) => parseClarifyDebugJson(line));
+  if (debugIndex >= 0 && hasClarifySelectionHint(lines, debugIndex)) {
+    return parseClarifyDebugJson(lines[debugIndex]);
+  }
+
+  const hintIndex = findLastIndex(lines, isClarifySelectionHint);
+  if (hintIndex < 0) return null;
+
+  const headerIndex = findLastIndex(
+    lines.slice(0, hintIndex + 1),
+    (line) => /Hermes needs your input/i.test(line),
+  );
+  if (headerIndex < 0) return null;
+
+  const region = lines.slice(headerIndex + 1, hintIndex)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !isStructuralApprovalLine(line));
+  const selectedIndex = region.findIndex((line) => /^❯\s*\S/.test(line));
+  if (selectedIndex < 0) return null;
+
+  const buttons = uniqueNonEmptyStrings(region.slice(selectedIndex).map(normalizeOptionLine));
+  if (buttons.length === 0) return null;
+
+  const message = uniqueNonEmptyStrings(region.slice(0, selectedIndex))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Input required';
+
+  return { message, buttons };
+}
+
 module.exports = function parseApproval(input) {
   const lines = getVisibleLines(input);
   if (lines.length === 0) return null;
-  return buildLegacyApproval(lines) || buildModernApproval(lines);
+  return buildLegacyApproval(lines) || buildModernApproval(lines) || buildClarifyChoiceApproval(lines);
 };
