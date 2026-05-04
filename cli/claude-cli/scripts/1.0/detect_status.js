@@ -61,6 +61,8 @@ function isShellChrome(line) {
 
 function isApprovalCue(line) {
     const trimmed = normalize(line);
+    // Also check with whitespace removed for VT-collapsed text
+    const compacted = trimmed.replace(/\s+/g, '').toLowerCase();
     return /This command requires approval/i.test(trimmed)
         || /requires approval/i.test(trimmed)
         || /Do you want to (?:proceed|allow|run|make this edit)/i.test(trimmed)
@@ -72,7 +74,9 @@ function isApprovalCue(line) {
         || /Allow\s*once/i.test(trimmed)
         || /Always\s*allow/i.test(trimmed)
         || /\(y\/n\)/i.test(trimmed)
-        || /\[Y\/n\]/i.test(trimmed);
+        || /\[Y\/n\]/i.test(trimmed)
+        || /doyouwantto(?:proceed|allow|run|create|makethisedit)/i.test(compacted)
+        || /requiresapproval/i.test(compacted);
 }
 
 function isApprovalButton(line) {
@@ -81,8 +85,10 @@ function isApprovalButton(line) {
         .replace(/^[❯›>]\s*/, '')
         .replace(/^\d+[.)]\s*/, '')
         .trim();
-    return /^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
-        && /^(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(label);
+    if (/^([❯›>]\s*)?\d+[.)]\s+/.test(trimmed)
+        && /^(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(label)) return true;
+    // VT-collapsed: '❯1.Yes' or '2.No' without spaces
+    return /^[❯›>]?\d+\.(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(trimmed);
 }
 
 function isStartupTrustButton(line) {

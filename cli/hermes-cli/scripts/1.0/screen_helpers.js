@@ -2,11 +2,29 @@
 
 // Copied/adapted from cli/claude-cli/scripts/1.0/screen_helpers.js
 
-function splitLines(text) {
+/**
+ * Convert ANSI cursor-forward sequences (ESC[<n>C) to the equivalent
+ * number of spaces, then strip all remaining ANSI escape sequences.
+ * xterm's serialize addon encodes inter-word spaces as ESC[1C rather
+ * than literal space characters; without this conversion every
+ * downstream regex that expects readable text fails on collapsed text.
+ */
+function stripAnsiEscapes(text) {
   return String(text || '')
-    .replace(/\u0007/g, '')
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
+    .replace(/\x1b\[(\d*)C/g, (_match, n) => ' '.repeat(Math.max(1, Number(n) || 1)))
+    .replace(/\x1b\[\d*D/g, '')
+    .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
+    .replace(/\x1b[^[\]]/g, '');
+}
+
+function splitLines(text) {
+  return stripAnsiEscapes(
+    String(text || '')
+      .replace(/\u0007/g, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n'),
+  )
     .split('\n')
     .map(line => line.replace(/\s+$/g, ''));
 }
@@ -15,8 +33,10 @@ function normalizeLineText(line) {
   const text = typeof line === 'string'
     ? line
     : (line && typeof line.text === 'string' ? line.text : '');
-  return String(text || '')
-    .replace(/\u0007/g, '')
+  return stripAnsiEscapes(
+    String(text || '')
+      .replace(/\u0007/g, ''),
+  )
     .replace(/^\d+;/, '')
     .trim();
 }

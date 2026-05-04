@@ -1,10 +1,34 @@
 'use strict';
 
-function splitLines(text) {
+/**
+ * Convert ANSI cursor-forward sequences (ESC[<n>C) to the equivalent
+ * number of spaces, then strip all remaining ANSI escape sequences.
+ * xterm's serialize addon encodes inter-word spaces as ESC[1C rather
+ * than literal space characters; without this conversion every
+ * downstream regex that expects readable text (approval detection,
+ * prompt parsing, message extraction) fails on collapsed text.
+ */
+function stripAnsiEscapes(text) {
     return String(text || '')
-        .replace(/\u0007/g, '')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
+        // ESC[<n>C → <n> spaces (cursor forward)
+        .replace(/\x1b\[(\d*)C/g, (_match, n) => ' '.repeat(Math.max(1, Number(n) || 1)))
+        // ESC[<n>D — cursor back: remove (no visible output)
+        .replace(/\x1b\[\d*D/g, '')
+        // Strip all remaining CSI sequences (ESC[ ... <letter>)
+        .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+        // Strip OSC sequences (ESC] ... BEL/ST)
+        .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
+        // Strip any remaining bare ESC sequences
+        .replace(/\x1b[^[\]]/g, '');
+}
+
+function splitLines(text) {
+    return stripAnsiEscapes(
+        String(text || '')
+            .replace(/\u0007/g, '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n'),
+    )
         .split('\n')
         .map(line => line.replace(/\s+$/, ''));
 }
@@ -13,8 +37,10 @@ function normalizeLineText(line) {
     const text = typeof line === 'string'
         ? line
         : (line && typeof line.text === 'string' ? line.text : '');
-    return String(text || '')
-        .replace(/\u0007/g, '')
+    return stripAnsiEscapes(
+        String(text || '')
+            .replace(/\u0007/g, ''),
+    )
         .replace(/^\d+;/, '')
         .trim();
 }
