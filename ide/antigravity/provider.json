@@ -3,8 +3,13 @@
   "name": "Antigravity",
   "category": "ide",
   "displayName": "Antigravity",
-  "icon": "\ud83d\ude80",
+  "icon": "🚀",
   "cli": "antigravity",
+  "launch": {
+    "prefer": {
+      "darwin": "app"
+    }
+  },
   "cdpPorts": [
     9335,
     9336
@@ -98,7 +103,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "\ud83e\udd16",
+      "icon": "🤖",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -110,7 +115,7 @@
       "id": "mode",
       "type": "select",
       "label": "Mode",
-      "icon": "\ud83e\udded",
+      "icon": "🧭",
       "placement": "bar",
       "order": 20,
       "dynamic": true,
@@ -122,7 +127,7 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "\u2795",
+      "icon": "➕",
       "placement": "bar",
       "hidden": true,
       "order": 80,
