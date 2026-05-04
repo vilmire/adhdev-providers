@@ -44,12 +44,19 @@ function hasPromptLine(screen) {
   return index >= 0 && Array.isArray(screen?.lines) && isPromptLineAt(screen.lines, index);
 }
 
+function isInterruptInputPromptText(line) {
+  const text = String(line || '').replace(/\s+/g, ' ').trim();
+  if (!text) return false;
+  return /type a message\b.*Enter to interrupt, Ctrl\+C to cancel/i.test(text)
+    || /Enter to interrupt, Ctrl\+C to cancel/i.test(text)
+    || /\bmsg\s*=\s*interrupt\b.*\bCtrl\+C\s+cancel\b/i.test(text);
+}
+
 function hasInterruptInputPromptLine(screen) {
   const index = Number.isInteger(screen?.promptLineIndex) ? screen.promptLineIndex : -1;
   if (index < 0 || !Array.isArray(screen?.lines) || !isPromptLineAt(screen.lines, index)) return false;
   const promptText = String(screen.lines[index]?.trimmed || screen.lines[index]?.text || '').trim();
-  return /type a message\b.*Enter to interrupt, Ctrl\+C to cancel/i.test(promptText)
-    || /Enter to interrupt, Ctrl\+C to cancel/i.test(promptText);
+  return isInterruptInputPromptText(promptText);
 }
 
 function hasPromptReadyRegion(screen) {
@@ -60,7 +67,8 @@ function hasPromptReadyRegion(screen) {
     .map((line) => String(line?.trimmed || line?.text || '').trim())
     .filter(Boolean);
   return below.every((line) => /^[-─━═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
-    || /Type your message|Resume this session with:|Session:|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
+    || /Type your message|Resume this session with:|Session:|Enter to interrupt, Ctrl\+C to cancel/i.test(line)
+    || isInterruptInputPromptText(line));
 }
 
 function buildStatusSignals(screen) {
@@ -87,7 +95,8 @@ function buildStatusSignals(screen) {
   const lastPromptIndex = lastMatchingIndex((line) => /^❯\s*$/.test(line));
   const lastAssistantStartIndex = lastMatchingIndex((line) => /^╭─\s*⚕\s*Hermes/i.test(line));
   const lastAssistantEndIndex = lastMatchingIndex((line) => /^╰─/.test(line));
-  const lastGeneratingIndex = lastMatchingIndex((line) => /Initializing agent|Enter to interrupt, Ctrl\+C to cancel/i.test(line));
+  const lastGeneratingIndex = lastMatchingIndex((line) => /Initializing agent|Enter to interrupt, Ctrl\+C to cancel/i.test(line)
+    || isInterruptInputPromptText(line));
   const finishedAssistantVisible = lastAssistantEndIndex >= 0
     && lastPromptIndex > lastAssistantEndIndex
     && (lastGeneratingIndex < 0 || lastGeneratingIndex <= lastAssistantEndIndex);

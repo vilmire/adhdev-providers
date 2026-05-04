@@ -2558,3 +2558,39 @@ test('hermes-cli parseOutput does not append replayed activity rows after a stab
     { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
   ]);
 });
+
+test('hermes-cli parseOutput treats the new msg=interrupt footer as generating chrome', () => {
+  const previousAnswer = '이전 답변입니다.';
+  const result = parseOutput({
+    screenText: [
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      'partial assistant output still streaming',
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    ].join('\n'),
+    buffer: '',
+    messages: [
+      { role: 'user', content: '상태 확인해줘' },
+      { role: 'assistant', content: previousAnswer },
+    ],
+  });
+
+  assert.equal(result.status, 'generating');
+  const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.equal(standardAssistants.length, 2);
+  assert.equal(standardAssistants[0].content, previousAnswer);
+  assert.equal(standardAssistants[0].bubbleState, 'final');
+  assert.equal(standardAssistants[1].content, 'partial assistant output still streaming');
+  assert.equal(standardAssistants[1].bubbleState, 'streaming');
+});
+
+test('hermes-cli parseOutput ignores the new msg=interrupt footer as transcript content', () => {
+  const result = parseOutput({
+    screenText: '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    buffer: '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    messages: [],
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.equal(result.messages.length, 0);
+});

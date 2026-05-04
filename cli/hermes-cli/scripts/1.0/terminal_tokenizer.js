@@ -43,6 +43,7 @@ function isNoise(line) {
     || /Type your message or \/help for commands/i.test(line)
     || /Tip: hermes sessions prune/i.test(line)
     || /Enter to interrupt, Ctrl\+C to cancel/i.test(line)
+    || /\bmsg\s*=\s*interrupt\b.*\bCtrl\+C\s+cancel\b/i.test(line)
     || /Initializing agent/i.test(line)
     || /(?:^|\s)(?:\([^\n]{0,24}\)\s*)?(?:♡\s*)?reasoning(?:\.\.\.|…)/i.test(line)
     || /commits behind/i.test(line)

@@ -265,6 +265,10 @@
       {
         "source": "Enter to interrupt, Ctrl\\+C to cancel",
         "flags": "i"
+      },
+      {
+        "source": "msg\\s*=\\s*interrupt.*Ctrl\\+C\\s+cancel",
+        "flags": "i"
       }
     ],
     "approval": [

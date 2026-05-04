@@ -212,14 +212,64 @@ test('hermes-cli returns to idle after a completed assistant box even if isWaiti
   assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
 
-test('hermes-cli stays generating while an assistant box is still open even if the prompt is already visible', () => {
+test('hermes-cli stays generating when the new msg=interrupt prompt footer is visible without an ellipsis line', () => {
+  const screenText = [
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'partial assistant output still streaming',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('hermes-cli stays generating for the current reasoning footer plus new msg=interrupt prompt copy', () => {
+  const screenText = [
+    'packages/web-core/src/components/dashboard/session-chat-tail-controller.ts packages/web-core/src/components/dashboard/conversation-message-snapshot.ts  0.3s',
+    '┊ 📖 read      oss/packages/mcp-server/test/read-chat.test.ts  0.9s',
+    '٩(๑❛ᴗ❛๑)۶ reasoning...  ⚕ gpt-5.5 │ 60.4K/272K │ [██░░░░░░░░] 22% │ 2m │ ⏱ 57s',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('hermes-cli returns to idle when new msg=interrupt text is stale above a later bare prompt', () => {
+  const screenText = [
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    ...Array.from({ length: 24 }, (_, index) => `history line ${index + 1}`),
+    'Welcome to Hermes Agent! Type your message or /help for commands.',
+    '❯',
+    'Resume this session with:',
+    'hermes --resume 20260504_000000_abc123',
+    'Session: 20260504_000000_abc123',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
+});
+
+test('hermes-cli returns to idle after a completed assistant box even if old msg=interrupt text remains in scrollback', () => {
+  const screenText = [
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+    'OK',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '⚕ gpt-5.5 │ 11.7K/272K │ [░░░░░░░░░░] 1% │',
+    '❯',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
+});
+
+test('hermes-cli stays generating while an assistant box is still open even with the new msg=interrupt footer', () => {
   const screenText = [
     'Welcome to Hermes Agent! Type your message or /help for commands.',
     '● Summarize the workspace status in one sentence.',
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
     'The workspace looks healthy so far.',
     'Still checking a couple more files...',
-    '❯',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
   ].join('\n');
 
   assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'generating');
