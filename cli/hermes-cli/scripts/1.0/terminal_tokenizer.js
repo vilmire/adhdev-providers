@@ -233,14 +233,20 @@ function stripActivityTransientSuffix(text) {
   let source = String(text || '').trim();
   if (!source) return '';
 
-  source = source
-    .replace(ACTIVITY_DURATION_STATUS_SUFFIX_RE, '')
-    .replace(ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE, '')
-    .replace(ACTIVITY_TRANSIENT_SECONDS_WORD_RE, '')
-    .replace(ACTIVITY_DURATION_SUFFIX_RE, '')
-    .replace(ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE, '')
-    .replace(ACTIVITY_TRAILING_DIVIDER_RE, '')
-    .trim();
+  const tail = source.slice(-128);
+  const mayHaveTransientSuffix = /[│┊]\s*$/u.test(tail)
+    || /\d+(?:\.\d+)?\s*(?:ms|s|m|h)/iu.test(tail)
+    || /(?:analyzing|ruminating|reasoning|thinking|processing|working|contemplating|brainstorming)(?:\.\.\.|…)\s*$/iu.test(tail);
+  if (mayHaveTransientSuffix) {
+    source = source
+      .replace(ACTIVITY_DURATION_STATUS_SUFFIX_RE, '')
+      .replace(ACTIVITY_TRANSIENT_PAREN_SUFFIX_RE, '')
+      .replace(ACTIVITY_TRANSIENT_SECONDS_WORD_RE, '')
+      .replace(ACTIVITY_DURATION_SUFFIX_RE, '')
+      .replace(ACTIVITY_TRANSIENT_SECONDS_SUFFIX_RE, '')
+      .replace(ACTIVITY_TRAILING_DIVIDER_RE, '')
+      .trim();
+  }
 
   return collapseRepeatedSkillActivity(source);
 }

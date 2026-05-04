@@ -57,6 +57,24 @@ function buildTimedOutLegacyApprovalScreen() {
   ].join('\n');
 }
 
+function buildResolvedLegacyApprovalWithInterruptPromptScreen() {
+  return [
+    '╭────────────────────────────────────────────────╮',
+    '│ ⚠️  Dangerous Command                          │',
+    '│                                                │',
+    '│ curl -sS --max-time 3 http://127.0.0.1:19280/api/status │',
+    '│                                                │',
+    '│ ❯ 1. Allow once                               │',
+    '│   2. Allow for this session                   │',
+    '╰────────────────────────────────────────────────╯',
+    '',
+    '  💻 curl -sS --max-time 3 http://127.0.0.1:19280/api/status  (20.0s)',
+    '',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+}
+
 function buildClarifyChoiceScreen() {
   return [
     '● 이 깃 긴',
@@ -133,6 +151,12 @@ test('hermes-cli ignores timed-out dangerous-command approval as resolved', () =
   const screenText = buildTimedOutLegacyApprovalScreen();
   assert.equal(parseApproval({ screenText }), null);
   assert.notEqual(detectStatus({ screenText }), 'waiting_approval');
+});
+
+test('hermes-cli ignores old dangerous-command approval once interrupt prompt is visible', () => {
+  const screenText = buildResolvedLegacyApprovalWithInterruptPromptScreen();
+  assert.equal(parseApproval({ screenText }), null);
+  assert.equal(detectStatus({ screenText }), 'generating');
 });
 
 test('hermes-cli parses live clarify choice prompt buttons', () => {

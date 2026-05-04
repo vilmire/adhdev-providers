@@ -126,22 +126,27 @@ function hasResolvedApprovalOutcome(lines, startIndex, endIndex) {
     .some(isResolvedApprovalOutcomeLine);
 }
 
+function isNonApprovalInputPromptLine(line) {
+  const text = String(line || '').replace(/\s+/g, ' ').trim();
+  return /^❯\s*$/.test(text)
+    || /^(?:⚕\s*)?❯\s*type a message\b/i.test(text)
+    || /^(?:⚕\s*)?❯\s*msg\s*=\s*interrupt\b.*\bCtrl\+C\s+cancel\b/i.test(text)
+    || /^Type your message or \/help for commands\.?$/i.test(text)
+    || /^Resume this session with:/i.test(text)
+    || /\bEnter to interrupt, Ctrl\+C to cancel\b/i.test(text);
+}
+
 function hasNormalPromptAfter(lines, startIndex) {
-  const trailing = lines.slice(startIndex + 1);
-  const promptIndex = trailing.findIndex((line) => (
-    /^❯\s*$/.test(line)
-    || /^(?:⚕\s*)?❯\s*type a message\b/i.test(line)
-    || /^Type your message or \/help for commands\.?$/i.test(line)
-    || /^Resume this session with:/i.test(line)
-  ));
-  if (promptIndex < 0) return false;
-
-  const beforePrompt = trailing.slice(0, promptIndex + 1).join('\n');
-  if (/↑\/↓ to select|Enter to confirm|requires approval|approve the delete\?/i.test(beforePrompt)) {
-    return false;
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = String(lines[index] || '');
+    if (/↑\/↓ to select|Enter to confirm|requires approval|approve the delete\?/i.test(line)) {
+      return false;
+    }
+    if (isNonApprovalInputPromptLine(line)) {
+      return true;
+    }
   }
-
-  return true;
+  return false;
 }
 
 function buildLegacyApproval(lines) {
