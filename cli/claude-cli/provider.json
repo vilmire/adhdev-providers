@@ -269,6 +269,15 @@
       "typedResults": true
     }
   },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "auto_import",
+      "format": "claude_mcp_json",
+      "path": ".mcp.json",
+      "serverName": "adhdev-mesh"
+    }
+  },
   "canonicalHistory": {
     "format": "claude-jsonl",
     "watchPath": "~/.claude/projects/**/*.jsonl",

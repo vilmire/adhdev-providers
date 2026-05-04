@@ -338,6 +338,18 @@
       "typedResults": true
     }
   },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "manual",
+      "format": "hermes_config_yaml",
+      "serverName": "adhdev-mesh",
+      "configPathCommand": "hermes config path",
+      "requiresRestart": true,
+      "instructions": "Hermes CLI does not auto-import repo-local .mcp.json. Add this MCP server to Hermes config under mcp_servers, then start a fresh Hermes session.",
+      "template": "mcp_servers:\n  {{serverName}}:\n    command: {{adhdevMcpCommand}}\n    args:\n      - --repo-mesh\n      - {{meshId}}\n    enabled: true\n"
+    }
+  },
   "canonicalHistory": {
     "format": "hermes-json",
     "watchPath": "~/.hermes/sessions/session_{{sessionId}}.json",
