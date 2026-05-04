@@ -1159,7 +1159,13 @@ module.exports = function parseOutput(input) {
         ? { promptText: '', assistantBlocks: [], assistantText: '' }
         : extractVisibleTurn(visibleScreen);
     const effectivePromptText = resolveEffectivePromptText(input?.promptText, promptText, previousMessages);
-    const hasConversationAnchor = !!effectivePromptText || previousMessages.some((message) => message?.role === 'assistant');
+    // When the daemon clears currentTurnScope after finishResponse(),
+    // effectivePromptText and previousMessages are both empty.
+    // Fall back to looking for a prompt in the transcript buffer so
+    // that completed turns remain visible instead of vanishing.
+    const hasConversationAnchor = !!effectivePromptText
+        || previousMessages.some((message) => message?.role === 'assistant')
+        || (effectiveStatus === 'idle' && transcriptSource.length > 200);
     let visibleMessages = effectiveStatus === 'waiting_approval'
         ? (activeModal ? [createApprovalMessage(activeModal)] : [])
         : (hasConversationAnchor ? buildVisibleMessages(getVisibleAssistantRegion(visibleScreen), effectivePromptText) : []);
