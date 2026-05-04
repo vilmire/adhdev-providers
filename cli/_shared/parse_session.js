@@ -32,7 +32,7 @@ function normalizeMessageIdentity(messages, status) {
     const isStreamingTail = status === 'generating' && role === 'assistant' && index === list.length - 1;
     const bubbleState = typeof message?.bubbleState === 'string' && message.bubbleState
       ? message.bubbleState
-      : (isStreamingTail ? 'streaming' : 'complete');
+      : (isStreamingTail ? 'streaming' : 'final');
 
     return {
       ...message,
