@@ -464,6 +464,7 @@ function isPlainAssistantCandidateLine(line) {
     && !isStructuralRuleLine(value)
     && !isPromptLineText(value)
     && !/^●\s+/.test(value)
+    && !STANDARD_ACTIVITY_PREFIX_RE.test(value)
     && !/^╭─\s*⚕\s*Hermes/i.test(value)
     && !/^╰─/.test(value);
 }
@@ -504,6 +505,7 @@ function parseMessages(text, options = {}) {
   let canStartPlainAssistant = false;
   let inUserMessage = false;
   let userLines = [];
+  let userPromptStyle = 'unknown';
 
   const flushAssistant = () => {
     const contentLines = assistantLines
@@ -519,7 +521,8 @@ function parseMessages(text, options = {}) {
     assistantLines = [];
   };
 
-  const flushUser = () => {
+  const flushUser = (options = {}) => {
+    const allowPlainAssistant = options.allowPlainAssistant !== false;
     const content = userLines
       .map(normalize)
       .filter((line) => line && !isNoise(line))
@@ -528,10 +531,11 @@ function parseMessages(text, options = {}) {
       .trim();
     if (content) {
       messages.push({ role: 'user', content });
-      canStartPlainAssistant = true;
+      canStartPlainAssistant = allowPlainAssistant;
     }
     userLines = [];
     inUserMessage = false;
+    userPromptStyle = 'unknown';
   };
 
   const isPromptLine = (line) => isPromptLineText(line);
@@ -565,6 +569,7 @@ function parseMessages(text, options = {}) {
       if (structuralPrompt && hasTranscriptOutputAfterStructuralPrompt(lines, index)) {
         inUserMessage = true;
         userLines = [structuralPrompt];
+        userPromptStyle = 'structural';
         canStartPlainAssistant = false;
       }
       continue;
@@ -581,6 +586,7 @@ function parseMessages(text, options = {}) {
       if (content) {
         inUserMessage = true;
         userLines = [content];
+        userPromptStyle = 'bullet';
       }
       continue;
     }
@@ -672,7 +678,8 @@ function parseMessages(text, options = {}) {
 
     if (inUserMessage) {
       if (isPromptLine(line) || isNoise(line)) {
-        flushUser();
+        const allowPlainAssistant = userPromptStyle !== 'bullet' && !isPromptLine(line);
+        flushUser({ allowPlainAssistant });
         if (isPromptLine(line)) continue;
       } else {
         userLines.push(line);

@@ -819,6 +819,48 @@ test('hermes-cli parseOutput captures plain assistant prose redrawn between inte
   ]);
 });
 
+test('hermes-cli parseOutput ignores incremental bullet-prompt redraw fragments from buffer when screen has the full prompt', () => {
+  const fullPrompt = '쿨디네이터모드 제대로 동작하게 해. 스탠드얼론 HMR로. 현재 클로드코드 cli로 제대로 작동하게 만드는게 1차 목표임.';
+  const screenText = [
+    '────────────────────────────────────────',
+    '● 쿨디네이터모드 제대로 동작하게 해. 스탠드얼론 HMR로. 현재 클로드코드 cli로',
+    '제대로 작동하게 만드는게 1차 목표임.',
+    'Initializing agent...',
+    '────────────────────────────────────────',
+    '  ┊ 📚 skill     systematic-debugging  0.1s',
+    '  ┊ 🔎 grep      coordinator|Coordinator|meshCoordinator|launch_mesh_coordinator',
+    '|repo.?mesh|RepoMesh|mcpConfig  0.7s',
+    '  🔎 coordinator|Coordinator|meshCoordinator|launch_mesh_coordinator|repo.?mesh|',
+    'RepoMesh|mcpConfig',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+  ].join('\n');
+  const buffer = [
+    '──────────────────────────────────────────────────────────────────────────────',
+    '● 쿨디네이터모드 제대로 동작하게 해. 스탠드얼론 HMR로. 현재 클로드코드 cli로',
+    '⚕ gpt-5.5 │ ctx -- │ [░░░░░░░░░░] -- │ │ ⏲',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '제대로 작동하게 만드는게 1차 목표임.',
+    '⚕ gpt-5.5 │ ctx -- │ [░░░░░░░░░░] -- │ │ ⏲',
+    'Initializing agent...',
+    '  ┊ 📚 skill     systematic-debugging  0.1s',
+    '  ┊ 🔎 grep      coordinator|Coordinator|meshCoordinator|launch_mesh_coordinator',
+    '|repo.?mesh|RepoMesh|mcpConfig  0.7s',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer,
+    messages: [],
+    isWaitingForResponse: true,
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: fullPrompt },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill systematic-debugging' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'grep coordinator|Coordinator|meshCoordinator|launch_mesh_coordinator|repo.?mesh|RepoMesh|mcpConfig' },
+  ]);
+});
+
 test('hermes-cli parseOutput ignores non-monotonic raw history before the current committed prompt', () => {
   const firstAnswer = 'First committed assistant answer that should not be appended again from raw history.';
   const secondAnswer = 'Second committed assistant answer that should remain canonical once.';
