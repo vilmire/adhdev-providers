@@ -575,10 +575,17 @@ function isAssistantReplayAfterStableAssistant(merged, cursor, message) {
   return isReplayedAssistantAnswerAfterStableAssistant(message, stable);
 }
 
-function collapseReplayedAssistantHistory(messages) {
+function collapseReplayedAssistantHistory(messages, options = {}) {
   const source = dedupeMessages(Array.isArray(messages) ? messages : [])
     .map(normalizeMessage)
     .filter((message) => message.content);
+  const dropPriorStableAfterActivity = options.dropPriorStableAfterActivity !== false;
+  const hasUserOrStandardAssistant = source.some((message) => (
+    message.role === 'user' || (message.kind || 'standard') === 'standard'
+  ));
+  if (source.length >= 1000 && !hasUserOrStandardAssistant) {
+    return source;
+  }
   const collapsed = [];
   let stableAssistant = null;
   // Compatibility fallback only: this protects existing sessions where viewport
@@ -590,7 +597,7 @@ function collapseReplayedAssistantHistory(messages) {
   const seenStableAssistantAnswerKeys = new Set();
   const seenAssistantSignatures = new Set();
   const canUseReplaySignatureSet = source.length < 1000
-    || source.some((message) => message.role === 'user' || (message.kind || 'standard') === 'standard');
+    || hasUserOrStandardAssistant;
 
   for (let index = 0; index < source.length; index += 1) {
     const message = source[index];
@@ -612,6 +619,7 @@ function collapseReplayedAssistantHistory(messages) {
     if (
       !currentTurnHasStandardAssistant
       && currentTurnHasActivity
+      && dropPriorStableAfterActivity
       && stableReplayKey
       && seenStableAssistantAnswerKeys.has(stableReplayKey)
     ) {
@@ -619,6 +627,7 @@ function collapseReplayedAssistantHistory(messages) {
     }
     if (
       !currentTurnHasStandardAssistant
+      && (!currentTurnHasActivity || dropPriorStableAfterActivity)
       && stableAssistantBeforeCurrentUser
       && isReplayedAssistantAnswerAfterStableAssistant(normalized, stableAssistantBeforeCurrentUser)
     ) {
@@ -1040,9 +1049,12 @@ module.exports = function parseOutput(input) {
   );
   const activeModal = parsedApproval || null;
   const effectiveStatus = activeModal ? 'waiting_approval' : status;
+  const replayCollapseOptions = {
+    dropPriorStableAfterActivity: isStreamLikeStatus(effectiveStatus),
+  };
   const finalMessages = activeModal
-    ? dedupeMessages([...collapseReplayedAssistantHistory(messages), createApprovalMessage(activeModal)])
-    : collapseReplayedAssistantHistory(messages);
+    ? dedupeMessages([...collapseReplayedAssistantHistory(messages, replayCollapseOptions), createApprovalMessage(activeModal)])
+    : collapseReplayedAssistantHistory(messages, replayCollapseOptions);
   const displayMessages = finalMessages;
   const identifiedMessages = assignProviderOwnedTranscriptIdentity(displayMessages, effectiveStatus);
   const model = extractCurrentModel(screenText || transcript);

@@ -413,6 +413,45 @@ test('hermes-cli parseOutput drops replayed activity rows after a Hermes interru
   ]);
 });
 
+test('hermes-cli parseOutput preserves a repeated answer after a different follow-up prompt with new activity', () => {
+  const final = [
+    '맞아. 내가 “헤르메스 2개”를 Hermes 내부 delegate_task 병렬 서브에이전트로 오해했어.',
+    '네 말은 ADHDev Repo Mesh 쪽이었고, 지금 이 Hermes CLI 세션에서는 mesh를 직접 못 쓰는 상태가 맞아.',
+    '확인한 근거:',
+    '1. hermes CLI 자체에는 mesh 명령이 없음',
+    '2. ADHDev 쪽에는 mesh가 있음',
+    '3. 하지만 현재 Hermes에 ADHDev MCP가 연결되어 있지 않음',
+  ].join('\n');
+  const priorPrompt = '이거';
+  const followUp = '이거 내가 말한건 메시 사용하라는 소리였는데 헤르메스 cli에 현재 메시 사용 못하는거지 그럼?';
+
+  const result = parseOutput({
+    screenText: [
+      `● ${followUp}`,
+      '┊ 📚 skill hermes-agent',
+      '┊ 🔎 grep mesh',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      final,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [
+      { role: 'user', content: priorPrompt },
+      { role: 'assistant', content: final },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: priorPrompt },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: final },
+    { role: 'user', kind: 'standard', senderName: undefined, content: followUp },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill hermes-agent' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'grep mesh' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: final },
+  ]);
+});
+
 test('hermes-cli parseOutput drops a prior final answer replayed after a follow-up user prompt', () => {
   const final = [
     '점검 완료.',
