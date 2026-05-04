@@ -341,7 +341,11 @@ function chooseMoreCompleteMessage(left, right) {
   if ((aComparable && aComparable === bComparable) || (aCompactComparable && aCompactComparable === bCompactComparable)) {
     const aNewlines = (a.content.match(/\n/g) || []).length;
     const bNewlines = (b.content.match(/\n/g) || []).length;
-    const preferred = bNewlines < aNewlines ? b : a;
+    const aParagraphBreaks = (a.content.match(/\n\s*\n/g) || []).length;
+    const bParagraphBreaks = (b.content.match(/\n\s*\n/g) || []).length;
+    const preferred = aParagraphBreaks !== bParagraphBreaks
+      ? (aParagraphBreaks > bParagraphBreaks ? a : b)
+      : (bNewlines < aNewlines ? b : a);
     const fallback = preferred === a ? b : a;
     return withMergedMessageIdentity(preferred, fallback);
   }

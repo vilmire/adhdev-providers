@@ -449,12 +449,31 @@ function parseActivityMessage(line, continuationLines = []) {
   return { role: 'assistant', kind: 'tool', senderName: 'Tool', content: body };
 }
 
+function isStructuralRuleLine(line) {
+  return /^[-─━═]{8,}$/.test(String(line || '').trim());
+}
+
+function isPromptLineText(line) {
+  return /^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(String(line || '').trim());
+}
+
+function isPlainAssistantCandidateLine(line) {
+  const value = String(line || '').trim();
+  if (!value) return false;
+  return !isNoise(value)
+    && !isStructuralRuleLine(value)
+    && !isPromptLineText(value)
+    && !/^●\s+/.test(value)
+    && !/^╭─\s*⚕\s*Hermes/i.test(value)
+    && !/^╰─/.test(value);
+}
+
 function parseStructuralInputPromptLine(lines, index) {
   if (!Array.isArray(lines) || index <= 0 || index >= lines.length - 1) return null;
   const previous = normalize(lines[index - 1]);
   const current = normalize(lines[index]);
   const next = normalize(lines[index + 1]);
-  if (!/^[-─━═]{8,}$/.test(previous) || !/^[-─━═]{8,}$/.test(next)) return null;
+  if (!isStructuralRuleLine(previous) || !isStructuralRuleLine(next)) return null;
   const match = current.match(/^>\s*(.*)$/);
   if (!match) return null;
   return match[1].trim();
@@ -465,9 +484,10 @@ function hasTranscriptOutputAfterStructuralPrompt(lines, index) {
   for (let nextIndex = index + 2; nextIndex < lines.length; nextIndex += 1) {
     const rawLine = lines[nextIndex];
     const line = normalize(rawLine);
-    if (!line || /^[-─━═]{8,}$/.test(line)) continue;
-    if (/^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(line) || /^●\s+/.test(line)) return false;
+    if (!line || isStructuralRuleLine(line)) continue;
+    if (isPromptLineText(line) || /^●\s+/.test(line)) return false;
     if (/^╭─\s*⚕\s*Hermes/i.test(line) || parseActivityHead(rawLine)) return true;
+    if (isPlainAssistantCandidateLine(line)) return true;
   }
   return false;
 }
@@ -480,6 +500,8 @@ function parseMessages(text, options = {}) {
   const messages = [];
   let inAssistantBox = false;
   let assistantLines = [];
+  let plainAssistantLines = [];
+  let canStartPlainAssistant = false;
   let inUserMessage = false;
   let userLines = [];
 
@@ -506,12 +528,27 @@ function parseMessages(text, options = {}) {
       .trim();
     if (content) {
       messages.push({ role: 'user', content });
+      canStartPlainAssistant = true;
     }
     userLines = [];
     inUserMessage = false;
   };
 
-  const isPromptLine = (line) => /^(?:⚕\s*)?❯\s*(?:$|\S.*)$/.test(line);
+  const isPromptLine = (line) => isPromptLineText(line);
+  const flushPlainAssistant = () => {
+    const contentLines = plainAssistantLines
+      .map(normalize)
+      .filter((line) => !isNoise(line));
+    const content = (shouldReflowAssistantLines(contentLines)
+      ? joinWrappedAssistantLines(contentLines)
+      : contentLines.join('\n'))
+      .trim();
+    if (content) {
+      messages.push({ role: 'assistant', content });
+    }
+    plainAssistantLines = [];
+    canStartPlainAssistant = false;
+  };
 
   for (let index = 0; index < lines.length; index += 1) {
     const rawLine = lines[index];
@@ -523,15 +560,18 @@ function parseMessages(text, options = {}) {
 
     const structuralPrompt = !inAssistantBox ? parseStructuralInputPromptLine(lines, index) : null;
     if (structuralPrompt !== null) {
+      if (plainAssistantLines.length) flushPlainAssistant();
       if (inUserMessage) flushUser();
       if (structuralPrompt && hasTranscriptOutputAfterStructuralPrompt(lines, index)) {
         inUserMessage = true;
         userLines = [structuralPrompt];
+        canStartPlainAssistant = false;
       }
       continue;
     }
 
     if (/^●\s+/.test(line)) {
+      if (plainAssistantLines.length) flushPlainAssistant();
       if (inAssistantBox) {
         flushAssistant();
         inAssistantBox = false;
@@ -546,6 +586,7 @@ function parseMessages(text, options = {}) {
     }
 
     if (/^╭─\s*⚕\s*Hermes/i.test(line)) {
+      if (plainAssistantLines.length) flushPlainAssistant();
       if (inUserMessage) flushUser();
       if (inAssistantBox) flushAssistant();
       inAssistantBox = true;
@@ -581,6 +622,7 @@ function parseMessages(text, options = {}) {
         const content = contentLines.join('\n').trim();
         if (content) {
           if (inUserMessage) flushUser();
+          if (plainAssistantLines.length) flushPlainAssistant();
           if (inAssistantBox) {
             flushAssistant();
             inAssistantBox = false;
@@ -617,6 +659,7 @@ function parseMessages(text, options = {}) {
       const activityMessage = parseActivityMessage(rawLine, continuationLines);
       if (activityMessage) {
         if (inUserMessage) flushUser();
+        if (plainAssistantLines.length) flushPlainAssistant();
         if (inAssistantBox) {
           flushAssistant();
           inAssistantBox = false;
@@ -637,6 +680,11 @@ function parseMessages(text, options = {}) {
       }
     }
 
+    if (canStartPlainAssistant && isPlainAssistantCandidateLine(line)) {
+      plainAssistantLines.push(line);
+      continue;
+    }
+
     if (inAssistantBox) {
       assistantLines.push(line);
     }
@@ -644,6 +692,7 @@ function parseMessages(text, options = {}) {
 
   if (inUserMessage) flushUser();
   if (inAssistantBox) flushAssistant();
+  if (plainAssistantLines.length) flushPlainAssistant();
 
   return finalizeMessages(messages);
 }

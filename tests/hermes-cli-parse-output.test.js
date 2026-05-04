@@ -738,6 +738,48 @@ test('hermes-cli parseOutput drops a prior final replay after current-turn tool 
   ]);
 });
 
+test('hermes-cli parseOutput captures plain assistant prose redrawn between interrupt prompt chrome', () => {
+  const currentPrompt = '맞아';
+  const currentAnswer = [
+    '응. 이 방향이면 MVP 순서는 이렇게 잡는 게 맞아.',
+    'MVP 1: Mesh Workspace Definition',
+    '- machine/workspace 등록',
+    '- provider availability 표시',
+    'MVP 2: Single Coordinator Chat',
+    '- mesh마다 coordinator session 하나 생성',
+  ].join('\n');
+  const chrome = [
+    '',
+    ' ⚕ gpt-5.5 │ 51.1K/272K │ [██░░░░░░░░] 19% │ │ ⏱',
+    '──────────────────────────────────────────────────────────────────────────────',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '──────────────────────────────────────────────────────────────────────────────',
+  ];
+  const buffer = [
+    '──────────────────────────────────────────────────────────────────────────────',
+    `> ${currentPrompt}`,
+    '──────────────────────────────────────────────────────────────────────────────',
+    ...currentAnswer.split('\n').flatMap((line) => [line, ...chrome]),
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: '❯',
+    buffer,
+    messages: [
+      { role: 'user', content: '이전 요청' },
+      { role: 'assistant', content: '이전 답변' },
+      { role: 'user', content: currentPrompt },
+    ],
+  });
+
+  assert.deepEqual(toMessages(result), [
+    { role: 'user', content: '이전 요청' },
+    { role: 'assistant', content: '이전 답변' },
+    { role: 'user', content: currentPrompt },
+    { role: 'assistant', content: currentAnswer },
+  ]);
+});
+
 test('hermes-cli parseOutput ignores non-monotonic raw history before the current committed prompt', () => {
   const firstAnswer = 'First committed assistant answer that should not be appended again from raw history.';
   const secondAnswer = 'Second committed assistant answer that should remain canonical once.';
