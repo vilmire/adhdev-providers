@@ -122,3 +122,111 @@ test('gemini-cli keeps wrapped multi-line prompts and assistant replies from the
   assert.match(result.messages[1].content, /SQUARES=1,4,9,16,25/);
   assert.match(result.messages[1].content, /UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧/);
 });
+
+test('gemini-cli drops leaked terminal device-attribute artifacts instead of showing 1;2c', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Say artifact clean',
+    '?1;2c',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ artifact clean',
+    '1;2c',
+    '────────────────────────────────────────────────────────────────────────',
+    ' YOLO Ctrl+Y                                                   1 GEMINI.md file',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' *   Type your message or @path/to/file',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.equal(result.messages[0].content, 'Say artifact clean');
+  assert.equal(result.messages[1].content, 'artifact clean');
+  assert.doesNotMatch(result.messages.map(message => message.content).join('\n'), /1;2c|\?1;2c/);
+});
+
+test('gemini-cli does not treat assistant markdown bullet lines as user turns', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * List two bullets',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ Here are two bullets:',
+    '* alpha',
+    '* beta',
+    '────────────────────────────────────────────────────────────────────────',
+    ' YOLO Ctrl+Y                                                   1 GEMINI.md file',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' *   Type your message or @path/to/file',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.equal(result.messages[0].content, 'List two bullets');
+  assert.equal(result.messages[1].content, 'Here are two bullets:\n* alpha\n* beta');
+});
+
+test('gemini-cli strips inline leaked terminal artifacts from assistant text', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Say clean inline artifact',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ clean [?1;2c inline artifact',
+    '1;2c',
+    '────────────────────────────────────────────────────────────────────────',
+    ' YOLO Ctrl+Y                                                   1 GEMINI.md file',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' *   Type your message or @path/to/file',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.equal(result.messages[1].content, 'clean inline artifact');
+  assert.doesNotMatch(result.messages.map(message => message.content).join('\n'), /1;2c|\?1;2c/);
+});
+
+test('gemini-cli uses promptText to select the current turn from repeated redraw history', () => {
+  const buffer = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Old prompt',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ old answer',
+    '────────────────────────────────────────────────────────────────────────',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Current prompt',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ current answer',
+    '────────────────────────────────────────────────────────────────────────',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Current prompt',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ current answer',
+  ].join('\n');
+
+  const result = parseOutput({ buffer, rawBuffer: buffer, promptText: 'Current prompt', messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.equal(result.messages[0].content, 'Current prompt');
+  assert.equal(result.messages[1].content, 'current answer');
+});
+
+test('gemini-cli parses framed input rows without confusing the frame for content', () => {
+  const screen = [
+    '╭────────────────────────────────────────╮',
+    '│ > Framed prompt                       │',
+    '╰────────────────────────────────────────╯',
+    '✦ framed answer',
+    '────────────────────────────────────────────────────────────────────────',
+    ' YOLO Ctrl+Y                                                   1 GEMINI.md file',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.equal(result.messages[0].content, 'Framed prompt');
+  assert.equal(result.messages[1].content, 'framed answer');
+});
