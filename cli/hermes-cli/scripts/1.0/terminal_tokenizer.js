@@ -26,14 +26,21 @@ function stripAssistantFooterNoise(text) {
   return String(text || '')
     .split(/\r?\n/)
     .map((line) => String(line || '').trimEnd())
-    .filter((line) => !isTransientAssistantFooterLine(line))
+    .filter((line) => !isTransientAssistantFooterLine(line) && !isProtocolArtifactLine(line))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
+function isProtocolArtifactLine(line) {
+  const value = normalize(line);
+  if (!value) return false;
+  return /^(?:[A-Za-z]{1,8}\|)?readChatResult$/i.test(value);
+}
+
 function isNoise(line) {
   return !line
+    || isProtocolArtifactLine(line)
     || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
     || /^\d+$/.test(line)
     || /^\d+(?:\.\d+)?\s*(?:ms|s|m|h)$/i.test(line)

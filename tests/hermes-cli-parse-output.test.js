@@ -632,6 +632,35 @@ test('hermes-cli does not surface status-bar duration as a tool bubble or strip 
   assert.equal(detailed.some((message) => message.role === 'assistant' && message.kind === 'tool' && /^4\s*s$/i.test(message.content)), false);
 });
 
+test('hermes-cli strips read_chat protocol artifact lines from assistant bubbles', () => {
+  const result = parseOutput({
+    screenText: '❯',
+    buffer: '❯',
+    messages: [
+      {
+        role: 'assistant',
+        content: [
+          'tus|readChatResult',
+          '진행 요약입니다.',
+          'readChatResult',
+          '검증 완료:',
+          'tus|readChatResult',
+          '- provider targeted tests 99/99 pass.',
+        ].join('\n'),
+      },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    {
+      role: 'assistant',
+      kind: 'standard',
+      senderName: undefined,
+      content: '진행 요약입니다.\n검증 완료:\n- provider targeted tests 99/99 pass.',
+    },
+  ]);
+});
+
 test('hermes-cli strips redraw kaomoji status suffixes from retained user and activity bubbles', () => {
   const result = parseOutput({
     screenText: '❯',

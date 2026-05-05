@@ -117,12 +117,27 @@ function buildStatusSignals(screen) {
   };
 }
 
+function hasSettledPromptEvidence(signals) {
+  if (!signals) return false;
+  if (signals.hasInitializing
+      || signals.hasInterruptInputPrompt
+      || signals.hasLiveTurnMarkers
+      || signals.hasEllipsisStatusAbovePrompt
+      || signals.hasOpenAssistantBox) {
+    return false;
+  }
+  return signals.finishedAssistantVisible || signals.hasBarePrompt || signals.hasPromptReady;
+}
+
 module.exports = function detectStatus(input) {
   const currentScreen = getScreen(input);
   const bufferScreen = getBufferScreen(input);
   const tailScreen = getTailScreen(input);
   const current = buildStatusSignals(currentScreen);
   if (!current.text.trim()) return 'idle';
+
+  const tail = buildStatusSignals(tailScreen);
+  const tailSettledPrompt = hasSettledPromptEvidence(tail);
 
   const approvalModal = parseApproval({
     screenText: currentScreen?.text || input?.screenText || '',
@@ -134,6 +149,13 @@ module.exports = function detectStatus(input) {
   });
   if (approvalModal) {
     return 'waiting_approval';
+  }
+
+  // The recent PTY tail is appended after the viewport snapshot. If it already
+  // contains a settled bare prompt, stale in-flight markers still visible in the
+  // current screen are scrollback artifacts from the completed turn.
+  if (tailSettledPrompt) {
+    return 'idle';
   }
 
   if (current.hasInterruptInputPrompt) {

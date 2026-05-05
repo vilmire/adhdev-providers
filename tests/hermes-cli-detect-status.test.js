@@ -212,6 +212,29 @@ test('hermes-cli returns to idle after a completed assistant box even if isWaiti
   assert.equal(detectStatus({ screenText, isWaitingForResponse: true }), 'idle');
 });
 
+test('hermes-cli returns to idle when recent PTY tail has a settled prompt after stale msg=interrupt redraws', () => {
+  const screenText = [
+    'nying command',
+    '┊ 💻 $ set -euo pipefail',
+    '┊ 🌐 navigate dev.adhf.dev 2.6s',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '┊ 💻 $ osascript -e \'tell application "Google Chrome" to get URL of active tab of front window\' …[truncated 17705 chars]',
+  ].join('\n');
+  const tail = [
+    '⚕ gpt-5.5 │ 68.3K/272K │ [██░░░░░░░░] 25% │ │ ⏲',
+    '───────────────────────────────────────────────────────────────────────────────',
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '───────────────────────────────────────────────────────────────────────────────',
+    '╰──────────────────────────────────────────────────────────────────────────────╯',
+    '⚕ gpt-5.5 │ 68.3K/272K │ [██░░░░░░░░] 25% │ │ ⏲',
+    '───────────────────────────────────────────────────────────────────────────────',
+    '❯',
+    '───────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail }), 'idle');
+});
+
 test('hermes-cli stays generating when the new msg=interrupt prompt footer is visible without an ellipsis line', () => {
   const screenText = [
     '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
