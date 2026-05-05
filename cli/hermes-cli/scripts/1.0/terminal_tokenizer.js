@@ -499,11 +499,32 @@ function hasTranscriptOutputAfterStructuralPrompt(lines, index) {
   return false;
 }
 
+function expandFlattenedTerminalSnapshot(text) {
+  const source = cleanAnsi(text);
+  if (!source.trim()) return '';
+
+  // Some terminal screen snapshots arrive as one physical row with Hermes box
+  // boundaries, activity rows, prompt chrome, and assistant prose flattened into
+  // spaces. Reintroduce the semantic boundaries before the normal line-based
+  // tokenizer runs, otherwise a completed assistant box can be invisible to the
+  // parser even though the text is present in the terminal snapshot.
+  return source.split(/\r?\n/).map((line) => {
+    if (!/[╭╰┊│]/u.test(line)) return line;
+    return line
+      .replace(/\s+(╭─\s*⚕\s*Hermes\b[^╮]*╮)\s*/giu, '\n$1\n')
+      .replace(/\s+(╰[─━═]+╯)\s*/gu, '\n$1\n')
+      .replace(/\s+([┊│]\s*(?:\p{Emoji}\uFE0F?|\$)\s+)/gu, '\n$1')
+      .replace(/\s+(●\s+)/gu, '\n$1')
+      .replace(/\s+(⚕\s*❯\s+)/gu, '\n$1')
+      .replace(/^\n+/, '');
+  }).join('\n').replace(/\n{3,}/g, '\n\n');
+}
+
 function parseMessages(text, options = {}) {
   const finalizeMessages = typeof options?.dedupeMessages === 'function'
     ? options.dedupeMessages
     : (messages) => messages;
-  const lines = cleanAnsi(text).split(/\r?\n/);
+  const lines = expandFlattenedTerminalSnapshot(text).split(/\r?\n/);
   const messages = [];
   let inAssistantBox = false;
   let assistantLines = [];

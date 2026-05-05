@@ -952,6 +952,87 @@ function shouldPreferRawMessages({
   return Boolean(mergeCoveredTranscript(baseMessages, rawMessages));
 }
 
+function promptsLikelySameTurn(left, right) {
+  const a = getCompactComparableContent(left);
+  const b = getCompactComparableContent(right);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  return shorter.length >= 2 && longer.startsWith(shorter);
+}
+
+function messagesLooselyOverlap(left, right) {
+  if (messagesMatch(left, right)) return true;
+  const a = getCompactComparableContent(left);
+  const b = getCompactComparableContent(right);
+  if (!a || !b) return false;
+  const shorter = a.length <= b.length ? a : b;
+  const longer = a.length <= b.length ? b : a;
+  return shorter.length >= 32 && longer.includes(shorter);
+}
+
+function appendMissingScreenFinalAnswer(messages, screenMessages) {
+  const base = (Array.isArray(messages) ? messages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  const screen = (Array.isArray(screenMessages) ? screenMessages : [])
+    .map(normalizeMessage)
+    .filter((message) => message.content);
+  if (base.length === 0 || screen.length === 0) return base;
+
+  let finalIndex = -1;
+  for (let index = screen.length - 1; index >= 0; index -= 1) {
+    const message = screen[index];
+    if (message.role === 'assistant' && (message.kind || 'standard') === 'standard') {
+      finalIndex = index;
+      break;
+    }
+    if (message.role === 'user') break;
+  }
+  if (finalIndex < 0) return base;
+
+  const finalMessage = screen[finalIndex];
+
+  let screenUserIndex = -1;
+  for (let index = finalIndex - 1; index >= 0; index -= 1) {
+    if (screen[index].role === 'user') {
+      screenUserIndex = index;
+      break;
+    }
+  }
+  let baseUserIndex = -1;
+  for (let index = base.length - 1; index >= 0; index -= 1) {
+    if (base[index].role === 'user') {
+      baseUserIndex = index;
+      break;
+    }
+  }
+
+  const samePrompt = screenUserIndex >= 0 && baseUserIndex >= 0
+    && promptsLikelySameTurn(screen[screenUserIndex], base[baseUserIndex]);
+  const screenTurnActivity = screen.slice(Math.max(0, screenUserIndex + 1), finalIndex)
+    .filter((message) => message.role === 'assistant' && (message.kind || 'standard') !== 'standard');
+  const baseTurn = base.slice(Math.max(0, baseUserIndex + 1));
+  const hasActivityOverlap = screenTurnActivity.some((screenActivity) => (
+    baseTurn.some((baseMessage) => messagesLooselyOverlap(baseMessage, screenActivity))
+  ));
+  const existingFinalIndex = base.findIndex((message) => messagesMatch(message, finalMessage));
+  if (existingFinalIndex >= 0) {
+    const trailingTurn = baseUserIndex > existingFinalIndex ? base.slice(baseUserIndex) : [];
+    const trailingHasFinal = trailingTurn.some((message) => (
+      message.role === 'assistant' && (message.kind || 'standard') === 'standard'
+    ));
+    if (trailingTurn.length > 0 && !trailingHasFinal && samePrompt && hasActivityOverlap) {
+      return base.slice(0, baseUserIndex);
+    }
+    return base;
+  }
+
+  if (!samePrompt && !hasActivityOverlap) return base;
+  return mergeMessageHistories(base, [finalMessage]);
+}
+
 module.exports = function parseOutput(input) {
   const transcript = String(input?.buffer || input?.screenText || input?.rawBuffer || '');
   const screenText = String(input?.screenText || '');
@@ -1036,7 +1117,7 @@ module.exports = function parseOutput(input) {
   const rawCurrentTurnMessages = mergeMessageHistories(primaryCurrentTurnMessages, secondaryCurrentTurnMessages);
   const coveredRawMessages = mergeCoveredTranscript(baseMessages, rawMessages);
   const preferredRawMessages = coveredRawMessages || rawMessages;
-  const messages = trimMessagesForHistoryState(
+  const messages = appendMissingScreenFinalAnswer(trimMessagesForHistoryState(
     shouldPreferRawMessages({
       baseMessages,
       rawMessages,
@@ -1046,7 +1127,7 @@ module.exports = function parseOutput(input) {
       ? preferredRawMessages
       : mergeMessageHistories(baseMessages, rawCurrentTurnMessages),
     historyState,
-  );
+  ), screenMessages);
   const activeModal = parsedApproval || null;
   const effectiveStatus = activeModal ? 'waiting_approval' : status;
   const replayCollapseOptions = {

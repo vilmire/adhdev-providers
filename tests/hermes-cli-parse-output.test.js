@@ -32,6 +32,50 @@ function toIdentityMessages(result) {
 }
 
 
+test('hermes-cli parseOutput recovers final assistant from flattened terminal screen snapshot', () => {
+  const finalAnswer = '커밋/푸시할 건 없어. 확인 결과: - root: main...origin/main clean - oss submodule: main...origin/main clean';
+  const flattenedScreen = `┊ 💻 $ git status --short --branch 0.3s ╭─ ⚕ Hermes ─────────────────────╮ ${finalAnswer} ╰────────────────────────────╯ ⚕ gpt-5.5 │ 128K/272K │ [█████░░░░░] 47% │ │ ⏲ ───────────────── ⚕ ❯ msg=interrupt · /queue`;
+  const result = parseOutput({
+    screenText: flattenedScreen,
+    buffer: '',
+    rawBuffer: '',
+    recentBuffer: '',
+    messages: [
+      { role: 'user', content: '커밋 푸시할게 있다면 진행해둬' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+    ],
+  });
+
+  assert.equal(result.messages.at(-1).role, 'assistant');
+  assert.equal(result.messages.at(-1).kind, 'standard');
+  assert.equal(result.messages.at(-1).content, finalAnswer);
+});
+
+test('hermes-cli parseOutput trims replay residue after recovered final assistant snapshot', () => {
+  const finalAnswer = '커밋/푸시할 건 없어. 확인 결과: - root: main...origin/main clean';
+  const flattenedScreen = `● 커밋 푸시할게 있다면 진행해둬 ┊ 🛠 skill github-pr-workflow 0.1s ┊ 💻 $ git status --short --branch 0.3s ╭─ ⚕ Hermes ─────────────────────╮ ${finalAnswer} ╰────────────────────────────╯ ⚕ ❯`;
+  const result = parseOutput({
+    screenText: flattenedScreen,
+    buffer: '',
+    rawBuffer: '',
+    recentBuffer: '',
+    messages: [
+      { role: 'user', content: '커밋 푸시할게 있다면 진행해둬' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill github-pr-workflow' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+      { role: 'assistant', kind: 'standard', content: finalAnswer },
+      { role: 'user', content: '커밋' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill github-pr-workflow' },
+      { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch' },
+    ],
+  });
+
+  assert.equal(result.messages.at(-1).role, 'assistant');
+  assert.equal(result.messages.at(-1).kind, 'standard');
+  assert.equal(result.messages.at(-1).content, finalAnswer);
+  assert.equal(result.messages.filter((message) => message.role === 'user').length, 1);
+});
+
 test('hermes-cli source classifier labels committed, buffer, and screen candidates before legacy merge', () => {
   const committed = toCandidates('committed', [
     { role: 'user', content: 'already committed prompt' },
