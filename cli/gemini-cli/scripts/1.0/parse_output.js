@@ -83,7 +83,12 @@ module.exports = function parseOutput(input) {
     const transcript = chooseTranscript(safeInput);
     const statusSource = screenText || transcript;
     const tail = recentBuffer || statusSource.slice(-1000);
-    const status = detectStatus({ tail, screenText: statusSource, rawBuffer });
+    const status = detectStatus({
+        tail,
+        screenText: statusSource,
+        rawBuffer,
+        isWaitingForResponse: Boolean(safeInput.isWaitingForResponse),
+    });
     const activeModal = status === 'waiting_approval'
         ? parseApproval({ buffer: transcript, screenText: statusSource, tail, rawBuffer })
         : null;

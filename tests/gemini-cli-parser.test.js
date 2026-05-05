@@ -49,8 +49,39 @@ function geminiRedrawTranscript() {
 }
 
 test('gemini-cli treats final redraw screen as idle, not a stuck generating turn', () => {
-  const status = detectStatus({ screenText: geminiRedrawTranscript(), tail: geminiRedrawTranscript() });
+  const status = detectStatus({ screenText: geminiRedrawTranscript(), tail: geminiRedrawTranscript(), isWaitingForResponse: true });
   assert.equal(status, 'idle');
+});
+
+test('gemini-cli treats a visible Thinking row as generating even when shortcuts/footer chrome is present', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Explain the fixture briefly',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ Previous answer remains visible while the next turn runs.',
+    ' ⠼ Thinking... (esc to cancel, 8s)                                                                      ? for shortcuts',
+    '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────',
+    ' YOLO Ctrl+Y                                                                                           1 GEMINI.md file',
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' *   Type your message or @path/to/file',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    ' workspace (/directory)                             sandbox                     /model                            quota',
+    ' /private/tmp/adhdev-gemini-quality                 no sandbox                  Auto (Gemini 3)                 2% used',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText: screen, tail: screen, isWaitingForResponse: true }), 'generating');
+  assert.equal(parseOutput({ screenText: screen, rawBuffer: screen, recentBuffer: screen, isWaitingForResponse: true, messages: [] }).status, 'generating');
+});
+
+test('gemini-cli treats Thinking plus ? for shortcuts on the same row as progress, not idle', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Summarize status detection',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    ' ⠴ Thinking... (esc to cancel, 2s)                                                                      ? for shortcuts',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText: screen, tail: screen }), 'generating');
 });
 
 test('gemini-cli parses current promptText plus star/diamond Gemini UI reply into one clean turn', () => {
