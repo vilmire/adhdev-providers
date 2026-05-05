@@ -199,6 +199,27 @@ test('gemini-cli does not treat assistant markdown bullet lines as user turns', 
   assert.equal(result.messages[1].content, 'Here are two bullets:\n* alpha\n* beta');
 });
 
+test('gemini-cli keeps bullet-looking continuation lines inside a user input box', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Reply exactly with these three lines, no tools:',
+    ' ADHDEV_TURN_ONE_OK',
+    ' * assistant bullet stays assistant',
+    ' NO_ARTIFACTS_HERE',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ ADHDEV_TURN_ONE_OK',
+    '* assistant bullet stays assistant',
+    'NO_ARTIFACTS_HERE',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
+  assert.match(result.messages[0].content, /ADHDEV_TURN_ONE_OK/);
+  assert.match(result.messages[0].content, /\* assistant bullet stays assistant/);
+  assert.equal(result.messages[1].content, 'ADHDEV_TURN_ONE_OK\n* assistant bullet stays assistant\nNO_ARTIFACTS_HERE');
+});
+
 test('gemini-cli strips inline leaked terminal artifacts from assistant text', () => {
   const screen = [
     '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
@@ -240,9 +261,62 @@ test('gemini-cli uses promptText to select the current turn from repeated redraw
 
   const result = parseOutput({ buffer, rawBuffer: buffer, promptText: 'Current prompt', messages: [] });
 
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant', 'user', 'assistant']);
+  assert.equal(result.messages[0].content, 'Old prompt');
+  assert.equal(result.messages[1].content, 'old answer');
+  assert.equal(result.messages[2].content, 'Current prompt');
+  assert.equal(result.messages[3].content, 'current answer');
+});
+
+test('gemini-cli preserves committed prior messages when parsing a new current turn', () => {
+  const buffer = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Current prompt',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ current answer',
+  ].join('\n');
+
+  const result = parseOutput({
+    buffer,
+    rawBuffer: buffer,
+    promptText: 'Current prompt',
+    messages: [
+      { role: 'user', content: 'Previous prompt' },
+      { role: 'assistant', content: 'previous answer' },
+    ],
+  });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant', 'user', 'assistant']);
+  assert.deepEqual(result.messages.map(message => message.content), [
+    'Previous prompt',
+    'previous answer',
+    'Current prompt',
+    'current answer',
+  ]);
+});
+
+test('gemini-cli pairs an orphan visible assistant answer with explicit promptText once', () => {
+  const screen = '✦ orphan answer from live redraw';
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, promptText: 'Prompt missing from screen', messages: [] });
+
   assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant']);
-  assert.equal(result.messages[0].content, 'Current prompt');
-  assert.equal(result.messages[1].content, 'current answer');
+  assert.equal(result.messages[0].content, 'Prompt missing from screen');
+  assert.equal(result.messages[1].content, 'orphan answer from live redraw');
+});
+
+test('gemini-cli appends promptText as a user turn instead of pairing it with a prior complete answer', () => {
+  const screen = [
+    '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄',
+    ' * Old prompt',
+    '▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀',
+    '✦ old answer',
+  ].join('\n');
+
+  const result = parseOutput({ screenText: screen, rawBuffer: screen, promptText: 'New prompt', messages: [] });
+
+  assert.deepEqual(result.messages.map(message => message.role), ['user', 'assistant', 'user']);
+  assert.deepEqual(result.messages.map(message => message.content), ['Old prompt', 'old answer', 'New prompt']);
 });
 
 test('gemini-cli parses framed input rows without confusing the frame for content', () => {

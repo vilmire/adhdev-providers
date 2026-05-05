@@ -54,15 +54,15 @@ function toMessageObjects(messages, status) {
 }
 
 function mergeMessages(priorMessages, parsedMessages, status) {
-    const parsed = [];
+    const merged = [];
+    for (const message of normalizePriorMessages(priorMessages)) {
+        pushDedup(merged, message);
+    }
     for (const message of Array.isArray(parsedMessages) ? parsedMessages : []) {
         if (!message || (message.role !== 'user' && message.role !== 'assistant')) continue;
-        pushDedup(parsed, message);
+        pushDedup(merged, message);
     }
-    if (parsed.length > 0) return toMessageObjects(parsed, status);
-
-    const prior = normalizePriorMessages(priorMessages);
-    return toMessageObjects(prior, status);
+    return toMessageObjects(merged, status);
 }
 
 function chooseTranscript(safeInput) {

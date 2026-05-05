@@ -145,7 +145,7 @@ function isStructuralUserLine(lines, index, insideInputBox) {
     if (!marker) return false;
     const prev = previousMeaningfulLine(lines, index);
     const previousLooksLikeBoxTop = isTopInputBoxLine(prev) || isDividerLine(prev);
-    if (marker.marker === '*') return insideInputBox || previousLooksLikeBoxTop;
+    if (marker.marker === '*') return previousLooksLikeBoxTop;
     return insideInputBox || previousLooksLikeBoxTop || index === 0;
 }
 
@@ -262,25 +262,51 @@ function materializeTurn(turn, explicitPrompt) {
     return messages;
 }
 
+function appendMessagesDedup(target, messages) {
+    for (const message of messages) {
+        const content = normalizeText(message?.content);
+        if (!content) continue;
+        const previous = target[target.length - 1];
+        if (previous && previous.role === message.role && comparableText(previous.content) === comparableText(content)) continue;
+        target.push({ role: message.role, content, kind: message.kind || 'standard' });
+    }
+}
+
+function materializeDistinctTurns(turns) {
+    const messages = [];
+    const seenTurns = new Set();
+    for (const turn of turns) {
+        const turnMessages = materializeTurn(turn, '');
+        if (turnMessages.length === 0) continue;
+        const key = turnMessages.map(message => `${message.role}:${comparableText(message.content)}`).join('\u0000');
+        if (seenTurns.has(key)) continue;
+        seenTurns.add(key);
+        appendMessagesDedup(messages, turnMessages);
+    }
+    return messages;
+}
+
 function reconcileCurrentTurn(candidates, explicitPrompt) {
     const prompt = normalizeText(explicitPrompt);
     const turns = splitIntoTurns(candidates);
     if (turns.length === 0) return prompt ? [{ role: 'user', content: prompt, kind: 'standard' }] : [];
 
-    if (prompt) {
-        for (let i = turns.length - 1; i >= 0; i -= 1) {
-            const userContent = turns[i].user?.content || '';
-            if (userContent && looksLikeSameText(userContent, prompt)) {
-                return materializeTurn(turns[i], prompt);
-            }
-        }
-        const lastAssistantTurn = [...turns].reverse().find(turn => turn.assistants.length > 0);
-        if (lastAssistantTurn) return materializeTurn({ user: null, assistants: lastAssistantTurn.assistants }, prompt);
-        return [{ role: 'user', content: prompt, kind: 'standard' }];
+    const messages = materializeDistinctTurns(turns);
+    if (!prompt) return messages;
+
+    if (messages.some(message => message.role === 'user' && looksLikeSameText(message.content, prompt))) {
+        return messages;
     }
 
-    const lastComplete = [...turns].reverse().find(turn => turn.user || turn.assistants.length > 0);
-    return materializeTurn(lastComplete, '');
+    const orphanAssistantIndex = turns.findLastIndex(turn => !turn.user && turn.assistants.length > 0);
+    if (orphanAssistantIndex >= 0) {
+        const merged = materializeDistinctTurns(turns.slice(0, orphanAssistantIndex));
+        appendMessagesDedup(merged, materializeTurn({ user: null, assistants: turns[orphanAssistantIndex].assistants }, prompt));
+        return merged;
+    }
+
+    appendMessagesDedup(messages, [{ role: 'user', content: prompt, kind: 'standard' }]);
+    return messages;
 }
 
 function parseGeminiMessages(input, transcript) {
