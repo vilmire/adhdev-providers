@@ -44,7 +44,10 @@ function hasInterruptInputPromptLine(screen) {
 
 function hasEscInterruptFooter(lines) {
     const window = takeLast(lines, 8);
-    return window.some(line => /\besc to (?:cancel|interrupt|stop)\b/i.test(normalize(line)));
+    // `Esc to cancel` is also present on Claude approval modals. Treat only
+    // interrupt/stop affordances as generation evidence; approval is detected
+    // separately via cues + buttons.
+    return window.some(line => /\besc to (?:interrupt|stop)\b/i.test(normalize(line)));
 }
 
 function isShellChrome(line) {
@@ -258,7 +261,10 @@ module.exports = function detectStatus(input) {
     const activeLines = screenLines.length > 0 ? screenLines : tailLines;
 
     if (activeLines.length > 0) {
-        if (hasActiveApproval(activeLines)) return 'waiting_approval';
+        // Prefer approval cues from either the virtual screen or the raw tail.
+        // The screen renderer can corrupt Claude's modal text (collapsed words,
+        // missing buttons) while the tail still has the intact actionable UI.
+        if (hasActiveApproval(screenLines) || hasActiveApproval(tailLines)) return 'waiting_approval';
         if (hasInterruptInputPromptLine(screen)) return 'generating';
         if (hasEscInterruptFooter(activeLines)) return 'generating';
         if (hasPromptAdjacentGenerating(screen)) return 'generating';
@@ -275,7 +281,7 @@ module.exports = function detectStatus(input) {
         const tail = String(input?.tail || '');
         if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
         if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
-        if (/esc to (cancel|interrupt|stop)/i.test(tail)) return 'generating';
+        if (/esc to (?:interrupt|stop)/i.test(tail)) return 'generating';
         if (nonEmpty(tail.split(/\r?\n/u)).some(isSpinnerLine)) return 'generating';
         if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
     }

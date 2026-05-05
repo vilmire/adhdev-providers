@@ -1367,6 +1367,63 @@ test('claude-cli parse_output surfaces an approval bubble from a real dangerous-
   ]);
 });
 
+test('claude-cli parse_output uses raw tail approval when the virtual screen modal is corrupted', () => {
+  const corruptedScreen = [
+    '⏺ Bash(# adhdev-mcp 프로세스 및 실행 상태 확인',
+    ' ps aux | grep "adhdev-mcp\\|mesh" | grepo-vcgrep…)dev/.claude/',
+    '  ⎿  W iting…',
+    '⏺ Bas                                  태 확인',
+    '────────────────────────────────────────────────────────────────────────────────',
+    ' Bash command',
+    '',
+    '───#─adhdev-mcp 프로세스 및 실행 상태 확인   ─  ─      ─────────────────────────',
+    '   ps aux | grep "adhdev-mcp',
+    'Dowyouhwantdto-proceed?ev/null && adhdev-mcp --help 2>/dev/null | head -10 Do3. Now c',
+    'Esc to cancel · Tab to amend · ctrl+e to explain',
+  ].join('\n');
+  const intactTail = [
+    '⏺ Bash(# adhdev-mcp 프로세스 및 실행 상태 확인',
+    'ps aux | grep "adhdev-mcp\\|mesh" | grep -v grep…)',
+    '⎿  Waiting…',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    'Bash command',
+    '',
+    '# adhdev-mcp 프로세스 및 실행 상태 확인',
+    'ps aux | grep "adhdev-mcp\\|mesh" | grep -v grep',
+    'which adhdev-mcp 2>/dev/null && adhdev-mcp --help 2>/dev/null | head -10',
+    'Check adhdev-mcp process status',
+    '',
+    'Do you want to proceed?',
+    '❯ 1. Yes',
+    '2. Yes, and don’t ask again for: adhdev-mcp --help',
+    '3. No',
+    '',
+    'Esc to cancel · Tab to amend · ctrl+e to explain',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(corruptedScreen);
+  assert.equal(detectStatus({
+    screenText: corruptedScreen,
+    screen,
+    tail: intactTail,
+    tailScreen: buildScreenSnapshot(intactTail),
+  }), 'waiting_approval');
+
+  const result = parseOutput({
+    screenText: corruptedScreen,
+    buffer: corruptedScreen,
+    recentBuffer: intactTail,
+    messages: [{ role: 'user', content: 'MCP 상태 확인해줘' }],
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal, {
+    message: 'which adhdev-mcp 2>/dev/null && adhdev-mcp --help 2>/dev/null | head -10 Check adhdev-mcp process status Do you want to proceed?',
+    buttons: ['Yes', 'Always allow', 'No'],
+  });
+});
+
 test('claude-cli parse_output surfaces the startup trust prompt as an approval bubble', () => {
   const screenText = [
     'Quick safety check',

@@ -40,6 +40,7 @@ function normalizeButtonLabel(line) {
 
     if (/^Yes,\s+and\s+don['’]t\s+ask\s+again\b/i.test(trimmed)) return 'Always allow';
     if (/^Allow\s*once\b/i.test(trimmed)) return 'Yes';
+    if (/^Yes\s*[-–—]/i.test(trimmed)) return 'Yes';
     if (/^(?:Deny|Reject)\b/i.test(trimmed)) return 'No';
     return trimmed;
 }
@@ -73,14 +74,8 @@ function findLastIndex(lines, predicate) {
     return -1;
 }
 
-module.exports = function parseApproval(input) {
-    const primaryScreen = getBufferScreen(input);
-    const fallbackScreen = getTailScreen(input);
-    const primary = String(input?.buffer || '');
-    const fallback = String(input?.tail || '');
-    const lines = (primaryScreen.lineCount > 0 ? primaryScreen.lines : fallbackScreen.lines)
-        .map(line => line.text);
-    if (lines.length === 0) return null;
+function parseApprovalFromLines(lines, sourceText) {
+    if (!Array.isArray(lines) || lines.length === 0) return null;
 
     const recent = takeLast(lines, 30);
     const normalizedRecent = recent.map(normalize).filter(Boolean);
@@ -107,7 +102,7 @@ module.exports = function parseApproval(input) {
     const startupTrust = normalizedRecent.some(isStartupTrustCue);
     const hasApproval = buttons.length > 0
         || startupTrust
-        || /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(primary || fallback);
+        || /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
     if (!hasApproval) return null;
 
     const questionIndex = findLastIndex(lines, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
@@ -135,4 +130,45 @@ module.exports = function parseApproval(input) {
         message: context.slice(-3).join(' ').slice(0, 240) || 'Claude Code approval required',
         buttons: buttons.length > 0 ? buttons : ['Allow once', 'Always allow', 'Deny'],
     };
+}
+
+module.exports = function parseApproval(input) {
+    const primaryScreen = getBufferScreen(input);
+    const fallbackScreen = getTailScreen(input);
+    const candidates = [];
+
+    if (primaryScreen.lineCount > 0) {
+        candidates.push({
+            lines: primaryScreen.lines.map(line => line.text),
+            sourceText: String(input?.buffer || input?.screenText || ''),
+        });
+    }
+    if (fallbackScreen.lineCount > 0) {
+        candidates.push({
+            lines: fallbackScreen.lines.map(line => line.text),
+            sourceText: String(input?.tail || input?.recentBuffer || ''),
+        });
+    }
+
+    // Adapter getStatus() calls can see a corrupted virtual-screen modal while
+    // the raw tail/buffer still contains Claude's complete approval UI. Search
+    // those raw streams as secondary candidates so approval/auto-approval does
+    // not depend on the renderer snapshot being perfect.
+    for (const key of ['tail', 'buffer', 'screenText', 'rawBuffer']) {
+        const text = typeof input?.[key] === 'string' ? input[key] : '';
+        if (text) candidates.push({ lines: text.split(/\r?\n/), sourceText: text });
+    }
+
+    const seen = new Set();
+    let best = null;
+    for (const candidate of candidates) {
+        const signature = takeLast(candidate.lines, 30).map(line => String(line || '')).join('\n');
+        if (!signature || seen.has(signature)) continue;
+        seen.add(signature);
+        const parsed = parseApprovalFromLines(candidate.lines, candidate.sourceText);
+        if (!parsed) continue;
+        if (!best || parsed.buttons.length > best.buttons.length) best = parsed;
+    }
+
+    return best;
 };
