@@ -20,6 +20,7 @@ function isNoise(line) {
     if (!trimmed) return true;
     if (/^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed)) return true;
     if (/^❯\s*$/.test(trimmed)) return true;
+    if (/^[❯›>]\s*\/rate-limit-options\s*$/i.test(trimmed)) return true;
     if (/^➜\s+\S+/.test(trimmed)) return true;
     if (/^⏵⏵\s+accept edits on/i.test(trimmed)) return true;
     if (/^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)) return true;
@@ -60,6 +61,26 @@ function isStartupTrustCue(line) {
         || /Claude Code'?ll be able to read, edit, and execute files here/i.test(trimmed);
 }
 
+function isApprovalQuestionLine(line) {
+    const trimmed = normalize(line);
+    return /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
+        || /^What do you want to do\??$/i.test(trimmed);
+}
+
+function isEnterConfirmCancelLine(line) {
+    const trimmed = normalize(line);
+    return /\bEnter to confirm\b/i.test(trimmed) && /\bEsc to cancel\b/i.test(trimmed);
+}
+
+function hasChoiceMenuStructure(lines) {
+    const questionIndex = findLastIndex(lines, line => /^What do you want to do\??$/i.test(normalize(line)));
+    if (questionIndex < 0) return false;
+    const afterQuestion = lines.slice(questionIndex + 1);
+    const footerIndex = afterQuestion.findIndex(isEnterConfirmCancelLine);
+    if (footerIndex < 0) return false;
+    return afterQuestion.slice(0, footerIndex).filter(isButtonLine).length >= 2;
+}
+
 function stripContextPrefix(line) {
     return normalize(line)
         .replace(/^[⏺•]\s+/, '')
@@ -89,7 +110,7 @@ function parseApprovalFromLines(lines, sourceText) {
         if (!trailingApproval) return null;
     }
 
-    const questionIndexInRecent = findLastIndex(recent, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
+    const questionIndexInRecent = findLastIndex(recent, isApprovalQuestionLine);
     const buttonWindow = questionIndexInRecent >= 0 ? recent.slice(questionIndexInRecent) : recent;
 
     const buttons = [];
@@ -100,21 +121,23 @@ function parseApprovalFromLines(lines, sourceText) {
     }
 
     const startupTrust = normalizedRecent.some(isStartupTrustCue);
-    const hasApproval = buttons.length > 0
-        || startupTrust
-        || /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
+    const choiceMenu = hasChoiceMenuStructure(recent);
+    const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
+    const hasApproval = startupTrust || choiceMenu || explicitApproval;
     if (!hasApproval) return null;
 
-    const questionIndex = findLastIndex(lines, line => /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(normalize(line)));
+    const questionIndex = findLastIndex(lines, isApprovalQuestionLine);
     const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
     const startupIndex = findLastIndex(lines, isStartupTrustCue);
+    const rateLimitIndex = findLastIndex(lines, line => /You've hit your limit/i.test(normalize(line)));
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
     const startIndex = Math.max(0, (
         actionIndex >= 0 ? actionIndex
             : approvalIndex >= 0 ? approvalIndex - 2
-                : questionIndex >= 0 ? questionIndex - 4
-                    : startupIndex >= 0 ? startupIndex
-                        : lines.length - 8
+                : rateLimitIndex >= 0 && questionIndex >= 0 && questionIndex - rateLimitIndex <= 10 ? rateLimitIndex
+                    : questionIndex >= 0 ? questionIndex - 4
+                        : startupIndex >= 0 ? startupIndex
+                            : lines.length - 8
     ));
     const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
 

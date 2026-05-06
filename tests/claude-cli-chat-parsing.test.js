@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const parseOutput = require('../cli/claude-cli/scripts/1.0/parse_output.js');
 const detectStatus = require('../cli/claude-cli/scripts/1.0/detect_status.js');
+const parseApproval = require('../cli/claude-cli/scripts/1.0/parse_approval.js');
 const { buildScreenSnapshot } = require('../cli/claude-cli/scripts/1.0/screen_helpers.js');
 
 function toMessages(result) {
@@ -97,6 +98,40 @@ test('claude-cli treats an empty prompt with esc-to-interrupt footer as generati
   assert.equal(screen.promptLine?.trimmed, '❯');
   assert.equal(detectStatus({ screenText, screen }), 'generating');
   assert.equal(parseOutput({ screenText, buffer: screenText, messages: [] }).status, 'generating');
+});
+
+test('claude-cli treats explicit rate-limit choice menu as waiting approval', () => {
+  const screenText = [
+    '❯ Please inspect worktrees:',
+    '1. Run `git worktree list --porcelain` for the root repo.',
+    '2. If `oss/` is a git submodule checkout, also run `git -C oss worktree list`.',
+    '3. Return a concise Korean summary.',
+    '',
+    '❯ /rate-limit-options',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '  What do you want to do?',
+    '',
+    '  ❯ 1. Stop and wait for limit to reset',
+    '    2. Add funds to continue with extra usage',
+    '    3. Upgrade your plan',
+    '',
+    '  Enter to confirm · Esc to cancel',
+  ].join('\n');
+
+  const screen = buildScreenSnapshot(screenText);
+  const modal = parseApproval({ screenText, buffer: screenText, tail: screenText });
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.equal(detectStatus({ screenText, screen }), 'waiting_approval');
+  assert.match(modal.message, /What do you want to do\?/);
+  assert.deepEqual(modal.buttons, [
+    'Stop and wait for limit to reset',
+    'Add funds to continue with extra usage',
+    'Upgrade your plan',
+  ]);
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal?.buttons, modal.buttons);
 });
 
 test('claude-cli does not treat interrupt copy outside the live input prompt as generating', () => {
@@ -1422,6 +1457,103 @@ test('claude-cli parse_output uses raw tail approval when the virtual screen mod
     message: 'which adhdev-mcp 2>/dev/null && adhdev-mcp --help 2>/dev/null | head -10 Check adhdev-mcp process status Do you want to proceed?',
     buttons: ['Yes', 'Always allow', 'No'],
   });
+});
+
+test('claude-cli classifies Claude rate-limit options menu from debug bundle as waiting approval', () => {
+  const screenText = [
+    ' ▐▛███▜▌   Claude Code v2.1.84',
+    '▝▜█████▛▘  Sonnet 4.6 with high effort · Claude Pro',
+    '  ▘▘ ▝▝    ~/Work/adhdev',
+    '',
+    '❯ Read-only inspection only. Do not edit files, stage, commit, reset, remove',
+    'worktrees, or push.',
+    '',
+    'The user suspects there are many git worktrees on the m1-s machine. From',
+    'workspace /Users/vilmire/Work/adhdev, inspect the current repository\'s git',
+    'worktree state and summarize:',
+    '1) Run `git worktree list --porcelain` for the root repo.',
+    '2) If `oss/` is a git submodule checkout, also run `git -C oss worktree list',
+    '--porcelain`.',
+    '3) Count worktrees for each repo, list each path, branch, HEAD short SHA, and',
+    'whether it appears bare/detached/prunable/locked if that info is present.',
+    '4) Identify which worktrees look like adhdev Repo Mesh clones/worktree nodes if',
+    ' obvious from branch/path names.',
+    '5) Do not modify anything. Return a concise Korean summary with any cleanup',
+    'recommendations, but do not perform cleanup.',
+    '  ⎿  You\'ve hit your limit · resets 11:30pm (Asia/Seoul)',
+    '',
+    '❯ /rate-limit-options',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '  What do you want to do?',
+    '',
+    '  ❯ 1. Stop and wait for limit to reset',
+    '    2. Add funds to continue with extra usage',
+    '    3. Upgrade your plan',
+    '',
+    '  Enter to confirm · Esc to cancel',
+  ].join('\n');
+  const recentBuffer = [
+    'cleanup',
+    '',
+    'recommendations, but do not perform cleanup.',
+    '',
+    '✶ Caramelizing…',
+    '',
+    '⎿  You\'ve hit your limit · resets 11:30pm (Asia/Seoul)',
+    '',
+    '❯ /rate-limit-options',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    'What do you want to do?',
+    '',
+    '❯ 1. Stop and wait for limit to reset',
+    '',
+    '2. Add funds to continue with extra usage',
+    '',
+    '3. Upgrade your plan',
+    '',
+    'Enter to confirm · Esc to cancel',
+  ].join('\n');
+
+  const statusInput = {
+    screenText,
+    screen: buildScreenSnapshot(screenText),
+    tail: recentBuffer,
+    tailScreen: buildScreenSnapshot(recentBuffer),
+  };
+  assert.equal(detectStatus(statusInput), 'waiting_approval');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    recentBuffer,
+    messages: [{ role: 'user', content: 'inspect worktrees without modifying anything' }],
+  });
+
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal, {
+    message: '⎿ You\'ve hit your limit · resets 11:30pm (Asia/Seoul) What do you want to do?',
+    buttons: [
+      'Stop and wait for limit to reset',
+      'Add funds to continue with extra usage',
+      'Upgrade your plan',
+    ],
+  });
+  assert.equal(result.activeModal.buttons.some((button) => /git worktree list/.test(button)), false);
+});
+
+test('claude-cli keeps ambiguous choice-like assistant output generating unless modal footer is present', () => {
+  const screenText = [
+    '⏺ What do you want to do?',
+    '1. Stop and wait for limit to reset',
+    '2. Upgrade your plan',
+  ].join('\n');
+
+  assert.equal(detectStatus({
+    screenText,
+    screen: buildScreenSnapshot(screenText),
+  }), 'generating');
 });
 
 test('claude-cli parse_output surfaces the startup trust prompt as an approval bubble', () => {

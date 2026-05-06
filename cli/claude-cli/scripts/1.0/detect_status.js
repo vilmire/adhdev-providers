@@ -88,6 +88,35 @@ function isApprovalButton(line) {
         && /^(?:Yes|No|Allow|Deny|Reject|Cancel|Proceed)\b/i.test(trimmed);
 }
 
+function isChoiceMenuQuestion(line) {
+    return /^What do you want to do\??$/i.test(normalize(line));
+}
+
+function isEnterConfirmCancelLine(line) {
+    const trimmed = normalize(line);
+    return /\bEnter to confirm\b/i.test(trimmed) && /\bEsc to cancel\b/i.test(trimmed);
+}
+
+function isChoiceMenuOption(line) {
+    const raw = normalize(line).replace(/^[❯›>]\s*/, '').trim();
+    if (!/^\d+[.)]\s+\S/.test(raw)) return false;
+    const label = raw.replace(/^\d+[.)]\s+/, '').trim();
+    return label.length > 0 && label.length <= 160;
+}
+
+function hasActiveChoiceMenu(lines) {
+    const window = takeLast(lines, 18);
+    const questionIndex = findLastIndex(window, isChoiceMenuQuestion);
+    if (questionIndex < 0) return false;
+
+    const afterQuestion = window.slice(questionIndex + 1);
+    const footerIndex = afterQuestion.findIndex(isEnterConfirmCancelLine);
+    if (footerIndex < 0) return false;
+
+    const optionCount = afterQuestion.slice(0, footerIndex).filter(isChoiceMenuOption).length;
+    return optionCount >= 2;
+}
+
 function isStartupTrustButton(line) {
     const trimmed = normalize(line)
         .replace(/^[❯›>]\s*/, '')
@@ -170,6 +199,7 @@ function isTransientPostReplyLine(line) {
 function hasActiveApproval(lines) {
     const window = takeLast(lines, 18);
     if (hasStartupTrustPrompt(window)) return true;
+    if (hasActiveChoiceMenu(window)) return true;
     const cues = window.filter(isApprovalCue).length;
     const buttons = window.filter(line => isApprovalButton(line) || isStartupTrustButton(line)).length;
     return buttons > 0 && cues > 0;
