@@ -196,6 +196,30 @@ test('hermes-cli parseOutput keeps generating tool and terminal activity visible
   assert.equal(streamingAssistant.meta?.streaming, true);
 });
 
+test('hermes-cli parseOutput keeps screen-only generating tool activity visible', () => {
+  const screenText = [
+    '┊ 🛠 skill systematic-debugging 0.1s',
+    '┊ 📖 read /Users/vilmire/Work/adhdev/file.ts 0.2s',
+    '┊ 💻 $ npm run test -w oss/packages/daemon-core 1.2s',
+    '◉_◉ computing...',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: '',
+    recentBuffer: screenText,
+    messages: [],
+    isWaitingForResponse: true,
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill systematic-debugging' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /Users/vilmire/Work/adhdev/file.ts' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ npm run test -w oss/packages/daemon-core' },
+  ]);
+});
+
 test('hermes-cli parseOutput handles long tool-heavy histories without re-normalizing quadratically', () => {
   const priorMessages = Array.from({ length: 2600 }, (_, index) => ({
     role: 'assistant',

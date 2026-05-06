@@ -933,8 +933,13 @@ function shouldDropOrphanActivityOnlyMessages(messages) {
   return source.every(isActivityTranscriptMessage);
 }
 
-function dropOrphanActivityOnlyMessages(messages) {
+function dropOrphanActivityOnlyMessages(messages, options = {}) {
+  if (options.keepActivityOnly) return messages;
   return shouldDropOrphanActivityOnlyMessages(messages) ? [] : messages;
+}
+
+function hasExplicitGeneratingActivityEvidence(...sources) {
+  return sources.some((source) => /\b[\p{L}\p{M}'’\-]{3,32}ing(?:\.\.\.|…)/iu.test(String(source || '')));
 }
 
 function shouldPreferRawMessages({
@@ -1071,13 +1076,17 @@ module.exports = function parseOutput(input) {
     historyState,
   ));
   const tokenizerOptions = { dedupeMessages };
+  const activityOnlyOptions = {
+    keepActivityOnly: isStreamLikeStatus(status)
+      && hasExplicitGeneratingActivityEvidence(transcript, screenText, input?.recentBuffer || input?.tail || ''),
+  };
   const parsedTranscriptMessages = dropOrphanActivityOnlyMessages(parseMessages(transcript || '', tokenizerOptions)
     .map((message) => ({
       role: message.role,
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
-    })));
+    })), activityOnlyOptions);
   const transcriptCandidates = toCandidates('buffer', parsedTranscriptMessages);
   const transcriptMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     candidatesToLegacyMessages(transcriptCandidates),
@@ -1089,7 +1098,7 @@ module.exports = function parseOutput(input) {
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
-    })));
+    })), activityOnlyOptions);
   const screenCandidates = toCandidates('screen', parsedScreenMessages);
   const screenMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
     candidatesToLegacyMessages(screenCandidates),
