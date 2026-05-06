@@ -88,6 +88,7 @@ function buildStatusSignals(screen) {
     || /Resume this session with:/i.test(text);
   const hasPromptReady = hasPromptReadyRegion(screen);
   const hasInitializing = /Initializing agent/i.test(text);
+  const hasStartupWelcome = /Welcome to Hermes Agent/i.test(text);
   const hasInterruptInputPrompt = hasInterruptInputPromptLine(screen);
   const hasLiveUserTurn = /(?:^|\n)●\s+/.test(text);
   const hasLiveToolActivity = /(?:^|\n)[┊│]\s*(?:\p{Emoji}\uFE0F?|\$)/u.test(text);
@@ -109,6 +110,7 @@ function buildStatusSignals(screen) {
     hasPrompt,
     hasPromptReady,
     hasInitializing,
+    hasStartupWelcome,
     hasInterruptInputPrompt,
     hasLiveTurnMarkers,
     hasEllipsisStatusAbovePrompt,
@@ -166,14 +168,20 @@ module.exports = function detectStatus(input) {
     return 'idle';
   }
 
-  // When the current viewport shows a bare ❯ prompt with no active "Enter to interrupt",
-  // stale interrupt signals in the recent tail/buffer are scroll artifacts from the
-  // completed turn and must not keep the status in 'generating' indefinitely.
-  const currentConfirmsNoInterrupt = current.hasBarePrompt && !current.hasInterruptInputPrompt;
-  const recentRawSignals = [tailScreen, bufferScreen]
+  // When the current viewport shows a ready prompt with no active current-turn
+  // signals, stale interrupt/activity/progress rows in tail/buffer are scroll
+  // artifacts from a completed turn and must not keep the status generating.
+  const currentConfirmsReady = (current.hasBarePrompt || current.hasPromptReady || current.hasPrompt)
+    && !current.hasInitializing
+    && !current.hasStartupWelcome
+    && !current.hasInterruptInputPrompt
+    && !current.hasLiveTurnMarkers
+    && !current.hasEllipsisStatusAbovePrompt
+    && !current.hasOpenAssistantBox;
+  const recentRawSignals = currentConfirmsReady ? false : [tailScreen, bufferScreen]
     .map(buildStatusSignals)
     .some((signals) => signals.hasInitializing
-      || (signals.hasInterruptInputPrompt && !currentConfirmsNoInterrupt)
+      || signals.hasInterruptInputPrompt
       || signals.hasLiveTurnMarkers
       || signals.hasEllipsisStatusAbovePrompt
       || signals.hasOpenAssistantBox);

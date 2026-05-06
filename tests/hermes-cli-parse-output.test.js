@@ -291,6 +291,36 @@ test('hermes-cli treats a separator-bounded > row as the live input prompt regio
   assert.equal(detectStatus({ screenText, screen }), 'idle');
 });
 
+test('hermes-cli treats a ready prompt as idle even when recent tail has stale generation rows', () => {
+  const staleTail = [
+    '⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel',
+    '( ˘⌣˘)♡ deliberating...',
+    '┊ 📚 skill adhdev-repo-mesh-hermes-mcp 0.1s',
+    '⚕ gpt-5.5 │ 33.2K/272K │ [█░░░░░░░░░] 12% │ │ ⏲',
+    '❯',
+  ].join('\n');
+  const messages = [
+    { role: 'user', content: 'Checkpoint fallback after the Repo Mesh checkpoint tool failed.' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill adhdev-repo-mesh-hermes-mcp' },
+    { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ set -e' },
+    { role: 'assistant', content: 'Completed. No push performed.\nNew HEAD:\ne881ff55 checkpoint: rc21 fresh global repo mesh e2e smoke' },
+  ];
+
+  assert.equal(detectStatus({ screenText: '❯', tail: staleTail, buffer: staleTail }), 'idle');
+
+  const result = parseOutput({
+    screenText: '❯',
+    recentBuffer: staleTail,
+    buffer: staleTail,
+    messages,
+  });
+  const finalAssistant = result.messages.findLast((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+
+  assert.equal(result.status, 'idle');
+  assert.equal(finalAssistant?.bubbleState, 'final');
+  assert.notEqual(finalAssistant?.meta?.streaming, true);
+});
+
 test('hermes-cli parseOutput merges terminal-elided copies of a long submitted prompt into the full committed user bubble', () => {
   const fullPrompt = [
     '이 세션은 ADHDev self-hosted isolated quality test입니다. 현재 작업 디렉터리 안에 Python 콘솔 3,6,9 게임을 실제로 만들어 주세요.',
