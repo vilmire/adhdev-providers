@@ -2870,3 +2870,14 @@ test('hermes-cli parseOutput ignores the new msg=interrupt footer as transcript 
   assert.equal(result.status, 'generating');
   assert.equal(result.messages.length, 0);
 });
+
+test('hermes-cli screen helpers remove OSC/private CSI noise without collapsing cursor-forward spaces', () => {
+  const screenText = [
+    '⚕ hello\x1b[2Cworld\x1b[?25h\x1b]0;hermes-title\x07 done',
+    '⚕ ❯',
+  ].join('\n');
+  const screen = buildScreenSnapshot(screenText);
+
+  assert.equal(screen.lines[0].trimmed, '⚕ hello  world done');
+  assert.equal(screen.promptLine?.trimmed, '⚕ ❯');
+});

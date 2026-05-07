@@ -14,21 +14,21 @@ function stripAnsiEscapes(text) {
         .replace(/\x1b\[(\d*)C/g, (_match, n) => ' '.repeat(Math.max(1, Number(n) || 1)))
         // ESC[<n>D — cursor back: remove (no visible output)
         .replace(/\x1b\[\d*D/g, '')
-        // Strip all remaining CSI sequences (ESC[ ... <letter>)
-        .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
-        // Strip OSC sequences (ESC] ... BEL/ST)
-        .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
-        // Strip any remaining bare ESC sequences
-        .replace(/\x1b[^[\]]/g, '');
+        // Strip all remaining CSI sequences, including private-mode forms like ESC[?25h.
+        .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+        // Strip OSC sequences (ESC] ... BEL/ST), DCS/SOS/PM/APC strings, and bare ESC codes.
+        .replace(/\x1b\][^\x07\x1b\n]*(?:\x07|\x1b\\|(?=\n|$))/g, '')
+        .replace(/\x1b[P^_X][\s\S]*?(?:\x07|\x1b\\)/g, '')
+        .replace(/\x1b(?:[@-Z\\-_])/g, '');
 }
 
 function splitLines(text) {
     return stripAnsiEscapes(
         String(text || '')
-            .replace(/\u0007/g, '')
             .replace(/\r\n/g, '\n')
             .replace(/\r/g, '\n'),
     )
+        .replace(/\u0007/g, '')
         .split('\n')
         .map(line => line.replace(/\s+$/, ''));
 }
@@ -38,9 +38,9 @@ function normalizeLineText(line) {
         ? line
         : (line && typeof line.text === 'string' ? line.text : '');
     return stripAnsiEscapes(
-        String(text || '')
-            .replace(/\u0007/g, ''),
+        String(text || ''),
     )
+        .replace(/\u0007/g, '')
         .replace(/^\d+;/, '')
         .trim();
 }

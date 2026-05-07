@@ -1750,3 +1750,14 @@ test('claude-cli parse_output drops wrapped command-output suffix fragments with
   assert.match(text, /GLYPHS=⏺ ⎿ ⚠ ❌ 𓂀 한글/);
   assert.doesNotMatch(text, /\ns\) ===\n/);
 });
+
+test('claude-cli screen helpers remove OSC/private CSI noise without collapsing cursor-forward spaces', () => {
+  const screenText = [
+    '⏺ hello\x1b[2Cworld\x1b[?25h\x1b]0;claude-title\x07 done',
+    '❯',
+  ].join('\n');
+  const screen = buildScreenSnapshot(screenText);
+
+  assert.equal(screen.lines[0].trimmed, '⏺ hello  world done');
+  assert.equal(screen.promptLine?.trimmed, '❯');
+});

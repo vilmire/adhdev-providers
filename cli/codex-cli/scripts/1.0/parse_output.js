@@ -21,7 +21,14 @@ const { extractControlValues } = require('./control_helpers.js');
 const ANSI_RE = /\x1b\[[0-?]*[ -/]*[@-~]/g;
 
 function stripAnsi(text) {
-    return String(text || '').replace(ANSI_RE, '');
+    return String(text || '')
+        // xterm serialize may encode spaces as cursor-forward escapes.
+        .replace(/\x1b\[(\d*)C/g, (_match, n) => ' '.repeat(Math.max(1, Number(n) || 1)))
+        .replace(/\x1b\[\d*D/g, '')
+        .replace(ANSI_RE, '')
+        .replace(/\x1b\][^\x07\x1b\n]*(?:\x07|\x1b\\|(?=\n|$))/g, '')
+        .replace(/\x1b[P^_X][\s\S]*?(?:\x07|\x1b\\)/g, '')
+        .replace(/\x1b(?:[@-Z\\-_])/g, '');
 }
 
 function splitLines(text) {

@@ -8,15 +8,25 @@
 
 // ─── Helpers ─────────────────────────────────────
 
-function splitLines(text) {
+function stripAnsi(text) {
     return String(text || '')
+        .replace(/\x1b\[(\d*)C/g, (_match, n) => ' '.repeat(Math.max(1, Number(n) || 1)))
+        .replace(/\x1b\[\d*D/g, '')
+        .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+        .replace(/\x1b\][^\x07\x1b\n]*(?:\x07|\x1b\\|(?=\n|$))/g, '')
+        .replace(/\x1b[P^_X][\s\S]*?(?:\x07|\x1b\\)/g, '')
+        .replace(/\x1b(?:[@-Z\\-_])/g, '');
+}
+
+function splitLines(text) {
+    return stripAnsi(text)
         .replace(/\u0007/g, '')
         .split(/\r?\n/)
         .map(l => l.replace(/\s+$/, ''));
 }
 
 function normalize(line) {
-    return String(line || '')
+    return stripAnsi(line)
         .replace(/\u0007/g, '')
         .replace(/^\d+;/, '')
         .replace(/\s+/g, ' ')

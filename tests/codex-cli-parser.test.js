@@ -701,3 +701,22 @@ test('codex parse_output strips overprinted tool/status residue appended to term
   assert.match(joined, /\/tmp\/adhdev-cli-quality-live-verify\/codex-cli/);
   assert.doesNotMatch(joined, /96\s+•Explored|Listrg--files|Working\(/i);
 });
+
+test('codex parser and status preserve cursor-forward spaces while removing OSC/private CSI noise', () => {
+  const prompt = 'Say hello';
+  const screenText = [
+    `› ${prompt}`,
+    `> hello\x1b[2Cworld\x1b[?25h\x1b]0;codex-title\x07 done`,
+    '›',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: screenText,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const assistant = [...result.messages].reverse().find(m => m.role === 'assistant' && m.kind === 'standard');
+
+  assert.equal(detectStatus({ screenText }), 'idle');
+  assert.equal(assistant?.content, 'hello world done');
+});
