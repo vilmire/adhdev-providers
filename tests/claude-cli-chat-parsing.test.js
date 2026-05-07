@@ -1761,3 +1761,54 @@ test('claude-cli screen helpers remove OSC/private CSI noise without collapsing 
   assert.equal(screen.lines[0].trimmed, '⏺ hello  world done');
   assert.equal(screen.promptLine?.trimmed, '❯');
 });
+
+test('claude-cli parse_output reconstructs full verifier transcript across follow-up turns from accumulated buffer', () => {
+  const firstPrompt = 'Please verify raw CLI transcript fidelity in this workspace.';
+  const followupPrompt = 'Confirm the previous raw verification in one short paragraph. You must mention tmp/adhdev_cli_verify.py, UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, and the square sequence 1,4,9,16,25 without changing the glyphs.';
+  const transcript = [
+    '❯ ' + firstPrompt,
+    '',
+    '⏺ RAW VERIFY RESULT',
+    '',
+    'Command run:',
+    'python3 tmp/adhdev_cli_verify.py',
+    '',
+    'Exact output:',
+    'CWD=/tmp/adhdev-cli-verify-claude-cli',
+    'SQUARES=1,4,9,16,25',
+    'JSON={"squares":[1,4,9,16,25],"ok":true}',
+    'UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧',
+    'GLYPHS=⏺ ⎿ ✢ ◆ ◇ ↳ ✓ ⚠ ❌ 🜁 𓂀 한글',
+    'PIPE_ROW=left|middle|right',
+    'LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19',
+    '20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END',
+    '',
+    'The file tmp/adhdev_cli_verify.py was confirmed to exist with matching content and executed successfully.',
+    '',
+    '❯ ' + followupPrompt,
+    '',
+    '⏺ The file tmp/adhdev_cli_verify.py was created and executed successfully. The',
+    'script produced all 7 expected output lines verbatim, including',
+    'UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, the square sequence SQUARES=1,4,9,16,25,',
+    'the pipe row, the full 01–40 long sequence, and the glyph set — all without',
+    'any substitution or normalization.',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ commit this',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText: transcript,
+    buffer: transcript,
+    messages: [],
+  });
+
+  const simplified = toMessages(result).map(({ role, kind, content }) => ({ role, kind, content }));
+  assert.equal(simplified.filter((message) => message.role === 'user').length, 2);
+  assert.equal(simplified.filter((message) => message.role === 'assistant' && message.kind === 'standard').length, 2);
+  assert.match(simplified[1].content.replace(/\s+/g, ' '), /LONG_SEQUENCE=BEGIN 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 END/);
+  assert.match(simplified.at(-1).content, /tmp\/adhdev_cli_verify\.py/);
+  assert.match(simplified.at(-1).content, /UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧/);
+  assert.match(simplified.at(-1).content, /SQUARES=1,4,9,16,25/);
+});

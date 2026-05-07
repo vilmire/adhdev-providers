@@ -1331,6 +1331,47 @@ test('hermes-cli parseOutput keeps the fuller prior user turn when the visible t
   );
 });
 
+test('hermes-cli parseOutput collapses replayed turns even when the replayed prompt is truncated to a short prefix', () => {
+  const fullPrompt = '좋아 1,2,3 여기에서 이관하지말고 스탠드얼론으로도 테스트하면서 고쳐';
+  const truncatedPrompt = '좋아';
+  const finalAnswer = '같은 메인 노드에서 바로 수정 작업 시작시켰습니다. 다른 노드로 이관하지 않았고, push/deploy 없이 진행하도록 제한했습니다.';
+  const result = parseOutput({
+    screenText: [
+      `● ${fullPrompt}`,
+      '┊ 🛠 skill systematic-debugging',
+      '┊ 🛠 skill test-driven-development',
+      '┊ ⚡ mcp_adhde',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      `● ${truncatedPrompt}`,
+      '┊ 🛠 skill systematic-debugging',
+      '┊ 🛠 skill test-driven-development',
+      '┊ ⚡ mcp_adhde',
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      finalAnswer,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '❯',
+    ].join('\n'),
+    buffer: '',
+    messages: [
+      { role: 'user', content: fullPrompt },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill systematic-debugging' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill test-driven-development' },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'mcp_adhde' },
+      { role: 'assistant', content: finalAnswer },
+    ],
+  });
+
+  assert.deepEqual(toDetailedMessages(result), [
+    { role: 'user', kind: 'standard', senderName: undefined, content: fullPrompt },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill systematic-debugging' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill test-driven-development' },
+    { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'mcp_adhde' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
+  ]);
+});
+
 test('hermes-cli parseOutput rejoins soft-wrapped assistant prose so follow-up summaries preserve exact command names and sequences', () => {
   const result = parseOutput({
     screenText: [

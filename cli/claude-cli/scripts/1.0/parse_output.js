@@ -597,6 +597,34 @@ function getVisibleAssistantRegion(text) {
     return trimBottom(lines.slice(contentStartIndex, contentEndIndex), 0);
 }
 
+function findPromptTurns(lines) {
+    const turns = [];
+    for (let index = 0; index < lines.length; index += 1) {
+        const parsedPrompt = parsePromptLine(lines[index]);
+        if (!parsedPrompt) continue;
+        const collected = collectPromptText(lines, index);
+        if (!collected.text) continue;
+        turns.push({ index, text: collected.text, endIndex: collected.endIndex });
+        index = Math.max(index, collected.endIndex);
+    }
+    return turns;
+}
+
+function trimAssistantRegionBoundaries(lines) {
+    let start = 0;
+    let end = Array.isArray(lines) ? lines.length : 0;
+    while (start < end && !sanitizeLine(lines[start]).trim()) start += 1;
+    while (end > start) {
+        const trimmed = sanitizeLine(lines[end - 1]).trim();
+        if (!trimmed || isHorizontalSeparatorLine(trimmed) || isFooterLine(trimmed)) {
+            end -= 1;
+            continue;
+        }
+        break;
+    }
+    return lines.slice(start, end);
+}
+
 function getTranscriptAssistantRegion(text, promptText) {
     const lines = splitLines(typeof text === 'string' ? text : String(text || ''));
     if (lines.length === 0) return [];
@@ -607,15 +635,37 @@ function getTranscriptAssistantRegion(text, promptText) {
         if (!parsedPrompt) continue;
         const collected = collectPromptText(lines, i);
         if (!promptText || looksLikeSamePrompt(collected.text, promptText)) {
-            promptInfo = collected;
+            promptInfo = { index: i, ...collected };
             break;
         }
     }
 
     if (!promptInfo) return [];
-    const trailing = lines.slice(promptInfo.endIndex + 1);
-    const emptyPromptIndex = trailing.findIndex((line) => parsePromptLine(line) === '');
-    return emptyPromptIndex >= 0 ? trailing.slice(0, emptyPromptIndex) : trailing;
+    const turns = findPromptTurns(lines);
+    const nextTurn = turns.find((turn) => turn.index > promptInfo.index);
+    const regionEnd = nextTurn ? nextTurn.index : lines.length;
+    return trimAssistantRegionBoundaries(lines.slice(promptInfo.endIndex + 1, regionEnd));
+}
+
+function buildFullTranscriptMessages(text) {
+    const lines = splitLines(typeof text === 'string' ? text : String(text || ''));
+    const turns = findPromptTurns(lines);
+    if (turns.length < 2) return [];
+
+    const messages = [];
+    for (let index = 0; index < turns.length; index += 1) {
+        const turn = turns[index];
+        const nextTurn = turns[index + 1] || null;
+        const regionEnd = nextTurn ? nextTurn.index : lines.length;
+        const region = trimAssistantRegionBoundaries(lines.slice(turn.endIndex + 1, regionEnd));
+        const parsedTurnMessages = buildVisibleMessages(region, turn.text)
+            .filter((message) => message && typeof message.content === 'string' && message.content.trim());
+        const hasAssistant = parsedTurnMessages.some((message) => message.role === 'assistant');
+        if (!hasAssistant) continue;
+        messages.push({ role: 'user', content: turn.text });
+        messages.push(...parsedTurnMessages);
+    }
+    return messages;
 }
 
 function needsPreformattedRender(text) {
@@ -1195,8 +1245,16 @@ module.exports = function parseOutput(input) {
         }
     }
 
+    const fullTranscriptMessages = effectiveStatus !== 'waiting_approval'
+        && !input?.promptText
+        && previousMessages.length === 0
+        ? buildFullTranscriptMessages(transcriptSource)
+        : [];
+
     const controlValues = extractControlValues(screenText || buffer);
-    const builtMessages = buildMessages(previousMessages, effectivePromptText, visibleMessages)
+    const builtMessages = (fullTranscriptMessages.length > visibleMessages.length
+        ? fullTranscriptMessages
+        : buildMessages(previousMessages, effectivePromptText, visibleMessages))
         .map((message) => {
             if (message?.role !== 'assistant' || (message?.kind || 'standard') !== 'standard') return message;
             return {

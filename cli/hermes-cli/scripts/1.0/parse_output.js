@@ -531,7 +531,12 @@ function replayTurnMessagesMatch(leftTurnMessages, rightTurnMessages) {
     if (!leftComparable || !rightComparable) return false;
 
     if (left.role === 'user') {
-      if (!replayComparableContentsMatch(leftComparable, rightComparable, 24)) return false;
+      // Terminal redraws can replay the same turn with the submitted prompt
+      // truncated down to a very short prefix (for example "좋아") while the
+      // following tool/final assistant rows are identical. Let the full-turn
+      // activity/final comparison below disambiguate these replay copies instead
+      // of treating the short prompt prefix as a distinct new turn.
+      if (!replayComparableContentsMatch(leftComparable, rightComparable, 2)) return false;
       continue;
     }
 
