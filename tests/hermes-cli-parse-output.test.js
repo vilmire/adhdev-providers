@@ -76,6 +76,32 @@ test('hermes-cli parseOutput trims replay residue after recovered final assistan
   assert.equal(result.messages.filter((message) => message.role === 'user').length, 1);
 });
 
+test('hermes-cli parseOutput recovers repeated idle final assistant after last user when prior turn had same answer', () => {
+  const prompt = '보조 워크스페이스는 무슨소리임';
+  const finalAnswer = '“보조 워크스페이스”는 제가 붙인 표현이고, 정확히는 Repo Mesh에 같이 등록되어 있던 두 번째 노드입니다. 지금 요청 범위에서는 무시해도 됩니다.';
+  const rawBuffer = `⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel\n${prompt}\n⚕ gpt-5.5 │ 37.2K/272K │ [█░░░░░░░░░] 14% │ │ ⏱`;
+  const screenText = `──────────────── ● ${prompt} ──────────────── ╭─ ⚕ Hermes ─────────────────╮ ${finalAnswer} ╰────────────────────────────╯ ⚕ gpt-5.5 │ 35.9K/272K │ [█░░░░░░░░░] 13% │ │ ⏲ ───────────────── ❯ ─────────────────`;
+  const result = parseOutput({
+    rawBuffer,
+    screenText,
+    buffer: '',
+    recentBuffer: '',
+    messages: [
+      { role: 'user', content: '보조' },
+      { role: 'assistant', kind: 'standard', content: finalAnswer },
+      { role: 'user', content: prompt },
+    ],
+  });
+
+  const finalMessages = result.messages.filter((message) => message.role === 'assistant' && message.kind === 'standard' && String(message.content || '').includes('“보조 워크스페이스”는 제가 붙인 표현이고'));
+  assert.equal(finalMessages.length, 2);
+  assert.match(result.messages.at(-1).content, /지금 요청 범위에서는 무시해도 됩니다/);
+  assert.equal(result.messages.at(-2).role, 'user');
+  assert.equal(result.messages.at(-2).content, prompt);
+  assert.equal(result.messages.some((message) => (message.kind === 'tool' || message.kind === 'terminal') && /❯|msg=interrupt|gpt-5\.5/.test(String(message.content || ''))), false);
+});
+
+
 test('hermes-cli source classifier labels committed, buffer, and screen candidates before legacy merge', () => {
   const committed = toCandidates('committed', [
     { role: 'user', content: 'already committed prompt' },

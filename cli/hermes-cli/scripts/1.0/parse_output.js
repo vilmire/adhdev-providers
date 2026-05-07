@@ -34,6 +34,7 @@ function stripUserPromptTransientSuffix(text) {
   let stripped = source
     .replace(/\s+[⚡✦✧*·•]?\s*Sending after interrupt:\s*(['"]).*?\1\s*$/iu, '')
     .replace(/\s+[^\r\n]{0,64}(?:synthesizing|ruminating|reasoning|thinking|processing|working|contemplating|brainstorming)(?:\.\.\.|…)?\s*$/iu, '')
+    .replace(/\s+[─━═]{3,}\s*$/u, '')
     .trim();
 
   const normalized = stripTransientPromptSuffix(stripped);
@@ -630,6 +631,7 @@ function collapseReplayedAssistantHistory(messages, options = {}) {
       && (!currentTurnHasActivity || dropPriorStableAfterActivity)
       && stableAssistantBeforeCurrentUser
       && isReplayedAssistantAnswerAfterStableAssistant(normalized, stableAssistantBeforeCurrentUser)
+      && source.slice(index + 1).some((laterMessage) => normalizeMessage(laterMessage).role === 'user')
     ) {
       continue;
     }
@@ -977,10 +979,41 @@ function messagesLooselyOverlap(left, right) {
   return shorter.length >= 32 && longer.includes(shorter);
 }
 
-function appendMissingScreenFinalAnswer(messages, screenMessages) {
-  const base = (Array.isArray(messages) ? messages : [])
+function isPromptChromeActivityMessage(message) {
+  const normalized = normalizeMessage(message);
+  const kind = normalized.kind || 'standard';
+  if (normalized.role !== 'assistant' || (kind !== 'tool' && kind !== 'terminal')) return false;
+  const content = String(normalized.content || '').trim();
+  if (!content) return false;
+  return /^[-─━═\s]*[⚕❯>]+[-─━═\s]*$/u.test(content)
+    || /\bmsg\s*=\s*interrupt\b.*\bCtrl\+C\s+cancel\b/iu.test(content)
+    || /^[-─━═\s]*❯[-─━═\s]*$/u.test(content)
+    || /^[-─━═\s]*⚕\s*❯[-─━═\s]*$/u.test(content)
+    || /^[-─━═\s]*⚕\s*gpt-5\.\d\b.*[⏱⏲][-─━═\s]*$/iu.test(content);
+}
+
+function trimPromptChromeAfterFinalAssistant(messages) {
+  const normalized = (Array.isArray(messages) ? messages : [])
     .map(normalizeMessage)
     .filter((message) => message.content);
+  let finalIndex = -1;
+  for (let index = normalized.length - 1; index >= 0; index -= 1) {
+    const message = normalized[index];
+    if (message.role === 'assistant' && (message.kind || 'standard') === 'standard') {
+      finalIndex = index;
+      break;
+    }
+    if (message.role === 'user') break;
+  }
+  if (finalIndex < 0 || finalIndex === normalized.length - 1) return normalized;
+  const trailing = normalized.slice(finalIndex + 1);
+  return trailing.every(isPromptChromeActivityMessage)
+    ? normalized.slice(0, finalIndex + 1)
+    : normalized;
+}
+
+function appendMissingScreenFinalAnswer(messages, screenMessages) {
+  const base = trimPromptChromeAfterFinalAssistant(messages);
   const screen = (Array.isArray(screenMessages) ? screenMessages : [])
     .map(normalizeMessage)
     .filter((message) => message.content);
@@ -1030,6 +1063,9 @@ function appendMissingScreenFinalAnswer(messages, screenMessages) {
     ));
     if (trailingTurn.length > 0 && !trailingHasFinal && samePrompt && hasActivityOverlap) {
       return base.slice(0, baseUserIndex);
+    }
+    if (trailingTurn.length > 0 && !trailingHasFinal && samePrompt && existingFinalIndex < baseUserIndex) {
+      return [...base, finalMessage];
     }
     return base;
   }
