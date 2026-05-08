@@ -417,7 +417,7 @@ test('hermes-cli parseOutput merges terminal-elided copies of a long submitted p
   assert.deepEqual(users, [{ role: 'user', content: fullPrompt }]);
 });
 
-test('hermes-cli parseOutput collapses replayed final answers with tiny terminal residue', () => {
+test('hermes-cli parseOutput preserves punctuation-residue-distinct final answers', () => {
   const cleanFinal = [
     '점검 완료.',
     '결론:',
@@ -452,11 +452,12 @@ test('hermes-cli parseOutput collapses replayed final answers with tiny terminal
   });
 
   const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
-  assert.equal(standardAssistants.length, 1);
+  assert.equal(standardAssistants.length, 2);
   assert.equal(standardAssistants[0].content, cleanFinal);
+  assert.equal(standardAssistants[1].content, residueFinal);
 });
 
-test('hermes-cli parseOutput collapses final answer redraws with repeated duration fragments', () => {
+test('hermes-cli parseOutput preserves duration-text-distinct final answers', () => {
   const partialFinal = [
     '맞습니다. 재현했고 원인도 잡았습니다.',
     '현재 세션에서 실제 상태:',
@@ -496,11 +497,12 @@ test('hermes-cli parseOutput collapses final answer redraws with repeated durati
   });
 
   const standardAssistants = result.messages.filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
-  assert.equal(standardAssistants.length, 1);
-  assert.equal(standardAssistants[0].content, completeFinal);
+  assert.equal(standardAssistants.length, 2);
+  assert.equal(standardAssistants[0].content, partialFinal);
+  assert.equal(standardAssistants[1].content, completeFinal);
 });
 
-test('hermes-cli parseOutput collapses a replayed final answer with residue after activity rows', () => {
+test('hermes-cli parseOutput preserves residue-distinct replay after activity rows', () => {
   const cleanFinal = [
     '실제로 standalone isolate로 Claude CLI 점검 끝냈어.',
     '검증 환경:',
@@ -548,6 +550,7 @@ test('hermes-cli parseOutput collapses a replayed final answer with residue afte
     { role: 'assistant', kind: 'standard', senderName: undefined, content: cleanFinal },
     { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'grep launch_cli|send_chat|read_chat' },
     { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ git status --short --branch && git log -1 --oneline' },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: replayedWithResidue },
   ]);
 });
 
@@ -1096,7 +1099,7 @@ test('hermes-cli parseOutput ignores non-monotonic raw history before the curren
   ]);
 });
 
-test('hermes-cli parseOutput drops a line-wrapped final replay after current-turn tools', () => {
+test('hermes-cli parseOutput preserves line-wrapped final replay after current-turn tools', () => {
   const cleanFinal = [
     '진행 상황 요약.',
     '1. Phase2 verify는 통과했어.',
@@ -1130,6 +1133,7 @@ test('hermes-cli parseOutput drops a line-wrapped final replay after current-tur
     { role: 'assistant', content: cleanFinal },
     { role: 'assistant', content: 'adhdev provider reload' },
     { role: 'assistant', content: 'skill systematic-debugging' },
+    { role: 'assistant', content: wrappedFinal },
   ]);
 });
 
@@ -2100,7 +2104,7 @@ test('hermes-cli parseOutput ignores orphan activity-only viewport rows without 
   assert.deepEqual(toDetailedMessages(result), []);
 });
 
-test('hermes-cli parseOutput trims already-retained final-answer text from a polluted terminal activity bubble', () => {
+test('hermes-cli parseOutput does not trim terminal activity by whitespace-collapsed final-answer text', () => {
   const prompt = 'Summarize the just-completed work.';
   const finalAnswer = [
     '작업 반영 완료했습니다.',
@@ -2140,7 +2144,7 @@ test('hermes-cli parseOutput trims already-retained final-answer text from a pol
       role: 'assistant',
       kind: 'terminal',
       senderName: 'Terminal',
-      content: 'npm run test -w oss/packages/web-core',
+      content: pollutedTerminal,
     },
   ]);
 });
@@ -2592,7 +2596,7 @@ test('hermes-cli parseOutput ignores transient analyzing suffixes appended to th
   ]);
 });
 
-test('hermes-cli parseOutput treats wrapped Hangul assistant prose as the same message and keeps the more complete version', () => {
+test('hermes-cli parseOutput preserves wrapped Hangul assistant prose when exact content differs', () => {
   const fullPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
   const reflowed = 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확인했습니다.';
   const wrapped = 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리\n를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확\n인했습니다.';
@@ -2625,10 +2629,11 @@ test('hermes-cli parseOutput treats wrapped Hangul assistant prose as the same m
   assert.deepEqual(toMessages(result), [
     { role: 'user', content: fullPrompt },
     { role: 'assistant', content: reflowed },
+    { role: 'assistant', content: wrapped.replace(/\n/g, ' ') },
   ]);
 });
 
-test('hermes-cli parseOutput collapses a polluted follow-up history into one prior answer and one final answer', () => {
+test('hermes-cli parseOutput preserves whitespace-distinct polluted follow-up history', () => {
   const initialPrompt = 'Please do all of the following in this workspace: 1. Create tmp/adhdev_cli_verify.py that prints exactly these three lines: ... (+8 more lines) - a fenced text block containing the exact command output If you need permission to write the file or run the command, request it.';
   const followupPrompt = 'In one short paragraph, summarize what you just executed. You must mention tmp/adhdev_cli_verify.py and the square sequence 1,4,9,16,25.';
   const pollutedFollowupPrompt = 'In one short paragraph, summarize what you just executed. You must mention ٩(๑❛ᴗ❛๑)۶ analyzing...';
@@ -2718,8 +2723,10 @@ test('hermes-cli parseOutput collapses a polluted follow-up history into one pri
   assert.deepEqual(toMessages(result), [
     { role: 'user', content: initialPrompt },
     { role: 'assistant', content: priorAnswer },
+    { role: 'assistant', content: wrappedPriorAnswer },
     { role: 'user', content: followupPrompt },
     { role: 'assistant', content: finalAnswer },
+    { role: 'assistant', content: 'tmp/adhdev_cli_verify.py를 생성한 뒤 python3로 실행했고, 현재 작업 디렉터리 를 출력하면서 제곱수 시퀀스 1,4,9,16,25와 동일한 값을 JSON 형식으로도 정확히 확 인했습니다.' },
   ]);
 });
 
@@ -2765,7 +2772,7 @@ test('hermes-cli parseOutput collapses repeated full-turn replays of the same us
     { role: 'user', kind: 'standard', senderName: undefined, content: prompt },
     { role: 'assistant', kind: 'tool', senderName: 'Tool', content: readCommandFile },
     { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: command },
-    { role: 'assistant', kind: 'standard', senderName: undefined, content: wrappedFinalAnswer },
+    { role: 'assistant', kind: 'standard', senderName: undefined, content: finalAnswer },
   ]);
 });
 

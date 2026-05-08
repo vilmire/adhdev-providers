@@ -25,7 +25,6 @@ const {
 
 const normalizedMessageCache = new WeakMap();
 const comparableContentCache = new WeakMap();
-const compactComparableContentCache = new WeakMap();
 
 function stripUserPromptTransientSuffix(text) {
   const source = String(text || '').trim();
@@ -107,7 +106,7 @@ function isLikelyTruncatedDuplicate(longer, shorter, options = {}) {
   if (longer.length <= shorter.length) return false;
   const minLength = typeof options.minLength === 'number' ? options.minLength : 48;
   if (shorter.length < minLength) return false;
-  return longer.startsWith(shorter) || longer.includes(shorter);
+  return longer.startsWith(shorter);
 }
 
 function getComparableContent(message) {
@@ -151,30 +150,6 @@ function getComparableContent(message) {
   return comparable;
 }
 
-function getCompactComparableContent(message) {
-  if (message && typeof message === 'object') {
-    const cached = compactComparableContentCache.get(message);
-    if (cached
-      && cached.role === message.role
-      && cached.kind === message.kind
-      && cached.senderName === message.senderName
-      && cached.content === message.content) {
-      return cached.compactComparable;
-    }
-  }
-  const compactComparable = getComparableContent(message).replace(/\s+/g, '');
-  if (message && typeof message === 'object') {
-    compactComparableContentCache.set(message, {
-      role: message.role,
-      kind: message.kind,
-      senderName: message.senderName,
-      content: message.content,
-      compactComparable,
-    });
-  }
-  return compactComparable;
-}
-
 const LINE_ELISION_MARKER_RE = /\s*\.{3}\s*\(\+\d+\s*more\s*lines\)\s*/iu;
 
 function isLikelyLineElidedDuplicate(longer, shorter, options = {}) {
@@ -204,96 +179,6 @@ function comparableContentsMatch(left, right, minLength) {
     || isLikelyLineElidedDuplicate(right, left, { minLength });
 }
 
-// Compatibility fallback only: source/turn scoping should prevent most replayed
-// final answers from reaching content comparison. Keep this narrow for terminal
-// redraw residue variants until the reconciler owns source boundaries.
-const SMALL_RESIDUE_RE = /^[\p{N}\p{P}\p{S}smhd]*$/iu;
-const DURATION_RESIDUE_RE = /\d+(?:\.\d+)?[smhd]/iu;
-
-function analyzeSmallResidueDuplicate(left, right) {
-  const a = String(left || '').replace(/\s+/g, '');
-  const b = String(right || '').replace(/\s+/g, '');
-  const shorterLength = Math.min(a.length, b.length);
-  const longerLength = Math.max(a.length, b.length);
-  if (shorterLength < 160 || longerLength === 0) return null;
-
-  let indexA = 0;
-  let indexB = 0;
-  let commonLength = 0;
-  let residueA = '';
-  let residueB = '';
-  const maxTotalResidue = 24;
-  const maxResidueRun = 8;
-
-  const appendResidue = (side, fragment) => {
-    if (!fragment || !SMALL_RESIDUE_RE.test(fragment)) return false;
-    if (side === 'a') residueA += fragment;
-    else residueB += fragment;
-    return residueA.length + residueB.length <= maxTotalResidue;
-  };
-
-  while (indexA < a.length && indexB < b.length) {
-    if (a[indexA] === b[indexB]) {
-      indexA += 1;
-      indexB += 1;
-      commonLength += 1;
-      continue;
-    }
-
-    let aligned = false;
-    for (let skip = 1; skip <= maxResidueRun && indexA + skip <= a.length; skip += 1) {
-      const fragment = a.slice(indexA, indexA + skip);
-      if (!SMALL_RESIDUE_RE.test(fragment)) break;
-      if (a[indexA + skip] === b[indexB] && appendResidue('a', fragment)) {
-        indexA += skip;
-        aligned = true;
-        break;
-      }
-    }
-    if (aligned) continue;
-
-    for (let skip = 1; skip <= maxResidueRun && indexB + skip <= b.length; skip += 1) {
-      const fragment = b.slice(indexB, indexB + skip);
-      if (!SMALL_RESIDUE_RE.test(fragment)) break;
-      if (a[indexA] === b[indexB + skip] && appendResidue('b', fragment)) {
-        indexB += skip;
-        aligned = true;
-        break;
-      }
-    }
-    if (!aligned) return null;
-  }
-
-  if (indexA < a.length && !appendResidue('a', a.slice(indexA))) return null;
-  if (indexB < b.length && !appendResidue('b', b.slice(indexB))) return null;
-
-  const residueLength = residueA.length + residueB.length;
-  if (residueLength === 0) return { prefer: 'shorter' };
-  if (residueLength > maxTotalResidue || commonLength / longerLength < 0.985) return null;
-
-  const onlyLeftHasResidue = Boolean(residueA) && !residueB;
-  const onlyRightHasResidue = Boolean(residueB) && !residueA;
-  const durationResidueSide = DURATION_RESIDUE_RE.test(residueA)
-    ? 'left'
-    : (DURATION_RESIDUE_RE.test(residueB) ? 'right' : '');
-  if (durationResidueSide === 'left' && onlyLeftHasResidue) return { prefer: 'left' };
-  if (durationResidueSide === 'right' && onlyRightHasResidue) return { prefer: 'right' };
-  return { prefer: 'shorter' };
-}
-
-function assistantStandardLooseMatchPreference(left, right) {
-  const aComparable = getComparableContent(left);
-  const bComparable = getComparableContent(right);
-  const comparableMatch = analyzeSmallResidueDuplicate(aComparable, bComparable);
-  if (comparableMatch) return comparableMatch.prefer;
-  const compactMatch = analyzeSmallResidueDuplicate(getCompactComparableContent(left), getCompactComparableContent(right));
-  return compactMatch ? compactMatch.prefer : '';
-}
-
-function assistantStandardContentsLooselyMatch(left, right) {
-  return Boolean(assistantStandardLooseMatchPreference(left, right));
-}
-
 function messagesMatch(left, right) {
   const a = normalizeMessage(left);
   const b = normalizeMessage(right);
@@ -308,11 +193,8 @@ function messagesMatch(left, right) {
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
   if (comparableContentsMatch(aComparable, bComparable, duplicateMinLength)) return true;
-  if (a.role === 'assistant' && a.kind === 'standard' && assistantStandardContentsLooselyMatch(a, b)) return true;
   if (a.kind !== 'standard' || b.kind !== 'standard') return false;
-  const aCompactComparable = getCompactComparableContent(a);
-  const bCompactComparable = getCompactComparableContent(b);
-  return comparableContentsMatch(aCompactComparable, bCompactComparable, duplicateMinLength);
+  return false;
 }
 
 function withMergedMessageIdentity(preferred, fallback) {
@@ -336,10 +218,8 @@ function chooseMoreCompleteMessage(left, right) {
   const b = normalizeMessage(right);
   const aComparable = getComparableContent(a);
   const bComparable = getComparableContent(b);
-  const aCompactComparable = getCompactComparableContent(a);
-  const bCompactComparable = getCompactComparableContent(b);
 
-  if ((aComparable && aComparable === bComparable) || (aCompactComparable && aCompactComparable === bCompactComparable)) {
+  if (aComparable && aComparable === bComparable) {
     const aNewlines = (a.content.match(/\n/g) || []).length;
     const bNewlines = (b.content.match(/\n/g) || []).length;
     const aParagraphBreaks = (a.content.match(/\n\s*\n/g) || []).length;
@@ -351,21 +231,14 @@ function chooseMoreCompleteMessage(left, right) {
     return withMergedMessageIdentity(preferred, fallback);
   }
 
-  const loosePreference = a.role === 'assistant' && a.kind === 'standard'
-    ? assistantStandardLooseMatchPreference(a, b)
-    : '';
-  if (loosePreference) {
-    let preferred;
-    if (loosePreference === 'left') preferred = a;
-    else if (loosePreference === 'right') preferred = b;
-    else preferred = aComparable.length <= bComparable.length ? a : b;
+  if (isLikelyTruncatedDuplicate(aComparable, bComparable, { minLength: 8 })
+    || isLikelyTruncatedDuplicate(bComparable, aComparable, { minLength: 8 })) {
+    const preferred = a.content.length >= b.content.length ? a : b;
     const fallback = preferred === a ? b : a;
     return withMergedMessageIdentity(preferred, fallback);
   }
 
-  const preferred = bComparable.length > aComparable.length ? b : a;
-  const fallback = preferred === a ? b : a;
-  return withMergedMessageIdentity(preferred, fallback);
+  return withMergedMessageIdentity(a, b);
 }
 
 function createApprovalMessage(activeModal) {
@@ -431,18 +304,7 @@ function isStableAssistantAnswer(message) {
 function stableAssistantAnswerKey(message) {
   if (!isStableAssistantAnswer(message)) return '';
   const normalized = normalizeMessage(message);
-  return getCompactComparableContent(normalized) || getComparableContent(normalized);
-}
-
-function compactIndexToRawIndex(rawText, compactIndex) {
-  const source = String(rawText || '');
-  let compactCursor = 0;
-  for (let index = 0; index < source.length; index += 1) {
-    if (/\s/u.test(source[index])) continue;
-    if (compactCursor === compactIndex) return index;
-    compactCursor += 1;
-  }
-  return -1;
+  return getComparableContent(normalized);
 }
 
 function trimStableAssistantTextFromActivityMessage(message, stableAssistant) {
@@ -452,15 +314,11 @@ function trimStableAssistantTextFromActivityMessage(message, stableAssistant) {
     return normalized;
   }
 
-  const stableCompact = getCompactComparableContent(stableAssistant);
-  if (stableCompact.length < 16) return normalized;
-
   const rawContent = String(normalized.content || '');
-  const rawCompact = rawContent.replace(/\s+/g, '');
-  const compactIndex = rawCompact.indexOf(stableCompact);
-  if (compactIndex <= 0) return normalized;
+  const stableContent = String(normalizeMessage(stableAssistant).content || '').trim();
+  if (stableContent.length < 16) return normalized;
 
-  const rawIndex = compactIndexToRawIndex(rawContent, compactIndex);
+  const rawIndex = rawContent.indexOf(stableContent);
   if (rawIndex <= 0) return normalized;
 
   const trimmedContent = stripActivityTransientSuffix(rawContent.slice(0, rawIndex));
@@ -473,7 +331,7 @@ function trimStableAssistantTextFromActivityMessage(message, stableAssistant) {
 
 function buildReplayMessageSignature(message) {
   const normalized = normalizeMessage(message);
-  const content = getComparableContent(normalized) || getCompactComparableContent(normalized);
+  const content = getComparableContent(normalized);
   if (!content) return '';
   return [
     normalized.role || '',
@@ -483,11 +341,11 @@ function buildReplayMessageSignature(message) {
   ].join('\u0000');
 }
 
-function buildTurnPromptFingerprint(message) {
+function buildTurnPromptPrefix(message) {
   const normalized = normalizeMessage(message);
-  const compact = getCompactComparableContent(normalized) || getComparableContent(normalized);
-  if (!compact) return '';
-  return compact.slice(0, 24);
+  const comparable = getComparableContent(normalized);
+  if (!comparable) return '';
+  return comparable.slice(0, 24);
 }
 
 function replayComparableContentsMatch(left, right, minLength) {
@@ -526,8 +384,8 @@ function replayTurnMessagesMatch(leftTurnMessages, rightTurnMessages) {
       return false;
     }
 
-    const leftComparable = getCompactComparableContent(left) || getComparableContent(left);
-    const rightComparable = getCompactComparableContent(right) || getComparableContent(right);
+    const leftComparable = getComparableContent(left);
+    const rightComparable = getComparableContent(right);
     if (!leftComparable || !rightComparable) return false;
 
     if (left.role === 'user') {
@@ -559,19 +417,11 @@ function isReplayedAssistantAnswerAfterStableAssistant(message, stableAnswer) {
 
   const content = getComparableContent(normalized);
   const stableContent = getComparableContent(stable);
-  const compactContent = getCompactComparableContent(normalized);
-  const stableCompactContent = getCompactComparableContent(stable);
   if (!content || !stableContent) return false;
   if (content === stableContent) return true;
-  if (compactContent && stableCompactContent && compactContent === stableCompactContent) return true;
-  if (assistantStandardContentsLooselyMatch(normalized, stable)) return true;
 
   const shorterLength = Math.min(content.length, stableContent.length);
-  if (shorterLength >= 80 && (content.startsWith(stableContent) || stableContent.startsWith(content))) return true;
-
-  const compactShorterLength = Math.min(compactContent.length, stableCompactContent.length);
-  return compactShorterLength >= 80
-    && (compactContent.startsWith(stableCompactContent) || stableCompactContent.startsWith(compactContent));
+  return shorterLength >= 80 && stableContent.startsWith(content);
 }
 
 function isAssistantReplayAfterStableAssistant(merged, cursor, message) {
@@ -778,8 +628,7 @@ function stableHash(value) {
 
 function identityComparableContent(message) {
   const normalized = normalizeMessage(message);
-  const compact = getCompactComparableContent(normalized);
-  return compact || getComparableContent(normalized) || String(normalized.content || '').trim();
+  return getComparableContent(normalized) || String(normalized.content || '').trim();
 }
 
 function buildProviderMessageId(providerUnitKey) {
@@ -808,7 +657,7 @@ function assignProviderOwnedTranscriptIdentity(messages, status) {
 
   for (const message of source) {
     if (message.role === 'user') {
-      const promptComparable = buildTurnPromptFingerprint(message) || identityComparableContent(message);
+      const promptComparable = buildTurnPromptPrefix(message) || identityComparableContent(message);
       const promptHash = stableHash(promptComparable).slice(0, 12);
       const promptCount = (turnCounts.get(promptHash) || 0) + 1;
       turnCounts.set(promptHash, promptCount);
@@ -965,8 +814,8 @@ function shouldPreferRawMessages({
 }
 
 function promptsLikelySameTurn(left, right) {
-  const a = getCompactComparableContent(left);
-  const b = getCompactComparableContent(right);
+  const a = getComparableContent(left);
+  const b = getComparableContent(right);
   if (!a || !b) return false;
   if (a === b) return true;
   const shorter = a.length <= b.length ? a : b;
@@ -974,14 +823,14 @@ function promptsLikelySameTurn(left, right) {
   return shorter.length >= 2 && longer.startsWith(shorter);
 }
 
-function messagesLooselyOverlap(left, right) {
+function messagesOverlapByExactOrPrefix(left, right) {
   if (messagesMatch(left, right)) return true;
-  const a = getCompactComparableContent(left);
-  const b = getCompactComparableContent(right);
+  const a = getComparableContent(left);
+  const b = getComparableContent(right);
   if (!a || !b) return false;
   const shorter = a.length <= b.length ? a : b;
   const longer = a.length <= b.length ? b : a;
-  return shorter.length >= 32 && longer.includes(shorter);
+  return shorter.length >= 32 && longer.startsWith(shorter);
 }
 
 function isPromptChromeActivityMessage(message) {
@@ -1093,7 +942,7 @@ function appendMissingScreenFinalAnswer(messages, screenMessages) {
     .filter((message) => message.role === 'assistant' && (message.kind || 'standard') !== 'standard');
   const baseTurn = base.slice(Math.max(0, baseUserIndex + 1));
   const hasActivityOverlap = screenTurnActivity.some((screenActivity) => (
-    baseTurn.some((baseMessage) => messagesLooselyOverlap(baseMessage, screenActivity))
+    baseTurn.some((baseMessage) => messagesOverlapByExactOrPrefix(baseMessage, screenActivity))
   ));
   const existingFinalIndex = base.findIndex((message) => messagesMatch(message, finalMessage));
   if (existingFinalIndex >= 0) {
