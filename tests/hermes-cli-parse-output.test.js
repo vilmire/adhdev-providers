@@ -244,6 +244,12 @@ test('hermes-cli parseOutput keeps screen-only generating tool activity visible'
     { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'read /Users/vilmire/Work/adhdev/file.ts' },
     { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: '$ npm run test -w oss/packages/daemon-core' },
   ]);
+  for (const message of result.messages) {
+    assert.equal(message.meta?.transcriptVisibility, 'internal');
+    assert.equal(message.meta?.audience, 'debug');
+    assert.equal(message.meta?.source, 'runtime_activity');
+    assert.equal(message.meta?.isInternal, true);
+  }
 });
 
 test('hermes-cli parseOutput handles long tool-heavy histories without re-normalizing quadratically', () => {

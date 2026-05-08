@@ -1127,6 +1127,7 @@ module.exports = function parseOutput(input) {
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
+      ...(message.meta && typeof message.meta === 'object' ? { meta: { ...message.meta } } : {}),
     })), activityOnlyOptions);
   const transcriptCandidates = toCandidates('buffer', parsedTranscriptMessages);
   const transcriptMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(
@@ -1139,6 +1140,7 @@ module.exports = function parseOutput(input) {
       kind: message.kind,
       senderName: message.senderName,
       content: String(message.content || ''),
+      ...(message.meta && typeof message.meta === 'object' ? { meta: { ...message.meta } } : {}),
     })), activityOnlyOptions);
   const screenCandidates = toCandidates('screen', parsedScreenMessages);
   const screenMessages = collapseReplayedAssistantHistory(trimMessagesForHistoryState(

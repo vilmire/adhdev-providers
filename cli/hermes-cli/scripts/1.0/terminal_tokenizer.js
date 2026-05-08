@@ -447,6 +447,21 @@ function parseInlineToolLabelLeak(line) {
   return null;
 }
 
+function buildInternalActivityMessage(kind, senderName, content) {
+  return {
+    role: 'assistant',
+    kind,
+    senderName,
+    content,
+    meta: {
+      transcriptVisibility: 'internal',
+      audience: 'debug',
+      source: 'runtime_activity',
+      isInternal: true,
+    },
+  };
+}
+
 function parseActivityMessage(line, continuationLines = []) {
   const head = parseActivityHead(line);
   if (!head) return null;
@@ -454,12 +469,12 @@ function parseActivityMessage(line, continuationLines = []) {
   const body = normalizeActivityBody([head.body, ...continuationLines]);
   if (!body || isNoise(body) || looksLikeApprovalActivity(body)) return null;
   if (icon === '💻' || icon === '$' || body.startsWith('$')) {
-    return { role: 'assistant', kind: 'terminal', senderName: 'Terminal', content: body };
+    return buildInternalActivityMessage('terminal', 'Terminal', body);
   }
   if (icon === '📋') {
-    return { role: 'assistant', kind: 'tool', senderName: 'Plan', content: body };
+    return buildInternalActivityMessage('tool', 'Plan', body);
   }
-  return { role: 'assistant', kind: 'tool', senderName: 'Tool', content: body };
+  return buildInternalActivityMessage('tool', 'Tool', body);
 }
 
 function isStructuralRuleLine(line) {
