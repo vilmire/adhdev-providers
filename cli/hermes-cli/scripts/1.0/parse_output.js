@@ -1017,6 +1017,41 @@ function trimPromptChromeAfterFinalAssistant(messages) {
     : normalized;
 }
 
+function assistantStandardContentEquals(left, right) {
+  const a = normalizeMessage(left);
+  const b = normalizeMessage(right);
+  return a.role === 'assistant'
+    && b.role === 'assistant'
+    && (a.kind || 'standard') === 'standard'
+    && (b.kind || 'standard') === 'standard'
+    && String(a.content || '').trim() === String(b.content || '').trim();
+}
+
+function trimStaleReplayAfterScreenFinal(messages, screenMessages, status) {
+  if (status !== 'idle') return messages;
+
+  const base = trimPromptChromeAfterFinalAssistant(messages);
+  const screen = trimPromptChromeAfterFinalAssistant(screenMessages);
+  const screenFinal = screen[screen.length - 1];
+  if (!screenFinal
+    || screenFinal.role !== 'assistant'
+    || (screenFinal.kind || 'standard') !== 'standard') {
+    return base;
+  }
+
+  let matchingFinalIndex = -1;
+  for (let index = base.length - 1; index >= 0; index -= 1) {
+    if (assistantStandardContentEquals(base[index], screenFinal)) {
+      matchingFinalIndex = index;
+      break;
+    }
+  }
+
+  return matchingFinalIndex >= 0 && matchingFinalIndex < base.length - 1
+    ? base.slice(0, matchingFinalIndex + 1)
+    : base;
+}
+
 function appendMissingScreenFinalAnswer(messages, screenMessages) {
   const base = trimPromptChromeAfterFinalAssistant(messages);
   const screen = (Array.isArray(screenMessages) ? screenMessages : [])
@@ -1169,7 +1204,7 @@ module.exports = function parseOutput(input) {
   const rawCurrentTurnMessages = mergeMessageHistories(primaryCurrentTurnMessages, secondaryCurrentTurnMessages);
   const coveredRawMessages = mergeCoveredTranscript(baseMessages, rawMessages);
   const preferredRawMessages = coveredRawMessages || rawMessages;
-  const messages = appendMissingScreenFinalAnswer(trimMessagesForHistoryState(
+  const reconciledMessages = trimMessagesForHistoryState(
     shouldPreferRawMessages({
       baseMessages,
       rawMessages,
@@ -1179,7 +1214,11 @@ module.exports = function parseOutput(input) {
       ? preferredRawMessages
       : mergeMessageHistories(baseMessages, rawCurrentTurnMessages),
     historyState,
-  ), screenMessages);
+  );
+  const messages = appendMissingScreenFinalAnswer(
+    trimStaleReplayAfterScreenFinal(reconciledMessages, screenMessages, status),
+    screenMessages,
+  );
   const activeModal = parsedApproval || null;
   const effectiveStatus = activeModal ? 'waiting_approval' : status;
   const replayCollapseOptions = {

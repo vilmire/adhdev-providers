@@ -76,6 +76,41 @@ test('hermes-cli parseOutput trims replay residue after recovered final assistan
   assert.equal(result.messages.filter((message) => message.role === 'user').length, 1);
 });
 
+test('hermes-cli parseOutput treats idle screen final as tail-authoritative over stale committed replay rows', () => {
+  const finalAnswer = '점검 결과: 프리뷰 업데이트 상태는 정상이고 추가 조치는 없습니다.';
+  const staleAssistant = '깨끗한 메인 노드 상태입니다.';
+  const screenText = [
+    '╭─ ⚕ Hermes ─────────────────────╮',
+    finalAnswer,
+    '╰────────────────────────────╯',
+    '❯',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer: '',
+    rawBuffer: '',
+    recentBuffer: '',
+    messages: [
+      { role: 'user', content: '프리뷰 업데이트 확인해줘' },
+      { role: 'assistant', kind: 'standard', content: finalAnswer },
+      { role: 'assistant', kind: 'tool', senderName: 'Tool', content: 'skill adhdev-checkpoint-release' },
+      { role: 'assistant', kind: 'standard', content: staleAssistant },
+      { role: 'user', content: '이전 질문 replay' },
+      { role: 'assistant', kind: 'tool', senderName: 'MCP', content: 'mcp tool result' },
+    ],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.messages.at(-1).role, 'assistant');
+  assert.equal(result.messages.at(-1).kind, 'standard');
+  assert.equal(result.messages.at(-1).content, finalAnswer);
+  assert.equal(result.messages.some((message) => message.content === staleAssistant), false);
+  assert.equal(result.messages.some((message) => message.content === '이전 질문 replay'), false);
+  assert.equal(result.messages.some((message) => message.content === 'mcp tool result'), false);
+});
+
+
 test('hermes-cli parseOutput recovers repeated idle final assistant after last user when prior turn had same answer', () => {
   const prompt = '보조 워크스페이스는 무슨소리임';
   const finalAnswer = '“보조 워크스페이스”는 제가 붙인 표현이고, 정확히는 Repo Mesh에 같이 등록되어 있던 두 번째 노드입니다. 지금 요청 범위에서는 무시해도 됩니다.';
