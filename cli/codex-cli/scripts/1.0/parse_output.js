@@ -173,77 +173,23 @@ function cleanLine(rawLine) {
         .trim());
 }
 
-function looksLikeCodeLine(line) {
-    const raw = String(line || '');
-    const trimmed = raw.trim();
-    if (!trimmed) return false;
-    if (looksLikeOutputLine(trimmed)) return false;
-    return /^(?:import\b|from\b|def\b|class\b|if __name__ ==|for\b|while\b|try:|except\b|with\b|return\b|print\(|[A-Za-z_][A-Za-z0-9_]*\s*=|\S.*:\s*$)/.test(trimmed)
-        || /^\s{2,}\S/.test(raw);
-}
-
-function looksLikeOutputLine(line) {
-    return /^(?:CWD=|SQUARES=|JSON=)/.test(String(line || '').trim());
+function cleanUserLine(rawLine) {
+    let l = stripInlineStatusResidue(normalize(rawLine));
+    if (!l) return '';
+    l = l.replace(/^[›❯▌>]\s*/, '').replace(/^\s*│\s*/, '').trim();
+    if (!l || BOX_RE.test(l) || isHeaderLine(l) || isFooterLine(l) || isWelcomeLine(l)
+        || isStatusLine(l) || isPlaceholderLine(l) || /^…\s+\+\d+\s+lines\b/i.test(l)) {
+        return '';
+    }
+    return stripTrailingFooterChrome(l);
 }
 
 function rehydrateRenderedSections(text) {
-    const raw = String(text || '');
-    if (!raw) return '';
-    const lines = raw.split(/\r?\n/);
-    const alreadyHasPythonFence = /```python[\s\S]*```/i.test(raw);
-    const alreadyHasTextFence = /```text[\s\S]*```/i.test(raw);
-
-    let codeStart = -1;
-    for (let i = 0; i < lines.length; i++) {
-        if (looksLikeCodeLine(lines[i])) {
-            codeStart = i;
-            break;
-        }
-    }
-
-    if (codeStart < 0) return raw.trim();
-
-    let codeEnd = codeStart;
-    while (codeEnd < lines.length) {
-        const line = lines[codeEnd];
-        if (!line.trim() || looksLikeCodeLine(line)) {
-            codeEnd += 1;
-            continue;
-        }
-        break;
-    }
-
-    let outputStart = codeEnd;
-    while (outputStart < lines.length && !looksLikeOutputLine(lines[outputStart])) outputStart += 1;
-    let outputEnd = outputStart;
-    while (outputEnd < lines.length && (!lines[outputEnd].trim() || looksLikeOutputLine(lines[outputEnd]))) outputEnd += 1;
-
-    const out = [];
-    out.push(...lines.slice(0, codeStart));
-    if (!alreadyHasPythonFence) {
-        if (out.length && out[out.length - 1].trim() !== '') out.push('');
-        out.push('```python');
-        out.push(...lines.slice(codeStart, codeEnd));
-        out.push('```');
-    } else {
-        out.push(...lines.slice(codeStart, codeEnd));
-    }
-
-    if (outputStart < lines.length) {
-        if (!alreadyHasTextFence) {
-            if (out.length && out[out.length - 1].trim() !== '') out.push('');
-            out.push('```text');
-            out.push(...lines.slice(outputStart, outputEnd));
-            out.push('```');
-        } else {
-            out.push(...lines.slice(outputStart, outputEnd));
-        }
-        out.push(...lines.slice(outputEnd));
-    } else {
-        out.push(...lines.slice(codeEnd));
-    }
-
-    return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    // Preserve the provider-rendered transcript literally. Older versions tried to
+    // infer Python/output sections and synthesize markdown fences for verifier
+    // readability, but that introduced provider-owned content not present in the
+    // raw CLI transcript and depended on fixture-specific output markers.
+    return String(text || '').trim();
 }
 
 // ─── Startup screen detection ───────────────────
@@ -427,7 +373,7 @@ function collectVisibleMessages(text) {
         const content = current.lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
         if (content && !shouldSuppress(content)) {
             messages.push({
-                role: 'assistant',
+                role: current.role || 'assistant',
                 kind: current.kind || 'standard',
                 ...(current.senderName ? { senderName: current.senderName } : {}),
                 content,
@@ -444,6 +390,10 @@ function collectVisibleMessages(text) {
         }
         if (isInputLine(line)) {
             flush();
+            const userText = cleanUserLine(line);
+            if (userText && !isHeaderLine(userText) && !isFooterLine(userText)) {
+                current = { role: 'user', kind: 'standard', lines: [userText] };
+            }
             continue;
         }
         if (isAssistantLead(line)) {
@@ -455,7 +405,9 @@ function collectVisibleMessages(text) {
             continue;
         }
         if (!current) continue;
-        const cleaned = cleanActivityContinuation(rawLine);
+        const cleaned = current.role === 'user'
+            ? cleanUserLine(rawLine)
+            : cleanActivityContinuation(rawLine);
         if (!cleaned) continue;
         if (current.lines[current.lines.length - 1] !== cleaned) current.lines.push(cleaned);
     }

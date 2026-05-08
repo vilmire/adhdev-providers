@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const detectStatus = require('../cli/codex-cli/scripts/1.0/detect_status.js');
+const parseApproval = require('../cli/codex-cli/scripts/1.0/parse_approval.js');
 const parseOutput = require('../cli/codex-cli/scripts/1.0/parse_output.js');
 
 const partialWorkingScreen = `
@@ -329,7 +330,21 @@ test('codex parse_output keeps status generating for a partial working turn inst
   assert.ok(result.messages.some(message => /Creating tmp\/adhdev_cli_verify\.py/.test(message.content || '')));
 });
 
-test('codex rehydrates fenced python/text blocks from a rendered script section', () => {
+test('codex parse_output keeps submitted user prompt alongside assistant output when parser state has no prior messages', () => {
+  const result = parseOutput({
+    screenText: completedTurnScreen,
+    buffer: completedTurnScreen,
+    recentBuffer: completedTurnTail,
+    messages: [],
+  });
+
+  assert.equal(result.status, 'idle');
+  assert.equal(result.messages[0]?.role, 'user');
+  assert.match(result.messages[0]?.content || '', /Please do all of the following/);
+  assert.ok(result.messages.some(message => message.role === 'assistant' && /tmp\/adhdev_cli_verify\.py/.test(message.content || '')));
+});
+
+test('codex parse_output preserves rendered script/output sections literally instead of synthesizing fences', () => {
   const renderedAssistant = `
 Created and ran tmp/adhdev_cli_verify.py, which prints the required values exactly.
 
@@ -359,8 +374,19 @@ JSON={"squares":[1,4,9,16,25]}
 `;
 
   const assistant = parseOutput.rehydrateRenderedSections(renderedAssistant);
-  assert.match(assistant, /```python[\s\S]*def main\(\) -> None:[\s\S]*```/);
-  assert.match(assistant, /```text[\s\S]*SQUARES=1,4,9,16,25[\s\S]*```/);
+  assert.equal(assistant, renderedAssistant.trim());
+  assert.doesNotMatch(assistant, /```(?:python|text)/);
+});
+
+test('codex parse_approval does not synthesize fallback buttons when labels cannot be read', () => {
+  const modal = parseApproval({
+    screenText: [
+      'Allow Codex to run this command?',
+      'Press Enter to confirm',
+    ].join('\n'),
+  });
+
+  assert.equal(modal, null);
 });
 
 test('codex parse_output keeps full prior transcript when conversation exceeds 50 messages', () => {

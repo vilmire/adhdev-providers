@@ -100,6 +100,6 @@ module.exports = function parseApproval(input) {
 
     return {
         message,
-        buttons: buttons.length > 0 ? buttons : ['Approve', 'Deny'],
+        buttons,
     };
 };
