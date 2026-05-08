@@ -217,36 +217,23 @@ function extractSessionId(rawBuffer, buffer, screenText) {
 
 // ─── Prompt scoping ─────────────────────────────
 
-function tokenizePrompt(text) {
-    return String(text || '')
-        .replace(/\s+/g, ' ').trim()
-        .split(/[^A-Za-z0-9_.:/-]+/)
-        .map(t => t.trim().toLowerCase())
-        .filter(t => t.length >= 4);
+function promptLineBody(line) {
+    const normalizedLine = normalize(line);
+    if (!isInputLine(normalizedLine)) return '';
+    return cleanUserLine(normalizedLine);
 }
 
 function findPromptLineIndex(lines, promptText) {
-    const tokens = tokenizePrompt(promptText);
-    if (tokens.length === 0) return -1;
-    const normalizedPrompt = normalizeForCompare(promptText).toLowerCase();
+    const normalizedPrompt = normalizeForCompare(promptText);
+    if (!normalizedPrompt) return -1;
 
-    const matches = (line) => {
-        const nl = normalizeForCompare(line).toLowerCase();
-        if (!nl) return false;
-        if (nl === normalizedPrompt) return true;
-        return tokens.filter(t => nl.includes(t)).length >= Math.min(tokens.length, 3);
-    };
-
-    // Prefer input lines (▌ or empty >) that match
     for (let i = lines.length - 1; i >= 0; i--) {
-        if (!isInputLine(normalize(lines[i]))) continue;
-        if (matches(lines[i])) return i;
-    }
-    // Fallback: any matching non-assistant line
-    for (let i = lines.length - 1; i >= 0; i--) {
-        const nl = normalize(lines[i]);
-        if (!nl || isAssistantLead(nl)) continue;
-        if (matches(lines[i])) return i;
+        const body = normalizeForCompare(promptLineBody(lines[i]));
+        if (!body) continue;
+        if (body === normalizedPrompt) return i;
+        // Codex can show a wrapped/truncated prompt row. Limit prefix matching to
+        // explicit input rows so assistant prose cannot become a fuzzy anchor.
+        if (body.length >= 24 && normalizedPrompt.startsWith(body)) return i;
     }
     return -1;
 }
@@ -273,18 +260,14 @@ function normalizeMessage(message) {
 }
 
 function comparableText(message) {
-    return normalizeForCompare(normalizeMessage(message).content).toLowerCase();
+    return normalizeForCompare(normalizeMessage(message).content);
 }
 
 function messagesMatch(left, right) {
     const a = normalizeMessage(left);
     const b = normalizeMessage(right);
     if (!a.content || !b.content || a.role !== b.role || a.kind !== b.kind) return false;
-    const ac = comparableText(a);
-    const bc = comparableText(b);
-    if (ac === bc) return true;
-    const minLength = a.role === 'assistant' && a.kind === 'standard' ? 8 : 32;
-    return (ac.length >= minLength && bc.includes(ac)) || (bc.length >= minLength && ac.includes(bc));
+    return comparableText(a) === comparableText(b);
 }
 
 function chooseMoreCompleteMessage(left, right) {

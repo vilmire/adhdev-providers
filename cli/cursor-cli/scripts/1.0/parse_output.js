@@ -20,27 +20,17 @@ function normalize(text) {
     return String(text || '').replace(/\s+/g, ' ').trim();
 }
 
-function tokenizePrompt(text) {
-    return String(text || '')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .split(/[^A-Za-z0-9_.:/-가-힣]+/)
-        .map((token) => token.trim().toLowerCase())
-        .filter((token) => token.length >= 2);
-}
-
 function lineMatchesPrompt(line, promptText) {
-    const normalizedLine = normalize(line).toLowerCase();
-    const normalizedPrompt = normalize(promptText).toLowerCase();
+    const parsedPromptLine = parsePromptLine(line);
+    const lineText = parsedPromptLine === null ? sanitize(line).trim() : parsedPromptLine;
+    const normalizedLine = normalize(lineText);
+    const normalizedPrompt = normalize(promptText);
     if (!normalizedLine || !normalizedPrompt) return false;
     if (normalizedLine === normalizedPrompt) return true;
-    if (normalizedLine.length >= 24 && normalizedPrompt.startsWith(normalizedLine)) return true;
-    const promptTokens = tokenizePrompt(promptText);
-    const lineTokens = tokenizePrompt(line);
-    if (lineTokens.length === 0 || promptTokens.length === 0) return false;
-    const promptTokenSet = new Set(promptTokens);
-    const matches = lineTokens.filter((token) => promptTokenSet.has(token)).length;
-    return matches >= 4 && matches / lineTokens.length >= 0.75;
+    // Cursor can soft-wrap/truncate the visible prompt line. Only accept a prefix
+    // match when the source line is an explicit prompt row; do not use token/fuzzy
+    // overlap against arbitrary transcript content.
+    return parsedPromptLine !== null && normalizedLine.length >= 24 && normalizedPrompt.startsWith(normalizedLine);
 }
 
 function parsePromptLine(line) {
@@ -461,8 +451,7 @@ function appendAssistantMessage(base, candidate) {
     const normalizedContent = normalize(message.content);
     if (!normalizedContent) return;
     const last = base[base.length - 1];
-    if (last && messageKey(last) === messageKey(message)) {
-        if (normalize(last.content) !== normalizedContent) last.content = message.content;
+    if (last && messageKey(last) === messageKey(message) && normalize(last.content) === normalizedContent) {
         if (message.senderName) last.senderName = message.senderName;
         last.kind = message.kind;
         return;

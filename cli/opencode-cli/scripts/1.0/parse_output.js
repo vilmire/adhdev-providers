@@ -20,14 +20,6 @@ function normalize(text) {
     return String(text || '').replace(/\s+/g, ' ').trim();
 }
 
-function tokenize(text) {
-    return String(text || '')
-        .toLowerCase()
-        .split(/[^a-z0-9_./:-]+/)
-        .map(token => token.trim())
-        .filter(token => token.length >= 4);
-}
-
 function getLastUserPrompt(previousMessages) {
     return [...(Array.isArray(previousMessages) ? previousMessages : [])]
         .reverse()
@@ -35,33 +27,21 @@ function getLastUserPrompt(previousMessages) {
         ?.content || '';
 }
 
-function promptTokenHits(line, promptText) {
-    const tokens = tokenize(promptText);
-    if (tokens.length === 0) return 0;
-    const normalizedLine = normalize(line).toLowerCase();
-    if (!normalizedLine) return 0;
-    return tokens.filter(token => normalizedLine.includes(token)).length;
+function promptLineBody(line) {
+    return sanitize(line).trim().replace(/^┃\s*/, '').trim();
 }
 
 function findPromptLineIndex(lines, promptText) {
-    if (!promptText) return -1;
-    let bestIndex = -1;
-    let bestScore = 0;
-    const normalizedPrompt = normalize(promptText).toLowerCase();
-    for (let index = 0; index < lines.length; index += 1) {
-        const line = sanitize(lines[index]);
-        const score = promptTokenHits(line, promptText);
-        if (score > bestScore) {
-            bestScore = score;
-            bestIndex = index;
-        }
-        const normalizedLine = normalize(line).toLowerCase();
-        if (normalizedLine && (normalizedPrompt.includes(normalizedLine) || normalizedLine.includes(normalizedPrompt))) {
-            bestIndex = index;
-            bestScore = Math.max(bestScore, tokenize(promptText).length + 1);
-        }
+    const normalizedPrompt = normalize(promptText);
+    if (!normalizedPrompt) return -1;
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+        const raw = sanitize(lines[index]).trim();
+        const body = normalize(promptLineBody(raw));
+        if (!body) continue;
+        if (body === normalizedPrompt) return index;
+        if (/^┃\s*/.test(raw) && body.length >= 24 && normalizedPrompt.startsWith(body)) return index;
     }
-    return bestScore > 0 ? bestIndex : -1;
+    return -1;
 }
 
 function isTableBorderLine(trimmed) {
@@ -215,8 +195,6 @@ function mergeAssistantContent(existing, incoming) {
     const normalizedCurrent = normalize(current);
     const normalizedNext = normalize(next);
     if (normalizedCurrent === normalizedNext) return current.length >= next.length ? current : next;
-    if (normalizedCurrent.includes(normalizedNext)) return current;
-    if (normalizedNext.includes(normalizedCurrent)) return next;
 
     const merged = splitBlocks(current);
     for (const block of splitBlocks(next)) {
@@ -237,12 +215,7 @@ function mergeAssistantContent(existing, incoming) {
             continue;
         }
 
-        const existingIndex = merged.findIndex(candidate => {
-            const normalizedCandidate = normalize(candidate);
-            return normalizedCandidate === normalizedBlock
-                || normalizedCandidate.includes(normalizedBlock)
-                || normalizedBlock.includes(normalizedCandidate);
-        });
+        const existingIndex = merged.findIndex(candidate => normalize(candidate) === normalizedBlock);
         if (existingIndex >= 0) {
             if (block.length > merged[existingIndex].length) merged[existingIndex] = block;
             continue;

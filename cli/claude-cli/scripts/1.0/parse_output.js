@@ -35,35 +35,36 @@ function normalizeText(text) {
         .toLowerCase();
 }
 
-function normalizeLooseText(text) {
-    return normalizeText(text).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim();
+function normalizePromptIdentity(text) {
+    // Prompt rows can wrap mid-token with an indented continuation. Repair only
+    // that terminal-wrap boundary for prompt echo detection; do not strip
+    // punctuation, lowercase beyond normalizeText, or use arbitrary substring
+    // matching for transcript replay.
+    return normalizeText(String(text || '').replace(/\n[ \t]+/g, ''));
 }
 
 function looksLikeSamePrompt(left, right) {
-    const a = normalizeText(left);
-    const b = normalizeText(right);
+    const a = normalizePromptIdentity(left);
+    const b = normalizePromptIdentity(right);
     if (!a || !b) return false;
     if (a === b) return true;
-    const looseA = normalizeLooseText(left);
-    const looseB = normalizeLooseText(right);
-    if (looseA && looseB && looseA === looseB) return true;
     const minLength = Math.min(a.length, b.length);
     if (minLength < 24) return false;
+    // Claude may expose only the visible prefix of the current prompt. Keep this
+    // source-boundary prefix check, but remove punctuation-stripping, compact CJK
+    // whitespace, and arbitrary substring matching.
+    return a.startsWith(b) || b.startsWith(a);
+}
 
-    const compactLooseA = looseA.replace(/\s+/g, '');
-    const compactLooseB = looseB.replace(/\s+/g, '');
-    if (compactLooseA && compactLooseB && Math.min(compactLooseA.length, compactLooseB.length) >= 24) {
-        if (compactLooseA === compactLooseB
-            || compactLooseA.startsWith(compactLooseB)
-            || compactLooseB.startsWith(compactLooseA)
-            || compactLooseA.includes(compactLooseB)
-            || compactLooseB.includes(compactLooseA)) {
-            return true;
-        }
-    }
-
-    return a.startsWith(b) || b.startsWith(a) || a.includes(b) || b.includes(a)
-        || (looseA && looseB && (looseA.startsWith(looseB) || looseB.startsWith(looseA) || looseA.includes(looseB) || looseB.includes(looseA)));
+function looksLikePromptBoundaryFragment(fragment, promptText, minLength = 8) {
+    const fragmentIdentity = normalizePromptIdentity(fragment);
+    const promptIdentity = normalizePromptIdentity(promptText);
+    if (!fragmentIdentity || !promptIdentity || fragmentIdentity.length < minLength) return false;
+    if (fragmentIdentity === promptIdentity) return true;
+    // Exact prompt echo handling is limited to terminal-wrap boundaries: the
+    // visible first prompt row or an immediately following tail row. Do not use
+    // arbitrary substring/fuzzy matching.
+    return promptIdentity.startsWith(fragmentIdentity) || promptIdentity.endsWith(fragmentIdentity);
 }
 
 function looksLikePromptEchoText(candidate, promptText, previousMessages) {
@@ -311,10 +312,9 @@ function trimPromptEchoPrefix(text, promptText) {
             if (dropCount === index) dropCount = index + 1;
             continue;
         }
-        const normalizedFragment = normalizeText(fragment);
+        const normalizedFragment = normalizePromptIdentity(fragment);
         if (!normalizedFragment) break;
-        const isPromptFragment = looksLikeSamePrompt(normalizedFragment, normalizedPrompt)
-            || (normalizedFragment.length >= 8 && normalizedPrompt.includes(normalizedFragment));
+        const isPromptFragment = looksLikePromptBoundaryFragment(fragment, promptText);
         if (isPromptFragment) {
             dropCount = index + 1;
             continue;
@@ -494,9 +494,9 @@ function cleanupAssistantText(text, promptText = '') {
             cleanedLines.shift();
             continue;
         }
-        const head = normalizeText(first);
-        const normalizedPrompt = normalizeText(promptText);
-        if (!head || head.length < 8 || !normalizedPrompt || !normalizedPrompt.includes(head)) break;
+        const head = normalizePromptIdentity(first);
+        const normalizedPrompt = normalizePromptIdentity(promptText);
+        if (!head || !normalizedPrompt || !looksLikePromptBoundaryFragment(first, promptText)) break;
         cleanedLines.shift();
     }
 
@@ -848,14 +848,9 @@ function buildVisibleMessages(lines, promptText = '') {
         if (isFooterLine(trimmed)) break;
 
         const cleaned = stripAssistantPrefix(sanitized).trim();
-        const normalizedCleaned = normalizeText(cleaned);
-        const normalizedPrompt = normalizeText(promptText);
         const isLeadingPromptFragment = !messages.length
             && currentAssistant.length === 0
-            && normalizedCleaned
-            && normalizedPrompt
-            && normalizedCleaned.length >= 8
-            && normalizedPrompt.includes(normalizedCleaned);
+            && looksLikePromptBoundaryFragment(cleaned, promptText);
         if (!cleaned || isLeadingPromptFragment) {
             skippingToolBlock = false;
             captureDetailBlock = false;
@@ -969,15 +964,15 @@ function shouldPreferTranscriptMessages(visibleMessages, transcriptMessages) {
 
 function stripLeadingPromptFragments(text, promptText) {
     const lines = splitLines(text).map((line) => line.trim());
-    const normalizedPrompt = normalizeText(promptText);
+    const normalizedPrompt = normalizePromptIdentity(promptText);
     if (!normalizedPrompt || lines.length === 0) return String(text || '').trim();
     if (lines.length > 1 && /^then\s+end\.?$/i.test(lines[0]) && /^begin$/i.test(lines[1])) {
         lines.shift();
     }
     let index = 0;
     while (index < lines.length - 1) {
-        const head = normalizeText(lines[index]);
-        if (!head || head.length < 8 || !normalizedPrompt.includes(head)) break;
+        const head = normalizePromptIdentity(lines[index]);
+        if (!head || !looksLikePromptBoundaryFragment(lines[index], promptText)) break;
         index += 1;
     }
     return lines.slice(index).join('\n').trim();

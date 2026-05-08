@@ -31,23 +31,16 @@ function normalizeText(value) {
 }
 
 function comparableText(value) {
-    return normalizeText(value).replace(/\s+/g, ' ').trim().toLowerCase();
-}
-
-function looseText(value) {
-    return comparableText(value).replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim();
+    // Exact parser identity only: strip terminal controls and outer whitespace, but
+    // do not lowercase, collapse CJK/user whitespace, remove punctuation, or use
+    // substring matching to merge transcript candidates.
+    return normalizeText(value);
 }
 
 function looksLikeSameText(left, right) {
     const a = comparableText(left);
     const b = comparableText(right);
-    if (!a || !b) return false;
-    if (a === b) return true;
-    const la = looseText(left);
-    const lb = looseText(right);
-    if (la && lb && la === lb) return true;
-    const min = Math.min(a.length, b.length);
-    return min >= 24 && (a.includes(b) || b.includes(a) || la.includes(lb) || lb.includes(la));
+    return !!a && !!b && a === b;
 }
 
 function removeInlineTerminalProbeArtifacts(value) {
