@@ -94,9 +94,19 @@ function isPromptContinuation(line) {
     const t = s.trim();
     if (!t) return true;
     if (/^\s*⏺\s+/.test(s)) return false;
+    if (/^\s*⎿\s+/.test(s)) return false;
     if (parsePromptLine(s) !== null) return false;
     if (isFooterLine(t)) return false;
-    return /^\s+\S/.test(s) || /^\d+[.)]\s+/.test(t) || /^[-*+]\s+/.test(t);
+    if (isNoiseLine(t)) return false;
+    if (/^[─═]{10,}$/.test(t)) return false;
+    // Any leading structural glyph → not a continuation
+    if (/^[⏺⎿✻✶✳✢✽·•❯›>▗▖▘▝]/.test(t)) return false;
+    // Indented continuation (terminal wrap with indent)
+    if (/^\s+\S/.test(s)) return true;
+    // List item continuations
+    if (/^\d+[.)]\s+/.test(t) || /^[-*+]\s+/.test(t)) return true;
+    // Plain text with no structural prefix — PTY hard-wrap of prompt at terminal width
+    return true;
 }
 
 function collectPromptText(lines, start) {
@@ -124,6 +134,8 @@ function isCompletionFooterLine(t) {
 function isFooterLine(t) {
     if (isShellChrome(t)) return true;
     if (isCompletionFooterLine(t)) return true;
+    // Horizontal separator lines (─ ═ —)
+    if (/^[─═\-]{10,}$/.test(t)) return true;
     // Survey UI: "N: Bad/Poor/... 0: Dismiss"
     if (/^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(t)) return true;
     // Bare numeric menu echo
@@ -144,6 +156,9 @@ function isNoiseLine(t) {
     if (/^\+\d+\s+more\s+tool\s+uses?\b/i.test(t)) return true;
     if (/\bctrl\+b\s+to\s+run\s+in\s+background\b/i.test(t)) return true;
     if (/^[·•✻✶✳✢✽…]$/.test(t)) return true;
+    // Truncated completion footer: "✻ Verb for" or "[glyph] Verb for" without duration yet
+    // (screen captured mid-render before duration appended)
+    if (/^(?:[✻✶✳✢✽]\s+)?[\p{L}][\p{L}\-]{1,30}(?:\s+[\p{L}][\p{L}\-]{1,30}){0,2}\s+for\s*$/iu.test(t)) return true;
     // Empty-session startup chrome (structural: appears before any turn)
     if (/^Type your message/i.test(t)) return true;
     if (/^\? for help/i.test(t)) return true;
@@ -398,6 +413,8 @@ function parseRegion(lines, promptText) {
         const s = sanitize(rawLine);
         const t = s.trim();
 
+        // Horizontal separators are UI chrome — always skip, never break
+        if (/^[─═\-]{10,}$/.test(t)) continue;
         if (isFooterLine(t)) break;
         if (isNoiseLine(t) && !/^\s*⏺\s+/.test(s)) continue;
 
