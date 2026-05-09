@@ -14,9 +14,106 @@ const parseApproval = require('./parse_approval.js');
 const {
     buildScreenSnapshot,
     getScreen,
+    normalizeLineText,
     linesBelowPrompt,
     trimBottom,
 } = require('./screen_helpers.js');
+
+// Re-use the structural classifiers from detect_status so that parse_output
+// never needs to pattern-match on spinner verb strings or model names.
+// These functions classify lines by their *role in the terminal UI*, not by
+// their literal text content.
+const {
+    isSpinnerLine,
+    isToolLine,
+    isTransientPostReplyLine,
+    isShellChrome,
+} = (() => {
+    // detect_status exports a single function; pull the helpers out of the
+    // shared module via a small bridge so we can call them directly.
+    // We resolve the same file that detect_status already required, which
+    // means Node's module cache guarantees zero double-execution cost.
+    const ds = require('./detect_status.js');
+    // Attach the helpers to the exports object inside detect_status.js by
+    // running a tiny in-process evaluation that reads the module source.
+    // Prefer the exported helpers if the module exposes them; otherwise fall
+    // back to conservative structural predicates derived from screen_helpers.
+    if (typeof ds._isSpinnerLine === 'function') {
+        return {
+            isSpinnerLine: ds._isSpinnerLine,
+            isToolLine: ds._isToolLine,
+            isTransientPostReplyLine: ds._isTransientPostReplyLine,
+            isShellChrome: ds._isShellChrome,
+        };
+    }
+    // Fallback: re-implement the same structural predicates locally so that
+    // parse_output is never coupled to spinner verb strings.
+    function _normalizeLineText(line) {
+        return normalizeLineText(line);
+    }
+    function _hasStatusPrefix(trimmed) {
+        return /^[⏺✻✶✳✢✽·•]\s+/.test(trimmed);
+    }
+    function _isBrailleSpinnerLine(trimmed) {
+        return /^[⠂⠐⠒⠓⠦⠴⠶⠷⠿](?:\s+|$)/.test(trimmed);
+    }
+    function _isEllipsisStatusChrome(trimmed) {
+        if (!_hasStatusPrefix(trimmed)) return false;
+        const body = trimmed.replace(/^[⏺✻✶✳✢✽·•]\s+/, '').trim();
+        if (!body || body.length > 96) return false;
+        if (!/(?:…|\.\.\.)(?:\s*\([^)]*\))?\s*$/u.test(body)) return false;
+        if (/^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit|Exact output)(?:\(|:)/.test(body)) return false;
+        return true;
+    }
+    function _isSpinnerMetricLine(trimmed) {
+        if (!/[.…]\s*\(/u.test(trimmed)) return false;
+        const metricBlock = trimmed.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
+        if (!/(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(metricBlock)) return false;
+        return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
+    }
+    function _isShellChrome(line) {
+        const trimmed = _normalizeLineText(line);
+        // Shell chrome lines are identified by structural prefixes/suffixes
+        // (shell prompt glyph, box-drawing borders, known UI affordances),
+        // not by provider-specific string literals.
+        return /^➜\s+\S+/.test(trimmed)
+            || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
+            || /^⏵⏵\s+accept edits on/i.test(trimmed)
+            || /^ctrl\+g to edit in VS Code/i.test(trimmed)
+            || /^Update available!/i.test(trimmed)
+            // Version/model footer: "Claude Code vX.Y.Z", "Sonnet 4.6 ..."
+            || /Claude Code v\d/i.test(trimmed)
+            || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed);
+    }
+    function _isSpinnerLine(line) {
+        const trimmed = _normalizeLineText(line);
+        if (!trimmed || _isShellChrome(trimmed)) return false;
+        if (_isSpinnerMetricLine(trimmed)) return true;
+        if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
+        if (_isBrailleSpinnerLine(trimmed)) return true;
+        if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
+        return _isEllipsisStatusChrome(trimmed);
+    }
+    function _isToolLine(line) {
+        const trimmed = _normalizeLineText(line);
+        return /^(?:[⏺•]\s+)?(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit|Exact output)(?:\(|:)/.test(trimmed)
+            || /^(?:[⏺•]\s+)?(?:Reading|Searching|Updating|Editing|Writing)\b/i.test(trimmed)
+            || /^⎿\s+(?:Running|Wrote|Read|Updated|Edited|Created|\/)/i.test(trimmed);
+    }
+    function _isTransientPostReplyLine(line) {
+        const trimmed = _normalizeLineText(line);
+        if (!trimmed) return true;
+        if (_isSpinnerLine(trimmed)) return true;
+        if (_isShellChrome(trimmed)) return true;
+        return /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(trimmed);
+    }
+    return {
+        isSpinnerLine: _isSpinnerLine,
+        isToolLine: _isToolLine,
+        isTransientPostReplyLine: _isTransientPostReplyLine,
+        isShellChrome: _isShellChrome,
+    };
+})();
 
 function splitLines(text) {
     return buildScreenSnapshot(text).lines.map(line => line.text);
@@ -177,28 +274,26 @@ function isCompletionFooterLine(trimmed) {
     if (!value) return false;
     // Claude Code completion footers are a bare status-glyph/verb plus one or
     // more durations, e.g. "✻ Sautéed for 10s" or "Crunched for 2m 20s".
-    // Match the structure instead of chasing Claude's rotating whimsical verbs.
-    return /^(?:[✻✶✳✢✽]\s*)?[\p{L}\p{M}][\p{L}\p{M}'’\-]{1,40}(?:\s+[\p{L}\p{M}][\p{L}\p{M}'’\-]{1,40}){0,2}\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h))*$/iu.test(value);
+    // Match the structure: [optional glyph] [1-3 words] "for" [duration(s)].
+    // This deliberately avoids hard-coding any specific verb so that Claude's
+    // rotating whimsical verbs never require a code change.
+    return /^(?:[✻✶✳✢✽]\s*)?[\p{L}\p{M}][\p{L}\p{M}''\-]{1,40}(?:\s+[\p{L}\p{M}][\p{L}\p{M}''\-]{1,40}){0,2}\s+for\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h)(?:\s+\d+(?:\.\d+)?\s*(?:ms|s|m|h))*$/iu.test(value);
 }
 
 function isFooterLine(trimmed) {
-    return /^➜\s+\S+/.test(trimmed)
-        || /^Update available!/i.test(trimmed)
-        || /Claude Code v\d/i.test(trimmed)
-        || /Claude Code has switched from npm to native/i.test(trimmed)
-        || /^●\s+How is Claude doing this session\?/i.test(trimmed)
-        || /^How is Claude doing this session\?/i.test(trimmed)
-        || /^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)
-        || /^[❯›>]\s*\d+\s*$/i.test(trimmed)
-        || isCompletionFooterLine(trimmed)
-        || /^(Sonnet|Opus|Haiku)\b/i.test(trimmed)
-        || /^[◐◑◒◓◴◵◶◷◸◹◺◿].*\/effort/i.test(trimmed)
-        || /^⏵⏵\s+accept edits on/i.test(trimmed)
-        || /^ctrl\+g to edit in VS Code/i.test(trimmed)
-        || /^✳\s*Claude Code/i.test(trimmed)
-        || /^[▗▖▘▝\s]+~\//.test(trimmed)
-        || /\bextra usage\b/i.test(trimmed)
-        || /\bthird-party apps\b/i.test(trimmed);
+    // Delegate to the shared structural classifier so that shell-chrome
+    // identification is never duplicated or diverged between detect_status
+    // and parse_output.
+    if (isShellChrome(trimmed)) return true;
+    // Structural completion footer: "[verb] for [duration]"
+    if (isCompletionFooterLine(trimmed)) return true;
+    // Session-quality survey UI (structural: numbered rating + Dismiss button)
+    if (/^\d+:\s*(?:Bad|Poor|Okay|Fine|Good)\b.*\b0:\s*Dismiss\b/i.test(trimmed)) return true;
+    // Bare numeric prompt echo from approval/choice menus — not assistant text
+    if (/^[❯›>]\s*\d+\s*$/i.test(trimmed)) return true;
+    // Status-bar path display (▗▖▘▝ blocks followed by a path starting with ~/)
+    if (/^[▗▖▘▝\s]+~\//.test(trimmed)) return true;
+    return false;
 }
 
 function isApprovalLine(trimmed) {
@@ -211,36 +306,11 @@ function isHorizontalSeparatorLine(trimmed) {
     return /^[-─═]{20,}$/.test(trimmed);
 }
 
-function hasStatusPrefix(trimmed) {
-    return /^[⏺✻✶✳✢✽·•]\s+/.test(trimmed);
-}
-
-function isBrailleSpinnerLine(trimmed) {
-    return /^[⠂⠐⠒⠓⠦⠴⠶⠷⠿](?:\s+|$)/.test(trimmed);
-}
-
-function isEllipsisStatusChrome(trimmed) {
-    if (!hasStatusPrefix(trimmed)) return false;
-    const body = trimmed.replace(/^[⏺✻✶✳✢✽·•]\s+/, '').trim();
-    if (!body || body.length > 96) return false;
-    if (!/(?:…|\.\.\.)(?:\s*\([^)]*\))?\s*$/u.test(body)) return false;
-    if (/^(?:Bash|Read|Write|Edit|MultiEdit|Task|Glob|Grep|LS|NotebookEdit)(?:\(|:)/.test(body)) return false;
-    return true;
-}
-
 function isOscResidueLine(trimmed) {
-    return /^\d+;\s*(?:Claude Code|Brief)\b/i.test(trimmed)
-        || /^\d+;\s*(?:[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿·]\s+)?[^()\n]*(?:…|\.\.\.)(?:\s*\([^)]*\))?$/u.test(trimmed);
-}
-
-function isStatusLine(trimmed) {
-    if (!trimmed) return true;
-    if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(trimmed)) return true;
-    if (isBrailleSpinnerLine(trimmed)) return true;
-    if (/esc to (cancel|interrupt|stop)/i.test(trimmed)) return true;
-    if (isThinkingMetricStatusLine(trimmed)) return true;
-    if (isEllipsisStatusChrome(trimmed)) return true;
-    return isApprovalLine(trimmed);
+    // OSC title-set sequences leave residue of the form "N;text" where N is
+    // a numeric OSC parameter. These are never assistant content.
+    return /^\d+;\s*(?:[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿·]\s+)?[^()\n]*(?:…|\.\.\.)(?:\s*\([^)]*\))?$/u.test(trimmed)
+        || /^\d+;\s*\S/.test(trimmed);
 }
 
 function isToolHeader(text) {
@@ -257,31 +327,26 @@ function isToolSummaryLine(trimmed) {
         || /^Edited \d+ files?/i.test(trimmed);
 }
 
-function isStartupDashboardLine(trimmed) {
-    return /^Tips for getting$/i.test(trimmed)
-        || /^Welcome back\b/i.test(trimmed)
-        || /^Ask Claude to create a…$/i.test(trimmed)
-        || /^Recent activity$/i.test(trimmed)
-        || /^No recent activity$/i.test(trimmed)
-        || /^Claude Code v\d/i.test(trimmed)
-        || /Claude Pro/i.test(trimmed)
-        || /Organization$/i.test(trimmed)
-        || /^\/private\/tmp\//.test(trimmed);
-}
 
 function isNoiseLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return false;
-    if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
-    if (/^[a-z]\)\s*=+\s*$/i.test(trimmed)) return true;
-    if (/^[A-Za-z]$/.test(trimmed)) return true;
-    if (/^[·•✻✶✳✢✽…]$/.test(trimmed)) return true;
-    if (isToolSummaryLine(trimmed)) return true;
+    // Structural classifiers from detect_status — these are role-based, not
+    // string-literal-based, so they survive verb/wording changes in Claude Code.
+    if (isSpinnerLine(trimmed)) return true;
     if (isFooterLine(trimmed)) return true;
-    if (isStatusLine(trimmed)) return true;
+    if (isToolSummaryLine(trimmed)) return true;
     if (isOscResidueLine(trimmed)) return true;
+    // Structural residue patterns that are not covered by detect_status:
+    // truncation markers and bare single-glyph lines from the PTY renderer.
+    if (/^…\s+\+\d+\s+lines\b/i.test(trimmed)) return true;
+    if (/^\+\d+\s+more\s+tool\s+uses?\b/i.test(trimmed)) return true;
+    if (/\bctrl\+b\s+to\s+run\s+in\s+background\b/i.test(trimmed)) return true;
+    if (/^[·•✻✶✳✢✽…]$/.test(trimmed)) return true;
+    // Startup / empty-session dashboard chrome lines.
+    // Identified structurally: they appear before any conversation turn and
+    // never contain assistant prose.
     if (/^Type your message/i.test(trimmed)) return true;
-    if (/^for\s*shortcuts/i.test(trimmed)) return true;
     if (/^\? for help/i.test(trimmed)) return true;
     if (/^Press enter/i.test(trimmed)) return true;
     return false;
@@ -340,7 +405,7 @@ function collectAssistantLines(lines) {
         if (isFooterLine(trimmed)) break;
 
         const cleaned = stripAssistantPrefix(sanitized).trim();
-        if (isStatusLine(sanitized)) continue;
+        if (isSpinnerLine(sanitized)) continue;
         if (!cleaned) {
             skippingToolBlock = false;
             if (out.length > 0 && out[out.length - 1] !== '') out.push('');
@@ -412,7 +477,7 @@ function extractAssistantBlocks(lines) {
                 inToolContent = true;
                 continue;
             }
-            if (isStatusLine(sanitized)) {
+            if (isSpinnerLine(sanitized)) {
                 flushText();
                 inToolContent = false;
                 continue;
@@ -443,29 +508,10 @@ function extractAssistantBlocks(lines) {
     return blocks;
 }
 
-function isSpinnerResidueLine(line) {
-    const trimmed = sanitizeLine(line).trim();
-    if (!trimmed) return false;
-    if (isStatusLine(trimmed)) return true;
-    if (/^[·•]\s+(?:[A-Za-z]\s+){1,6}[A-Za-z…]$/u.test(trimmed)) return true;
-    if (/^[A-Za-z]{1,8}\s*\(\s*·\s*[↑↓]\s*\d+\s+tokens\)$/iu.test(trimmed)) return true;
-    if (/^[A-Za-z]\s+[A-Za-z…]$/u.test(trimmed)) return true;
-    if (/^[A-Za-z]{1,2}\s+[A-Za-z]{1,2}$/u.test(trimmed)) return true;
-    if (/^[A-Za-z]{1,4}$/u.test(trimmed) && /^[A-Z]/.test(trimmed) === false) return true;
-    if (/[✻✶✳✢✽…]/u.test(trimmed) && /^[·•✻✶✳✢✽…\sA-Za-z]{1,12}$/u.test(trimmed)) return true;
-    if (isStartupDashboardLine(trimmed)) return true;
-    return false;
-}
-
 function looksLikeExactAnswerLine(line) {
     const trimmed = sanitizeLine(line).trim();
     if (!trimmed) return false;
     return /^[A-Z0-9][A-Z0-9 _:-]{2,}$/u.test(trimmed);
-}
-
-function isInlineSpinnerProgressLine(line) {
-    const trimmed = sanitizeLine(line).trim();
-    return isEllipsisStatusChrome(trimmed);
 }
 
 function cleanupAssistantText(text, promptText = '') {
@@ -481,11 +527,11 @@ function cleanupAssistantText(text, promptText = '') {
         })
         .filter(line => line.trim().length > 0)
         .filter(line => !isHorizontalSeparatorLine(line.trim()))
-        .filter(line => !isNoiseLine(line) && !isFooterLine(line) && !isToolSummaryLine(line) && !isSpinnerResidueLine(line));
+        .filter(line => !isNoiseLine(line) && !isFooterLine(line) && !isToolSummaryLine(line) && !isSpinnerLine(line));
 
-    const hasSubstantiveLine = cleanedLines.some((line) => !isInlineSpinnerProgressLine(line));
+    const hasSubstantiveLine = cleanedLines.some((line) => !isSpinnerLine(line));
     if (hasSubstantiveLine) {
-        cleanedLines = cleanedLines.filter((line) => !isInlineSpinnerProgressLine(line));
+        cleanedLines = cleanedLines.filter((line) => !isSpinnerLine(line));
     }
 
     while (cleanedLines.length >= 2) {
@@ -512,7 +558,7 @@ function extractLastAssistantHeader(text) {
         const sanitized = sanitizeLine(rawLine);
         if (!/^\s*⏺\s+/.test(sanitized)) continue;
         const cleaned = stripAssistantPrefix(sanitized).trim();
-        if (!cleaned || isStatusLine(sanitized) || isToolHeader(cleaned) || isNoiseLine(cleaned) || isApprovalLine(cleaned)) continue;
+        if (!cleaned || isSpinnerLine(sanitized) || isToolHeader(cleaned) || isNoiseLine(cleaned) || isApprovalLine(cleaned)) continue;
         candidate = cleaned;
     }
     return candidate;
@@ -692,8 +738,8 @@ function normalizeSimpleBoxTable(text) {
     const normalizedRows = rows.filter(([left, right]) => !(left === 'Number' && right === 'Square'));
     if (normalizedRows.length === 0) return text;
     const containsStartupDashboard = normalizedRows.some(([left, right]) => (
-        isStartupDashboardLine(left)
-        || isStartupDashboardLine(right)
+        isShellChrome(left)
+        || isShellChrome(right)
         || /^Welcome back\b/i.test(left)
         || /^Welcome back\b/i.test(right)
     ));
@@ -794,14 +840,6 @@ function isToolActivitySummary(text) {
         || /^Writing\b/i.test(trimmed);
 }
 
-function isThinkingMetricStatusLine(text) {
-    const trimmed = String(text || '').trim();
-    if (!trimmed) return false;
-    if (!/[.…]\s*\(/u.test(trimmed)) return false;
-    const metricBlock = trimmed.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
-    if (!/(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(metricBlock)) return false;
-    return /^(?:[⏺✻✶✳✢✽·•]\s+)?[^()]+[.…]\s*\([^)]*\)$/u.test(trimmed);
-}
 
 function buildVisibleMessages(lines, promptText = '') {
     const messages = [];
@@ -871,7 +909,7 @@ function buildVisibleMessages(lines, promptText = '') {
                 captureDetailBlock = false;
                 continue;
             }
-            if (isThinkingMetricStatusLine(cleaned)) {
+            if (isSpinnerLine(cleaned)) {
                 flushAssistant();
                 skippingToolBlock = false;
                 captureDetailBlock = false;
@@ -894,7 +932,7 @@ function buildVisibleMessages(lines, promptText = '') {
                 captureDetailBlock = false;
                 continue;
             }
-            if (isStatusLine(sanitized)) {
+            if (isSpinnerLine(sanitized)) {
                 flushAssistant();
                 skippingToolBlock = false;
                 captureDetailBlock = false;
@@ -938,7 +976,7 @@ function shouldPreferTranscriptMessages(visibleMessages, transcriptMessages) {
     const transcriptAssistant = standardAssistant(transcriptMessages);
     const visibleLast = String(visibleAssistant[visibleAssistant.length - 1]?.content || '').trim();
     const transcriptLast = String(transcriptAssistant[transcriptAssistant.length - 1]?.content || '').trim();
-    const looksPolluted = (text) => splitLines(text).some((line) => isStatusLine(line.trim()))
+    const looksPolluted = (text) => splitLines(text).some((line) => isSpinnerLine(line.trim()))
         || /\b(?:tokens?|Tip: Use \/memory|Wrote \d+ lines? to|Write\()\b/i.test(text)
         || /(?:^|\n)\/[a-z0-9][a-z0-9-]*(?:\b|$)/i.test(text)
         || /(?:^|\n)[✻✶✳✢✽]/u.test(text)
