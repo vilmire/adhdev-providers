@@ -21,11 +21,22 @@ function stripAnsiEscapes(text) {
     .replace(/\x1b(?:[@-Z\\-_])/g, '');
 }
 
+function resolveCarriageReturns(text) {
+  return text.split('\n').map(row => {
+    if (!row.includes('\r')) return row;
+    const segments = row.split('\r');
+    for (let i = segments.length - 1; i >= 0; i -= 1) {
+      if (segments[i].length > 0) return segments[i];
+    }
+    return '';
+  }).join('\n');
+}
+
 function splitLines(text) {
   return stripAnsiEscapes(
-    String(text || '')
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n'),
+    resolveCarriageReturns(
+      String(text || '').replace(/\r\n/g, '\n'),
+    ),
   )
     .replace(/\u0007/g, '')
     .split('\n')
@@ -91,7 +102,7 @@ function findPromptLineIndex(lines) {
 }
 
 function buildScreenSnapshot(text) {
-  const normalizedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const normalizedText = resolveCarriageReturns(String(text || '').replace(/\r\n/g, '\n'));
   const lines = splitLines(normalizedText).map((line, index, arr) => ({
     index,
     fromTop: index,
@@ -156,6 +167,7 @@ function toText(lines, options = {}) {
 }
 
 module.exports = {
+  resolveCarriageReturns,
   splitLines,
   normalizeLineText,
   isHorizontalSeparatorLine,
