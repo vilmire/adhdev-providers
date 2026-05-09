@@ -22,11 +22,27 @@ function stripAnsiEscapes(text) {
         .replace(/\x1b(?:[@-Z\\-_])/g, '');
 }
 
+function resolveCarriageReturns(text) {
+    // Split on \n to get physical rows, then within each row resolve \r-based
+    // overwrite sequences (e.g. animated counters: "100\r200\r300" → "300").
+    // \r\n is already collapsed to \n before this is called.
+    return text.split('\n').map(row => {
+        if (!row.includes('\r')) return row;
+        const segments = row.split('\r');
+        // Each \r resets to column 0 and the next segment overwrites from the left.
+        // Keep the last segment — it is what the terminal actually displays.
+        for (let i = segments.length - 1; i >= 0; i -= 1) {
+            if (segments[i].length > 0) return segments[i];
+        }
+        return '';
+    }).join('\n');
+}
+
 function splitLines(text) {
     return stripAnsiEscapes(
-        String(text || '')
-            .replace(/\r\n/g, '\n')
-            .replace(/\r/g, '\n'),
+        resolveCarriageReturns(
+            String(text || '').replace(/\r\n/g, '\n'),
+        ),
     )
         .replace(/\u0007/g, '')
         .split('\n')
@@ -109,7 +125,7 @@ function findPromptLineIndex(lines) {
 }
 
 function buildScreenSnapshot(text) {
-    const normalizedText = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const normalizedText = resolveCarriageReturns(String(text || '').replace(/\r\n/g, '\n'));
     const lines = splitLines(normalizedText).map((line, index, arr) => ({
         index,
         fromTop: index,
@@ -210,6 +226,7 @@ function toText(lines, options = {}) {
 }
 
 module.exports = {
+    resolveCarriageReturns,
     buildScreenSnapshot,
     getScreen,
     getBufferScreen,
