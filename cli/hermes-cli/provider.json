@@ -208,6 +208,28 @@
       "confirmLabel": "Retry turn"
     }
   ],
+  "capabilities": {
+    "input": {
+      "multipart": true,
+      "mediaTypes": [
+        "text",
+        "image"
+      ],
+      "strategies": [
+        {
+          "mediaType": "image",
+          "strategies": [
+            "resource_link",
+            "text_fallback"
+          ],
+          "native": false,
+          "degradation": [
+            "text_fallback"
+          ]
+        }
+      ]
+    }
+  },
   "binary": "hermes",
   "versionCommand": "hermes version",
   "sendDelayMs": 500,
