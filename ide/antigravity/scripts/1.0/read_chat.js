@@ -196,7 +196,16 @@
             .replace(/[ \t]+\n/g, '\n')
             .replace(/\n{3,}/g, '\n\n')
             .trim();
-        const userBubbles = scroll.querySelectorAll('div[class*="bg-gray-500/10"].select-text, div[class*="bg-gray-500/15"].select-text');
+        // Primary: data-testid="user-input-step" (stable attribute)
+        // Fallback: bg-gray-500/20 wrapper containing whitespace-pre-wrap (structural)
+        // Legacy: bg-gray-500/10 or /15 with select-text (pre-2026 DOM)
+        let userBubbles = scroll.querySelectorAll('[data-testid="user-input-step"]');
+        if (userBubbles.length === 0) {
+            userBubbles = scroll.querySelectorAll('div[class*="bg-gray-500/20"]');
+        }
+        if (userBubbles.length === 0) {
+            userBubbles = scroll.querySelectorAll('div[class*="bg-gray-500/10"].select-text, div[class*="bg-gray-500/15"].select-text');
+        }
         for (const bubble of userBubbles) {
             if (!bubble || bubble.offsetWidth <= 0 || bubble.offsetHeight <= 0) continue;
             const textEl = bubble.querySelector('[class*="whitespace-pre-wrap"]') || bubble.querySelector('p') || bubble;
