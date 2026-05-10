@@ -284,37 +284,64 @@ function looksLikeActiveOutput(lines) {
     return hasContent;
 }
 
-module.exports = function detectStatus(input) {
+// ─── Generating hold duration (ms) after last spinner seen ───────────────────
+// Claude sometimes redraws the screen without a spinner for 1-2 frames between
+// tool steps. Without a hold, detect_status would snap to 'idle' during those
+// frames, causing the daemon to incorrectly believe the turn finished.
+const GENERATING_HOLD_MS = 1500;
+
+module.exports = function detectStatus(state, input) {
     const screen = getScreen(input);
     const screenLines = nonEmpty(screen.lines);
     const tailLines = nonEmpty(getTailScreen(input).lines);
     const activeLines = screenLines.length > 0 ? screenLines : tailLines;
+    const now = Date.now();
+
+    let rawStatus = null;
 
     if (activeLines.length > 0) {
-        // Prefer approval cues from either the virtual screen or the raw tail.
-        // The screen renderer can corrupt Claude's modal text (collapsed words,
-        // missing buttons) while the tail still has the intact actionable UI.
-        if (hasActiveApproval(screenLines) || hasActiveApproval(tailLines)) return 'waiting_approval';
-        if (hasInterruptInputPromptLine(screen)) return 'generating';
-        if (hasEscInterruptFooter(activeLines)) return 'generating';
-        if (hasPromptAdjacentGenerating(screen)) return 'generating';
-        if (hasVisibleCompletedReply(activeLines)) return 'idle';
-        if (hasActiveGenerating(activeLines)) return 'generating';
-        if (hasPromptReadyRegion(screen)) return 'idle';
-        if (takeLast(activeLines, 6).some(isIdlePrompt)) return 'idle';
-        if (takeLast(activeLines, 8).some(isShellChrome)) return 'idle';
-        // No prompt visible + active content = still generating
-        if (looksLikeActiveOutput(activeLines)) return 'generating';
+        if (hasActiveApproval(screenLines) || hasActiveApproval(tailLines)) rawStatus = 'waiting_approval';
+        else if (hasInterruptInputPromptLine(screen)) rawStatus = 'generating';
+        else if (hasEscInterruptFooter(activeLines)) rawStatus = 'generating';
+        else if (hasPromptAdjacentGenerating(screen)) rawStatus = 'generating';
+        else if (hasVisibleCompletedReply(activeLines)) rawStatus = 'idle';
+        else if (hasActiveGenerating(activeLines)) rawStatus = 'generating';
+        else if (hasPromptReadyRegion(screen)) rawStatus = 'idle';
+        else if (takeLast(activeLines, 6).some(isIdlePrompt)) rawStatus = 'idle';
+        else if (takeLast(activeLines, 8).some(isShellChrome)) rawStatus = 'idle';
+        else if (looksLikeActiveOutput(activeLines)) rawStatus = 'generating';
     }
 
-    if (activeLines.length === 0) {
+    if (rawStatus === null && activeLines.length === 0) {
         const tail = String(input?.tail || '');
-        if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) return 'waiting_approval';
-        if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) return 'waiting_approval';
-        if (/esc to (?:interrupt|stop)/i.test(tail)) return 'generating';
-        if (nonEmpty(tail.split(/\r?\n/u)).some(isSpinnerLine)) return 'generating';
-        if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) return 'generating';
+        if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) rawStatus = 'waiting_approval';
+        else if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) rawStatus = 'waiting_approval';
+        else if (/esc to (?:interrupt|stop)/i.test(tail)) rawStatus = 'generating';
+        else if (nonEmpty(tail.split(/\r?\n/u)).some(isSpinnerLine)) rawStatus = 'generating';
+        else if (/[⠂⠐⠒⠓⠦⠴⠶⠷⠿]/.test(tail) && !/accept edits on/i.test(tail)) rawStatus = 'generating';
     }
 
-    return 'idle';
+    if (rawStatus === null) rawStatus = 'idle';
+
+    // ── State-based generating hold ──────────────────────────────────────────
+    // Update lastGeneratingAt whenever we see a hard generating signal.
+    if (state && rawStatus === 'generating') {
+        state.lastGeneratingAt = now;
+    }
+
+    // If rawStatus resolved to idle but we were confidently generating very
+    // recently, hold 'generating' to avoid false-idle snaps during brief
+    // screen-redraw frames where the spinner is temporarily absent.
+    if (state && rawStatus === 'idle' && state.lastGeneratingAt > 0) {
+        const msSinceGenerating = now - state.lastGeneratingAt;
+        if (msSinceGenerating < GENERATING_HOLD_MS) {
+            const hasStrongIdle = takeLast(activeLines, 4).some(isIdlePrompt)
+                && takeLast(activeLines, 6).some(isShellChrome);
+            if (!hasStrongIdle) {
+                return 'generating';
+            }
+        }
+    }
+
+    return rawStatus;
 };

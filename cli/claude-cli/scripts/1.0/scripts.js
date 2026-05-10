@@ -5,15 +5,9 @@
  *   - IDE scripts return JS code strings for CDP evaluate (browser context)
  *   - CLI scripts are Node.js functions that receive PTY buffer and return structured data
  *
- * Each export receives an `input` object:
- *   {
- *     buffer: string,
- *     rawBuffer: string,
- *     recentBuffer: string,
- *     screenText: string,
- *     screen: { lines, promptLineIndex, linesAbovePrompt, linesBelowPrompt, ... },
- *     messages: Array
- *   }
+ * Each export receives (state, input) where:
+ *   - state: opaque object created by createState() once per session; mutate freely
+ *   - input: { buffer, rawBuffer, recentBuffer, screenText, screen, messages, ... }
  * and returns a result conforming to the output contract.
  */
 
@@ -29,25 +23,39 @@ function loadModule(name) {
     catch { return null; }
 }
 
+// ─── State factory ───
+
+/**
+ * Per-session state for claude-cli scripts.
+ * - lastGeneratingAt: timestamp when generating was last confidently detected
+ * - lastApprovalText: normalized text of the last seen approval prompt (dedup)
+ * - spinnerStabilityCount: consecutive generating signals before locking status
+ */
+module.exports.createState = () => ({
+    lastGeneratingAt: 0,
+    lastApprovalText: '',
+    spinnerStabilityCount: 0,
+});
+
 // ─── Core ───
 
 /** Parse full PTY output → ReadChatResult */
-module.exports.parseSession = (input) => { const m = loadModule('parse_session.js'); return m ? m(input) : null; };
-module.exports.parseOutput = (input) => {
+module.exports.parseSession = (state, input) => { const m = loadModule('parse_session.js'); return m ? m(state, input) : null; };
+module.exports.parseOutput = (state, input) => {
     const mod = loadModule('parse_output.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Lightweight status detection (100ms polling) → AgentStatus string */
-module.exports.detectStatus = (input) => {
+module.exports.detectStatus = (state, input) => {
     const mod = loadModule('detect_status.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Parse approval modal from PTY output → ModalInfo | null */
-module.exports.parseApproval = (input) => {
+module.exports.parseApproval = (state, input) => {
     const mod = loadModule('parse_approval.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 module.exports.readNativeHistory = nativeHistory.readClaudeNativeHistory;
@@ -56,31 +64,31 @@ module.exports.listNativeHistory = nativeHistory.listClaudeNativeHistory;
 // ─── Controls ───
 
 /** List available models for the model selector */
-module.exports.listModels = (input) => {
+module.exports.listModels = (state, input) => {
     const mod = loadModule('list_models.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Set the active model via /model command */
-module.exports.setModel = (input) => {
+module.exports.setModel = (state, input) => {
     const mod = loadModule('set_model.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Set effort level via /effort command */
-module.exports.setEffort = (input) => {
+module.exports.setEffort = (state, input) => {
     const mod = loadModule('set_effort.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Start a new session via /clear command */
-module.exports.newSession = (input) => {
+module.exports.newSession = (state, input) => {
     const mod = loadModule('new_session.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
 
 /** Toggle compact output mode via /compact command */
-module.exports.setCompact = (input) => {
+module.exports.setCompact = (state, input) => {
     const mod = loadModule('set_compact.js');
-    return mod ? mod(input) : null;
+    return mod ? mod(state, input) : null;
 };
