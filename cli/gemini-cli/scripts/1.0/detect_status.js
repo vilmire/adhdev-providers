@@ -42,7 +42,9 @@ function isProgressCue(line) {
     return /Waiting for authentication/i.test(value)
         || /Thinking/i.test(value)
         || /Generating/i.test(value)
-        || /esc to (cancel|interrupt|stop)/i.test(value);
+        || /esc to (cancel|interrupt|stop)/i.test(value)
+        || /[\u2800-\u28ff]/.test(value)
+        || /[\u2580-\u259f]/.test(value);
 }
 
 function isIdleCue(line) {
@@ -50,7 +52,10 @@ function isIdleCue(line) {
     if (!value || isProgressCue(value)) return false;
     return /Type your message(?:\s+or\s+@path\/to\/file)?/i.test(value)
         || /^>\s*$/.test(value)
-        || /[›❯]\s*$/.test(value);
+        || /[›❯]\s*$/.test(value)
+        || /\?\s*for\s*shortcuts/i.test(value)
+        || /sandbox/i.test(value)
+        || /Ready\s*\(/i.test(value);
 }
 
 function isAssistantCue(line) {
