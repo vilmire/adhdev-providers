@@ -43,8 +43,7 @@ function isProgressCue(line) {
         || /Thinking/i.test(value)
         || /Generating/i.test(value)
         || /esc to (cancel|interrupt|stop)/i.test(value)
-        || /[\u2800-\u28ff]/.test(value)
-        || /[\u2580-\u259f]/.test(value);
+        || /[\u2800-\u28ff]/.test(value);
 }
 
 function isIdleCue(line) {
