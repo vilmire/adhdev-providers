@@ -63,6 +63,21 @@ function isAssistantCue(line) {
 }
 
 module.exports = function detectStatus(input) {
+    const fs = require('fs');
+    try {
+        const result = _detectStatus(input);
+        fs.appendFileSync('/tmp/gemini-detect.log', JSON.stringify({
+            time: new Date().toISOString(),
+            input: { screenText: input.screenText, tail: input.tail },
+            result
+        }) + '\n');
+        return result;
+    } catch (e) {
+        return 'generating';
+    }
+}
+
+function _detectStatus(input) {
     const screenText = normalizeText(input?.screenText || '');
     const tailText = normalizeText(input?.tail || '');
     const text = screenText.trim() ? screenText : tailText;
@@ -94,4 +109,4 @@ module.exports = function detectStatus(input) {
     if (/workspace\s*\(\/directory\)/i.test(text) || /\/model/i.test(text)) return 'idle';
     if (screenText.trim()) return 'idle';
     return 'idle';
-};
+}
