@@ -129,6 +129,16 @@
   "details": "Terminal only",
   "providerVersion": "1.0.0",
   "contractVersion": 2,
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "manual",
+      "serverName": "adhdev-mesh",
+      "requiresRestart": true,
+      "instructions": "ADHDev will register the adhdev-mesh MCP server in Codex via `codex mcp add` before launching a fresh coordinator session. You can verify with `codex mcp list`.",
+      "template": "codex mcp add {{serverName}} -- {{adhdevMcpCommand}} --repo-mesh {{meshId}}"
+    }
+  },
   "capabilities": {
     "input": {
       "multipart": false,
