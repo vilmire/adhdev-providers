@@ -83,10 +83,6 @@
         "flags": ""
       },
       {
-        "source": "[\u2580\u2584\u258c\u2590\u2591\u2592\u2593\u2588]",
-        "flags": ""
-      },
-      {
         "source": "Thinking",
         "flags": "i"
       },
@@ -174,7 +170,7 @@
       "serverName": "adhdev-mesh",
       "requiresRestart": true,
       "instructions": "ADHDev will register the adhdev-mesh MCP server in Gemini CLI via `gemini mcp add` before launching a fresh coordinator session. You can verify with `gemini mcp list`.",
-      "template": "gemini mcp add {{serverName}} {{adhdevMcpCommand}} --repo-mesh {{meshId}}"
+      "template": "gemini mcp add {{serverName}} {{adhdevMcpCommand}} --mode ipc --repo-mesh {{meshId}}"
     }
   },
   "capabilities": {
