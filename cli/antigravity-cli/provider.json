@@ -1,0 +1,62 @@
+{
+  "type": "antigravity-cli",
+  "name": "Antigravity CLI",
+  "category": "cli",
+  "aliases": [
+    "agy"
+  ],
+  "icon": "🪐",
+  "displayName": "Antigravity CLI",
+  "binary": "agy",
+  "versionCommand": "agy --version",
+  "sendDelayMs": 500,
+  "sendKey": "\r",
+  "submitStrategy": "wait_for_echo",
+  "requirePromptEchoBeforeSubmit": true,
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
+  "spawn": {
+    "command": "agy",
+    "args": [],
+    "shell": true,
+    "env": {}
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "ctrl_c",
+    "shutdownGraceMs": 4000,
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
+  "defaultScriptDir": "scripts/1.0",
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ],
+  "status": "Beta",
+  "details": "Terminal only",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  }
+}
