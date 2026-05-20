@@ -156,10 +156,46 @@ test('antigravity-cli parses a completed visible turn from the current screen', 
   const session = parseSession({ screenText, promptText, messages: [] });
   const expectedMessages = [
     { role: 'user', content: promptText },
-    { role: 'assistant', content: `${promptText}\nADHDEV_AGY_INTERACTIVE_SESSION` },
+    { role: 'assistant', content: 'ADHDEV_AGY_INTERACTIVE_SESSION' },
   ];
 
   assert.equal(result.status, 'idle');
   assert.deepEqual(result.messages, expectedMessages);
   assert.deepEqual(session.messages, expectedMessages);
+});
+
+test('antigravity-cli does not invent assistant transcript from startup chrome', () => {
+  const screenText = [
+    '▄▀▀▄        Antigravity CLI 1.0.0',
+    '▀▀▀▀▀▀       wqalistar@gmail.com (Google AI Ultra)',
+    '▀▀▀▀▀▀▀▀      Claude Sonnet 4.6 (Thinking)',
+    '   ▄▀▀    ▀▀▄     /private/tmp',
+    '  ▄▀▀      ▀▀▄',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────',
+    '>',
+    '────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────',
+    '? for shortcuts',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, messages: [] });
+  assert.equal(result.status, 'idle');
+  assert.deepEqual(result.messages, []);
+});
+
+test('antigravity-cli preserves prior transcript when current screen only shows shell chrome', () => {
+  const priorMessages = [
+    { role: 'user', content: 'previous question' },
+    { role: 'assistant', content: 'previous answer' },
+  ];
+  const screenText = [
+    'Claude Sonnet 4.6 (Thinking)',
+    '/private/tmp/adhdev-agy-manual',
+    '',
+    '? for shortcuts',
+    '>',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, messages: priorMessages });
+  assert.deepEqual(result.messages, priorMessages);
 });

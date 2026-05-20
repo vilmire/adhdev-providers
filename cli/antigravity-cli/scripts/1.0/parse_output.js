@@ -42,6 +42,17 @@ function getLastUserPrompt(input) {
   return '';
 }
 
+function getLastUserPromptFromMessages(messages) {
+  const slice = Array.isArray(messages) ? messages : [];
+  for (let i = slice.length - 1; i >= 0; i -= 1) {
+    const message = slice[i];
+    if (message?.role === 'user' && typeof message.content === 'string' && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+  return '';
+}
+
 function isPromptStart(line) {
   return /^>\s*\S/.test(line || '');
 }
@@ -98,12 +109,87 @@ function shouldKeepAssistantLine(line) {
   return !!text && !isFooterLine(line);
 }
 
+function isLikelyChromeLine(line) {
+  const text = normalize(line);
+  return !text
+    || /^claude\s+sonnet\b/i.test(text)
+    || /^gemini\b/i.test(text)
+    || /^\/([A-Za-z0-9._-]+\/)*[A-Za-z0-9._-]+$/.test(text);
+}
+
+function normalizeMessage(message) {
+  if (!message || (message.role !== 'user' && message.role !== 'assistant')) return null;
+  const content = String(message.content || '').trim();
+  if (!content) return null;
+  return { role: message.role, content };
+}
+
 function pushDeduped(messages, role, content) {
   const text = String(content || '').trim();
   if (!text) return;
   const last = messages[messages.length - 1];
   if (last?.role === role && normalize(last.content) === normalize(text)) return;
   messages.push({ role, content: text });
+}
+
+function findPromptLineIndex(lines, promptText) {
+  const normalizedPrompt = normalize(promptText);
+  if (!normalizedPrompt) return -1;
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (normalize(lines[i]) === normalizedPrompt) return i;
+  }
+  return -1;
+}
+
+function collectMeaningfulLines(screenText) {
+  return splitLines(screenText).filter((line) => {
+    const text = normalize(line);
+    return !!text && !isFooterLine(line) && !isHeaderNoise(line);
+  });
+}
+
+function extractFallbackAssistantText(screenText, promptText) {
+  const meaningfulLines = collectMeaningfulLines(screenText);
+  if (meaningfulLines.length === 0 || !normalize(promptText)) return '';
+
+  const promptIndex = findPromptLineIndex(meaningfulLines, promptText);
+  if (promptIndex >= 0) {
+    return meaningfulLines.slice(promptIndex + 1).join('\n').trim();
+  }
+
+  return meaningfulLines.filter((line) => !isLikelyChromeLine(line)).join('\n').trim();
+}
+
+function mergeMessages(previousMessages, incomingMessages) {
+  const base = Array.isArray(previousMessages)
+    ? previousMessages.map(normalizeMessage).filter(Boolean)
+    : [];
+  const incoming = Array.isArray(incomingMessages)
+    ? incomingMessages.map(normalizeMessage).filter(Boolean)
+    : [];
+
+  if (incoming.length === 0) return base;
+  if (base.length === 0) return incoming;
+
+  let overlap = 0;
+  const maxOverlap = Math.min(base.length, incoming.length);
+  for (let size = maxOverlap; size > 0; size -= 1) {
+    let matches = true;
+    for (let i = 0; i < size; i += 1) {
+      const left = base[base.length - size + i];
+      const right = incoming[i];
+      if (left.role !== right.role || normalize(left.content) !== normalize(right.content)) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) {
+      overlap = size;
+      break;
+    }
+  }
+
+  return base.concat(incoming.slice(overlap));
 }
 
 function extractTranscriptMessages(screenText) {
@@ -139,11 +225,7 @@ function extractTranscriptMessages(screenText) {
       if (shouldKeepAssistantLine(lines[i])) assistantLines.push(lines[i]);
       i += 1;
     }
-    const assistantText = assistantLines.join('\n').trim();
-    const visibleTurnText = assistantText
-      ? `${userLines.join('\n')}\n${assistantText}`
-      : '';
-    pushDeduped(messages, 'assistant', visibleTurnText);
+    pushDeduped(messages, 'assistant', assistantLines.join('\n'));
   }
 
   return messages;
@@ -154,6 +236,7 @@ module.exports = function parseOutput(input) {
   const status = detectStatus(input);
   const activeModal = parseApproval(input);
   const promptText = getLastUserPrompt(input);
+  const previousPromptText = getLastUserPromptFromMessages(input?.messages);
   let messages = extractTranscriptMessages(screenText);
 
   if (activeModal) {
@@ -162,18 +245,17 @@ module.exports = function parseOutput(input) {
 
   if (messages.length === 0) {
     const fallback = [];
-    pushDeduped(fallback, 'user', promptText);
-    if (!activeModal) {
-      const text = splitLines(screenText).filter((line) => !isFooterLine(line) && !isHeaderNoise(line)).join('\n').trim();
-      pushDeduped(fallback, 'assistant', text);
+    if (normalize(promptText) && normalize(promptText) !== normalize(previousPromptText)) {
+      pushDeduped(fallback, 'user', promptText);
     }
+    if (!activeModal) pushDeduped(fallback, 'assistant', extractFallbackAssistantText(screenText, promptText));
     messages = fallback;
   }
 
   return {
     status,
     title: 'Antigravity CLI',
-    messages,
+    messages: mergeMessages(input?.messages, messages),
     activeModal,
   };
 };
