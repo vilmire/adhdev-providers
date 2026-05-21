@@ -290,10 +290,16 @@ function looksLikeActiveOutput(lines) {
 // frames, causing the daemon to incorrectly believe the turn finished.
 const GENERATING_HOLD_MS = 1500;
 
-module.exports = function detectStatus(state, input) {
-    const screen = getScreen(input);
+module.exports = function detectStatus(stateOrInput, input) {
+    // Support both call signatures:
+    //   detectStatus(input)         — stateless (tests, parse_output.js)
+    //   detectStatus(state, input)  — stateful with generating hold (daemon)
+    const effectiveInput = input !== undefined ? input : stateOrInput;
+    const effectiveState = input !== undefined ? stateOrInput : null;
+
+    const screen = getScreen(effectiveInput);
     const screenLines = nonEmpty(screen.lines);
-    const tailLines = nonEmpty(getTailScreen(input).lines);
+    const tailLines = nonEmpty(getTailScreen(effectiveInput).lines);
     const activeLines = screenLines.length > 0 ? screenLines : tailLines;
     const now = Date.now();
 
@@ -313,7 +319,7 @@ module.exports = function detectStatus(state, input) {
     }
 
     if (rawStatus === null && activeLines.length === 0) {
-        const tail = String(input?.tail || '');
+        const tail = String(effectiveInput?.tail || '');
         if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) rawStatus = 'waiting_approval';
         else if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) rawStatus = 'waiting_approval';
         else if (/esc to (?:interrupt|stop)/i.test(tail)) rawStatus = 'generating';
@@ -325,15 +331,15 @@ module.exports = function detectStatus(state, input) {
 
     // ── State-based generating hold ──────────────────────────────────────────
     // Update lastGeneratingAt whenever we see a hard generating signal.
-    if (state && rawStatus === 'generating') {
-        state.lastGeneratingAt = now;
+    if (effectiveState && rawStatus === 'generating') {
+        effectiveState.lastGeneratingAt = now;
     }
 
     // If rawStatus resolved to idle but we were confidently generating very
     // recently, hold 'generating' to avoid false-idle snaps during brief
     // screen-redraw frames where the spinner is temporarily absent.
-    if (state && rawStatus === 'idle' && state.lastGeneratingAt > 0) {
-        const msSinceGenerating = now - state.lastGeneratingAt;
+    if (effectiveState && rawStatus === 'idle' && effectiveState.lastGeneratingAt > 0) {
+        const msSinceGenerating = now - effectiveState.lastGeneratingAt;
         if (msSinceGenerating < GENERATING_HOLD_MS) {
             const hasStrongIdle = takeLast(activeLines, 4).some(isIdlePrompt)
                 && takeLast(activeLines, 6).some(isShellChrome);

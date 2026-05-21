@@ -41,10 +41,23 @@ const { isSpinnerLine, isShellChrome } = (() => {
             || /Claude Code v\d/i.test(t)
             || /^(Sonnet|Opus|Haiku)\b/i.test(t);
     }
+    function _hasMetricBlock(metricBlock) {
+        return /(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(metricBlock);
+    }
     function _isSpinnerMetric(t) {
-        if (!/[.…]\s*\(/u.test(t)) return false;
-        const m = t.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
-        return /(?:\btokens?\b|thought for|[↑↓]|\b\d+(?:\.\d+)?(?:ms|s|m|h)\b)/iu.test(m);
+        // Standard: "text… (metric block)"
+        if (/[.…]\s*\(/u.test(t)) {
+            const m = t.match(/\(([^)]*)\)\s*$/u)?.[1] || '';
+            if (_hasMetricBlock(m)) return true;
+        }
+        // Chopped metric suffix: very short non-punctuated prefix + " (metric block)"
+        // e.g. "emp ( · ↓ 1 tokens)" is a chopped "Contemplating… ( · ↓ 1 tokens)"
+        const suffixMatch = t.match(/^([\p{L}\p{M}\s·…]{0,10})\s*\(([^)]+)\)\s*$/u);
+        if (suffixMatch) {
+            const prefix = suffixMatch[1].trim();
+            if (prefix.length <= 8 && !/[.!?,;:]/.test(prefix) && _hasMetricBlock(suffixMatch[2])) return true;
+        }
+        return false;
     }
     function _isSpinnerLine(t) {
         if (!t || _isShellChrome(t)) return false;
@@ -52,6 +65,9 @@ const { isSpinnerLine, isShellChrome } = (() => {
         if (/^[✻✶✳✢✽⠂⠐⠒⠓⠦⠴⠶⠷⠿]+$/.test(t)) return true;
         if (/^[⠂⠐⠒⠓⠦⠴⠶⠷⠿](?:\s+|$)/.test(t)) return true;
         if (/esc to (cancel|interrupt|stop)/i.test(t)) return true;
+        // Bare word ending with horizontal ellipsis — spinner without glyph prefix
+        // (e.g. single-word TUI animation frames like "g…" partial renders)
+        if (/^[\p{L}\p{M}''\-]{1,30}…$/u.test(t)) return true;
         if (!_hasGlyphPrefix(t)) return false;
         const body = t.replace(/^[⏺✻✶✳✢✽·•]\s+/, '').trim();
         if (!body || body.length > 96) return false;
@@ -105,6 +121,8 @@ function isPromptContinuation(line) {
     if (/^\s+\S/.test(s)) return true;
     // List item continuations
     if (/^\d+[.)]\s+/.test(t) || /^[-*+]\s+/.test(t)) return true;
+    // Very short pure-letter tokens are animation frame fragments, not real prompt wraps
+    if (/^[a-zA-Z]{1,4}$/.test(t)) return false;
     // Plain text with no structural prefix — PTY hard-wrap of prompt at terminal width
     return true;
 }
@@ -340,6 +358,92 @@ function getTranscriptAssistantRegion(text, promptText) {
     return trimRegionBoundaries(lines.slice(promptInfo.endIndex + 1, next ? next.index : lines.length));
 }
 
+// ─── Box-drawing table normalization ─────────────────────────────────────────
+
+function normalizeBoxTable(lines) {
+    // Convert box-drawing table rows (│ col │) to markdown (| col |).
+    // Rows: ┌/├/└ separator rows → skip (we emit our own --- separator).
+    // Returns the normalized lines replacing the block.
+    const boxRow = /^[\s│]*(│[^┌┐└┘├┤┬┴┼]+)+│\s*$/;
+    const boxSep = /^[\s┌┐└┘├┤┬┴┼─]+$/;
+
+    const out = [];
+    let i = 0;
+    while (i < lines.length) {
+        const t = lines[i].trim();
+        if (boxSep.test(t) && /[┌┐└┘├┤┬┴┼]/.test(t)) {
+            // start of a box table block — skip separator, collect data rows
+            i++;
+            const tableRows = [];
+            while (i < lines.length) {
+                const rt = lines[i].trim();
+                if (boxSep.test(rt) && /[┌┐└┘├┤┬┴┼]/.test(rt)) { i++; continue; }
+                if (!boxRow.test(lines[i])) break;
+                const cols = rt.replace(/^│/, '').replace(/│$/, '').split('│').map(c => c.trim());
+                tableRows.push(cols);
+                i++;
+            }
+            if (tableRows.length > 0) {
+                const header = tableRows[0];
+                out.push('| ' + header.join(' | ') + ' |');
+                out.push('| ' + header.map(() => '---').join(' | ') + ' |');
+                for (const row of tableRows.slice(1)) {
+                    out.push('| ' + row.join(' | ') + ' |');
+                }
+            }
+        } else {
+            out.push(lines[i]);
+            i++;
+        }
+    }
+    return out;
+}
+
+function normalizePythonFences(lines) {
+    // Detect unfenced Python code blocks and wrap them in ```python fences.
+    // A Python block starts with an import statement or common Python keywords
+    // preceded by no fence marker, and ends where non-Python prose resumes.
+    const pythonStart = /^(?:import\s+\w|from\s+\w+\s+import|def\s+\w|class\s+\w|#!.*python)/;
+    const pythonLine = /^(?:import\s|from\s|def\s|class\s|return\s|if\s|for\s|while\s|with\s|try:|except|print\(|[a-zA-Z_]\w*\s*=|#[^!]|""")/;
+    const inFence = (line) => /^```/.test(line.trim());
+
+    const out = [];
+    let i = 0;
+    let inFenceBlock = false;
+    while (i < lines.length) {
+        const t = lines[i].trim();
+        if (inFence(lines[i])) { inFenceBlock = !inFenceBlock; out.push(lines[i]); i++; continue; }
+        if (!inFenceBlock && pythonStart.test(t)) {
+            // Collect the block
+            const block = [];
+            while (i < lines.length && !inFence(lines[i])) {
+                const bt = lines[i].trim();
+                if (!bt) { block.push(''); i++; continue; }
+                if (pythonLine.test(bt)) { block.push(lines[i]); i++; continue; }
+                break;
+            }
+            // Trim trailing empty lines
+            while (block.length > 0 && !block[block.length - 1].trim()) block.pop();
+            if (block.length > 0) {
+                out.push('```python');
+                out.push(...block);
+                out.push('```');
+            }
+        } else {
+            out.push(lines[i]);
+            i++;
+        }
+    }
+    return out;
+}
+
+function normalizeAssistantText(text) {
+    let lines = String(text || '').split('\n');
+    lines = normalizeBoxTable(lines);
+    lines = normalizePythonFences(lines);
+    return lines.join('\n');
+}
+
 // ─── Message builders ─────────────────────────────────────────────────────────
 
 function makeAssistant(content) {
@@ -384,6 +488,17 @@ function parseRegion(lines, promptText) {
     let activeTerminalIdx = -1;
 
     function flushAssistant() {
+        // Drop batches that are entirely animation frame fragments (e.g. "El", "E e", "f c")
+        // Artifacts: ≤5 chars, only letters/spaces/ellipsis, no uppercase initial (real words start uppercase)
+        const isArtifact = (t) => t.length <= 5 && /^[a-zA-Z ·…]+$/.test(t) && !/^[A-Z]{2,}/.test(t);
+        if (currentAssistant.length > 0 && currentAssistant.every(l => isArtifact(l.trim()))) {
+            currentAssistant = [];
+            return;
+        }
+        // Strip leading animation artifacts before real content
+        while (currentAssistant.length > 1 && isArtifact(currentAssistant[0].trim())) {
+            currentAssistant.shift();
+        }
         const text = currentAssistant
             .join('\n')
             .replace(/\n{3,}/g, '\n\n')
@@ -392,7 +507,7 @@ function parseRegion(lines, promptText) {
         if (!text) return;
         // Drop if it's entirely a prompt echo
         if (isPromptFragment(text, promptText) && text.length < (normPrompt(promptText).length + 10)) return;
-        messages.push(makeAssistant(text));
+        messages.push(makeAssistant(normalizeAssistantText(text)));
     }
 
     function appendTerminal(line) {
@@ -401,6 +516,8 @@ function parseRegion(lines, promptText) {
         if (!t) return true;
         // Skip transient state lines inside terminal output
         if (/^(?:Running|Queued|Waiting)(?:…|\.\.\.)?$/i.test(t)) return true;
+        // Skip TUI hard-wrap path suffix fragments: mid-word lowercase start + ) pattern
+        if (/^[a-z]\)/.test(t)) return true;
         const msg = messages[activeTerminalIdx];
         if (!msg || msg.kind !== 'terminal') return false;
         msg.content = `${String(msg.content || '').replace(/\s+$/, '')}\n${t}`;
@@ -422,8 +539,12 @@ function parseRegion(lines, promptText) {
         if (/^\s*⏺\s+/.test(s)) {
             const body = s.replace(/^\s*⏺\s+/, '').trim();
 
-            // Spinner metric / ellipsis — pure chrome
-            if (isSpinnerLine(s)) {
+            // Tool activity progress lines (e.g. "Reading 1 file… (ctrl+o to expand)")
+            // must be checked before spinner so they are not swallowed as chrome.
+            const isToolActivity = /^(?:Reading|Searching|Updating|Editing|Writing)\b/i.test(body);
+
+            // Spinner metric / ellipsis — pure chrome (but not tool activity)
+            if (!isToolActivity && isSpinnerLine(s)) {
                 flushAssistant();
                 skippingTool = false;
                 activeTerminalIdx = -1;
@@ -455,6 +576,15 @@ function parseRegion(lines, promptText) {
                     // All other tools: show "Name(args)" as a tool message
                     messages.push(makeTool(body, 'tool', 'Tool'));
                 }
+                continue;
+            }
+
+            // Tool activity progress line (e.g. "Reading 1 file… (ctrl+o to expand)")
+            if (isToolActivity) {
+                flushAssistant();
+                skippingTool = false;
+                activeTerminalIdx = -1;
+                messages.push(makeTool(body, 'tool', 'Tool'));
                 continue;
             }
 
@@ -689,7 +819,14 @@ module.exports = function parseOutput(input) {
         let visiblePrompt = '';
         for (let i = searchEnd; i >= 0; i--) {
             const p = parsePromptLine(visibleLines[i]);
-            if (p) { visiblePrompt = collectPromptText(visibleLines, i).text || p; break; }
+            if (p) {
+                // If this prompt is a structural input box (preceded by separator),
+                // the user is still typing — skip and look for the last submitted prompt.
+                const prevLine = i > 0 ? sanitize(visibleLines[i - 1]).trim() : '';
+                if (/^[─═\-]{10,}$/.test(prevLine)) continue;
+                visiblePrompt = collectPromptText(visibleLines, i).text || p;
+                break;
+            }
         }
         promptText = resolvePromptText(input?.promptText, visiblePrompt, previousMessages);
 
