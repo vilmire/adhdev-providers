@@ -69,9 +69,9 @@ function isFooterLine(line) {
   const text = normalize(line);
   return !text
     || isEmptyPrompt(text)
-    || /^\?\s+for\s+shortcuts$/i.test(text)
+    || /^\?\s+for\s+shortcuts\b/i.test(text)
     || /^thinking for\b/i.test(text)
-    || /^esc to cancel$/i.test(text)
+    || /\besc to cancel\b/i.test(text)
     || /^gemini .*\(high\)$/i.test(text)
     || /^how's the cli experience so far\?/i.test(text)
     || /^\[[0-3]\]\s+good/i.test(text)
@@ -90,7 +90,11 @@ function isHeaderNoise(line) {
     || /google ai ultra/i.test(text)
     || /gemini 3\.5 flash \(high\)/i.test(text)
     || /^signed in as:/i.test(text)
-    || /^welcome to the antigravity cli/i.test(text);
+    || /^welcome to the antigravity cli/i.test(text)
+    || /^yes,\s+i\s+trust\s+this/i.test(text)
+    || /^no,\s+exit/i.test(text)
+    || /^↑\/↓\s+navigate/i.test(text)
+    || /^accessing workspace:/i.test(text);
 }
 
 function shouldStayInUserBlock(line) {
@@ -106,7 +110,11 @@ function shouldStayInUserBlock(line) {
 
 function shouldKeepAssistantLine(line) {
   const text = normalize(line);
-  return !!text && !isFooterLine(line);
+  return !!text
+    && !isFooterLine(line)
+    && !isHeaderNoise(line)
+    && !/^●\s+/.test(text)
+    && !/^⎿\b/.test(text);
 }
 
 function isLikelyChromeLine(line) {
@@ -194,6 +202,8 @@ function mergeMessages(previousMessages, incomingMessages) {
 
 function extractTranscriptMessages(screenText) {
   const lines = splitLines(screenText);
+  // Map from normalized user text → { userIdx, assistantIdx } in messages array
+  const turnIndex = new Map();
   const messages = [];
   let i = 0;
 
@@ -213,7 +223,7 @@ function extractTranscriptMessages(screenText) {
       userLines.push(normalize(lines[i]));
       i += 1;
     }
-    pushDeduped(messages, 'user', userLines.join('\n'));
+    const userText = userLines.join('\n').trim();
 
     const assistantLines = [];
     while (i < lines.length) {
@@ -225,7 +235,28 @@ function extractTranscriptMessages(screenText) {
       if (shouldKeepAssistantLine(lines[i])) assistantLines.push(lines[i]);
       i += 1;
     }
-    pushDeduped(messages, 'assistant', assistantLines.join('\n'));
+    const assistantText = assistantLines.join('\n').trim();
+
+    const key = normalize(userText);
+    if (!key) continue;
+
+    if (turnIndex.has(key)) {
+      // TUI re-render: same user prompt seen again — update the assistant content
+      // with the later (more complete) render, keeping the longer of the two.
+      const { assistantIdx } = turnIndex.get(key);
+      if (assistantIdx >= 0 && assistantText) {
+        const prev = messages[assistantIdx].content;
+        if (assistantText.length > prev.length || !prev) {
+          messages[assistantIdx] = { role: 'assistant', content: assistantText };
+        }
+      }
+    } else {
+      const userIdx = messages.length;
+      messages.push({ role: 'user', content: userText });
+      const assistantIdx = assistantText ? messages.length : -1;
+      if (assistantText) messages.push({ role: 'assistant', content: assistantText });
+      turnIndex.set(key, { userIdx, assistantIdx });
+    }
   }
 
   return messages;

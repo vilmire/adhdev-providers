@@ -199,3 +199,58 @@ test('antigravity-cli preserves prior transcript when current screen only shows 
   const result = parseOutput({ screenText, messages: priorMessages });
   assert.deepEqual(result.messages, priorMessages);
 });
+
+test('antigravity-cli deduplicates TUI redraw: keeps last (longest) assistant content per user turn', () => {
+  // Simulates the TUI scrollback pattern: same user prompt appears twice,
+  // second render has more complete assistant content.
+  // The ● marker ends the user block; everything after is assistant content.
+  const screenText = [
+    '> Hello, world',
+    '● Bash(echo hi)',
+    'Partial answer.',
+    '',
+    '> Hello, world',
+    '● Bash(echo hi)',
+    'Full answer with more content.',
+    '',
+    '>',
+    '? for shortcuts',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, messages: [] });
+  const assistantMessages = result.messages.filter((m) => m.role === 'assistant');
+  assert.equal(assistantMessages.length, 1);
+  assert.match(assistantMessages[0].content, /Full answer with more content/);
+  assert.equal(result.messages.filter((m) => m.role === 'user').length, 1);
+});
+
+test('antigravity-cli multi-turn deduplication: keeps each unique user turn once with latest assistant', () => {
+  const screenText = [
+    '> First question',
+    '● Bash(cmd1)',
+    'First answer.',
+    '',
+    '> Second question',
+    '● Bash(cmd2)',
+    'Partial second answer.',
+    '',
+    '> First question',
+    '● Bash(cmd1)',
+    'First answer.',
+    '',
+    '> Second question',
+    '● Bash(cmd2)',
+    'Complete second answer.',
+    '',
+    '>',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, messages: [] });
+  const users = result.messages.filter((m) => m.role === 'user');
+  const assistants = result.messages.filter((m) => m.role === 'assistant');
+  assert.equal(users.length, 2);
+  assert.equal(assistants.length, 2);
+  assert.equal(users[0].content, 'First question');
+  assert.equal(users[1].content, 'Second question');
+  assert.match(assistants[1].content, /Complete second answer/);
+});
