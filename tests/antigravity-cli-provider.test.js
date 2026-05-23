@@ -11,7 +11,8 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.type, 'antigravity-cli');
   assert.equal(provider.binary, 'agy');
   assert.equal(provider.versionCommand, 'agy --version');
-  assert.equal(provider.spawn.command, 'agy');
+  assert.equal(provider.spawn.command, 'bash');
+  assert.ok(provider.spawn.args[1].includes('agy'), 'spawn args should invoke agy');
   assert.equal(provider.submitStrategy, 'wait_for_echo');
   assert.equal(provider.sendKey, '\r');
   assert.equal(provider.requirePromptEchoBeforeSubmit, true);

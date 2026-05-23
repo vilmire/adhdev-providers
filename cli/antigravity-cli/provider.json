@@ -18,9 +18,12 @@
     "statusActivityHold": 5000
   },
   "spawn": {
-    "command": "agy",
-    "args": [],
-    "shell": true,
+    "command": "bash",
+    "args": [
+      "-c",
+      "_agy_link=\"$(mktemp -d)/adhdev-agy-ws\" && ln -sfn \"{{workingDir}}\" \"$_agy_link\" && cd \"$_agy_link\" && exec agy"
+    ],
+    "shell": false,
     "env": {}
   },
   "resume": {
