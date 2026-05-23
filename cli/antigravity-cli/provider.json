@@ -19,7 +19,7 @@
   },
   "spawn": {
     "command": "agy",
-    "args": [],
+    "args": ["--add-dir", "{{workingDir}}"],
     "shell": true,
     "env": {}
   },
