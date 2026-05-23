@@ -86,7 +86,7 @@ function isHeaderNoise(line) {
     || /^▀▀▀▀▀▀▀▀/.test(text)
     || /^▄▀▀\s+▀▀▄/.test(text)
     || /^▄▀▀\s+▀▀▄\s+\/.*/.test(text)
-    || /antigravity cli 1\.0\.0/i.test(text)
+    || /antigravity cli \d+\.\d+\.\d+/i.test(text)
     || /google ai ultra/i.test(text)
     || /gemini 3\.5 flash \(high\)/i.test(text)
     || /^signed in as:/i.test(text)
