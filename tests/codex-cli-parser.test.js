@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const detectStatus = require('../cli/codex-cli/scripts/1.0/detect_status.js');
 const parseApproval = require('../cli/codex-cli/scripts/1.0/parse_approval.js');
 const parseOutput = require('../cli/codex-cli/scripts/1.0/parse_output.js');
@@ -298,6 +301,57 @@ test('codex detect_status treats startup booting fragments plus a default starte
   );
 });
 
+test('codex detect_status treats post-trust starter prompt as idle startup screen', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.133.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    'Tip: Join the OpenAI community Discord: http://discord.gg/openai',
+    '',
+    '› Summarize recent commits',
+    '',
+    'gpt-5.5 medium · /private/tmp/adhdev-codex-live-verify-reset-2',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: screenText }), 'idle');
+});
+
+test('codex detect_status lets current startup starter prompt beat stale MCP raw output', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.133.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    '› Find and fix a bug in @filename',
+    '',
+    'gpt-5.5 medium · /private/tmp/adhdev-codex-live-verify-reset-3',
+  ].join('\n');
+  const rawBuffer = [
+    '◦ Starting MCP servers (1/2): codex_apps (4s • esc to interrupt)',
+    screenText,
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: screenText, rawBuffer }), 'idle');
+});
+
+test('codex detect_status stays generating while MCP servers are still starting on the startup screen', () => {
+  const screenText = [
+    'OpenAI Codex',
+    '',
+    '◦ Starting MCP servers (1/2): codex_apps (3s • esc to interrupt)',
+    '',
+    '› Find and fix a bug in @filename',
+    '',
+    'gpt-5.5 medium · /private/tmp/adhdev-codex-live-verify',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'generating',
+  );
+});
+
 test('codex detect_status returns idle once the bare prompt is back at the bottom even if older working lines remain on screen', () => {
   assert.equal(
     detectStatus({ screenText: completedTurnScreen, tail: completedTurnTail }),
@@ -309,6 +363,20 @@ test('codex detect_status returns idle when a follow-up reply ends and the idle 
   assert.equal(
     detectStatus({ screenText: followupTurnScreen, tail: followupTurnTail }),
     'idle',
+  );
+});
+
+test('codex detect_status stays generating for active progress glyph without an idle prompt', () => {
+  const activeScreen = [
+    '› Please verify raw CLI transcript fidelity in this workspace.',
+    '',
+    '• I’ll create the exact script in tmp/adhdev_cli_verify.py, then run the',
+    '◦',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText: activeScreen, tail: activeScreen }),
+    'generating',
   );
 });
 
@@ -565,6 +633,25 @@ test('codex detect_status trusts the active ANSI idle prompt over stale recentBu
   assert.equal(detectStatus({ screenText, tail: staleRecentBuffer }), 'idle');
 });
 
+test('codex detect_status trusts active idle footer over overprinted working residue', () => {
+  const screenText = [
+    '› Confirm the previous raw verification in one short paragraph.',
+    '•   rk',
+    '',
+    '• Confirmed: tmp/adhdev_cli_verify.py was created and executed successfully,',
+    '  preserving UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧ and 1,4,9,16,25.',
+    '› gpt-5.5 medium · /private/tmp/adhdev-codex-live-verify-reset-4',
+  ].join('\n');
+  const staleRecentBuffer = [
+    '• Working (0s • esc to interrupt)',
+    'W    ng',
+    'Wo    g',
+    '• W',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: staleRecentBuffer }), 'idle');
+});
+
 test('codex parse_output clears streaming and drops spinner residue when idle prompt is visible after completion', () => {
   const prompt = '3,6,9 게임을 만들고 self-test marker를 출력하세요.';
   const screenText = [
@@ -745,4 +832,86 @@ test('codex parser and status preserve cursor-forward spaces while removing OSC/
 
   assert.equal(detectStatus({ screenText }), 'idle');
   assert.equal(assistant?.content, 'hello world done');
+});
+
+test('codex parse_output prefers workspace-matched native JSONL over folded TUI transcript', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-work-'));
+  process.env.HOME = home;
+  try {
+    const sessionId = '11111111-2222-4333-8444-555555555555';
+    const sessionDir = path.join(home, '.codex', 'sessions', '2026', '05', '25');
+    fs.mkdirSync(sessionDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionDir, `rollout-${sessionId}.jsonl`), [
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-05-25T00:00:00.000Z', payload: { id: sessionId, cwd: workspace } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-25T00:00:01.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'make snake' }] } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-25T00:00:02.000Z', payload: { type: 'function_call_output', output: 'LINE_1\nLINE_2\nADHDEV_SNAKE_DONE_CODEX_CLI' } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-25T00:00:03.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'Created snake_game.py and verified ADHDEV_SNAKE_DONE_CODEX_CLI.' }] } }),
+    ].join('\n') + '\n', 'utf-8');
+
+    const screenText = [
+      '› make snake',
+      '• Ran python3 snake_game.py --self-test',
+      ' └ LINE_1',
+      '   … +2 lines (ctrl + t to view transcript)',
+      '• Created snake_game.py.',
+      '›',
+    ].join('\n');
+
+    const result = parseOutput({
+      workspace,
+      workingDir: workspace,
+      screenText,
+      buffer: screenText,
+      messages: [{ role: 'user', content: 'make snake' }],
+    });
+    const joined = result.messages.map(m => m.content).join('\n\n');
+
+    assert.equal(result.providerSessionId, sessionId);
+    assert.equal(result.transcriptAuthority, 'provider');
+    assert.equal(result.coverage, 'full');
+    assert.match(joined, /ADHDEV_SNAKE_DONE_CODEX_CLI/);
+    assert.doesNotMatch(joined, /… \+2 lines/);
+  } finally {
+    if (originalHome === undefined) delete process.env.HOME;
+    else process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test('codex detects rate-limit model switch dialog from raw buffer as approval', () => {
+  const screenText = [
+    '› Please verify raw CLI transcript fidelity',
+    '',
+    '◦',
+    '',
+    "■ You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro),",
+    'visit https://chatgpt.com/codex/settings/usage to purchase more credits or try',
+    'again at May 26th, 2026 1:46 AM.',
+    '',
+    '  Approaching rate limits',
+  ].join('\n');
+  const rawBuffer = [
+    'Approaching rate limits',
+    'Switch to gpt-5.4-mini for lower credit usage?',
+    '› 1. Switch to gpt-5.4-mini                 Small, fast, and cost-efficient',
+    '                                            model for simpler coding tasks.',
+    '2. Keep current model',
+    '3. Keep current model (never show again)    Hide future rate limit reminders',
+    'Press enter to confirm or esc to go back',
+  ].join('\n');
+
+  const approval = parseApproval({ screenText, rawBuffer });
+  const parsed = parseOutput({ screenText, rawBuffer, buffer: screenText, messages: [{ role: 'user', content: 'Please verify raw CLI transcript fidelity' }] });
+
+  assert.equal(detectStatus({ screenText, rawBuffer }), 'waiting_approval');
+  assert.deepEqual(approval?.buttons.slice(0, 3), [
+    'Switch to gpt-5.4-mini Small, fast, and cost-efficient model for simpler coding tasks.',
+    'Keep current model',
+    'Keep current model (never show again) Hide future rate limit reminders',
+  ]);
+  assert.equal(parsed.status, 'waiting_approval');
+  assert.equal(parsed.activeModal?.buttons.length, 3);
 });

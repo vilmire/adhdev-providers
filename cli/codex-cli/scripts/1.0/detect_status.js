@@ -26,20 +26,23 @@ function text(input, key) {
 
 // ─── Matchers ────────────────────────────────────
 
-const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!/i;
+const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
 const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s+\S|Approve and run now|Always approve this session/i;
 const APPROVAL_FOOTER_RE = /Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 
 const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i;
+const GENERATING_MCP_START_RE = /Starting MCP servers?[^\n]*(?:\(\d+s\b|esc to interrupt|[◦◐◑◒◓◔◕◉●])/i;
 const GENERATING_ESC_RE = /Esc to interrupt/i;
 const GENERATING_BRAILLE_RE = /[⠁-⣿]/;
+const GENERATING_PROGRESS_GLYPH_RE = /(?:^|\n)\s*[◦◐◑◒◓◔◕◉●]\s*(?:$|\n|[A-Z[(])/;
 const GENERATING_PARTIAL_WORK_RE = /(?:^|\s)•\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)\b/i;
 
 const IDLE_SEND_RE = /⏎\s+send/i;
 const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
 const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|gpt-[^\n]*?·\s*\/)/i;
 const WELCOME_RE = /OpenAI Codex/i;
-const STARTUP_RE = /To get started, describe a task|model:\s+.*directory:\s+|Tip:\s+(?:New Try the Codex App|Use \/skills)/is;
+const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
+const STARTUP_RE = /To get started, describe a task/is;
 
 // ─── Detection ───────────────────────────────────
 
@@ -74,7 +77,9 @@ function hasGenerating(lines, raw) {
     }
     
     if (GENERATING_ESC_RE.test(block)) return true;
+    if (GENERATING_MCP_START_RE.test(block)) return true;
     if (GENERATING_SPINNER_RE.test(block)) return true;
+    if (GENERATING_PROGRESS_GLYPH_RE.test(block)) return true;
     if (GENERATING_BRAILLE_RE.test(block) && /(?:Working|Thinking|Esc to interrupt|Generating)/i.test(block)) return true;
     if (GENERATING_PARTIAL_WORK_RE.test(rawText || block)) return true;
     return false;
@@ -84,7 +89,9 @@ function hasReadyPrompt(raw) {
     const rawText = String(raw || '');
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
     const recent = lines.slice(-8);
-    return recent.some(line => IDLE_SEND_RE.test(line) || IDLE_PROMPT_LINE_RE.test(line));
+    const recentBlock = recent.join('\n');
+    return recent.some(line => IDLE_SEND_RE.test(line) || IDLE_PROMPT_LINE_RE.test(line))
+        || IDLE_FOOTER_RE.test(recentBlock);
 }
 
 function hasIdle(raw) {
@@ -112,7 +119,14 @@ function hasIdle(raw) {
         return true;
     }
 
-    if (WELCOME_RE.test(rawText) && STARTUP_RE.test(rawText)) return true;
+    if (
+        WELCOME_RE.test(rawText)
+        && (STARTUP_RE.test(rawText) || lines.some(line => STARTER_PROMPT_RE.test(line)))
+        && !GENERATING_ESC_RE.test(rawText)
+        && !GENERATING_MCP_START_RE.test(rawText)
+        && !GENERATING_SPINNER_RE.test(rawText)
+        && !GENERATING_PROGRESS_GLYPH_RE.test(rawText)
+    ) return true;
     
     // Added for Gemini/Codex generic readiness:
     if (/Ready\s*\(/i.test(rawText)) return true;
@@ -121,19 +135,35 @@ function hasIdle(raw) {
     return false;
 }
 
+function hasStartupIdleScreen(raw) {
+    const rawText = String(raw || '');
+    if (!WELCOME_RE.test(rawText)) return false;
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const hasStartupPrompt = STARTUP_RE.test(rawText) || lines.some(line => STARTER_PROMPT_RE.test(line));
+    if (!hasStartupPrompt) return false;
+    if (GENERATING_ESC_RE.test(rawText)) return false;
+    if (GENERATING_MCP_START_RE.test(rawText)) return false;
+    if (GENERATING_SPINNER_RE.test(rawText)) return false;
+    if (GENERATING_PROGRESS_GLYPH_RE.test(rawText)) return false;
+    return true;
+}
+
 // ─── Export ──────────────────────────────────────
 
 module.exports = function detectStatus(input) {
     const screen = text(input, 'screenText');
     const tail = text(input, 'tail');
-    const visible = screen.trim() || tail.trim();
+    const raw = text(input, 'rawBuffer');
+    const visible = screen.trim() || tail.trim() || raw.trim();
     if (!visible) return 'idle';
 
-    const lines = (screen || tail).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    const recentRaw = tail || screen;
+    const combined = [screen, tail, raw].filter(Boolean).join('\n');
+    const lines = combined.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const recentRaw = raw || tail || screen;
 
     if (hasApproval(lines)) return 'waiting_approval';
     if (screen && hasReadyPrompt(screen)) return 'idle';
+    if (screen && hasStartupIdleScreen(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
     if (hasIdle(screen || tail)) return 'idle';
     if (tail && hasIdle(tail)) return 'idle';

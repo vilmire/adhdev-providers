@@ -25,6 +25,18 @@ function splitLines(text) {
         .map(l => l.replace(/\s+$/, ''));
 }
 
+function dedupeNormalizedLines(lines) {
+    const seen = new Set();
+    const out = [];
+    for (const rawLine of lines) {
+        const key = normalize(rawLine);
+        if (key && seen.has(key)) continue;
+        if (key) seen.add(key);
+        out.push(rawLine);
+    }
+    return out;
+}
+
 function normalize(line) {
     return stripAnsi(line)
         .replace(/\u0007/g, '')
@@ -39,7 +51,7 @@ function stripLeadMarker(s) {
 
 // ─── Line classifiers ───────────────────────────
 
-const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!/i;
+const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
 const BUTTON_RE = /^\d+\.\s+/;
 const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
@@ -60,8 +72,11 @@ function normalizeButton(line) {
 
 module.exports = function parseApproval(input) {
     const screen = String(input?.screenText || '');
-    const text = screen || String(input?.buffer || input?.tail || '');
-    const lines = splitLines(text);
+    const text = [screen, input?.rawBuffer, input?.buffer, input?.tail]
+        .map(value => String(value || ''))
+        .filter(Boolean)
+        .join('\n');
+    const lines = dedupeNormalizedLines(splitLines(text));
     if (lines.length === 0) return null;
 
     // Check if there's actually an approval screen visible

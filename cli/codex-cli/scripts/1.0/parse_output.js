@@ -15,6 +15,8 @@
 const detectStatus = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
 const { extractControlValues } = require('./control_helpers.js');
+let nativeHistory = null;
+try { nativeHistory = require('../../../_shared/native_history.js'); } catch { nativeHistory = null; }
 
 // ─── Helpers ─────────────────────────────────────
 
@@ -101,6 +103,7 @@ function isStatusLine(l) {
 
 function isApprovalLine(l) {
     return /Do you trust the contents|Working with untrusted|You are running Codex in|Allow Codex to|Allow command\?|Press Enter to (?:continue|confirm)|Esc to cancel/i.test(l)
+        || /Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage|You've hit your usage limit/i.test(l)
         || /^(?:[>▌›❯]\s*)?\d+\.\s+\S/.test(l)
         || /Approve and run now|Always approve this session/i.test(l);
 }
@@ -257,6 +260,24 @@ function normalizeMessage(message) {
         content: typeof message?.content === 'string' ? message.content.trim() : String(message?.content || '').trim(),
         timestamp: message?.timestamp,
     };
+}
+
+function normalizeNativeMessage(message) {
+    const normalized = normalizeMessage(message);
+    if (!normalized.content || normalized.kind === 'session_start' || normalized.role === 'system') return null;
+    return normalized;
+}
+
+function collectNativeMessages(input, fallbackSessionId) {
+    if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') return { messages: [], providerSessionId: fallbackSessionId || '' };
+    const workspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
+    const historySessionId = String(input?.historySessionId || input?.sessionId || input?.args?.historySessionId || input?.args?.sessionId || fallbackSessionId || '').trim();
+    if (!workspace && !historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
+    const records = Array.isArray(result?.messages) ? result.messages : [];
+    const messages = records.map(normalizeNativeMessage).filter(Boolean);
+    const resolvedSessionId = String(records.find(record => record?.historySessionId)?.historySessionId || historySessionId || '').trim();
+    return { messages: dedupeMessages(messages), providerSessionId: resolvedSessionId || fallbackSessionId || '' };
 }
 
 function comparableText(message) {
@@ -497,6 +518,8 @@ function parseOutput(input) {
     const activeModal = status === 'waiting_approval'
         ? parseApproval({ screenText, buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
         : null;
+    const visibleSessionId = extractSessionId(input?.rawBuffer, transcript, screenText);
+    const nativeSession = collectNativeMessages(input, visibleSessionId);
 
     // During approval or pre-prompt startup, return current messages unchanged except for a visible approval bubble.
     if (status === 'waiting_approval' || (!hasUserPrompt && isStartupScreen(transcript))) {
@@ -510,7 +533,7 @@ function parseOutput(input) {
             messages: toMessageObjects(visibleMessages, status),
             activeModal,
             ...(controlValues ? { controlValues } : {}),
-            providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
+            providerSessionId: nativeSession.providerSessionId || visibleSessionId || undefined,
         };
     }
 
@@ -524,7 +547,10 @@ function parseOutput(input) {
     const screenMessages = collectVisibleMessages(scopedScreen || screenText);
     const bufferMessages = collectVisibleMessages(scopedBuffer || buffer);
     const recentMessages = collectVisibleMessages(sliceAfterPrompt(tail, promptScope) || tail);
-    const currentMessages = chooseRicherMessages(screenMessages, bufferMessages, recentMessages);
+    const tuiMessages = chooseRicherMessages(screenMessages, bufferMessages, recentMessages);
+    const currentMessages = nativeSession.messages.length > 0
+        ? (status === 'idle' ? nativeSession.messages : chooseRicherMessages(nativeSession.messages, tuiMessages))
+        : tuiMessages;
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
     const fromRecent = collectAssistantText(sliceAfterPrompt(tail, promptScope) || tail);
@@ -544,6 +570,7 @@ function parseOutput(input) {
             messages: toMessageObjects(previousMessages, status),
             activeModal,
             ...(controlValues ? { controlValues } : {}),
+            providerSessionId: nativeSession.providerSessionId || visibleSessionId || undefined,
         };
     }
 
@@ -558,7 +585,8 @@ function parseOutput(input) {
         messages: toMessageObjects(messages, status),
         activeModal,
         ...(controlValues ? { controlValues } : {}),
-        providerSessionId: extractSessionId(input?.rawBuffer, transcript, screenText) || undefined,
+        providerSessionId: nativeSession.providerSessionId || visibleSessionId || undefined,
+        ...(nativeSession.messages.length > 0 ? { transcriptAuthority: 'provider', coverage: 'full' } : {}),
     };
 }
 

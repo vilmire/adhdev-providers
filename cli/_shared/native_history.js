@@ -33,6 +33,19 @@ function isPathInside(root, target) {
   return targetPath === rootPath || targetPath.startsWith(rootPath + path.sep);
 }
 
+function normalizeWorkspacePath(value) {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return '';
+  const resolved = path.resolve(raw);
+  try { return fs.realpathSync.native ? fs.realpathSync.native(resolved) : fs.realpathSync(resolved); } catch { return resolved; }
+}
+
+function workspacePathsMatch(left, right) {
+  const a = normalizeWorkspacePath(left);
+  const b = normalizeWorkspacePath(right);
+  return !!a && !!b && a === b;
+}
+
 function listFilesRecursive(root, predicate) {
   const files = [];
   const stack = [root];
@@ -306,17 +319,23 @@ function readCodexSessionMeta(filePath) {
 
 function resolveCodexSessionTranscriptPath(historySessionId, workspace) {
   const normalized = normalizeHistorySessionId(historySessionId);
-  if (!normalized || !isUuidLikeSessionId(normalized)) return null;
+  if (normalized && !isUuidLikeSessionId(normalized)) return null;
   const root = path.join(os.homedir(), '.codex', 'sessions');
   if (!fs.existsSync(root)) return null;
   const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
   const candidates = [];
-  for (const sourcePath of listFilesRecursive(root, (_entryPath, entry) => entry.isFile() && entry.name.endsWith('.jsonl') && entry.name.includes(normalized))) {
+  if (!normalized && !normalizedWorkspace) return null;
+  for (const sourcePath of listFilesRecursive(root, (_entryPath, entry) => {
+    if (!entry.isFile() || !entry.name.endsWith('.jsonl')) return false;
+    return !normalized || entry.name.includes(normalized);
+  })) {
     const meta = readCodexSessionMeta(sourcePath);
     const metaSessionId = String(meta?.id || '').trim();
-    if (metaSessionId && metaSessionId !== normalized) continue;
+    if (normalized && metaSessionId && metaSessionId !== normalized) continue;
     const metaWorkspace = String(meta?.cwd || '').trim();
-    candidates.push({ path: sourcePath, mtimeMs: statMtimeMs(sourcePath), workspaceMatches: !!normalizedWorkspace && metaWorkspace === normalizedWorkspace, metaMatches: metaSessionId === normalized });
+    const workspaceMatches = !!normalizedWorkspace && workspacePathsMatch(metaWorkspace, normalizedWorkspace);
+    if (!normalized && !workspaceMatches) continue;
+    candidates.push({ path: sourcePath, mtimeMs: statMtimeMs(sourcePath), workspaceMatches, metaMatches: !!normalized && metaSessionId === normalized });
   }
   candidates.sort((a, b) => Number(b.workspaceMatches) - Number(a.workspaceMatches) || Number(b.metaMatches) - Number(a.metaMatches) || b.mtimeMs - a.mtimeMs);
   return candidates[0]?.path || null;
@@ -373,7 +392,9 @@ function resolveCodexSession(sessionId, workspace) {
   const sourcePath = resolveCodexSessionTranscriptPath(normalized, workspace);
   if (!sourcePath) return null;
   const meta = readCodexSessionMeta(sourcePath);
-  return { sessionId: normalized, historySessionId: normalized, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), workspace: String(meta?.cwd || workspace || '').trim() || undefined };
+  const resolvedSessionId = String(meta?.id || normalized || '').trim();
+  if (!isUuidLikeSessionId(resolvedSessionId)) return null;
+  return { sessionId: resolvedSessionId, historySessionId: resolvedSessionId, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), workspace: String(meta?.cwd || workspace || '').trim() || undefined };
 }
 
 function listCodexSessions() {
