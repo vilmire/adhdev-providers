@@ -362,7 +362,7 @@
       "configPathCommand": "hermes config path",
       "requiresRestart": true,
       "instructions": "ADHDev writes the adhdev-mesh MCP server into Hermes config.yaml under mcp_servers before launching a fresh Hermes coordinator session.",
-      "template": "mcp_servers:\n  {{serverName}}:\n    command: {{adhdevMcpCommand}}\n    args:\n      - --repo-mesh\n      - {{meshId}}\n    enabled: true\n"
+      "template": "mcp_servers:\n  {{serverName}}:\n    command: {{adhdevMcpCommand}}\n    args:\n      - mcp\n      - --mode\n      - ipc\n      - --repo-mesh\n      - {{meshId}}\n    enabled: true\n"
     }
   },
   "canonicalHistory": {
