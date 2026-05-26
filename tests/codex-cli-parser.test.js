@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const detectStatus = require('../cli/codex-cli/scripts/1.0/detect_status.js');
+const codexScripts = require('../cli/codex-cli/scripts/1.0/scripts.js');
 const parseApproval = require('../cli/codex-cli/scripts/1.0/parse_approval.js');
 const parseOutput = require('../cli/codex-cli/scripts/1.0/parse_output.js');
 
@@ -357,6 +358,71 @@ test('codex detect_status returns idle once the bare prompt is back at the botto
     detectStatus({ screenText: completedTurnScreen, tail: completedTurnTail }),
     'idle',
   );
+});
+
+test('codex provider detectStatus waits for 2s of unchanged idle text before leaving generating', () => {
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const input = {
+    screenText: completedTurnScreen,
+    tail: completedTurnTail,
+    rawBuffer: completedTurnScreen,
+    isWaitingForResponse: true,
+    now: 10_000,
+  };
+
+  assert.equal(codexScripts.detectStatus(state, input), 'generating');
+  assert.equal(codexScripts.detectStatus(state, { ...input, now: 11_999 }), 'generating');
+  assert.equal(codexScripts.detectStatus(state, { ...input, now: 12_000 }), 'idle');
+  assert.equal(codexScripts.detectStatus(state, { ...input, now: 12_100 }), 'idle');
+});
+
+test('codex provider detectStatus resets the idle settle timer when visible text changes', () => {
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const input = {
+    screenText: completedTurnScreen,
+    tail: completedTurnTail,
+    rawBuffer: completedTurnScreen,
+    isWaitingForResponse: true,
+    now: 20_000,
+  };
+
+  assert.equal(codexScripts.detectStatus(state, input), 'generating');
+  assert.equal(codexScripts.detectStatus(state, {
+    ...input,
+    screenText: `${completedTurnScreen}\nredraw tick`,
+    rawBuffer: `${completedTurnScreen}\nredraw tick`,
+    now: 22_100,
+  }), 'generating');
+  assert.equal(codexScripts.detectStatus(state, {
+    ...input,
+    screenText: `${completedTurnScreen}\nredraw tick`,
+    rawBuffer: `${completedTurnScreen}\nredraw tick`,
+    now: 24_100,
+  }), 'idle');
+});
+
+test('codex provider parseSession applies the same idle settle contract as detectStatus', () => {
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const input = {
+    screenText: completedTurnScreen,
+    buffer: completedTurnScreen,
+    recentBuffer: completedTurnTail,
+    tail: completedTurnTail,
+    rawBuffer: completedTurnScreen,
+    messages: [],
+    isWaitingForResponse: true,
+    now: 30_000,
+  };
+
+  const first = codexScripts.parseSession(state, input);
+  assert.equal(first.status, 'generating');
+
+  const settled = codexScripts.parseSession(state, { ...input, now: 32_000 });
+  assert.equal(settled.status, 'idle');
+  assert.ok(settled.messages.some(message => message.role === 'assistant'));
 });
 
 test('codex detect_status returns idle when a follow-up reply ends and the idle footer reappears after stale working fragments', () => {
