@@ -6,25 +6,27 @@ const parseOutput = require('../cli/codex-cli/scripts/1.0/parse_output.js');
 const listModels = require('../cli/codex-cli/scripts/1.0/list_models.js');
 const setFast = require('../cli/codex-cli/scripts/1.0/set_fast.js');
 const openModelPicker = require('../cli/codex-cli/scripts/1.0/open_model_picker.js');
+const openReasoningPicker = require('../cli/codex-cli/scripts/1.0/open_reasoning_picker.js');
 
-test('codex-cli provider exposes explicit controls without unsafe model/reasoning selectors', () => {
+test('codex-cli provider exposes model/reasoning picker actions without unsafe selectors', () => {
   assert.deepEqual(
     (provider.controls || []).map(control => [control.id, control.type]),
     [
-      ['model', 'display'],
-      ['reasoning', 'display'],
-      ['fast', 'toggle'],
       ['model_picker', 'action'],
+      ['reasoning_picker', 'action'],
+      ['fast', 'toggle'],
     ],
   );
   assert.equal(provider.capabilities.controls.typedResults, true);
 
-  const model = provider.controls.find(control => control.id === 'model');
-  const reasoning = provider.controls.find(control => control.id === 'reasoning');
-  assert.equal(model.setScript, undefined);
-  assert.equal(reasoning.setScript, undefined);
-  assert.equal(model.readFrom, 'model');
-  assert.equal(reasoning.readFrom, 'reasoning');
+  const modelPicker = provider.controls.find(control => control.id === 'model_picker');
+  const reasoningPicker = provider.controls.find(control => control.id === 'reasoning_picker');
+  assert.equal(modelPicker.setScript, undefined);
+  assert.equal(reasoningPicker.setScript, undefined);
+  assert.equal(modelPicker.invokeScript, 'openModelPicker');
+  assert.equal(reasoningPicker.invokeScript, 'openReasoningPicker');
+  assert.equal(modelPicker.readFrom, 'model');
+  assert.equal(reasoningPicker.readFrom, 'reasoning');
 });
 
 test('codex-cli parse_output surfaces model, reasoning, and fast from session header', () => {
@@ -107,5 +109,13 @@ test('codex-cli model action sends only the documented native picker command', (
     ok: true,
     command: { type: 'pty_write', text: '/model', enterCount: 2 },
     effects: [{ type: 'toast', toast: { level: 'info', message: 'Opened Codex model picker in the terminal.' } }],
+  });
+});
+
+test('codex-cli reasoning action sends only the documented native picker command', () => {
+  assert.deepEqual(openReasoningPicker(), {
+    ok: true,
+    command: { type: 'pty_write', text: '/reasoning', enterCount: 2 },
+    effects: [{ type: 'toast', toast: { level: 'info', message: 'Opened Codex reasoning picker in the terminal.' } }],
   });
 });
