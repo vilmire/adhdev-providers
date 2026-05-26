@@ -95,3 +95,4 @@ module.exports.listNativeHistory = nativeHistory.listCodexNativeHistory;
 module.exports.listModels = (state, input) => { const m = loadModule('list_models.js'); return m ? m(input) : null; };
 module.exports.setFast = (state, input) => { const m = loadModule('set_fast.js'); return m ? m(input) : null; };
 module.exports.openModelPicker = (state, input) => { const m = loadModule('open_model_picker.js'); return m ? m(input) : null; };
+module.exports.openReasoningPicker = (state, input) => { const m = loadModule('open_reasoning_picker.js'); return m ? m(input) : null; };

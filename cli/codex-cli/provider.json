@@ -158,22 +158,26 @@
   },
   "controls": [
     {
-      "id": "model",
-      "type": "display",
+      "id": "model_picker",
+      "type": "action",
       "label": "Model",
       "icon": "\ud83e\udd16",
       "placement": "bar",
       "order": 10,
-      "readFrom": "model"
+      "resultDisplay": "inline",
+      "readFrom": "model",
+      "invokeScript": "openModelPicker"
     },
     {
-      "id": "reasoning",
-      "type": "display",
+      "id": "reasoning_picker",
+      "type": "action",
       "label": "Reasoning",
       "icon": "\ud83e\udde0",
       "placement": "bar",
       "order": 20,
-      "readFrom": "reasoning"
+      "resultDisplay": "inline",
+      "readFrom": "reasoning",
+      "invokeScript": "openReasoningPicker"
     },
     {
       "id": "fast",
@@ -185,15 +189,6 @@
       "defaultValue": false,
       "setScript": "setFast",
       "readFrom": "fast"
-    },
-    {
-      "id": "model_picker",
-      "type": "action",
-      "label": "Model",
-      "icon": "\u2318",
-      "placement": "bar",
-      "order": 40,
-      "invokeScript": "openModelPicker"
     }
   ]
 }

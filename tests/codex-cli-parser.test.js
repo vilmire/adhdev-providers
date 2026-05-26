@@ -981,3 +981,167 @@ test('codex detects rate-limit model switch dialog from raw buffer as approval',
   assert.equal(parsed.status, 'waiting_approval');
   assert.equal(parsed.activeModal?.buttons.length, 3);
 });
+
+// ─── Regression: non-gpt-* model idle detection ──────────────────────────────
+
+test('detect_status: idle footer with o3 model is recognized as idle', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.140.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    '› Summarize recent commits',
+    '',
+    'o3 · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'idle',
+    'o3 model footer should be recognized as idle',
+  );
+});
+
+test('detect_status: idle footer with o4-mini model is recognized as idle', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.140.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    '› Summarize recent commits',
+    '',
+    'o4-mini · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'idle',
+    'o4-mini model footer should be recognized as idle',
+  );
+});
+
+test('detect_status: idle footer with codex-mini-latest model is recognized as idle', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.140.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    '› Summarize recent commits',
+    '',
+    'codex-mini-latest · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'idle',
+    'codex-mini-latest footer should be recognized as idle',
+  );
+});
+
+test('detect_status: o3 model footer after working output correctly resolves to idle', () => {
+  const screenText = [
+    '• Working on something',
+    '',
+    '• Done with the task now',
+    '',
+    '›',
+    '',
+    'o3 · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+  const tail = [
+    'Working(5s',
+    '• Done with the task now',
+    '›',
+    'o3 · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail }),
+    'idle',
+    'idle footer with o3 should win over stale working fragment',
+  );
+});
+
+test('detect_status: o4-mini model with reasoning level in footer is idle', () => {
+  const screenText = [
+    '› What is 2+2?',
+    '',
+    '• 4',
+    '',
+    '›',
+    '',
+    'o4-mini medium · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'idle',
+    'o4-mini with reasoning level in footer should be idle',
+  );
+});
+
+test('detect_status: generating is still correctly detected for o3 while Esc to interrupt is present', () => {
+  const screenText = [
+    '• Working (12s • esc to interrupt)',
+    '',
+    '• Processing your request...',
+    '',
+    'o3 · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({ screenText, tail: screenText }),
+    'generating',
+    'Esc to interrupt beats idle footer even with o3 model',
+  );
+});
+
+// ─── Regression: model/reasoning picker action scripts ───────────────────────
+// Codex CLI uses interactive terminal pickers (/model, /reasoning) rather than
+// deterministic programmatic set commands. Controls are action buttons, not selects.
+
+test('open_model_picker: returns pty_write /model command with toast effect', () => {
+  const openModelPicker = require('../cli/codex-cli/scripts/1.0/open_model_picker.js');
+  const result = openModelPicker();
+  assert.equal(result.ok, true);
+  assert.equal(result.command.type, 'pty_write');
+  assert.equal(result.command.text, '/model');
+  assert.equal(result.command.enterCount, 2);
+  assert.ok(Array.isArray(result.effects));
+  assert.ok(result.effects.some(e => e.type === 'toast'));
+});
+
+test('open_reasoning_picker: returns pty_write /reasoning command with toast effect', () => {
+  const openReasoningPicker = require('../cli/codex-cli/scripts/1.0/open_reasoning_picker.js');
+  const result = openReasoningPicker();
+  assert.equal(result.ok, true);
+  assert.equal(result.command.type, 'pty_write');
+  assert.equal(result.command.text, '/reasoning');
+  assert.equal(result.command.enterCount, 2);
+  assert.ok(Array.isArray(result.effects));
+  assert.ok(result.effects.some(e => e.type === 'toast'));
+});
+
+test('provider.json: model_picker and reasoning_picker are action controls with invokeScript', () => {
+  const provider = require('../cli/codex-cli/provider.json');
+  const modelPicker = provider.controls.find(c => c.id === 'model_picker');
+  const reasoningPicker = provider.controls.find(c => c.id === 'reasoning_picker');
+
+  assert.ok(modelPicker, 'model_picker control should exist');
+  assert.equal(modelPicker.type, 'action');
+  assert.equal(modelPicker.invokeScript, 'openModelPicker');
+  assert.equal(modelPicker.readFrom, 'model', 'model_picker should readFrom model for inline display');
+
+  assert.ok(reasoningPicker, 'reasoning_picker control should exist');
+  assert.equal(reasoningPicker.type, 'action');
+  assert.equal(reasoningPicker.invokeScript, 'openReasoningPicker');
+  assert.equal(reasoningPicker.readFrom, 'reasoning', 'reasoning_picker should readFrom reasoning for inline display');
+});
+
+test('provider.json: no dead display controls for model or reasoning', () => {
+  const provider = require('../cli/codex-cli/provider.json');
+  const deadDisplays = provider.controls.filter(
+    c => c.type === 'display' && (c.id === 'model' || c.id === 'reasoning'),
+  );
+  assert.equal(deadDisplays.length, 0, 'display-only model/reasoning controls should not exist — they are not clickable');
+});

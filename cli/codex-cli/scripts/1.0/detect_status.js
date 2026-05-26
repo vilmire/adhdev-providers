@@ -39,12 +39,34 @@ const GENERATING_PARTIAL_WORK_RE = /(?:^|\s)•\s*(?:W|Wo|Wor|Work|Worki|Workin|
 
 const IDLE_SEND_RE = /⏎\s+send/i;
 const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
-const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|gpt-[^\n]*?·\s*\/)/i;
+// Match idle footer containing known model prefixes (gpt-, o<digit>, codex-, claude-) followed by · /
+const IDLE_FOOTER_MODEL_TOKEN_RE = /(?:^|[›❯>]\s*)\b(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i;
+const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*\/)/i;
 const WELCOME_RE = /OpenAI Codex/i;
 const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
 const STARTUP_RE = /To get started, describe a task/is;
 
 // ─── Detection ───────────────────────────────────
+
+/**
+ * Returns the last position in rawText where an idle model-footer appears.
+ * Handles gpt-, o<digit>, codex-, claude- model name prefixes.
+ */
+function lastIdleFooterIndex(rawText) {
+    const tabQueue = Math.max(
+        rawText.lastIndexOf('› tab to queue message'),
+        rawText.lastIndexOf('❯ tab to queue message'),
+    );
+    // Scan for last › / ❯ followed by a known model token and ·
+    const MODEL_FOOTER_SCAN_RE = /[›❯]\s*(?:gpt-|o\d[\w._-]*|codex-[\w._-]*|claude-[\w._-]*)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/gi;
+    let match;
+    let lastModel = -1;
+    let m;
+    while ((m = MODEL_FOOTER_SCAN_RE.exec(rawText)) !== null) {
+        lastModel = m.index;
+    }
+    return Math.max(tabQueue, lastModel);
+}
 
 function hasApproval(lines) {
     const window = lines.slice(-18);
@@ -57,7 +79,7 @@ function hasApproval(lines) {
 function hasGenerating(lines, raw) {
     const rawText = String(raw || '');
     const block = lines.slice(-12).join('\n');
-    
+
     // Check if idle prompt is newest
     const lastGenerating = Math.max(
         rawText.lastIndexOf('Esc to interrupt'),
@@ -66,12 +88,7 @@ function hasGenerating(lines, raw) {
         rawText.lastIndexOf('•Working'),
         rawText.lastIndexOf('Working(')
     );
-    const lastIdleFooter = Math.max(
-        rawText.lastIndexOf('› tab to queue message'),
-        rawText.lastIndexOf('› gpt-'),
-        rawText.lastIndexOf('❯ tab to queue message'),
-        rawText.lastIndexOf('❯ gpt-')
-    );
+    const lastIdleFooter = lastIdleFooterIndex(rawText);
     if (lastIdleFooter >= 0 && lastIdleFooter > lastGenerating && IDLE_FOOTER_RE.test(rawText.slice(Math.max(0, lastIdleFooter - 2)))) {
         return false;
     }
@@ -108,13 +125,8 @@ function hasIdle(raw) {
         rawText.lastIndexOf('•Working'),
         rawText.lastIndexOf('Working(')
     );
-    const lastIdleFooter = Math.max(
-        rawText.lastIndexOf('› tab to queue message'),
-        rawText.lastIndexOf('› gpt-'),
-        rawText.lastIndexOf('❯ tab to queue message'),
-        rawText.lastIndexOf('❯ gpt-')
-    );
-    
+    const lastIdleFooter = lastIdleFooterIndex(rawText);
+
     if (lastIdleFooter >= 0 && lastIdleFooter > lastGenerating && IDLE_FOOTER_RE.test(rawText.slice(Math.max(0, lastIdleFooter - 2)))) {
         return true;
     }
