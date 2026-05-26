@@ -8,6 +8,41 @@ function statMtimeMs(filePath) {
   try { return fs.statSync(filePath).mtimeMs; } catch { return 0; }
 }
 
+const CODEX_CACHE_TTL_MS = 2500;
+const codexResolveCache = new Map();
+const codexReadCache = new Map();
+const codexListCache = new Map();
+const codexCacheStats = { resolveScans: 0, transcriptParses: 0, listScans: 0, resolveHits: 0, transcriptHits: 0, listHits: 0 };
+
+function nowMs() {
+  return Date.now();
+}
+
+function readCache(map, key) {
+  const entry = map.get(key);
+  if (!entry || entry.expiresAt <= nowMs()) {
+    if (entry) map.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function writeCache(map, key, value, ttlMs = CODEX_CACHE_TTL_MS) {
+  map.set(key, { value, expiresAt: nowMs() + ttlMs });
+  return value;
+}
+
+function clearCodexNativeHistoryCaches() {
+  codexResolveCache.clear();
+  codexReadCache.clear();
+  codexListCache.clear();
+  for (const key of Object.keys(codexCacheStats)) codexCacheStats[key] = 0;
+}
+
+function getCodexNativeHistoryCacheStats() {
+  return { ...codexCacheStats };
+}
+
 function normalizeHistorySessionId(value) {
   return String(value || '').trim();
 }
@@ -323,8 +358,15 @@ function resolveCodexSessionTranscriptPath(historySessionId, workspace) {
   const root = path.join(os.homedir(), '.codex', 'sessions');
   if (!fs.existsSync(root)) return null;
   const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  const cacheKey = JSON.stringify({ normalized, workspace: normalizeWorkspacePath(normalizedWorkspace) || normalizedWorkspace });
+  const cached = readCache(codexResolveCache, cacheKey);
+  if (cached !== undefined) {
+    codexCacheStats.resolveHits += 1;
+    return cached;
+  }
   const candidates = [];
   if (!normalized && !normalizedWorkspace) return null;
+  codexCacheStats.resolveScans += 1;
   for (const sourcePath of listFilesRecursive(root, (_entryPath, entry) => {
     if (!entry.isFile() || !entry.name.endsWith('.jsonl')) return false;
     return !normalized || entry.name.includes(normalized);
@@ -338,7 +380,7 @@ function resolveCodexSessionTranscriptPath(historySessionId, workspace) {
     candidates.push({ path: sourcePath, mtimeMs: statMtimeMs(sourcePath), workspaceMatches, metaMatches: !!normalized && metaSessionId === normalized });
   }
   candidates.sort((a, b) => Number(b.workspaceMatches) - Number(a.workspaceMatches) || Number(b.metaMatches) - Number(a.metaMatches) || b.mtimeMs - a.mtimeMs);
-  return candidates[0]?.path || null;
+  return writeCache(codexResolveCache, cacheKey, candidates[0]?.path || null);
 }
 
 function flattenCodexContent(content) {
@@ -399,8 +441,14 @@ function resolveCodexSession(sessionId, workspace) {
 
 function listCodexSessions() {
   const root = path.join(os.homedir(), '.codex', 'sessions');
+  const cached = readCache(codexListCache, root);
+  if (cached !== undefined) {
+    codexCacheStats.listHits += 1;
+    return cached;
+  }
   const uuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
-  return listFilesRecursive(root, (_entryPath, entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
+  codexCacheStats.listScans += 1;
+  const sessions = listFilesRecursive(root, (_entryPath, entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
     .map((sourcePath) => {
       const meta = readCodexSessionMeta(sourcePath);
       const sessionId = String(meta?.id || path.basename(sourcePath).match(uuidPattern)?.[1] || '').trim();
@@ -408,12 +456,21 @@ function listCodexSessions() {
       return { sessionId, historySessionId: sessionId, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), workspace: String(meta?.cwd || '').trim() || undefined };
     })
     .filter(Boolean);
+  return writeCache(codexListCache, root, sessions);
 }
 
 function readCodexSessionRef(ref) {
   const root = path.join(os.homedir(), '.codex', 'sessions');
   if (!ref || !isUuidLikeSessionId(ref.sessionId) || !isPathInside(root, ref.sourcePath)) return null;
+  const mtimeMs = statMtimeMs(ref.sourcePath);
+  const cacheKey = `${ref.sourcePath}:${mtimeMs}:${ref.sessionId}`;
+  const cached = readCache(codexReadCache, cacheKey);
+  if (cached !== undefined) {
+    codexCacheStats.transcriptHits += 1;
+    return cached;
+  }
   try {
+    codexCacheStats.transcriptParses += 1;
     const lines = fs.readFileSync(ref.sourcePath, 'utf-8').split('\n').filter(Boolean);
     const records = [];
     let fallbackTs = Date.now();
@@ -448,7 +505,7 @@ function readCodexSessionRef(ref) {
         if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'codex-cli', historySessionId: ref.sessionId });
       }
     }
-    return records;
+    return writeCache(codexReadCache, cacheKey, records);
   } catch {
     return null;
   }
@@ -506,4 +563,6 @@ module.exports = {
   listClaudeNativeHistory,
   readCodexNativeHistory,
   listCodexNativeHistory,
+  __clearCodexNativeHistoryCaches: clearCodexNativeHistoryCaches,
+  __getCodexNativeHistoryCacheStats: getCodexNativeHistoryCacheStats,
 };

@@ -9,6 +9,7 @@ const path = require('node:path');
 const hermesScripts = require('../cli/hermes-cli/scripts/1.0/scripts.js');
 const claudeScripts = require('../cli/claude-cli/scripts/1.0/scripts.js');
 const codexScripts = require('../cli/codex-cli/scripts/1.0/scripts.js');
+const nativeHistory = require('../cli/_shared/native_history.js');
 const hermesProvider = require('../cli/hermes-cli/provider.json');
 const claudeProvider = require('../cli/claude-cli/provider.json');
 const codexProvider = require('../cli/codex-cli/provider.json');
@@ -118,4 +119,27 @@ test('codex native history script reads rollout JSONL without viewport elision',
   const listed = codexScripts.listNativeHistory({});
   assert.equal(listed.sessions[0].historySessionId, sessionId);
   assert.equal(listed.sessions[0].workspace, workspace);
+}));
+
+test('codex native history script caches transcript path scans and parsed records between rapid polls', () => withTempHome((home) => {
+  nativeHistory.__clearCodexNativeHistoryCaches();
+  const sessionId = '12345678-1234-4234-9234-1234567890ac';
+  const workspace = '/workspaces/adhdev-cache';
+  const sourcePath = path.join(home, '.codex', 'sessions', '2026', '04', '29', `rollout-2026-04-29T00-27-22-${sessionId}.jsonl`);
+  writeJsonl(sourcePath, [
+    { type: 'session_meta', timestamp: '2026-04-29T00:27:22.000Z', payload: { id: sessionId, cwd: workspace } },
+    { type: 'response_item', timestamp: '2026-04-29T00:27:23.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'first poll user' }] } },
+    { type: 'response_item', timestamp: '2026-04-29T00:27:24.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'first poll assistant' }] } },
+  ]);
+
+  const first = codexScripts.readNativeHistory({ workspace });
+  const second = codexScripts.readNativeHistory({ workspace });
+  const stats = nativeHistory.__getCodexNativeHistoryCacheStats();
+
+  assert.equal(first.sourcePath, sourcePath);
+  assert.equal(second.sourcePath, sourcePath);
+  assert.equal(stats.resolveScans, 1);
+  assert.equal(stats.transcriptParses, 1);
+  assert.ok(stats.resolveHits >= 1);
+  assert.ok(stats.transcriptHits >= 1);
 }));
