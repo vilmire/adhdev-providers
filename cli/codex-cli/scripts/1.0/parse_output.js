@@ -199,13 +199,14 @@ function rehydrateRenderedSections(text) {
 
 function isStartupScreen(text) {
     const v = String(text || '');
+    const lines = splitLines(v).map(l => normalize(l)).filter(Boolean);
     return /You are running Codex in/i.test(v)
         || /Do you trust the contents of this directory\?/i.test(v)
         || (/OpenAI Codex/i.test(v) && /To get started, describe a task/i.test(v))
         || /Since this folder is version controlled/i.test(v)
         || /\/init - create an AGENTS\.md file/i.test(v)
         || /Tip:\s+(?:New Try the Codex App|Use \/skills)/i.test(v)
-        || STARTER_PROMPT_RE.test(v);
+        || lines.some(line => STARTER_PROMPT_RE.test(line));
 }
 
 // ─── Session ID extraction ──────────────────────
@@ -272,7 +273,7 @@ function collectNativeMessages(input, fallbackSessionId) {
     if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') return { messages: [], providerSessionId: fallbackSessionId || '' };
     const workspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
     const historySessionId = String(input?.historySessionId || input?.sessionId || input?.args?.historySessionId || input?.args?.sessionId || fallbackSessionId || '').trim();
-    if (!workspace && !historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    if (!historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
     const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
     const records = Array.isArray(result?.messages) ? result.messages : [];
     const messages = records.map(normalizeNativeMessage).filter(Boolean);
@@ -515,13 +516,14 @@ function parseOutput(input) {
     const controlValues = extractControlValues(screenText, buffer, input?.recentBuffer || '', input?.rawBuffer || '');
 
     const status = detectStatus({ tail, screenText, rawBuffer: input?.rawBuffer || '' });
+    const visibleSessionId = extractSessionId(input?.rawBuffer, transcript, screenText);
     const activeModal = status === 'waiting_approval'
         ? parseApproval({ screenText, buffer: transcript, rawBuffer: input?.rawBuffer || '', tail })
         : null;
-    const visibleSessionId = extractSessionId(input?.rawBuffer, transcript, screenText);
-    const nativeSession = collectNativeMessages(input, visibleSessionId);
 
-    // During approval or pre-prompt startup, return current messages unchanged except for a visible approval bubble.
+    // During approval or pre-prompt startup, avoid workspace-wide native history.
+    // Fresh Codex launches often have no session id yet, and reading by cwd alone
+    // can attach an older transcript from another Codex terminal in the same repo.
     if (status === 'waiting_approval' || (!hasUserPrompt && isStartupScreen(transcript))) {
         const visibleMessages = activeModal
             ? buildMessages(previousMessages, [createApprovalMessage(activeModal)])
@@ -533,9 +535,11 @@ function parseOutput(input) {
             messages: toMessageObjects(visibleMessages, status),
             activeModal,
             ...(controlValues ? { controlValues } : {}),
-            providerSessionId: nativeSession.providerSessionId || visibleSessionId || undefined,
+            providerSessionId: visibleSessionId || undefined,
         };
     }
+
+    const nativeSession = collectNativeMessages(input, visibleSessionId);
 
     // Scope to current turn
     const scopedScreen = sliceAfterPrompt(screenText, promptScope);

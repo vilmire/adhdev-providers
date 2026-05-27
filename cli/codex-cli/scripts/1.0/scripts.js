@@ -34,6 +34,39 @@ function shouldSettleIdle(state, input) {
     );
 }
 
+function hasFinalAssistantMessage(parsed) {
+    const messages = Array.isArray(parsed && parsed.messages) ? parsed.messages : [];
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant') return false;
+    if (last.bubbleState === 'streaming') return false;
+    if (last.meta && last.meta.streaming === true) return false;
+    return String(last.content || '').trim().length > 0;
+}
+
+function hasVisibleIdlePrompt(input) {
+    const text = normalizeStatusText(input);
+    return /(?:^|\s)[›❯>]\s*(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i.test(text)
+        || /(?:^|\s)(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*(?:\/|~)/i.test(text)
+        || /(?:^|\s)[›❯]\s*(?:tab to queue message\b|$)/i.test(text);
+}
+
+function hasStartupIdlePrompt(input) {
+    const text = [
+        input && input.screenText,
+        input && input.tail,
+    ]
+        .filter(Boolean)
+        .join('\n')
+        .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(-4000);
+    return /OpenAI Codex/i.test(text)
+        && /(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)/i.test(text)
+        && hasVisibleIdlePrompt(input)
+        && !/esc to interrupt|Starting MCP servers?|Working\s*\(\d+s\b/i.test(text);
+}
+
 function settleStatus(state, input, parsed) {
     state = state || {};
     const status = typeof parsed === 'string' ? parsed : parsed && parsed.status;
@@ -43,6 +76,20 @@ function settleStatus(state, input, parsed) {
         state.idleCandidate = null;
         state.settledIdleSignature = '';
         state.lastProviderStatus = status;
+        return parsed;
+    }
+
+    if (hasStartupIdlePrompt(input)) {
+        state.idleCandidate = null;
+        state.settledIdleSignature = normalizeStatusText(input);
+        state.lastProviderStatus = 'idle';
+        return parsed;
+    }
+
+    if (typeof parsed !== 'string' && hasFinalAssistantMessage(parsed) && hasVisibleIdlePrompt(input)) {
+        state.idleCandidate = null;
+        state.settledIdleSignature = normalizeStatusText(input);
+        state.lastProviderStatus = 'idle';
         return parsed;
     }
 

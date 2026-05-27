@@ -121,6 +121,20 @@ test('codex native history script reads rollout JSONL without viewport elision',
   assert.equal(listed.sessions[0].workspace, workspace);
 }));
 
+test('codex native history script rejects explicit session reads from the wrong workspace', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ad';
+  const workspace = '/workspaces/adhdev';
+  const otherWorkspace = '/workspaces/other';
+  const sourcePath = path.join(home, '.codex', 'sessions', '2026', '04', '29', `rollout-2026-04-29T00-27-22-${sessionId}.jsonl`);
+  writeJsonl(sourcePath, [
+    { type: 'session_meta', timestamp: '2026-04-29T00:27:22.000Z', payload: { id: sessionId, cwd: otherWorkspace } },
+    { type: 'response_item', timestamp: '2026-04-29T00:27:23.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'wrong workspace assistant' }] } },
+  ]);
+
+  const read = codexScripts.readNativeHistory({ historySessionId: sessionId, workspace });
+  assert.equal(read, null);
+}));
+
 test('codex native history script caches transcript path scans and parsed records between rapid polls', () => withTempHome((home) => {
   nativeHistory.__clearCodexNativeHistoryCaches();
   const sessionId = '12345678-1234-4234-9234-1234567890ac';

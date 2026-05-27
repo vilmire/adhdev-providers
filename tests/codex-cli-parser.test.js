@@ -403,7 +403,7 @@ test('codex provider detectStatus resets the idle settle timer when visible text
   }), 'idle');
 });
 
-test('codex provider parseSession applies the same idle settle contract as detectStatus', () => {
+test('codex provider parseSession returns idle immediately when a final assistant and prompt are visible', () => {
   const state = codexScripts.createState();
   state.lastProviderStatus = 'generating';
   const input = {
@@ -418,11 +418,60 @@ test('codex provider parseSession applies the same idle settle contract as detec
   };
 
   const first = codexScripts.parseSession(state, input);
-  assert.equal(first.status, 'generating');
+  assert.equal(first.status, 'idle');
+  assert.ok(first.messages.some(message => message.role === 'assistant'));
+  assert.notEqual(first.messages.at(-1)?.bubbleState, 'streaming');
+});
 
-  const settled = codexScripts.parseSession(state, { ...input, now: 32_000 });
-  assert.equal(settled.status, 'idle');
-  assert.ok(settled.messages.some(message => message.role === 'assistant'));
+test('codex provider parseSession returns idle for starter prompt without workspace native history bleed-through', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-startup-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-startup-work-'));
+  process.env.HOME = home;
+  try {
+    const sessionId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+    const sessionDir = path.join(home, '.codex', 'sessions', '2026', '05', '26');
+    fs.mkdirSync(sessionDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionDir, `rollout-${sessionId}.jsonl`), [
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-05-26T00:00:00.000Z', payload: { id: sessionId, cwd: workspace } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-26T00:00:01.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'stale assistant from another terminal' }] } }),
+    ].join('\n') + '\n', 'utf-8');
+
+    const screenText = [
+      '╭────────────────────────────────────────────────╮',
+      '│ >_ OpenAI Codex (v0.133.0)                     │',
+      '│ model:       gpt-5.5 medium   /model to change │',
+      `│ directory:   ${workspace} │`,
+      '╰────────────────────────────────────────────────╯',
+      '',
+      'Tip: New Use /fast to enable our fastest inference with increased plan usage.',
+      '',
+      '› Improve documentation in @filename',
+      '',
+      `gpt-5.5 medium · ${workspace}`,
+    ].join('\n');
+    const state = codexScripts.createState();
+    state.lastProviderStatus = 'generating';
+
+    const result = codexScripts.parseSession(state, {
+      workspace,
+      workingDir: workspace,
+      screenText,
+      buffer: screenText,
+      recentBuffer: screenText,
+      rawBuffer: screenText,
+      isWaitingForResponse: false,
+      messages: [],
+    });
+
+    assert.equal(result.status, 'idle');
+    assert.equal(result.messages.length, 0);
+  } finally {
+    if (originalHome === undefined) delete process.env.HOME;
+    else process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
 });
 
 test('codex detect_status returns idle when a follow-up reply ends and the idle footer reappears after stale working fragments', () => {
@@ -928,6 +977,7 @@ test('codex parse_output prefers workspace-matched native JSONL over folded TUI 
     const result = parseOutput({
       workspace,
       workingDir: workspace,
+      historySessionId: sessionId,
       screenText,
       buffer: screenText,
       messages: [{ role: 'user', content: 'make snake' }],
@@ -942,6 +992,46 @@ test('codex parse_output prefers workspace-matched native JSONL over folded TUI 
   } finally {
     if (originalHome === undefined) delete process.env.HOME;
     else process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test('codex parse_output does not hydrate native JSONL by workspace alone without a concrete session id', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-work-'));
+  process.env.HOME = home;
+  try {
+    const sessionId = '22222222-3333-4444-8555-666666666666';
+    const sessionDir = path.join(home, '.codex', 'sessions', '2026', '05', '25');
+    fs.mkdirSync(sessionDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionDir, `rollout-${sessionId}.jsonl`), [
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-05-25T00:00:00.000Z', payload: { id: sessionId, cwd: workspace } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-25T00:00:01.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'assistant from another codex session' }] } }),
+    ].join('\n') + '\n', 'utf-8');
+
+    const screenText = [
+      '› current prompt',
+      '> assistant from current TUI',
+      '›',
+    ].join('\n');
+
+    const result = parseOutput({
+      workspace,
+      workingDir: workspace,
+      screenText,
+      buffer: screenText,
+      messages: [{ role: 'user', content: 'current prompt' }],
+    });
+    const joined = result.messages.map(m => m.content).join('\n\n');
+
+    assert.equal(result.providerSessionId, undefined);
+    assert.equal(result.transcriptAuthority, undefined);
+    assert.match(joined, /assistant from current TUI/);
+    assert.doesNotMatch(joined, /assistant from another codex session/);
+  } finally {
+    process.env.HOME = originalHome;
     fs.rmSync(home, { recursive: true, force: true });
     fs.rmSync(workspace, { recursive: true, force: true });
   }
