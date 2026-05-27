@@ -977,6 +977,7 @@ test('codex parse_output prefers workspace-matched native JSONL over folded TUI 
     const result = parseOutput({
       workspace,
       workingDir: workspace,
+      historySessionId: sessionId,
       screenText,
       buffer: screenText,
       messages: [{ role: 'user', content: 'make snake' }],
@@ -991,6 +992,46 @@ test('codex parse_output prefers workspace-matched native JSONL over folded TUI 
   } finally {
     if (originalHome === undefined) delete process.env.HOME;
     else process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test('codex parse_output does not hydrate native JSONL by workspace alone without a concrete session id', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-work-'));
+  process.env.HOME = home;
+  try {
+    const sessionId = '22222222-3333-4444-8555-666666666666';
+    const sessionDir = path.join(home, '.codex', 'sessions', '2026', '05', '25');
+    fs.mkdirSync(sessionDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionDir, `rollout-${sessionId}.jsonl`), [
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-05-25T00:00:00.000Z', payload: { id: sessionId, cwd: workspace } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-25T00:00:01.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'assistant from another codex session' }] } }),
+    ].join('\n') + '\n', 'utf-8');
+
+    const screenText = [
+      '› current prompt',
+      '> assistant from current TUI',
+      '›',
+    ].join('\n');
+
+    const result = parseOutput({
+      workspace,
+      workingDir: workspace,
+      screenText,
+      buffer: screenText,
+      messages: [{ role: 'user', content: 'current prompt' }],
+    });
+    const joined = result.messages.map(m => m.content).join('\n\n');
+
+    assert.equal(result.providerSessionId, undefined);
+    assert.equal(result.transcriptAuthority, undefined);
+    assert.match(joined, /assistant from current TUI/);
+    assert.doesNotMatch(joined, /assistant from another codex session/);
+  } finally {
+    process.env.HOME = originalHome;
     fs.rmSync(home, { recursive: true, force: true });
     fs.rmSync(workspace, { recursive: true, force: true });
   }

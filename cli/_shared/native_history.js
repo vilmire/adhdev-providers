@@ -376,6 +376,7 @@ function resolveCodexSessionTranscriptPath(historySessionId, workspace) {
     if (normalized && metaSessionId && metaSessionId !== normalized) continue;
     const metaWorkspace = String(meta?.cwd || '').trim();
     const workspaceMatches = !!normalizedWorkspace && workspacePathsMatch(metaWorkspace, normalizedWorkspace);
+    if (normalizedWorkspace && !workspaceMatches) continue;
     if (!normalized && !workspaceMatches) continue;
     candidates.push({ path: sourcePath, mtimeMs: statMtimeMs(sourcePath), workspaceMatches, metaMatches: !!normalized && metaSessionId === normalized });
   }

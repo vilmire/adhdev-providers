@@ -273,7 +273,7 @@ function collectNativeMessages(input, fallbackSessionId) {
     if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') return { messages: [], providerSessionId: fallbackSessionId || '' };
     const workspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
     const historySessionId = String(input?.historySessionId || input?.sessionId || input?.args?.historySessionId || input?.args?.sessionId || fallbackSessionId || '').trim();
-    if (!workspace && !historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    if (!historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
     const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
     const records = Array.isArray(result?.messages) ? result.messages : [];
     const messages = records.map(normalizeNativeMessage).filter(Boolean);
