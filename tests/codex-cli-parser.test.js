@@ -295,6 +295,15 @@ test('codex detect_status stays generating when historical user prompts remain v
   );
 });
 
+test('codex detect_status does not use generic Ready/shortcuts text as idle', () => {
+  const screenText = [
+    'Ready (press ? for shortcuts)',
+    '? for shortcuts',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: screenText }), null);
+});
+
 test('codex detect_status treats startup booting fragments plus a default starter prompt as idle, not generating', () => {
   assert.equal(
     detectStatus({ screenText: startupPromptScreen, tail: startupPromptTail }),
@@ -601,6 +610,16 @@ test('codex parse_approval does not synthesize fallback buttons when labels cann
   });
 
   assert.equal(modal, null);
+});
+
+test('codex detects squashed startup trust approval from PTY text', () => {
+  const screenText = '>You are in /private/tmp/adhdev-codex-start-smokeDoyoutrustthecontentsofthisdirectory?Workingwithuntrustedcontentscomeswithhigherriskofpromptinjection.Trustingthedirectoryallowsproject-localconfig,hooks,andexecpoliciestoload.› 1. Yes, continue2.No,quitPress enter to continue';
+
+  assert.equal(detectStatus({ screenText, tail: screenText, rawBuffer: screenText }), 'waiting_approval');
+  assert.deepEqual(parseApproval({ screenText, tail: screenText, rawBuffer: screenText }), {
+    message: 'Do you trust the contents of this directory?',
+    buttons: ['Yes, continue', 'No, quit'],
+  });
 });
 
 test('codex parse_output keeps full prior transcript when conversation exceeds 50 messages', () => {

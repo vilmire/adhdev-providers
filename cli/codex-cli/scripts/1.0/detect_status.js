@@ -2,7 +2,7 @@
  * Codex CLI — detect_status
  *
  * Lightweight status detection from screen/tail text.
- * Returns: 'idle' | 'generating' | 'waiting_approval'
+ * Returns: 'idle' | 'generating' | 'waiting_approval' | null
  */
 'use strict';
 
@@ -24,10 +24,41 @@ function text(input, key) {
     return stripAnsi((input && input[key]) || '');
 }
 
+function compactText(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function hasCompactApprovalCue(value) {
+    const compact = compactText(value);
+    return compact.includes('doyoutrustthecontentsofthisdirectory')
+        || compact.includes('workingwithuntrustedcontents')
+        || compact.includes('youarerunningcodexin')
+        || compact.includes('allowcodextorun')
+        || compact.includes('allowcodextoapply')
+        || compact.includes('allowcommand')
+        || compact.includes('updateavailable')
+        || compact.includes('approachingratelimits')
+        || /switchtogpt[\w]+forlowercreditusage/.test(compact);
+}
+
+function hasCompactApprovalButton(value) {
+    const text = String(value || '');
+    const compact = compactText(text);
+    return /(?:^|[\s›❯>▌])\d+\.\s*\S/.test(text)
+        || /\d+(?:yescontinue|noquit|approveandrun|alwaysapprove|deny)/i.test(compact);
+}
+
+function hasCompactApprovalFooter(value) {
+    const compact = compactText(value);
+    return compact.includes('pressentertocontinue')
+        || compact.includes('pressentertoconfirm')
+        || compact.includes('esctocancel');
+}
+
 // ─── Matchers ────────────────────────────────────
 
 const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
-const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s+\S|Approve and run now|Always approve this session/i;
+const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s*\S|(?:^|\s)\d+\.\s*\S|Approve and run now|Always approve this session/i;
 const APPROVAL_FOOTER_RE = /Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 
 const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i;
@@ -39,9 +70,10 @@ const GENERATING_PARTIAL_WORK_RE = /(?:^|\s)•\s*(?:W|Wo|Wor|Work|Worki|Workin|
 
 const IDLE_SEND_RE = /⏎\s+send/i;
 const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
-// Match idle footer containing known model prefixes (gpt-, o<digit>, codex-, claude-) followed by · /
-const IDLE_FOOTER_MODEL_TOKEN_RE = /(?:^|[›❯>]\s*)\b(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i;
-const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*\/)/i;
+// Match Codex idle footers only. Keep this provider-specific; generic readiness
+// fallbacks belong in provider scripts, not the shared CLI adapter.
+const IDLE_FOOTER_MODEL_TOKEN_RE = /(?:^|[›❯>]\s*)\b(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i;
+const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*\/)/i;
 const WELCOME_RE = /OpenAI Codex/i;
 const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
 const STARTUP_RE = /To get started, describe a task/is;
@@ -50,7 +82,7 @@ const STARTUP_RE = /To get started, describe a task/is;
 
 /**
  * Returns the last position in rawText where an idle model-footer appears.
- * Handles gpt-, o<digit>, codex-, claude- model name prefixes.
+ * Handles Codex model footer prefixes: gpt-, o<digit>, and codex-.
  */
 function lastIdleFooterIndex(rawText) {
     const tabQueue = Math.max(
@@ -58,7 +90,7 @@ function lastIdleFooterIndex(rawText) {
         rawText.lastIndexOf('❯ tab to queue message'),
     );
     // Scan for last › / ❯ followed by a known model token and ·
-    const MODEL_FOOTER_SCAN_RE = /[›❯]\s*(?:gpt-|o\d[\w._-]*|codex-[\w._-]*|claude-[\w._-]*)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/gi;
+    const MODEL_FOOTER_SCAN_RE = /[›❯]\s*(?:gpt-|o\d[\w._-]*|codex-[\w._-]*)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/gi;
     let match;
     let lastModel = -1;
     let m;
@@ -70,9 +102,10 @@ function lastIdleFooterIndex(rawText) {
 
 function hasApproval(lines) {
     const window = lines.slice(-18);
-    const hasCue = window.some(l => APPROVAL_RE.test(l));
-    const hasButton = window.some(l => APPROVAL_BUTTON_RE.test(l));
-    const hasFooter = window.some(l => APPROVAL_FOOTER_RE.test(l));
+    const block = window.join('\n');
+    const hasCue = window.some(l => APPROVAL_RE.test(l) || hasCompactApprovalCue(l)) || hasCompactApprovalCue(block);
+    const hasButton = window.some(l => APPROVAL_BUTTON_RE.test(l) || hasCompactApprovalButton(l)) || hasCompactApprovalButton(block);
+    const hasFooter = window.some(l => APPROVAL_FOOTER_RE.test(l) || hasCompactApprovalFooter(l)) || hasCompactApprovalFooter(block);
     return hasButton && (hasCue || hasFooter);
 }
 
@@ -140,10 +173,6 @@ function hasIdle(raw) {
         && !GENERATING_PROGRESS_GLYPH_RE.test(rawText)
     ) return true;
     
-    // Added for Gemini/Codex generic readiness:
-    if (/Ready\s*\(/i.test(rawText)) return true;
-    if (/\?\s*for\s*shortcuts/i.test(rawText)) return true;
-
     return false;
 }
 
@@ -183,5 +212,5 @@ module.exports = function detectStatus(input) {
     if (GENERATING_ESC_RE.test(tail)) return 'generating';
     if (GENERATING_SPINNER_RE.test(tail)) return 'generating';
 
-    return 'idle';
+    return null;
 };

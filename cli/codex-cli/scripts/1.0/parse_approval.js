@@ -45,6 +45,60 @@ function normalize(line) {
         .trim();
 }
 
+function compactText(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function hasCompactApprovalCue(value) {
+    const compact = compactText(value);
+    return compact.includes('doyoutrustthecontentsofthisdirectory')
+        || compact.includes('workingwithuntrustedcontents')
+        || compact.includes('youarerunningcodexin')
+        || compact.includes('allowcodextorun')
+        || compact.includes('allowcodextoapply')
+        || compact.includes('allowcommand')
+        || compact.includes('updateavailable')
+        || compact.includes('approachingratelimits')
+        || /switchtogpt[\w]+forlowercreditusage/.test(compact);
+}
+
+function hasCompactApprovalButton(value) {
+    const text = String(value || '');
+    const compact = compactText(text);
+    return /(?:^|[\s›❯>▌])\d+\.\s*\S/.test(text)
+        || /\d+(?:yescontinue|noquit|approveandrun|alwaysapprove|deny)/i.test(compact);
+}
+
+function hasCompactApprovalFooter(value) {
+    const compact = compactText(value);
+    return compact.includes('pressentertocontinue')
+        || compact.includes('pressentertoconfirm')
+        || compact.includes('esctocancel');
+}
+
+function parseSquashedTrustButtons(value) {
+    const compact = compactText(value);
+    if (!compact.includes('doyoutrustthecontentsofthisdirectory')
+        && !compact.includes('workingwithuntrustedcontents')) {
+        return [];
+    }
+    if (/1yescontinue2noquit/i.test(compact)) {
+        return ['Yes, continue', 'No, quit'];
+    }
+    return [];
+}
+
+function squashedTrustMessage(value) {
+    const compact = compactText(value);
+    if (compact.includes('doyoutrustthecontentsofthisdirectory')) {
+        return 'Do you trust the contents of this directory?';
+    }
+    if (compact.includes('workingwithuntrustedcontents')) {
+        return 'Working with untrusted contents';
+    }
+    return '';
+}
+
 function stripLeadMarker(s) {
     return String(s || '').replace(/^(?:[▌>›❯]\s*)+/, '').trim();
 }
@@ -52,7 +106,7 @@ function stripLeadMarker(s) {
 // ─── Line classifiers ───────────────────────────
 
 const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
-const BUTTON_RE = /^\d+\.\s+/;
+const BUTTON_RE = /^\d+\.\s*/;
 const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
 const CHROME_RE = /^>?\s*(?:You are in|model:|directory:|OpenAI Codex)\b/i;
@@ -81,14 +135,15 @@ module.exports = function parseApproval(input) {
 
     // Check if there's actually an approval screen visible
     const window = lines.slice(-24).map(normalize).filter(Boolean);
-    const hasCue = window.some(l => CUE_RE.test(l));
-    const hasButton = window.some(isButton);
-    const hasFooter = window.some(l => FOOTER_RE.test(l));
+    const windowBlock = window.join('\n');
+    const hasCue = window.some(l => CUE_RE.test(l) || hasCompactApprovalCue(l)) || hasCompactApprovalCue(windowBlock);
+    const hasButton = window.some(l => isButton(l) || hasCompactApprovalButton(l)) || hasCompactApprovalButton(windowBlock);
+    const hasFooter = window.some(l => FOOTER_RE.test(l) || hasCompactApprovalFooter(l)) || hasCompactApprovalFooter(windowBlock);
     // Same logic as detect_status: cue+button or button+footer
     if (!hasButton || (!hasCue && !hasFooter)) return null;
 
     // Collect buttons
-    const buttons = [];
+    const buttons = parseSquashedTrustButtons(windowBlock);
     let currentButton = '';
     for (const rawLine of lines.slice(-24)) {
         const line = normalize(rawLine);
@@ -111,7 +166,7 @@ module.exports = function parseApproval(input) {
         .filter(l => l && !BOX_RE.test(l) && !isButton(l) && !FOOTER_RE.test(l) && !CHROME_RE.test(l) && !/^OpenAI Codex\b/i.test(l))
         .slice(-3)
         .join(' ')
-        .slice(0, 240) || 'Codex approval required';
+        .slice(0, 240) || squashedTrustMessage(windowBlock) || 'Codex approval required';
 
     return {
         message,

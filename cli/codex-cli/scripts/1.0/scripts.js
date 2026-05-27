@@ -45,8 +45,8 @@ function hasFinalAssistantMessage(parsed) {
 
 function hasVisibleIdlePrompt(input) {
     const text = normalizeStatusText(input);
-    return /(?:^|\s)[›❯>]\s*(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i.test(text)
-        || /(?:^|\s)(?:gpt-|o\d\b|codex-|claude-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*(?:\/|~)/i.test(text)
+    return /(?:^|\s)[›❯>]\s*(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i.test(text)
+        || /(?:^|\s)(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*(?:\/|~)/i.test(text)
         || /(?:^|\s)[›❯]\s*(?:tab to queue message\b|$)/i.test(text);
 }
 
