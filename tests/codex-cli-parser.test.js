@@ -1047,6 +1047,62 @@ test('codex parse_output prefers workspace-matched native JSONL over folded TUI 
   }
 });
 
+test('codex parse_output keeps native JSONL authoritative while generating', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-generating-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-generating-workspace-'));
+  const sessionId = '12345678-1234-4234-9234-123456789abc';
+  try {
+    process.env.HOME = home;
+    const transcriptDir = path.join(home, '.codex', 'sessions', '2026', '05', '27');
+    fs.mkdirSync(transcriptDir, { recursive: true });
+    fs.writeFileSync(path.join(transcriptDir, `rollout-${sessionId}.jsonl`), [
+      JSON.stringify({ type: 'session_meta', timestamp: '2026-05-27T00:00:00.000Z', payload: { id: sessionId, cwd: workspace } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-27T00:00:01.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'current prompt' }] } }),
+      JSON.stringify({ type: 'response_item', timestamp: '2026-05-27T00:00:02.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'native assistant answer' }] } }),
+      '',
+    ].join('\n'));
+
+    const screenText = [
+      '› current prompt',
+      '',
+      '• native assistant answer',
+      '',
+      '• pty-only partial line that should not replace native',
+      '',
+      '• Working (4s • esc to interrupt)',
+    ].join('\n');
+    const rawBuffer = [
+      `Session: ${sessionId}`,
+      screenText,
+    ].join('\n');
+
+    const result = parseOutput({
+      historySessionId: sessionId,
+      sessionId,
+      workspace,
+      workingDir: workspace,
+      rawBuffer,
+      screenText,
+      buffer: screenText,
+      recentBuffer: screenText,
+      messages: [{ role: 'user', content: 'current prompt' }],
+    });
+    const joined = result.messages.map(m => m.content).join('\n\n');
+
+    assert.equal(result.status, 'generating');
+    assert.equal(result.transcriptAuthority, 'provider');
+    assert.equal(result.coverage, 'full');
+    assert.equal(result.providerSessionId, sessionId);
+    assert.match(joined, /native assistant answer/);
+    assert.doesNotMatch(joined, /pty-only partial line/);
+  } finally {
+    process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
 test('codex parse_output does not hydrate native JSONL by workspace alone without a concrete session id', () => {
   const originalHome = process.env.HOME;
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));

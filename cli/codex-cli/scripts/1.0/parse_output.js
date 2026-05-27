@@ -563,7 +563,7 @@ function parseOutput(input) {
     const recentMessages = collectVisibleMessages(sliceAfterPrompt(tail, promptScope) || tail);
     const tuiMessages = chooseRicherMessages(screenMessages, bufferMessages, recentMessages);
     const currentMessages = nativeSession.messages.length > 0
-        ? (status === 'idle' ? nativeSession.messages : chooseRicherMessages(nativeSession.messages, tuiMessages))
+        ? nativeSession.messages
         : tuiMessages;
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
