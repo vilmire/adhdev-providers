@@ -481,6 +481,37 @@ test('codex detect_status returns idle when a follow-up reply ends and the idle 
   );
 });
 
+test('codex parseSession surfaces the dispatched user prompt while a fresh turn is generating before assistant output', () => {
+  const promptText = 'Diagnose why mesh_read_chat returned zero messages for this Codex task.';
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.133.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    '◦ Working (1s • esc to interrupt)',
+    '',
+    'gpt-5.5 medium · /private/tmp/adhdev-codex-live-verify',
+  ].join('\n');
+  const state = codexScripts.createState();
+
+  const result = codexScripts.parseSession(state, {
+    workspace: '/private/tmp/adhdev-codex-live-verify',
+    workingDir: '/private/tmp/adhdev-codex-live-verify',
+    screenText,
+    buffer: screenText,
+    recentBuffer: screenText,
+    rawBuffer: screenText,
+    isWaitingForResponse: true,
+    promptText,
+    messages: [],
+  });
+
+  assert.equal(result.status, 'generating');
+  assert.deepEqual(result.messages.map(message => [message.role, message.content]), [
+    ['user', promptText],
+  ]);
+});
+
 test('codex detect_status stays generating for active progress glyph without an idle prompt', () => {
   const activeScreen = [
     '› Please verify raw CLI transcript fidelity in this workspace.',

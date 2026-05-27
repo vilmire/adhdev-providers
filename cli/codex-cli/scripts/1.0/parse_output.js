@@ -471,6 +471,15 @@ function createApprovalMessage(activeModal) {
     };
 }
 
+function appendPromptMessage(messages, promptText) {
+    const prompt = String(promptText || '').trim();
+    const base = Array.isArray(messages) ? messages : [];
+    if (!prompt) return base;
+    const lastUser = [...base].reverse().find(m => m?.role === 'user');
+    if (lastUser && normalizeForCompare(lastUser.content) === normalizeForCompare(prompt)) return base;
+    return [...base, { role: 'user', kind: 'standard', content: prompt }];
+}
+
 function buildMessages(previousMessages, currentMessagesOrText) {
     const base = Array.isArray(previousMessages)
         ? previousMessages
@@ -508,9 +517,10 @@ function parseOutput(input) {
     const buffer = String(input?.buffer || '');
     const transcript = screenText || buffer;
     const tail = String(input?.recentBuffer || transcript.slice(-500));
-    const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
+    const promptText = String(input?.promptText || input?.scope?.prompt || input?.args?.promptText || '').trim();
+    const previousMessages = appendPromptMessage(Array.isArray(input?.messages) ? input.messages : [], promptText);
     const lastUser = [...previousMessages].reverse().find(m => m?.role === 'user');
-    const promptScope = lastUser?.content || '';
+    const promptScope = lastUser?.content || promptText;
     const hasUserPrompt = !!promptScope;
 
     const controlValues = extractControlValues(screenText, buffer, input?.recentBuffer || '', input?.rawBuffer || '');
