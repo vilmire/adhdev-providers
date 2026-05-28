@@ -134,6 +134,31 @@ test('claude-cli treats explicit rate-limit choice menu as waiting approval', ()
   assert.deepEqual(result.activeModal?.buttons, modal.buttons);
 });
 
+test('claude-cli reports login/access blockers as structured auth errors', () => {
+  const screenText = [
+    '❯ Please verify raw CLI transcript fidelity in this workspace.',
+    '',
+    '⏺ Your account does not have access to Claude Code. Please run /login.',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ ',
+    '────────────────────────────────────────────────────────────────────────────────',
+  ].join('\n');
+
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.equal(result.status, 'error');
+  assert.equal(result.errorReason, 'auth_failed');
+  assert.match(result.errorMessage, /does not have access to Claude Code/i);
+  assert.deepEqual(
+    result.messages.map(({ role, content }) => ({ role, content })),
+    [
+      { role: 'user', content: 'Please verify raw CLI transcript fidelity in this workspace.' },
+      { role: 'assistant', content: 'Your account does not have access to Claude Code. Please run /login.' },
+    ],
+  );
+});
+
 test('claude-cli does not treat interrupt copy outside the live input prompt as generating', () => {
   const screenText = [
     '⏺ Literal text: type a message + Enter to interrupt, Ctrl+C to cancel',

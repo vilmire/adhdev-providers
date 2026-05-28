@@ -470,6 +470,23 @@ function makeApproval(activeModal) {
     return { role: 'assistant', kind: 'system', senderName: 'System', content: lines.join('\n') };
 }
 
+function detectAuthBlocker(text) {
+    const source = String(text || '');
+    const accessMatch = source.match(/Your account does not have access to Claude Code\. Please run \/login\./i);
+    if (accessMatch) {
+        return accessMatch[0];
+    }
+    const loginMatch = source.match(/(?:Please run \/login|login required|please (?:log in|sign in|authenticate))/i);
+    if (loginMatch) {
+        const line = source
+            .split(/\r?\n/)
+            .map(line => sanitize(line).trim())
+            .find(line => loginMatch[0] && line.toLowerCase().includes(loginMatch[0].toLowerCase()));
+        return line || loginMatch[0];
+    }
+    return '';
+}
+
 // ─── Core region parser ───────────────────────────────────────────────────────
 //
 // Iterates lines in the assistant region and emits message objects.
@@ -780,6 +797,7 @@ module.exports = function parseOutput(input) {
     const transcriptSource = buffer || screenText || String(input?.rawBuffer || '');
     const visibleScreen = buildScreenSnapshot(screenText || transcriptSource);
     const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
+    const authBlocker = detectAuthBlocker([screenText, buffer, input?.rawBuffer || ''].join('\n'));
 
     const status = detectStatus({
         tail,
@@ -802,7 +820,7 @@ module.exports = function parseOutput(input) {
 
     const effectiveStatus = status === 'waiting_approval' && !activeModal
         ? (/^\s*[❯›>]\s*$/m.test(screenText) ? 'idle' : 'generating')
-        : status;
+        : authBlocker ? 'error' : status;
 
     // ── Prompt resolution ────────────────────────────────────────────────────
     let promptText = '';
@@ -891,6 +909,7 @@ module.exports = function parseOutput(input) {
                 : {}),
         })),
         activeModal,
+        ...(authBlocker ? { errorReason: 'auth_failed', errorMessage: authBlocker } : {}),
         ...(controlValues ? { controlValues } : {}),
     };
 };

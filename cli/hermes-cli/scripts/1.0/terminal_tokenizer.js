@@ -44,6 +44,7 @@ function isNoise(line) {
     || /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/.test(line)
     || /^\d+$/.test(line)
     || /^\d+(?:\.\d+)?\s*(?:ms|s|m|h)$/i.test(line)
+    || /^\d+(?:\.\d+)?\s*(?:ms|s|m|h)\s*[-─━═]{8,}$/i.test(line)
     || /Hermes Agent v[0-9]/i.test(line)
     || /Available Tools|Available Skills/i.test(line)
     || isTransientAssistantFooterLine(line)

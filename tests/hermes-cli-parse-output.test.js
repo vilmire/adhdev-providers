@@ -756,6 +756,36 @@ test('hermes-cli does not surface status-bar duration as a tool bubble or strip 
   assert.equal(detailed.some((message) => message.role === 'assistant' && message.kind === 'tool' && /^4\s*s$/i.test(message.content)), false);
 });
 
+test('hermes-cli does not surface duration separator chrome as the last assistant answer', () => {
+  const prompt = 'Confirm the previous raw verification in one short paragraph.';
+  const reply = [
+    'Confirmed: tmp/adhdev_cli_verify.py was created and executed.',
+    'The markers included UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧ and 1,4,9,16,25.',
+  ].join(' ');
+  const result = parseOutput({
+    screenText: [
+      `● ${prompt}`,
+      '╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮',
+      reply,
+      '╰──────────────────────────────────────────────────────────────────────────────╯',
+      '16s ────────────────────────────────────────────────────────────────────────────────',
+      '❯',
+    ].join('\n'),
+    buffer: [
+      `● ${prompt}`,
+      reply,
+      '16s ────────────────────────────────────────────────────────────────────────────────',
+      '❯',
+    ].join('\n'),
+    messages: [],
+  });
+
+  const assistantMessages = toDetailedMessages(result)
+    .filter((message) => message.role === 'assistant' && (message.kind || 'standard') === 'standard');
+  assert.equal(assistantMessages.at(-1)?.content, reply);
+  assert.equal(assistantMessages.some((message) => /^16s\s+─/.test(message.content)), false);
+});
+
 test('hermes-cli strips read_chat protocol artifact lines from assistant bubbles', () => {
   const result = parseOutput({
     screenText: '❯',
