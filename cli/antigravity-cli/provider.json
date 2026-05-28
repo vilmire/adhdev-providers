@@ -61,5 +61,14 @@
     "controls": {
       "typedResults": false
     }
+  },
+  "canonicalHistory": {
+    "format": "antigravity-opaque-protobuf",
+    "watchPath": "~/.gemini/antigravity/conversations/*.pb",
+    "mode": "native-source",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   }
 }

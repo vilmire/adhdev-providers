@@ -566,6 +566,47 @@ function listCodexNativeHistory() {
   return { sessions: sortSummaries(sessions) };
 }
 
+function antigravityConversationsRoot() {
+  return path.join(os.homedir(), '.gemini', 'antigravity', 'conversations');
+}
+
+function listAntigravityConversationFiles() {
+  const root = antigravityConversationsRoot();
+  return listFilesRecursive(root, (_entryPath, entry) => entry.isFile() && /^[0-9a-f-]+\.pb$/i.test(entry.name))
+    .map((sourcePath) => {
+      const sessionId = path.basename(sourcePath, '.pb');
+      if (!isUuidLikeSessionId(sessionId)) return null;
+      return { sessionId, historySessionId: sessionId, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath) };
+    })
+    .filter(Boolean);
+}
+
+function readAntigravityNativeHistory() {
+  // Antigravity CLI 1.0.x exposes conversation IDs and stores native records under
+  // ~/.gemini/antigravity/conversations/*.pb, but those files are opaque protobuf
+  // payloads with no stable public schema. Fail closed instead of pretending PTY is
+  // provider-native or guessing at private binary fields.
+  return null;
+}
+
+function listAntigravityNativeHistory() {
+  const sessions = listAntigravityConversationFiles().map((ref) => ({
+    historySessionId: ref.historySessionId || ref.sessionId,
+    sessionId: ref.sessionId,
+    sessionTitle: undefined,
+    messageCount: 0,
+    firstMessageAt: ref.sourceMtimeMs || Date.now(),
+    lastMessageAt: ref.sourceMtimeMs || Date.now(),
+    preview: undefined,
+    source: 'provider-native',
+    sourcePath: ref.sourcePath,
+    sourceMtimeMs: ref.sourceMtimeMs || 0,
+    agent: 'antigravity-cli',
+    unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
+  }));
+  return { sessions: sortSummaries(sessions) };
+}
+
 function buildSummary(agentType, ref, messages) {
   const visible = Array.isArray(messages) ? messages.filter((message) => message && message.kind !== 'session_start') : [];
   if (visible.length === 0) return null;
@@ -599,6 +640,8 @@ module.exports = {
   listClaudeNativeHistory,
   readCodexNativeHistory,
   listCodexNativeHistory,
+  readAntigravityNativeHistory,
+  listAntigravityNativeHistory,
   __clearCodexNativeHistoryCaches: clearCodexNativeHistoryCaches,
   __getCodexNativeHistoryCacheStats: getCodexNativeHistoryCacheStats,
 };
