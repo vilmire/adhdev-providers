@@ -570,6 +570,14 @@ function antigravityConversationsRoot() {
   return path.join(os.homedir(), '.gemini', 'antigravity', 'conversations');
 }
 
+function antigravityCliRoot() {
+  return path.join(os.homedir(), '.gemini', 'antigravity-cli');
+}
+
+function antigravityCliHistoryPath() {
+  return path.join(antigravityCliRoot(), 'history.jsonl');
+}
+
 function listAntigravityConversationFiles() {
   const root = antigravityConversationsRoot();
   return listFilesRecursive(root, (_entryPath, entry) => entry.isFile() && /^[0-9a-f-]+\.pb$/i.test(entry.name))
@@ -581,29 +589,167 @@ function listAntigravityConversationFiles() {
     .filter(Boolean);
 }
 
-function readAntigravityNativeHistory() {
-  // Antigravity CLI 1.0.x exposes conversation IDs and stores native records under
-  // ~/.gemini/antigravity/conversations/*.pb, but those files are opaque protobuf
-  // payloads with no stable public schema. Fail closed instead of pretending PTY is
-  // provider-native or guessing at private binary fields.
-  return null;
+function readAntigravityCliHistoryRows() {
+  const sourcePath = antigravityCliHistoryPath();
+  let lines = [];
+  try { lines = fs.readFileSync(sourcePath, 'utf-8').split('\n').filter(Boolean); } catch { return { sourcePath, sourceMtimeMs: 0, rows: [] }; }
+  const rows = [];
+  for (const line of lines) {
+    let parsed = null;
+    try { parsed = JSON.parse(line); } catch { parsed = null; }
+    if (!parsed || typeof parsed !== 'object') continue;
+    const conversationId = normalizeHistorySessionId(parsed.conversationId);
+    const display = typeof parsed.display === 'string' ? parsed.display.trim() : '';
+    const workspace = typeof parsed.workspace === 'string' ? parsed.workspace.trim() : '';
+    const receivedAt = extractTimestampValue(parsed.timestamp);
+    if (!conversationId || !isUuidLikeSessionId(conversationId) || !display || !receivedAt) continue;
+    rows.push({ conversationId, display, workspace, receivedAt });
+  }
+  return { sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), rows };
+}
+
+function antigravityRowsMatchWorkspace(rows, workspace) {
+  const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  if (!normalizedWorkspace) return rows;
+  return rows.filter((row) => row.workspace && workspacePathsMatch(row.workspace, normalizedWorkspace));
+}
+
+function antigravityRowsMatchPrompt(rows, promptText) {
+  const expected = String(promptText || '').replace(/\s+/g, ' ').trim();
+  if (!expected) return rows;
+  return rows.filter((row) => row.display.replace(/\s+/g, ' ').trim() === expected);
+}
+
+function resolveAntigravityConversation(sessionId, workspace, promptText) {
+  const normalized = normalizeHistorySessionId(sessionId);
+  if (normalized && !isUuidLikeSessionId(normalized)) return null;
+  const history = readAntigravityCliHistoryRows();
+  let rows = history.rows;
+  if (normalized) rows = rows.filter((row) => row.conversationId === normalized);
+  rows = antigravityRowsMatchWorkspace(rows, workspace);
+  rows = antigravityRowsMatchPrompt(rows, promptText);
+  if (rows.length === 0) {
+    if (normalized) {
+      const pbPath = resolvePathInside(antigravityConversationsRoot(), `${normalized}.pb`);
+      if (pbPath && fs.existsSync(pbPath)) {
+        return {
+          sessionId: normalized,
+          historySessionId: normalized,
+          sourcePath: pbPath,
+          sourceMtimeMs: statMtimeMs(pbPath),
+          rows: [],
+          unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
+        };
+      }
+    }
+    return null;
+  }
+  rows.sort((a, b) => a.receivedAt - b.receivedAt);
+  const latest = rows[rows.length - 1];
+  const sessionRows = history.rows
+    .filter((row) => row.conversationId === latest.conversationId)
+    .filter((row) => !workspace || !row.workspace || workspacePathsMatch(row.workspace, workspace))
+    .sort((a, b) => a.receivedAt - b.receivedAt);
+  return {
+    sessionId: latest.conversationId,
+    historySessionId: latest.conversationId,
+    sourcePath: history.sourcePath,
+    sourceMtimeMs: history.sourceMtimeMs,
+    rows: sessionRows,
+    workspace: latest.workspace,
+  };
+}
+
+function readAntigravityNativeHistory(input = {}) {
+  const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
+  const workspace = input.workspace || input.args?.workspace;
+  const promptText = input.promptText || input.expectedPrompt || input.args?.promptText || input.args?.expectedPrompt;
+  const ref = resolveAntigravityConversation(sessionId, workspace, promptText);
+  if (!ref || ref.unavailableReason || !Array.isArray(ref.rows) || ref.rows.length === 0) return null;
+  const records = [];
+  const firstWorkspace = ref.workspace || ref.rows.find((row) => row.workspace)?.workspace || '';
+  if (firstWorkspace) {
+    const firstTs = ref.rows[0].receivedAt;
+    records.push({ ts: new Date(firstTs).toISOString(), receivedAt: firstTs, role: 'system', kind: 'session_start', content: firstWorkspace, agent: 'antigravity-cli', historySessionId: ref.sessionId, workspace: firstWorkspace });
+  }
+  for (const row of ref.rows) {
+    records.push({
+      ts: new Date(row.receivedAt).toISOString(),
+      receivedAt: row.receivedAt,
+      role: 'user',
+      content: row.display,
+      kind: 'standard',
+      agent: 'antigravity-cli',
+      historySessionId: ref.sessionId,
+      ...(row.workspace ? { workspace: row.workspace } : {}),
+    });
+  }
+  return {
+    messages: records,
+    providerSessionId: ref.sessionId,
+    sourcePath: ref.sourcePath,
+    sourceMtimeMs: ref.sourceMtimeMs,
+    nativeHistoryCoverage: 'partial',
+    partialReason: 'antigravity_cli_history_jsonl_contains_user_prompts_only',
+    unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
+  };
+}
+
+function buildAntigravityCliJsonlSummaries() {
+  const history = readAntigravityCliHistoryRows();
+  const grouped = new Map();
+  for (const row of history.rows) {
+    const existing = grouped.get(row.conversationId) || {
+      historySessionId: row.conversationId,
+      sessionId: row.conversationId,
+      sessionTitle: undefined,
+      messageCount: 0,
+      firstMessageAt: row.receivedAt,
+      lastMessageAt: row.receivedAt,
+      preview: undefined,
+      workspace: row.workspace || undefined,
+      source: 'provider-native',
+      sourcePath: history.sourcePath,
+      sourceMtimeMs: history.sourceMtimeMs,
+      agent: 'antigravity-cli',
+      nativeHistoryCoverage: 'partial',
+      partialReason: 'antigravity_cli_history_jsonl_contains_user_prompts_only',
+      unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
+    };
+    existing.messageCount += 1;
+    existing.firstMessageAt = Math.min(existing.firstMessageAt || row.receivedAt, row.receivedAt);
+    if (row.receivedAt >= (existing.lastMessageAt || 0)) {
+      existing.lastMessageAt = row.receivedAt;
+      existing.sessionTitle = row.display;
+      existing.preview = row.display;
+      if (row.workspace) existing.workspace = row.workspace;
+    }
+    grouped.set(row.conversationId, existing);
+  }
+  return Array.from(grouped.values());
 }
 
 function listAntigravityNativeHistory() {
-  const sessions = listAntigravityConversationFiles().map((ref) => ({
-    historySessionId: ref.historySessionId || ref.sessionId,
-    sessionId: ref.sessionId,
-    sessionTitle: undefined,
-    messageCount: 0,
-    firstMessageAt: ref.sourceMtimeMs || Date.now(),
-    lastMessageAt: ref.sourceMtimeMs || Date.now(),
-    preview: undefined,
-    source: 'provider-native',
-    sourcePath: ref.sourcePath,
-    sourceMtimeMs: ref.sourceMtimeMs || 0,
-    agent: 'antigravity-cli',
-    unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
-  }));
+  const sessions = buildAntigravityCliJsonlSummaries();
+  const seen = new Set(sessions.map((session) => session.historySessionId));
+  for (const ref of listAntigravityConversationFiles()) {
+    if (seen.has(ref.historySessionId || ref.sessionId)) continue;
+    sessions.push({
+      historySessionId: ref.historySessionId || ref.sessionId,
+      sessionId: ref.sessionId,
+      sessionTitle: undefined,
+      messageCount: 0,
+      firstMessageAt: ref.sourceMtimeMs || Date.now(),
+      lastMessageAt: ref.sourceMtimeMs || Date.now(),
+      preview: undefined,
+      source: 'provider-native',
+      sourcePath: ref.sourcePath,
+      sourceMtimeMs: ref.sourceMtimeMs || 0,
+      agent: 'antigravity-cli',
+      nativeHistoryCoverage: 'unavailable',
+      unavailableReason: 'opaque_antigravity_protobuf_without_stable_schema',
+    });
+  }
   return { sessions: sortSummaries(sessions) };
 }
 

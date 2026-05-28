@@ -2,6 +2,7 @@
 
 const detectStatus = require('./detect_status.js');
 const parseApproval = require('./parse_approval.js');
+const nativeHistory = require('../../../_shared/native_history.js');
 
 function stripAnsi(text) {
   return String(text || '')
@@ -288,5 +289,13 @@ module.exports = function parseOutput(input) {
     title: 'Antigravity CLI',
     messages: mergeMessages(input?.messages, messages),
     activeModal,
+    ...(() => {
+      const native = nativeHistory.readAntigravityNativeHistory({
+        historySessionId: input?.historySessionId || input?.providerSessionId || input?.sessionId,
+        workspace: input?.workspace || input?.workingDir,
+        promptText,
+      });
+      return native?.providerSessionId ? { providerSessionId: native.providerSessionId } : {};
+    })(),
   };
 };

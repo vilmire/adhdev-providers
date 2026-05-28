@@ -216,6 +216,55 @@ test('codex native history script caches transcript path scans and parsed record
   assert.ok(stats.transcriptHits >= 1);
 }));
 
+test('antigravity native history script reads partial CLI history JSONL without claiming full transcript coverage', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ab';
+  const otherSessionId = '12345678-1234-4234-9234-1234567890ac';
+  const workspace = '/workspaces/agy-native';
+  const sourcePath = path.join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+  fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+  fs.writeFileSync(sourcePath, [
+    JSON.stringify({ display: 'other prompt', timestamp: 1779253000000, workspace, conversationId: otherSessionId }),
+    JSON.stringify({ display: 'agy user one', timestamp: 1779253163746, workspace, conversationId: sessionId }),
+    JSON.stringify({ display: 'agy user two', timestamp: 1779253177873, workspace, conversationId: sessionId }),
+    '',
+  ].join('\n'), 'utf8');
+
+  const read = antigravityScripts.readNativeHistory({ historySessionId: sessionId, workspace });
+  assert.equal(read.sourcePath, sourcePath);
+  assert.equal(read.providerSessionId, sessionId);
+  assert.equal(read.nativeHistoryCoverage, 'partial');
+  assert.equal(read.partialReason, 'antigravity_cli_history_jsonl_contains_user_prompts_only');
+  assert.equal(read.unavailableReason, 'opaque_antigravity_protobuf_without_stable_schema');
+  assert.deepEqual(read.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['system', 'session_start', workspace],
+    ['user', 'standard', 'agy user one'],
+    ['user', 'standard', 'agy user two'],
+  ]);
+
+  const listed = antigravityScripts.listNativeHistory({});
+  assert.equal(listed.sessions[0].historySessionId, sessionId);
+  assert.equal(listed.sessions[0].source, 'provider-native');
+  assert.equal(listed.sessions[0].sourcePath, sourcePath);
+  assert.equal(listed.sessions[0].messageCount, 2);
+  assert.equal(listed.sessions[0].nativeHistoryCoverage, 'partial');
+}));
+
+test('antigravity native history resolves latest conversation by workspace and prompt', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ab';
+  const workspace = '/workspaces/agy-native-prompt';
+  const sourcePath = path.join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+  fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+  fs.writeFileSync(sourcePath, [
+    JSON.stringify({ display: 'find this prompt', timestamp: 1779253163746, workspace: '/workspaces/other', conversationId: '12345678-1234-4234-9234-1234567890ac' }),
+    JSON.stringify({ display: 'find this prompt', timestamp: 1779253177873, workspace, conversationId: sessionId }),
+    '',
+  ].join('\n'), 'utf8');
+
+  const read = antigravityScripts.readNativeHistory({ workspace, promptText: 'find this prompt' });
+  assert.equal(read.providerSessionId, sessionId);
+  assert.equal(read.messages.find((m) => m.role === 'user')?.content, 'find this prompt');
+}));
+
 test('antigravity native history script fails closed while listing opaque protobuf sessions', () => withTempHome((home) => {
   const sessionId = '12345678-1234-4234-9234-1234567890ab';
   const sourcePath = path.join(home, '.gemini', 'antigravity', 'conversations', `${sessionId}.pb`);
@@ -229,5 +278,6 @@ test('antigravity native history script fails closed while listing opaque protob
   assert.equal(listed.sessions[0].source, 'provider-native');
   assert.equal(listed.sessions[0].sourcePath, sourcePath);
   assert.equal(listed.sessions[0].messageCount, 0);
+  assert.equal(listed.sessions[0].nativeHistoryCoverage, 'unavailable');
   assert.equal(listed.sessions[0].unavailableReason, 'opaque_antigravity_protobuf_without_stable_schema');
 }));

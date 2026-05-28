@@ -1,5 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 
 const provider = require('../cli/antigravity-cli/provider.json');
 const detectStatus = require('../cli/antigravity-cli/scripts/1.0/detect_status.js');
@@ -17,6 +20,12 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.sendKey, '\r');
   assert.equal(provider.requirePromptEchoBeforeSubmit, true);
   assert.deepEqual(provider.resume?.resumeArgs, ['--continue']);
+});
+
+test('antigravity-cli provider declares partial native history source instead of opaque protobuf full coverage', () => {
+  assert.equal(provider.canonicalHistory.format, 'antigravity-cli-history-jsonl-partial');
+  assert.match(provider.canonicalHistory.watchPath, /antigravity-cli\/history\.jsonl/);
+  assert.match(provider.canonicalHistory.watchPath, /antigravity\/conversations\/\*\.pb/);
 });
 
 test('antigravity-cli detects workspace trust prompt as approval', () => {
@@ -286,4 +295,45 @@ test('antigravity-cli multi-turn deduplication: keeps each unique user turn once
   assert.equal(users[0].content, 'First question');
   assert.equal(users[1].content, 'Second question');
   assert.match(assistants[1].content, /Complete second answer/);
+});
+
+test('antigravity-cli parse_output derives providerSessionId from partial native CLI history but does not claim provider transcript authority', () => {
+  const originalHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-agy-native-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-agy-native-work-'));
+  const sessionId = '12345678-1234-4234-9234-1234567890ab';
+  try {
+    process.env.HOME = home;
+    const historyPath = path.join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+    fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+    fs.writeFileSync(historyPath, JSON.stringify({
+      display: 'current agy prompt',
+      timestamp: 1779253163746,
+      workspace,
+      conversationId: sessionId,
+    }) + '\n', 'utf8');
+
+    const parsed = parseOutput({
+      workspace,
+      workingDir: workspace,
+      screenText: [
+        '> current agy prompt',
+        'visible pty answer',
+        '>',
+      ].join('\n'),
+      buffer: '',
+      recentBuffer: '',
+      messages: [{ role: 'user', content: 'current agy prompt' }],
+    });
+
+    assert.equal(parsed.providerSessionId, sessionId);
+    assert.equal(parsed.transcriptAuthority, undefined);
+    assert.equal(parsed.coverage, undefined);
+    assert.ok(parsed.messages.some((message) => message.content.includes('visible pty answer')));
+  } finally {
+    if (originalHome === undefined) delete process.env.HOME;
+    else process.env.HOME = originalHome;
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
 });

@@ -63,8 +63,8 @@
     }
   },
   "canonicalHistory": {
-    "format": "antigravity-opaque-protobuf",
-    "watchPath": "~/.gemini/antigravity/conversations/*.pb",
+    "format": "antigravity-cli-history-jsonl-partial",
+    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity/conversations/*.pb",
     "mode": "native-source",
     "scripts": {
       "readSession": "readNativeHistory",
