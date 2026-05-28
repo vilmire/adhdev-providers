@@ -643,6 +643,30 @@ function readAntigravityCliHistoryRows() {
   return { sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), rows };
 }
 
+function readAntigravityCliPromptRows() {
+  const sourcePath = antigravityCliHistoryPath();
+  let lines = [];
+  try { lines = fs.readFileSync(sourcePath, 'utf-8').split('\n').filter(Boolean); } catch { return { sourcePath, sourceMtimeMs: 0, rows: [] }; }
+  const rows = [];
+  for (const line of lines) {
+    let parsed = null;
+    try { parsed = JSON.parse(line); } catch { parsed = null; }
+    if (!parsed || typeof parsed !== 'object') continue;
+    const conversationId = normalizeHistorySessionId(parsed.conversationId);
+    const display = typeof parsed.display === 'string' ? parsed.display.trim() : '';
+    const workspace = typeof parsed.workspace === 'string' ? parsed.workspace.trim() : '';
+    const receivedAt = extractTimestampValue(parsed.timestamp);
+    if (!display || !receivedAt) continue;
+    rows.push({
+      conversationId: isUuidLikeSessionId(conversationId) ? conversationId : '',
+      display,
+      workspace,
+      receivedAt,
+    });
+  }
+  return { sourcePath, sourceMtimeMs: statMtimeMs(sourcePath), rows };
+}
+
 function antigravityRowsMatchWorkspace(rows, workspace) {
   const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
   if (!normalizedWorkspace) return rows;
@@ -715,6 +739,32 @@ function readAntigravityTranscriptRows(ref, workspace) {
     }
   }
   return records.length > 0 ? records : null;
+}
+
+function normalizeComparableText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function antigravityTranscriptIsMissingNewerPrompt(ref, workspace, transcriptMessages) {
+  const sourceMtimeMs = Number(ref?.sourceMtimeMs || 0);
+  if (!sourceMtimeMs || !Array.isArray(transcriptMessages)) return false;
+  const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  if (!normalizedWorkspace) return false;
+  const transcriptPrompts = new Set(
+    transcriptMessages
+      .filter((message) => message && message.role === 'user')
+      .map((message) => normalizeComparableText(message.content))
+      .filter(Boolean),
+  );
+  const history = readAntigravityCliPromptRows();
+  return history.rows
+    .filter((row) => row.receivedAt > sourceMtimeMs + 1000)
+    .filter((row) => row.workspace && workspacePathsMatch(row.workspace, normalizedWorkspace))
+    .some((row) => {
+      const prompt = normalizeComparableText(row.display);
+      if (!prompt || transcriptPrompts.has(prompt)) return false;
+      return !row.conversationId || row.conversationId === ref.sessionId;
+    });
 }
 
 function resolveAntigravityConversation(sessionId, workspace, promptText) {
@@ -790,8 +840,10 @@ function readAntigravityNativeHistory(input = {}) {
   const ref = resolveAntigravityConversation(sessionId, workspace, promptText);
   if (!ref || ref.unavailableReason) return null;
   if (ref.nativeHistoryCoverage === 'full') {
-    const transcriptMessages = readAntigravityTranscriptRows(ref, workspace || ref.workspace);
+    const transcriptWorkspace = workspace || ref.workspace;
+    const transcriptMessages = readAntigravityTranscriptRows(ref, transcriptWorkspace);
     if (transcriptMessages) {
+      if (antigravityTranscriptIsMissingNewerPrompt(ref, transcriptWorkspace, transcriptMessages)) return null;
       return {
         messages: transcriptMessages,
         providerSessionId: ref.sessionId,
