@@ -37,10 +37,14 @@ module.exports.createState = () => ({
     spinnerStabilityCount: 0,
 });
 
+function resolveInput(state, input) {
+    return input === undefined ? state : input;
+}
+
 // ─── Core ───
 
 /** Parse full PTY output → ReadChatResult */
-module.exports.parseSession = (state, input) => { const m = loadModule('parse_session.js'); return m ? m(input) : null; };
+module.exports.parseSession = (state, input) => { const m = loadModule('parse_session.js'); return m ? m(resolveInput(state, input)) : null; };
 module.exports.parseOutput = (state, input) => {
     const mod = loadModule('parse_output.js');
     return mod ? mod(input) : null;

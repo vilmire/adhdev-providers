@@ -27,6 +27,10 @@ function nowMs(input) {
     return Number.isFinite(input && input.now) ? Number(input.now) : Date.now();
 }
 
+function resolveInput(state, input) {
+    return input === undefined ? state : input;
+}
+
 function shouldSettleIdle(state, input) {
     return Boolean(
         input && input.isWaitingForResponse === true
@@ -133,9 +137,9 @@ function settleStatus(state, input, parsed) {
 
 module.exports.createState = () => ({ lastGeneratingAt: 0, lastApprovalText: '', lastProviderStatus: 'idle', idleCandidate: null, settledIdleSignature: '' });
 
-module.exports.parseSession = (state, input) => { const m = loadModule('parse_session.js'); return m ? settleStatus(state, input, m(input)) : null; };
-module.exports.parseOutput   = (state, input) => { const m = loadModule('parse_output.js'); return m ? settleStatus(state, input, m(input)) : null; };
-module.exports.detectStatus  = (state, input) => { const m = loadModule('detect_status.js'); return m ? settleStatus(state, input, m(input)) : null; };
+module.exports.parseSession = (state, input) => { const m = loadModule('parse_session.js'); const resolved = resolveInput(state, input); return m ? settleStatus(state, resolved, m(resolved)) : null; };
+module.exports.parseOutput   = (state, input) => { const m = loadModule('parse_output.js'); const resolved = resolveInput(state, input); return m ? settleStatus(state, resolved, m(resolved)) : null; };
+module.exports.detectStatus  = (state, input) => { const m = loadModule('detect_status.js'); const resolved = resolveInput(state, input); return m ? settleStatus(state, resolved, m(resolved)) : null; };
 module.exports.parseApproval = (state, input) => { const m = loadModule('parse_approval.js'); return m ? m(input) : null; };
 module.exports.readNativeHistory = nativeHistory.readCodexNativeHistory;
 module.exports.listNativeHistory = nativeHistory.listCodexNativeHistory;

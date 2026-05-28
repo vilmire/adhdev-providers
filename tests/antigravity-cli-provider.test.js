@@ -162,7 +162,14 @@ test('antigravity-cli parses a completed visible turn from the current screen', 
 
   assert.equal(result.status, 'idle');
   assert.deepEqual(result.messages, expectedMessages);
-  assert.deepEqual(session.messages, expectedMessages);
+  assert.deepEqual(
+    session.messages.map(({ role, content }) => ({ role, content })),
+    expectedMessages,
+  );
+  assert.equal(typeof session.messages[0].providerUnitKey, 'string');
+  assert.equal(typeof session.messages[0].bubbleId, 'string');
+  assert.equal(typeof session.messages[0]._turnKey, 'string');
+  assert.equal(session.messages[0].bubbleState, 'final');
 });
 
 test('antigravity-cli does not invent assistant transcript from startup chrome', () => {
