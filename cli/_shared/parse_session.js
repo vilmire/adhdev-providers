@@ -47,10 +47,20 @@ function normalizeMessageIdentity(messages, status) {
 function normalizeParseOutputSession(output, options = {}) {
   const status = typeof output?.status === 'string' ? output.status : 'idle';
   return {
+    ...(typeof output?.id === 'string' ? { id: output.id } : {}),
     status,
+    ...(typeof output?.title === 'string' ? { title: output.title } : {}),
     messages: normalizeMessageIdentity(output?.messages, status),
     modal: output?.activeModal || output?.modal || null,
+    activeModal: output?.activeModal || output?.modal || null,
     parsedStatus: status || null,
+    ...(typeof output?.providerSessionId === 'string' ? { providerSessionId: output.providerSessionId } : {}),
+    ...(output?.transcriptAuthority === 'provider' || output?.transcriptAuthority === 'daemon'
+      ? { transcriptAuthority: output.transcriptAuthority }
+      : {}),
+    ...(output?.coverage === 'full' || output?.coverage === 'tail' || output?.coverage === 'current-turn'
+      ? { coverage: output.coverage }
+      : {}),
     ...(options.resultFields || {}),
   };
 }

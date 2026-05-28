@@ -273,9 +273,17 @@ function collectNativeMessages(input, fallbackSessionId) {
     if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') return { messages: [], providerSessionId: fallbackSessionId || '' };
     const workspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
     const historySessionId = String(input?.historySessionId || input?.sessionId || input?.args?.historySessionId || input?.args?.sessionId || fallbackSessionId || '').trim();
-    if (!historySessionId) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    if (!historySessionId && !workspace) return { messages: [], providerSessionId: fallbackSessionId || '' };
     const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
     const records = Array.isArray(result?.messages) ? result.messages : [];
+    if (!historySessionId) {
+        const promptText = String(input?.promptText || input?.scope?.prompt || input?.args?.promptText || '').trim();
+        const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
+        const lastUser = [...previousMessages].reverse().find(m => m?.role === 'user' && String(m?.content || '').trim());
+        const expectedPrompt = normalizeForCompare(promptText || lastUser?.content || '');
+        const hasMatchingPrompt = expectedPrompt && records.some(record => record?.role === 'user' && normalizeForCompare(record.content) === expectedPrompt);
+        if (expectedPrompt && !hasMatchingPrompt) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    }
     const messages = records.map(normalizeNativeMessage).filter(Boolean);
     const resolvedSessionId = String(records.find(record => record?.historySessionId)?.historySessionId || historySessionId || '').trim();
     return { messages: dedupeMessages(messages), providerSessionId: resolvedSessionId || fallbackSessionId || '' };
