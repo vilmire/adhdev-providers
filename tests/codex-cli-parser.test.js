@@ -1358,6 +1358,47 @@ test('provider.json: no dead display controls for model or reasoning', () => {
   assert.equal(deadDisplays.length, 0, 'display-only model/reasoning controls should not exist — they are not clickable');
 });
 
+test('detect_status: Codex stays generating when tool activity appears after a stale idle prompt', () => {
+  const rawBuffer = [
+    '› gpt-5.1 codex · /model',
+    '',
+    '>',
+    '',
+    'functions.write_stdin({"session_id":123,"chars":"","yield_time_ms":30000})',
+    'Waiting for command output',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({
+      screenText: '>\n',
+      tail: rawBuffer,
+      rawBuffer,
+      isWaitingForResponse: true,
+    }),
+    'generating',
+  );
+});
+
+test('detect_status: Codex returns idle when prompt-ready evidence is newer than tool activity', () => {
+  const rawBuffer = [
+    'functions.write_stdin({"session_id":123,"chars":"","yield_time_ms":30000})',
+    'Tool output received',
+    '',
+    '>',
+    '› gpt-5.1 codex · /model',
+  ].join('\n');
+
+  assert.equal(
+    detectStatus({
+      screenText: '>\n› gpt-5.1 codex · /model',
+      tail: rawBuffer,
+      rawBuffer,
+      isWaitingForResponse: true,
+    }),
+    'idle',
+  );
+});
+
 test('parse_output: uses Codex native history by workspace before visible session id is known', () => {
   const previousHome = process.env.HOME;
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));

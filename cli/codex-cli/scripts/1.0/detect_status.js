@@ -67,6 +67,7 @@ const GENERATING_ESC_RE = /Esc to interrupt/i;
 const GENERATING_BRAILLE_RE = /[⠁-⣿]/;
 const GENERATING_PROGRESS_GLYPH_RE = /(?:^|\n)\s*[◦◐◑◒◓◔◕◉●]\s*(?:$|\n|[A-Z[(])/;
 const GENERATING_PARTIAL_WORK_RE = /(?:^|\s)•\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)\b/i;
+const ACTIVE_TOOL_ACTIVITY_RE = /(?:^|\n)\s*(?:[•·]\s*)?(?:functions\.)?(?:exec_command|write_stdin|apply_patch|view_image|read_mcp_resource|list_mcp_resources|mcp__[A-Za-z0-9_]+)\b|(?:^|\n)\s*(?:[•·]\s*)?(?:Running|Reading|Editing|Writing|Patching|Checking|Executing)\b/i;
 
 const IDLE_SEND_RE = /⏎\s+send/i;
 const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
@@ -98,6 +99,33 @@ function lastIdleFooterIndex(rawText) {
         lastModel = m.index;
     }
     return Math.max(tabQueue, lastModel);
+}
+
+function lastIdlePromptIndex(rawText) {
+    const promptRe = /(?:^|\n)\s*[›❯>]\s*(?:\n|$)/g;
+    let last = -1;
+    let match;
+    while ((match = promptRe.exec(rawText)) !== null) {
+        last = match.index;
+    }
+    return Math.max(last, lastIdleFooterIndex(rawText));
+}
+
+function lastActiveToolActivityIndex(rawText) {
+    const toolRe = new RegExp(ACTIVE_TOOL_ACTIVITY_RE.source, 'gi');
+    let last = -1;
+    let match;
+    while ((match = toolRe.exec(rawText)) !== null) {
+        last = match.index;
+    }
+    return last;
+}
+
+function hasActiveToolActivityAfterIdle(rawText) {
+    const source = String(rawText || '');
+    const lastTool = lastActiveToolActivityIndex(source);
+    if (lastTool < 0) return false;
+    return lastTool > lastIdlePromptIndex(source);
 }
 
 function hasApproval(lines) {
@@ -203,6 +231,7 @@ module.exports = function detectStatus(input) {
     const recentRaw = raw || tail || screen;
 
     if (hasApproval(lines)) return 'waiting_approval';
+    if (input?.isWaitingForResponse && hasActiveToolActivityAfterIdle(recentRaw)) return 'generating';
     if (screen && hasReadyPrompt(screen)) return 'idle';
     if (screen && hasStartupIdleScreen(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
