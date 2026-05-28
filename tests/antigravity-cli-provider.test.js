@@ -16,16 +16,19 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.versionCommand, 'agy --version');
   assert.equal(provider.spawn.command, 'bash');
   assert.ok(provider.spawn.args[1].includes('agy'), 'spawn args should invoke agy');
+  assert.match(provider.spawn.args[1], /case "\$_agy_real" in \*\/\.\*/);
+  assert.match(provider.spawn.args[1], /ln -sfn/);
   assert.equal(provider.submitStrategy, 'wait_for_echo');
   assert.equal(provider.sendKey, '\r');
   assert.equal(provider.requirePromptEchoBeforeSubmit, true);
   assert.deepEqual(provider.resume?.resumeArgs, ['--continue']);
 });
 
-test('antigravity-cli provider declares partial native history source instead of opaque protobuf full coverage', () => {
-  assert.equal(provider.canonicalHistory.format, 'antigravity-cli-history-jsonl-partial');
+test('antigravity-cli provider declares CLI transcript logs as native history source', () => {
+  assert.equal(provider.canonicalHistory.format, 'antigravity-cli-transcript-jsonl');
   assert.match(provider.canonicalHistory.watchPath, /antigravity-cli\/history\.jsonl/);
-  assert.match(provider.canonicalHistory.watchPath, /antigravity\/conversations\/\*\.pb/);
+  assert.match(provider.canonicalHistory.watchPath, /antigravity-cli\/brain\/\*\/\.system_generated\/logs\/transcript\*\.jsonl/);
+  assert.match(provider.canonicalHistory.watchPath, /antigravity-cli\/conversations\/\*\.pb/);
 });
 
 test('antigravity-cli detects workspace trust prompt as approval', () => {

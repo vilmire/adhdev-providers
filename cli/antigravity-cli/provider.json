@@ -21,7 +21,7 @@
     "command": "bash",
     "args": [
       "-c",
-      "_agy_link=\"$(mktemp -d)/adhdev-agy-ws\" && ln -sfn \"{{workingDir}}\" \"$_agy_link\" && cd \"$_agy_link\" && exec agy"
+      "_agy_ws=\"{{workingDir}}\"; _agy_real=\"$(cd \"$_agy_ws\" 2>/dev/null && pwd -P || printf '%s' \"$_agy_ws\")\"; case \"$_agy_real\" in */.*) _agy_link=\"$(mktemp -d)/adhdev-agy-ws\" && ln -sfn \"$_agy_real\" \"$_agy_link\" && cd \"$_agy_link\" ;; *) cd \"$_agy_real\" ;; esac && exec agy"
     ],
     "shell": false,
     "env": {}
@@ -63,8 +63,8 @@
     }
   },
   "canonicalHistory": {
-    "format": "antigravity-cli-history-jsonl-partial",
-    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity/conversations/*.pb",
+    "format": "antigravity-cli-transcript-jsonl",
+    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript*.jsonl;~/.gemini/antigravity-cli/conversations/*.pb",
     "mode": "native-source",
     "scripts": {
       "readSession": "readNativeHistory",

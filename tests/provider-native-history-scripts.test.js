@@ -265,9 +265,69 @@ test('antigravity native history resolves latest conversation by workspace and p
   assert.equal(read.messages.find((m) => m.role === 'user')?.content, 'find this prompt');
 }));
 
+test('antigravity native history prefers CLI brain transcript JSONL when available', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ab';
+  const workspace = '/workspaces/agy-native-full';
+  const historyPath = path.join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+  const transcriptPath = path.join(home, '.gemini', 'antigravity-cli', 'brain', sessionId, '.system_generated', 'logs', 'transcript.jsonl');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+  fs.mkdirSync(path.dirname(transcriptPath), { recursive: true });
+  fs.writeFileSync(historyPath, JSON.stringify({
+    display: 'agy full prompt',
+    timestamp: 1779253163746,
+    workspace,
+    conversationId: sessionId,
+  }) + '\n', 'utf8');
+  fs.writeFileSync(transcriptPath, [
+    JSON.stringify({
+      step_index: 0,
+      source: 'USER_EXPLICIT',
+      type: 'USER_INPUT',
+      status: 'DONE',
+      created_at: '2026-05-28T13:03:33Z',
+      content: '<USER_REQUEST>\nagy full prompt\n</USER_REQUEST>\n<ADDITIONAL_METADATA>\nignored\n</ADDITIONAL_METADATA>',
+    }),
+    JSON.stringify({
+      step_index: 1,
+      source: 'MODEL',
+      type: 'PLANNER_RESPONSE',
+      status: 'DONE',
+      created_at: '2026-05-28T13:03:34Z',
+      content: 'agy full answer',
+      thinking: 'not user visible',
+    }),
+    JSON.stringify({
+      step_index: 2,
+      source: 'MODEL',
+      type: 'LIST_DIRECTORY',
+      status: 'DONE',
+      created_at: '2026-05-28T13:03:35Z',
+      content: 'tool output',
+    }),
+    '',
+  ].join('\n'), 'utf8');
+
+  const read = antigravityScripts.readNativeHistory({ historySessionId: sessionId, workspace });
+  assert.equal(read.sourcePath, transcriptPath);
+  assert.equal(read.providerSessionId, sessionId);
+  assert.equal(read.nativeHistoryCoverage, 'full');
+  assert.equal(read.partialReason, undefined);
+  assert.deepEqual(read.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['user', 'standard', 'agy full prompt'],
+    ['assistant', 'standard', 'agy full answer'],
+    ['assistant', 'tool', 'tool output'],
+  ]);
+
+  const listed = antigravityScripts.listNativeHistory({});
+  assert.equal(listed.sessions[0].historySessionId, sessionId);
+  assert.equal(listed.sessions[0].sourcePath, transcriptPath);
+  assert.equal(listed.sessions[0].messageCount, 3);
+  assert.equal(listed.sessions[0].nativeHistoryCoverage, 'full');
+}));
+
 test('antigravity native history script fails closed while listing opaque protobuf sessions', () => withTempHome((home) => {
   const sessionId = '12345678-1234-4234-9234-1234567890ab';
-  const sourcePath = path.join(home, '.gemini', 'antigravity', 'conversations', `${sessionId}.pb`);
+  const sourcePath = path.join(home, '.gemini', 'antigravity-cli', 'conversations', `${sessionId}.pb`);
   fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
   fs.writeFileSync(sourcePath, Buffer.from([0x0a, 0x03, 0x66, 0x6f, 0x6f]));
 
