@@ -143,6 +143,31 @@ test('antigravity-cli detects generating screen', () => {
   assert.equal(detectStatus({ screenText }), 'generating');
 });
 
+test('antigravity-cli trusts settled recent idle prompt over stale screen cancel chrome', () => {
+  const screenText = [
+    'Output:',
+    '  SQUARES=1,4,9,16,25',
+    '⡿ Loading...',
+    '└ Tip: Use /tasks to see background tasks',
+    '────────────────────────────────────────────────────────────────────────────────',
+    'esc to cancel                                              Gemini 3.1 Pro (High)',
+    '? for shortcuts',
+  ].join('\n');
+  const recentBuffer = [
+    'Output:',
+    '  SQUARES=1,4,9,16,25',
+    '',
+    'The file tmp/adhdev_cli_verify.py was created successfully.',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '>',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '? for shortcuts                                            Gemini 3.1 Pro (High)',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, recentBuffer, isWaitingForResponse: true }), 'idle');
+});
+
 test('antigravity-cli parses a completed visible turn from the current screen', () => {
   const promptText = 'Repeat exactly: ADHDEV_AGY_INTERACTIVE_SESSION';
   const screenText = [
