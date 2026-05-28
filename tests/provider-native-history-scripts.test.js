@@ -372,6 +372,50 @@ test('antigravity native history rejects stale brain transcript when CLI history
   assert.equal(read, null);
 }));
 
+test('antigravity native history matches latest workspace prompt to brain transcript when CLI history has no conversation id', () => withTempHome((home) => {
+  const runtimeSessionId = '12345678-1234-4234-9234-1234567890ab';
+  const transcriptSessionId = '22345678-1234-4234-9234-1234567890ab';
+  const workspace = '/workspaces/agy-native-no-conversation-id';
+  const historyPath = path.join(home, '.gemini', 'antigravity-cli', 'history.jsonl');
+  const transcriptPath = path.join(home, '.gemini', 'antigravity-cli', 'brain', transcriptSessionId, '.system_generated', 'logs', 'transcript_full.jsonl');
+  fs.mkdirSync(path.dirname(historyPath), { recursive: true });
+  fs.mkdirSync(path.dirname(transcriptPath), { recursive: true });
+  fs.writeFileSync(historyPath, JSON.stringify({
+    display: 'prompt without conversation id',
+    timestamp: 1779253200000,
+    workspace,
+  }) + '\n', 'utf8');
+  fs.writeFileSync(transcriptPath, [
+    JSON.stringify({
+      step_index: 0,
+      source: 'USER_EXPLICIT',
+      type: 'USER_INPUT',
+      status: 'DONE',
+      created_at: '2026-05-28T13:00:00Z',
+      content: '<USER_REQUEST>\nprompt without conversation id\n</USER_REQUEST>',
+    }),
+    JSON.stringify({
+      step_index: 1,
+      source: 'MODEL',
+      type: 'PLANNER_RESPONSE',
+      status: 'DONE',
+      created_at: '2026-05-28T13:00:01Z',
+      content: 'native answer',
+    }),
+    '',
+  ].join('\n'), 'utf8');
+  fs.utimesSync(transcriptPath, new Date(1779253210000), new Date(1779253210000));
+
+  const read = antigravityScripts.readNativeHistory({ historySessionId: runtimeSessionId, workspace });
+  assert.equal(read.sourcePath, transcriptPath);
+  assert.equal(read.providerSessionId, transcriptSessionId);
+  assert.equal(read.nativeHistoryCoverage, 'full');
+  assert.deepEqual(read.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['user', 'standard', 'prompt without conversation id'],
+    ['assistant', 'standard', 'native answer'],
+  ]);
+}));
+
 test('antigravity native history script fails closed while listing opaque protobuf sessions', () => withTempHome((home) => {
   const sessionId = '12345678-1234-4234-9234-1234567890ab';
   const sourcePath = path.join(home, '.gemini', 'antigravity-cli', 'conversations', `${sessionId}.pb`);

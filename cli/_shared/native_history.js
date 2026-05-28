@@ -745,6 +745,41 @@ function normalizeComparableText(value) {
   return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function antigravityTranscriptUserPrompts(ref) {
+  const records = readAntigravityTranscriptRows(ref, ref.workspace || '');
+  if (!Array.isArray(records)) return [];
+  return records
+    .filter((message) => message && message.role === 'user')
+    .map((message) => normalizeComparableText(message.content))
+    .filter(Boolean);
+}
+
+function resolveAntigravityTranscriptByWorkspacePrompt(workspace, promptText) {
+  const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  if (!normalizedWorkspace) return null;
+  let expectedPrompt = normalizeComparableText(promptText);
+  let promptReceivedAt = 0;
+  if (!expectedPrompt) {
+    const history = readAntigravityCliPromptRows();
+    const rows = antigravityRowsMatchWorkspace(history.rows, normalizedWorkspace)
+      .sort((a, b) => a.receivedAt - b.receivedAt);
+    const latest = rows[rows.length - 1];
+    expectedPrompt = normalizeComparableText(latest?.display);
+    promptReceivedAt = latest?.receivedAt || 0;
+  }
+  if (!expectedPrompt) return null;
+  const candidates = listAntigravityTranscriptLogs()
+    .filter((ref) => !promptReceivedAt || ref.sourceMtimeMs >= promptReceivedAt - 120_000)
+    .sort((a, b) => b.sourceMtimeMs - a.sourceMtimeMs);
+  for (const ref of candidates) {
+    const prompts = antigravityTranscriptUserPrompts({ ...ref, workspace: normalizedWorkspace });
+    if (prompts.includes(expectedPrompt)) {
+      return { ...ref, workspace: normalizedWorkspace, rows: [], nativeHistoryCoverage: 'full' };
+    }
+  }
+  return null;
+}
+
 function antigravityTranscriptIsMissingNewerPrompt(ref, workspace, transcriptMessages) {
   const sourceMtimeMs = Number(ref?.sourceMtimeMs || 0);
   if (!sourceMtimeMs || !Array.isArray(transcriptMessages)) return false;
@@ -803,7 +838,7 @@ function resolveAntigravityConversation(sessionId, workspace, promptText) {
         };
       }
     }
-    return null;
+    return resolveAntigravityTranscriptByWorkspacePrompt(workspace, promptText);
   }
   rows.sort((a, b) => a.receivedAt - b.receivedAt);
   const latest = rows[rows.length - 1];
