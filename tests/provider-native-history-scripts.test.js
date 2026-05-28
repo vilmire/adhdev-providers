@@ -46,10 +46,12 @@ for (const [name, provider] of [
 
 test('hermes native history script reads and lists ~/.hermes session JSON', () => withTempHome((home) => {
   const sessionId = '20260420_095128_ae3acd';
+  const workspace = '/workspaces/hermes-native';
   const sourcePath = path.join(home, '.hermes', 'sessions', `session_${sessionId}.json`);
   fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
   fs.writeFileSync(sourcePath, JSON.stringify({
     session_start: '2026-04-20T09:52:10.000Z',
+    workspace,
     messages: [
       { role: 'user', content: 'hermes user', timestamp: '2026-04-20T09:52:11.000Z' },
       { role: 'assistant', content: 'hermes assistant', timestamp: '2026-04-20T09:52:12.000Z' },
@@ -60,14 +62,66 @@ test('hermes native history script reads and lists ~/.hermes session JSON', () =
   const read = hermesScripts.readNativeHistory({ historySessionId: sessionId });
   assert.equal(read.sourcePath, sourcePath);
   assert.deepEqual(read.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['system', 'session_start', workspace],
     ['user', 'standard', 'hermes user'],
     ['assistant', 'standard', 'hermes assistant'],
     ['assistant', 'tool', 'tool output'],
   ]);
+  assert.equal(read.messages[1].workspace, workspace);
 
   const listed = hermesScripts.listNativeHistory({});
   assert.equal(listed.sessions[0].historySessionId, sessionId);
   assert.equal(listed.sessions[0].messageCount, 3);
+  assert.equal(listed.sessions[0].workspace, workspace);
+}));
+
+test('hermes native history script resolves latest matching session by workspace before session id is known', () => withTempHome((home) => {
+  const olderSessionId = '20260420_095128_old';
+  const newerSessionId = '20260420_095128_new';
+  const workspace = '/workspaces/hermes-workspace';
+  const otherWorkspace = '/workspaces/hermes-other';
+  const sessionsDir = path.join(home, '.hermes', 'sessions');
+  fs.mkdirSync(sessionsDir, { recursive: true });
+
+  const olderPath = path.join(sessionsDir, `session_${olderSessionId}.json`);
+  const newerPath = path.join(sessionsDir, `session_${newerSessionId}.json`);
+  const otherPath = path.join(sessionsDir, 'session_20260420_095128_other.json');
+  fs.writeFileSync(olderPath, JSON.stringify({
+    session_start: '2026-04-20T09:52:10.000Z',
+    project: { root: workspace },
+    messages: [{ role: 'assistant', content: 'older assistant', timestamp: '2026-04-20T09:52:12.000Z' }],
+  }), 'utf8');
+  fs.writeFileSync(newerPath, JSON.stringify({
+    session_start: '2026-04-20T09:55:10.000Z',
+    cwd: workspace,
+    messages: [{ role: 'assistant', content: 'newer assistant', timestamp: '2026-04-20T09:55:12.000Z' }],
+  }), 'utf8');
+  fs.writeFileSync(otherPath, JSON.stringify({
+    session_start: '2026-04-20T09:56:10.000Z',
+    workspace: otherWorkspace,
+    messages: [{ role: 'assistant', content: 'wrong workspace', timestamp: '2026-04-20T09:56:12.000Z' }],
+  }), 'utf8');
+  fs.utimesSync(olderPath, new Date('2026-04-20T09:52:20.000Z'), new Date('2026-04-20T09:52:20.000Z'));
+  fs.utimesSync(newerPath, new Date('2026-04-20T09:55:20.000Z'), new Date('2026-04-20T09:55:20.000Z'));
+  fs.utimesSync(otherPath, new Date('2026-04-20T09:56:20.000Z'), new Date('2026-04-20T09:56:20.000Z'));
+
+  const read = hermesScripts.readNativeHistory({ workspace });
+  assert.equal(read.sourcePath, newerPath);
+  assert.equal(read.messages.find((m) => m.role === 'assistant')?.content, 'newer assistant');
+  assert.equal(read.messages[0].historySessionId, newerSessionId);
+}));
+
+test('hermes native history script rejects explicit session reads from the wrong workspace', () => withTempHome((home) => {
+  const sessionId = '20260420_095128_wrong_workspace';
+  const sourcePath = path.join(home, '.hermes', 'sessions', `session_${sessionId}.json`);
+  fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+  fs.writeFileSync(sourcePath, JSON.stringify({
+    workspace: '/workspaces/other',
+    messages: [{ role: 'assistant', content: 'wrong workspace assistant' }],
+  }), 'utf8');
+
+  const read = hermesScripts.readNativeHistory({ historySessionId: sessionId, workspace: '/workspaces/requested' });
+  assert.equal(read, null);
 }));
 
 test('claude native history script reads project JSONL with tool parts', () => withTempHome((home) => {

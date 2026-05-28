@@ -141,11 +141,42 @@ function hermesSessionPath(sessionId) {
   return resolvePathInside(hermesSessionsRoot(), `session_${sessionId}.json`);
 }
 
-function resolveHermesSession(sessionId) {
+function extractHermesWorkspace(raw) {
+  if (!raw || typeof raw !== 'object') return '';
+  const direct = raw.workspace || raw.cwd || raw.projectRoot || raw.project_root || raw.workingDirectory || raw.working_directory;
+  if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  const project = raw.project && typeof raw.project === 'object' ? raw.project : null;
+  const nested = project?.workspace || project?.cwd || project?.root || project?.path;
+  return typeof nested === 'string' ? nested.trim() : '';
+}
+
+function readHermesSessionRaw(sourcePath) {
+  try { return JSON.parse(fs.readFileSync(sourcePath, 'utf-8')); } catch { return null; }
+}
+
+function hermesSessionMatchesWorkspace(ref, workspace) {
+  const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  if (!normalizedWorkspace) return true;
+  const raw = readHermesSessionRaw(ref.sourcePath);
+  const sessionWorkspace = extractHermesWorkspace(raw);
+  return !sessionWorkspace || workspacePathsMatch(sessionWorkspace, normalizedWorkspace);
+}
+
+function resolveHermesSession(sessionId, workspace) {
   const normalized = normalizeHistorySessionId(sessionId);
-  const sourcePath = hermesSessionPath(normalized);
-  if (!sourcePath || !fs.existsSync(sourcePath)) return null;
-  return { sessionId: normalized, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath) };
+  if (normalized) {
+    const sourcePath = hermesSessionPath(normalized);
+    if (!sourcePath || !fs.existsSync(sourcePath)) return null;
+    const ref = { sessionId: normalized, historySessionId: normalized, sourcePath, sourceMtimeMs: statMtimeMs(sourcePath) };
+    return hermesSessionMatchesWorkspace(ref, workspace) ? ref : null;
+  }
+
+  const normalizedWorkspace = typeof workspace === 'string' ? workspace.trim() : '';
+  if (!normalizedWorkspace) return null;
+  const candidates = listHermesSessions()
+    .filter((ref) => hermesSessionMatchesWorkspace(ref, normalizedWorkspace))
+    .sort((a, b) => b.sourceMtimeMs - a.sourceMtimeMs);
+  return candidates[0] || null;
 }
 
 function listHermesSessions() {
@@ -163,10 +194,13 @@ function readHermesSessionRef(ref) {
   const expectedPath = hermesSessionPath(ref.sessionId);
   if (!expectedPath || path.resolve(expectedPath) !== path.resolve(ref.sourcePath)) return null;
   try {
-    const raw = JSON.parse(fs.readFileSync(ref.sourcePath, 'utf-8'));
+    const raw = readHermesSessionRaw(ref.sourcePath);
+    if (!raw || typeof raw !== 'object') return null;
     const canonicalMessages = Array.isArray(raw.messages) ? raw.messages : [];
     const records = [];
     let fallbackTs = Date.parse(raw.session_start || raw.last_updated || '') || Date.now();
+    const workspace = extractHermesWorkspace(raw);
+    if (workspace) records.push({ ts: new Date(fallbackTs).toISOString(), receivedAt: fallbackTs, role: 'system', kind: 'session_start', content: workspace, agent: 'hermes-cli', historySessionId: ref.sessionId, workspace });
     for (const message of canonicalMessages) {
       const role = String(message.role || '').trim();
       const content = normalizeCanonicalHermesMessageContent(message.content);
@@ -174,9 +208,9 @@ function readHermesSessionRef(ref) {
       const receivedAt = extractCanonicalHermesMessageTimestamp(message, fallbackTs);
       fallbackTs = receivedAt + 1;
       if (role === 'user' || role === 'assistant') {
-        records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role, content, kind: 'standard', agent: 'hermes-cli', historySessionId: ref.sessionId });
+        records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role, content, kind: 'standard', agent: 'hermes-cli', historySessionId: ref.sessionId, ...(workspace ? { workspace } : {}) });
       } else if (role === 'tool') {
-        records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'hermes-cli', historySessionId: ref.sessionId });
+        records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'hermes-cli', historySessionId: ref.sessionId, ...(workspace ? { workspace } : {}) });
       }
     }
     return records;
@@ -187,7 +221,8 @@ function readHermesSessionRef(ref) {
 
 function readHermesNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
-  const ref = resolveHermesSession(sessionId);
+  const workspace = input.workspace || input.args?.workspace;
+  const ref = resolveHermesSession(sessionId, workspace);
   if (!ref) return null;
   const messages = readHermesSessionRef(ref);
   return messages ? { messages, sourcePath: ref.sourcePath, sourceMtimeMs: ref.sourceMtimeMs } : null;
