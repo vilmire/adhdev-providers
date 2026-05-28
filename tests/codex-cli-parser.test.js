@@ -327,6 +327,22 @@ test('codex detect_status treats post-trust starter prompt as idle startup scree
   assert.equal(detectStatus({ screenText, tail: screenText }), 'idle');
 });
 
+test('codex detect_status treats the skills starter prompt help text as idle startup screen', () => {
+  const screenText = [
+    '╭──────────────────────────────────────────────────────────╮',
+    '│ >_ OpenAI Codex (v0.133.0)                              │',
+    '╰──────────────────────────────────────────────────────────╯',
+    '',
+    'To get started, describe a task or try one of these commands:',
+    '',
+    '› Use /skills to list available skills',
+    '',
+    'gpt-5.5 medium · /workspaces/adhdev',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText, tail: screenText, rawBuffer: screenText }), 'idle');
+});
+
 test('codex detect_status lets current startup starter prompt beat stale MCP raw output', () => {
   const screenText = [
     '╭──────────────────────────────────────────────────────────╮',

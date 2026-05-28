@@ -9,10 +9,12 @@ const path = require('node:path');
 const hermesScripts = require('../cli/hermes-cli/scripts/1.0/scripts.js');
 const claudeScripts = require('../cli/claude-cli/scripts/1.0/scripts.js');
 const codexScripts = require('../cli/codex-cli/scripts/1.0/scripts.js');
+const antigravityScripts = require('../cli/antigravity-cli/scripts/1.0/scripts.js');
 const nativeHistory = require('../cli/_shared/native_history.js');
 const hermesProvider = require('../cli/hermes-cli/provider.json');
 const claudeProvider = require('../cli/claude-cli/provider.json');
 const codexProvider = require('../cli/codex-cli/provider.json');
+const antigravityProvider = require('../cli/antigravity-cli/provider.json');
 
 function withTempHome(fn) {
   const originalHome = process.env.HOME;
@@ -35,12 +37,14 @@ for (const [name, provider] of [
   ['hermes-cli', hermesProvider],
   ['claude-cli', claudeProvider],
   ['codex-cli', codexProvider],
+  ['antigravity-cli', antigravityProvider],
 ]) {
   test(`${name} declares provider-owned native history scripts`, () => {
     assert.deepEqual(provider.canonicalHistory.scripts, {
       readSession: 'readNativeHistory',
       listSessions: 'listNativeHistory',
     });
+    assert.equal(provider.canonicalHistory.mode, 'native-source');
   });
 }
 
@@ -210,4 +214,20 @@ test('codex native history script caches transcript path scans and parsed record
   assert.equal(stats.transcriptParses, 1);
   assert.ok(stats.resolveHits >= 1);
   assert.ok(stats.transcriptHits >= 1);
+}));
+
+test('antigravity native history script fails closed while listing opaque protobuf sessions', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ab';
+  const sourcePath = path.join(home, '.gemini', 'antigravity', 'conversations', `${sessionId}.pb`);
+  fs.mkdirSync(path.dirname(sourcePath), { recursive: true });
+  fs.writeFileSync(sourcePath, Buffer.from([0x0a, 0x03, 0x66, 0x6f, 0x6f]));
+
+  assert.equal(antigravityScripts.readNativeHistory({ historySessionId: sessionId }), null);
+
+  const listed = antigravityScripts.listNativeHistory({});
+  assert.equal(listed.sessions[0].historySessionId, sessionId);
+  assert.equal(listed.sessions[0].source, 'provider-native');
+  assert.equal(listed.sessions[0].sourcePath, sourcePath);
+  assert.equal(listed.sessions[0].messageCount, 0);
+  assert.equal(listed.sessions[0].unavailableReason, 'opaque_antigravity_protobuf_without_stable_schema');
 }));

@@ -75,7 +75,7 @@ const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
 const IDLE_FOOTER_MODEL_TOKEN_RE = /(?:^|[›❯>]\s*)\b(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i;
 const IDLE_FOOTER_RE = /(?:^|\s)[›❯]\s*(?:tab to queue message\b|(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*\/)/i;
 const WELCOME_RE = /OpenAI Codex/i;
-const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills|Run \/review on my current changes)$/i;
+const STARTER_PROMPT_RE = /^(?:[›❯]\s*)?(?:Find and fix a bug in @filename|Improve documentation in @filename|Write tests for @filename|Explain this codebase|Summarize recent commits|Implement \{feature\}|Use \/skills(?:\s+to\s+list\s+available\s+skills)?|Run \/review on my current changes)$/i;
 const STARTUP_RE = /To get started, describe a task/is;
 
 // ─── Detection ───────────────────────────────────
