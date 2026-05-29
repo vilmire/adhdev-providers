@@ -31,12 +31,54 @@ function sourceText(input) {
   return '';
 }
 
+const HIGH_TRAFFIC_RETRY_DELAYS_MS = [3000, 6000, 9000];
+
 function detectHighTrafficError(text) {
   const source = stripAnsi(text);
   if (!/servers?\s+are\s+experiencing\s+high\s+traffic/i.test(source)) return null;
   return {
     errorReason: 'provider_unavailable_high_traffic',
     errorMessage: 'Antigravity CLI reported server high traffic. Retry later.',
+  };
+}
+
+function buildHighTrafficRetry(state, promptText, screenText) {
+  if (!state || typeof state !== 'object') return {};
+  const fingerprint = normalize(promptText) || normalize(screenText).slice(-500) || 'antigravity-high-traffic';
+  const previous = state.highTrafficRetry && typeof state.highTrafficRetry === 'object'
+    ? state.highTrafficRetry
+    : null;
+  const now = Date.now();
+  const previousAttempts = previous?.fingerprint === fingerprint
+    ? Number(previous.attempts || 0)
+    : 0;
+  const previousDelayMs = Number(previous?.delayMs || 0);
+  const previousIssuedAt = Number(previous?.issuedAt || 0);
+  if (
+    previous?.fingerprint === fingerprint
+    && previousAttempts > 0
+    && previousAttempts <= HIGH_TRAFFIC_RETRY_DELAYS_MS.length
+    && now < previousIssuedAt + previousDelayMs + 500
+  ) {
+    return {
+      retryPrompt: 'continue',
+      retryDelayMs: previousDelayMs,
+      retryAttempt: previousAttempts,
+      retryMaxAttempts: HIGH_TRAFFIC_RETRY_DELAYS_MS.length,
+    };
+  }
+  if (previousAttempts >= HIGH_TRAFFIC_RETRY_DELAYS_MS.length) {
+    state.highTrafficRetry = { fingerprint, attempts: previousAttempts, delayMs: previousDelayMs, issuedAt: previousIssuedAt };
+    return {};
+  }
+  const nextAttempt = previousAttempts + 1;
+  const retryDelayMs = HIGH_TRAFFIC_RETRY_DELAYS_MS[nextAttempt - 1];
+  state.highTrafficRetry = { fingerprint, attempts: nextAttempt, delayMs: retryDelayMs, issuedAt: now };
+  return {
+    retryPrompt: 'continue',
+    retryDelayMs,
+    retryAttempt: nextAttempt,
+    retryMaxAttempts: HIGH_TRAFFIC_RETRY_DELAYS_MS.length,
   };
 }
 
@@ -272,7 +314,10 @@ function extractTranscriptMessages(screenText) {
   return messages;
 }
 
-module.exports = function parseOutput(input) {
+module.exports = function parseOutput(stateOrInput, maybeInput) {
+  const hasState = arguments.length >= 2;
+  const state = hasState ? stateOrInput : null;
+  const input = hasState ? maybeInput : stateOrInput;
   const screenText = sourceText(input);
   const status = detectStatus(input);
   const activeModal = parseApproval(input);
@@ -294,12 +339,17 @@ module.exports = function parseOutput(input) {
     messages = fallback;
   }
 
+  const retry = transientError && !activeModal
+    ? buildHighTrafficRetry(state, promptText, screenText)
+    : {};
+
   return {
     status: transientError && !activeModal ? 'error' : status,
     title: 'Antigravity CLI',
     messages: mergeMessages(input?.messages, messages),
     activeModal,
     ...(transientError || {}),
+    ...retry,
     ...(() => {
       const native = nativeHistory.readAntigravityNativeHistory({
         historySessionId: input?.historySessionId || input?.providerSessionId || input?.sessionId,

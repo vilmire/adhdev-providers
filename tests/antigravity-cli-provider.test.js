@@ -9,6 +9,7 @@ const detectStatus = require('../cli/antigravity-cli/scripts/1.0/detect_status.j
 const parseApproval = require('../cli/antigravity-cli/scripts/1.0/parse_approval.js');
 const parseOutput = require('../cli/antigravity-cli/scripts/1.0/parse_output.js');
 const parseSession = require('../cli/antigravity-cli/scripts/1.0/parse_session.js');
+const scripts = require('../cli/antigravity-cli/scripts/1.0/scripts.js');
 
 test('antigravity-cli provider manifest uses agy with echo-then-enter submission', () => {
   assert.equal(provider.type, 'antigravity-cli');
@@ -24,6 +25,7 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.approvalKeys['3'], '0\r');
   assert.ok(provider.approvalPositiveHints.includes('skip'));
   assert.deepEqual(provider.resume?.resumeArgs, ['--continue']);
+  assert.equal(typeof scripts.createState, 'function');
 });
 
 test('antigravity-cli provider declares CLI transcript logs as native history source', () => {
@@ -185,6 +187,45 @@ test('antigravity-cli classifies high traffic output as provider unavailable', (
   assert.equal(parsed.status, 'error');
   assert.equal(parsed.errorReason, 'provider_unavailable_high_traffic');
   assert.match(parsed.errorMessage, /high traffic/i);
+});
+
+test('antigravity-cli high traffic parser requests bounded continue retries', () => {
+  const state = scripts.createState();
+  const input = {
+    screenText: [
+      '> smoke prompt',
+      'Our servers are experiencing high traffic right now, please try again in a minute.',
+    ].join('\n'),
+    promptText: 'smoke prompt',
+    messages: [],
+  };
+
+  const first = scripts.parseSession(state, input);
+  const firstRepeat = scripts.parseSession(state, input);
+  state.highTrafficRetry.issuedAt -= 3501;
+  const second = scripts.parseSession(state, input);
+  state.highTrafficRetry.issuedAt -= 6501;
+  const third = scripts.parseSession(state, input);
+  state.highTrafficRetry.issuedAt -= 9501;
+  const fourth = scripts.parseSession(state, input);
+
+  assert.equal(first.status, 'error');
+  assert.equal(first.errorReason, 'provider_unavailable_high_traffic');
+  assert.equal(first.retryPrompt, 'continue');
+  assert.equal(first.retryDelayMs, 3000);
+  assert.equal(first.retryAttempt, 1);
+  assert.equal(first.retryMaxAttempts, 3);
+  assert.equal(firstRepeat.retryPrompt, 'continue');
+  assert.equal(firstRepeat.retryDelayMs, 3000);
+  assert.equal(firstRepeat.retryAttempt, 1);
+  assert.equal(second.retryPrompt, 'continue');
+  assert.equal(second.retryDelayMs, 6000);
+  assert.equal(second.retryAttempt, 2);
+  assert.equal(third.retryPrompt, 'continue');
+  assert.equal(third.retryDelayMs, 9000);
+  assert.equal(third.retryAttempt, 3);
+  assert.equal(fourth.retryPrompt, undefined);
+  assert.equal(fourth.retryDelayMs, undefined);
 });
 
 test('antigravity-cli keeps feedback prompt actionable before surfacing high traffic failure', () => {
