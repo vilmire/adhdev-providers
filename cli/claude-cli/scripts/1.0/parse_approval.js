@@ -61,6 +61,11 @@ function isStartupTrustCue(line) {
         || /Claude Code'?ll be able to read, edit, and execute files here/i.test(trimmed);
 }
 
+function isNewMCPServerCue(line) {
+    const trimmed = normalize(line);
+    return /New MCP server found in this project/i.test(trimmed);
+}
+
 function isApprovalQuestionLine(line) {
     const trimmed = normalize(line);
     return /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
@@ -122,13 +127,15 @@ function parseApprovalFromLines(lines, sourceText) {
 
     const startupTrust = normalizedRecent.some(isStartupTrustCue);
     const choiceMenu = hasChoiceMenuStructure(recent);
+    const mcpServer = normalizedRecent.some(isNewMCPServerCue);
     const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
-    const hasApproval = startupTrust || choiceMenu || explicitApproval;
+    const hasApproval = startupTrust || choiceMenu || explicitApproval || mcpServer;
     if (!hasApproval) return null;
 
     const questionIndex = findLastIndex(lines, isApprovalQuestionLine);
     const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
     const startupIndex = findLastIndex(lines, isStartupTrustCue);
+    const mcpServerIndex = findLastIndex(lines, isNewMCPServerCue);
     const rateLimitIndex = findLastIndex(lines, line => /You've hit your limit/i.test(normalize(line)));
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
     const startIndex = Math.max(0, (
@@ -137,7 +144,8 @@ function parseApprovalFromLines(lines, sourceText) {
                 : rateLimitIndex >= 0 && questionIndex >= 0 && questionIndex - rateLimitIndex <= 10 ? rateLimitIndex
                     : questionIndex >= 0 ? questionIndex - 4
                         : startupIndex >= 0 ? startupIndex
-                            : lines.length - 8
+                            : mcpServerIndex >= 0 ? mcpServerIndex
+                                : lines.length - 8
     ));
     const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
 
