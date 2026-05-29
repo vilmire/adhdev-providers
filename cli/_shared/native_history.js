@@ -225,7 +225,14 @@ function readHermesNativeHistory(input = {}) {
   const ref = resolveHermesSession(sessionId, workspace);
   if (!ref) return null;
   const messages = readHermesSessionRef(ref);
-  return messages ? { messages, sourcePath: ref.sourcePath, sourceMtimeMs: ref.sourceMtimeMs } : null;
+  return messages ? {
+    messages,
+    providerSessionId: ref.sessionId,
+    source: 'provider-native',
+    sourcePath: ref.sourcePath,
+    sourceMtimeMs: ref.sourceMtimeMs,
+    nativeHistoryCoverage: 'full',
+  } : null;
 }
 
 function listHermesNativeHistory() {

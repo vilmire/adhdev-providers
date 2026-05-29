@@ -65,6 +65,9 @@ test('hermes native history script reads and lists ~/.hermes session JSON', () =
 
   const read = hermesScripts.readNativeHistory({ historySessionId: sessionId });
   assert.equal(read.sourcePath, sourcePath);
+  assert.equal(read.providerSessionId, sessionId);
+  assert.equal(read.source, 'provider-native');
+  assert.equal(read.nativeHistoryCoverage, 'full');
   assert.deepEqual(read.messages.map((m) => [m.role, m.kind, m.content]), [
     ['system', 'session_start', workspace],
     ['user', 'standard', 'hermes user'],
