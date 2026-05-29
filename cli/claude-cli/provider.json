@@ -222,6 +222,21 @@
     "2": "3",
     "3": "4"
   },
+  "approvalPositiveHints": [
+    "yes",
+    "allow once",
+    "approve",
+    "accept",
+    "use this mcp server",
+    "use this",
+    "trust",
+    "continue",
+    "run",
+    "proceed",
+    "confirm",
+    "allow",
+    "always allow"
+  ],
   "resume": {
     "supported": true,
     "stopStrategy": "command",

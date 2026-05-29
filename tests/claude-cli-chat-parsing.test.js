@@ -134,6 +134,36 @@ test('claude-cli treats explicit rate-limit choice menu as waiting approval', ()
   assert.deepEqual(result.activeModal?.buttons, modal.buttons);
 });
 
+test('claude-cli extracts MCP trust prompt choices from the visible input menu', () => {
+  const screenText = [
+    '────────────────────────────────────────────────────────────────────────────────',
+    'New MCP server found in this project: adhdev-mesh',
+    'MCP servers may execute code or access system resources. All tool calls',
+    'require approval. Learn more in the MCP documentation.',
+    '',
+    '❯ 1. Use this MCP server',
+    '  2. Use this and all future MCP servers in this project',
+    '  3. Continue without using this MCP server',
+    '',
+    'Enter to confirm · Esc to cancel',
+  ].join('\n');
+
+  const modal = parseApproval({ screenText, buffer: screenText, tail: screenText });
+  const result = parseOutput({ screenText, buffer: screenText, messages: [] });
+
+  assert.equal(detectStatus({ screenText, screen: buildScreenSnapshot(screenText) }), 'waiting_approval');
+  assert.deepEqual(modal, {
+    message: 'New MCP server found in this project: adhdev-mesh MCP servers may execute code or access system resources. All tool calls require approval. Learn more in the MCP documentation.',
+    buttons: [
+      'Use this MCP server',
+      'Use this and all future MCP servers in this project',
+      'Continue without using this MCP server',
+    ],
+  });
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal?.buttons, modal.buttons);
+});
+
 test('claude-cli reports login/access blockers as structured auth errors', () => {
   const screenText = [
     '❯ Please verify raw CLI transcript fidelity in this workspace.',

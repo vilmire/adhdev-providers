@@ -65,6 +65,7 @@ function isShellChrome(line) {
 function isApprovalCue(line) {
     const trimmed = normalize(line);
     return /This command requires approval/i.test(trimmed)
+        || /New MCP server found in this project/i.test(trimmed)
         || /requires approval/i.test(trimmed)
         || /Do you want to (?:proceed|allow|run|make this edit|create)/i.test(trimmed)
         || /Quick safety check/i.test(trimmed)
@@ -200,6 +201,10 @@ function hasActiveApproval(lines) {
     const window = takeLast(lines, 18);
     if (hasStartupTrustPrompt(window)) return true;
     if (hasActiveChoiceMenu(window)) return true;
+    const hasNumberedConfirmMenu = window.some(isApprovalCue)
+        && window.some(isEnterConfirmCancelLine)
+        && window.filter(isChoiceMenuOption).length >= 2;
+    if (hasNumberedConfirmMenu) return true;
     const cues = window.filter(isApprovalCue).length;
     const buttons = window.filter(line => isApprovalButton(line) || isStartupTrustButton(line)).length;
     return buttons > 0 && cues > 0;

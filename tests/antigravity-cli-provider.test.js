@@ -23,7 +23,7 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.sendKey, '\r');
   assert.equal(provider.requirePromptEchoBeforeSubmit, true);
   assert.equal(provider.approvalKeys['3'], '0\r');
-  assert.ok(provider.approvalPositiveHints.includes('skip'));
+  assert.ok(!provider.approvalPositiveHints.includes('skip'));
   assert.deepEqual(provider.resume?.resumeArgs, ['--continue']);
   assert.equal(typeof scripts.createState, 'function');
 });
@@ -93,6 +93,38 @@ test('antigravity-cli detects command approval prompt as approval', () => {
   assert.deepEqual(parseApproval({ screenText }), {
     message: 'Do you want to proceed? git diff --cached',
     buttons: ['Yes', "Yes, don't ask again for this command", 'No, and tell agy what to do differently'],
+  });
+});
+
+test('antigravity-cli extracts command approval choices from the live input menu text', () => {
+  const screenText = [
+    '● Bash(node scripts/refine-bootstrap.mjs && npm run typeche...) (ctrl+o to',
+    'expand)',
+    'Command',
+    '⎿ User declined the tool call',
+    '',
+    'agy wants to run:',
+    'node scripts/refine-bootstrap.mjs && npm run typecheck',
+    '',
+    'Do you want to proceed?',
+    '> Yes',
+    '  No',
+    '  No, and tell agy what to do differently',
+    '  No, and stop asking for this command',
+    '',
+    '↑/↓ Navigate',
+    'esc to cancel',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'waiting_approval');
+  assert.deepEqual(parseApproval({ screenText }), {
+    message: 'Do you want to proceed? node scripts/refine-bootstrap.mjs && npm run typecheck',
+    buttons: [
+      'Yes',
+      'No',
+      'No, and tell agy what to do differently',
+      'No, and stop asking for this command',
+    ],
   });
 });
 
@@ -171,6 +203,18 @@ test('antigravity-cli detects feedback prompt as skippable automation modal', ()
     buttons: ['Good', 'Fine', 'Bad', 'Skip'],
   });
   assert.deepEqual(parseOutput({ screenText, messages: [] }).activeModal, {
+    message: "How's the CLI experience so far?",
+    buttons: ['Good', 'Fine', 'Bad', 'Skip'],
+  });
+});
+
+test('antigravity-cli parses inline bracket prompt choices from visible text', () => {
+  const screenText = [
+    "How's the CLI experience so far?",
+    '[1] Good  [2] Fine  [3] Bad  [0] Skip',
+  ].join('\n');
+
+  assert.deepEqual(parseApproval({ screenText }), {
     message: "How's the CLI experience so far?",
     buttons: ['Good', 'Fine', 'Bad', 'Skip'],
   });
