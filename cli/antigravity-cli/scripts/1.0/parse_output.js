@@ -31,6 +31,15 @@ function sourceText(input) {
   return '';
 }
 
+function detectHighTrafficError(text) {
+  const source = stripAnsi(text);
+  if (!/servers?\s+are\s+experiencing\s+high\s+traffic/i.test(source)) return null;
+  return {
+    errorReason: 'provider_unavailable_high_traffic',
+    errorMessage: 'Antigravity CLI reported server high traffic. Retry later.',
+  };
+}
+
 function getLastUserPrompt(input) {
   if (typeof input?.promptText === 'string' && input.promptText.trim()) return input.promptText.trim();
   const messages = Array.isArray(input?.messages) ? input.messages : [];
@@ -267,6 +276,7 @@ module.exports = function parseOutput(input) {
   const screenText = sourceText(input);
   const status = detectStatus(input);
   const activeModal = parseApproval(input);
+  const transientError = detectHighTrafficError(screenText);
   const promptText = getLastUserPrompt(input);
   const previousPromptText = getLastUserPromptFromMessages(input?.messages);
   let messages = extractTranscriptMessages(screenText);
@@ -285,10 +295,11 @@ module.exports = function parseOutput(input) {
   }
 
   return {
-    status,
+    status: transientError && !activeModal ? 'error' : status,
     title: 'Antigravity CLI',
     messages: mergeMessages(input?.messages, messages),
     activeModal,
+    ...(transientError || {}),
     ...(() => {
       const native = nativeHistory.readAntigravityNativeHistory({
         historySessionId: input?.historySessionId || input?.providerSessionId || input?.sessionId,

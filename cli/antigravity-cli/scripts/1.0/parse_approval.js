@@ -113,6 +113,14 @@ module.exports = function parseApproval(input) {
   const optionIndexes = findOptionIndexes(lines);
   const optionLines = optionIndexes.map((index) => numberedOption(lines[index])).filter(Boolean);
 
+  const feedbackIndex = normalized.findIndex((line) => /^how's the cli experience so far\?/i.test(line));
+  if (feedbackIndex >= 0 && /\[0\]\s+skip/i.test(normalized.join(' '))) {
+    return {
+      message: "How's the CLI experience so far?",
+      buttons: ['Good', 'Fine', 'Bad', 'Skip'],
+    };
+  }
+
   const trustIndex = normalized.findIndex((line) => /do you trust the files in this folder\?/i.test(line));
   if (trustIndex >= 0 && optionLines.length >= 2) {
     return {

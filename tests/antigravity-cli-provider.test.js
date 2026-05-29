@@ -21,6 +21,8 @@ test('antigravity-cli provider manifest uses agy with echo-then-enter submission
   assert.equal(provider.submitStrategy, 'wait_for_echo');
   assert.equal(provider.sendKey, '\r');
   assert.equal(provider.requirePromptEchoBeforeSubmit, true);
+  assert.equal(provider.approvalKeys['3'], '0\r');
+  assert.ok(provider.approvalPositiveHints.includes('skip'));
   assert.deepEqual(provider.resume?.resumeArgs, ['--continue']);
 });
 
@@ -153,6 +155,50 @@ test('antigravity-cli falls back from blank screenText to recentBuffer for appro
 test('antigravity-cli detects generating screen', () => {
   const screenText = ['Thinking for 1s', '', 'esc to cancel'].join('\n');
   assert.equal(detectStatus({ screenText }), 'generating');
+});
+
+test('antigravity-cli detects feedback prompt as skippable automation modal', () => {
+  const screenText = [
+    "How's the CLI experience so far?",
+    '[1] Good  [2] Fine  [3] Bad  [0] Skip',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'waiting_approval');
+  assert.deepEqual(parseApproval({ screenText }), {
+    message: "How's the CLI experience so far?",
+    buttons: ['Good', 'Fine', 'Bad', 'Skip'],
+  });
+  assert.deepEqual(parseOutput({ screenText, messages: [] }).activeModal, {
+    message: "How's the CLI experience so far?",
+    buttons: ['Good', 'Fine', 'Bad', 'Skip'],
+  });
+});
+
+test('antigravity-cli classifies high traffic output as provider unavailable', () => {
+  const screenText = [
+    '> What is the purpose of this repository?',
+    'Our servers are experiencing high traffic right now, please try again in a minute.',
+  ].join('\n');
+
+  assert.equal(detectStatus({ screenText }), 'error');
+  const parsed = parseOutput({ screenText, promptText: 'What is the purpose of this repository?', messages: [] });
+  assert.equal(parsed.status, 'error');
+  assert.equal(parsed.errorReason, 'provider_unavailable_high_traffic');
+  assert.match(parsed.errorMessage, /high traffic/i);
+});
+
+test('antigravity-cli keeps feedback prompt actionable before surfacing high traffic failure', () => {
+  const screenText = [
+    '> What is the purpose of this repository?',
+    'Our servers are experiencing high traffic right now, please try again in a minute.',
+    "How's the CLI experience so far?",
+    '[1] Good  [2] Fine  [3] Bad  [0] Skip',
+  ].join('\n');
+
+  const parsed = parseOutput({ screenText, promptText: 'What is the purpose of this repository?', messages: [] });
+  assert.equal(parsed.status, 'waiting_approval');
+  assert.equal(parsed.errorReason, 'provider_unavailable_high_traffic');
+  assert.equal(parsed.activeModal?.buttons[3], 'Skip');
 });
 
 test('antigravity-cli trusts settled recent idle prompt over stale screen cancel chrome', () => {

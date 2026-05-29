@@ -13,6 +13,22 @@
   "sendKey": "\r",
   "submitStrategy": "wait_for_echo",
   "requirePromptEchoBeforeSubmit": true,
+  "approvalKeys": {
+    "3": "0\r"
+  },
+  "approvalPositiveHints": [
+    "skip",
+    "yes",
+    "allow once",
+    "approve",
+    "accept",
+    "continue",
+    "run",
+    "proceed",
+    "confirm",
+    "trust",
+    "allow"
+  ],
   "timeouts": {
     "idleFinishConfirm": 5000,
     "statusActivityHold": 5000
