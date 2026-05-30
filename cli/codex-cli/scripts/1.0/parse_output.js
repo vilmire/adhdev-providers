@@ -513,6 +513,43 @@ function collectAssistantText(text) {
     return preferred ? preferred.content : '';
 }
 
+function collectOrphanAssistantTail(text) {
+    const lines = splitLines(text);
+    const collected = [];
+    let started = false;
+    for (let i = lines.length - 1; i >= 0; i--) {
+        const line = normalize(lines[i]);
+        if (!line) continue;
+        if (isAssistantLead(line) || isInputLine(line) || isHeaderLine(line) || isFooterLine(line) || BOX_RE.test(line)) {
+            if (started) break;
+            continue;
+        }
+        const cleaned = cleanActivityContinuation(line);
+        if (!cleaned) continue;
+        if (/^\d{1,3}$/.test(cleaned)) continue;
+        if (cleaned.length < 6) continue;
+        collected.push(cleaned);
+        started = true;
+    }
+    return collected.reverse().join('\n').trim();
+}
+
+function appendOrphanAssistantTail(messages, orphanTail) {
+    const tail = String(orphanTail || '').trim();
+    if (!tail || !Array.isArray(messages) || messages.length === 0) return messages;
+    if (messages.some(m => normalizeForCompare(m?.content).includes(normalizeForCompare(tail)))) return messages;
+    const next = messages.slice();
+    for (let i = next.length - 1; i >= 0; i--) {
+        const message = next[i];
+        if (message?.role === 'assistant' && (message.kind || 'standard') === 'standard') {
+            next[i] = { ...message, content: [String(message.content || '').trim(), tail].filter(Boolean).join('\n') };
+            return next;
+        }
+    }
+    next.push({ role: 'assistant', kind: 'standard', content: tail });
+    return next;
+}
+
 function messageSetScore(messages) {
     return (Array.isArray(messages) ? messages : []).reduce((score, message) => {
         const content = String(message?.content || '');
@@ -650,7 +687,7 @@ function parseOutput(input) {
     const tuiMessages = chooseRicherMessages(screenMessages, bufferMessages, recentMessages);
     const currentMessages = nativeSession.messages.length > 0
         ? nativeSession.messages
-        : tuiMessages;
+        : appendOrphanAssistantTail(tuiMessages, collectOrphanAssistantTail(scopedScreen || screenText));
     const fromScreen = collectAssistantText(scopedScreen || screenText);
     const fromBuffer = collectAssistantText(scopedBuffer || buffer);
     const fromRecent = collectAssistantText(sliceAfterPrompt(tail, promptScope) || tail);

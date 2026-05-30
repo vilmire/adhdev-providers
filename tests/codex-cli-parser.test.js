@@ -715,6 +715,52 @@ test('codex parse_output preserves visible tool activity as typed bubbles instea
   );
 });
 
+test('codex parse_output appends visible orphan assistant tail from the live screen', () => {
+  const prompt = '메시상태확인하고 팔로업할거없는지 확인';
+  const buffer = [
+    '› ' + prompt,
+    '',
+    '• 메시 상태와 최근 작업 이력을 먼저 확인해서, 완료/실패/대기 중인 후속 조치가 있',
+    '  는지 보겠습니다.',
+    '',
+    '• Called',
+    '  └ adhdev-',
+    '        mesh.mesh_git_status({"node_id":"node_5094c5e5ebcf4d11bd5f5c2856fab763"}',
+    '        )',
+    '',
+    '• 확인했습니다. 활성 큐 작업은 없습니다. pending/assigned/generating/approval 모',
+    '',
+    '─',
+    '',
+    '  gpt-5.5 medium · ~/Work/adhdev',
+  ].join('\n');
+  const screenText = [
+    buffer,
+    '',
+    '›',
+    '',
+    '',
+    '  가장 우선순위 높은 후속은 node_d727... ELK layout 브랜치 refine, 그 다음',
+    '                                                              79',
+    '',
+    '─ gpt-5.5 medium · ~/Work/adhdev',
+  ].join('\n');
+
+  const result = parseOutput({
+    screenText,
+    buffer,
+    recentBuffer: buffer,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+  });
+
+  const assistant = result.messages.filter(message => message.role === 'assistant' && (message.kind || 'standard') === 'standard').at(-1);
+  assert.match(assistant?.content || '', /확인했습니다\. 활성 큐 작업은 없습니다/);
+  assert.match(assistant?.content || '', /가장 우선순위 높은 후속은 node_d727/);
+  assert.doesNotMatch(assistant?.content || '', /\b79\b/);
+});
+
 test('codex parse_output drops spinner fragments and model footer from completed turns', () => {
   const prompt = 'Confirm the previous raw verification in one short paragraph. You must mention tmp/adhdev_cli_verify.py, UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧, and the square sequence 1,4,9,16,25 without changing the glyphs.';
   const previous = [
