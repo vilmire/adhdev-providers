@@ -211,7 +211,10 @@ function isStartupScreen(text) {
 
 // ─── Session ID extraction ──────────────────────
 
-const SESSION_ID_RE = /session id:\s*([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})/i;
+// Codex generates v7 UUIDs (time-ordered, version nibble = 7). The original
+// pattern [1-5] excluded v6/v7 and caused extractSessionId to return empty
+// when the TUI showed a modern Codex session id, breaking native history lookup.
+const SESSION_ID_RE = /session id:\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
 
 function extractSessionId(rawBuffer, buffer, screenText) {
     const source = [rawBuffer, buffer, screenText].map(v => String(v || '')).join('\n');
