@@ -86,6 +86,22 @@ function hasChoiceMenuStructure(lines) {
     return afterQuestion.slice(0, footerIndex).filter(isButtonLine).length >= 2;
 }
 
+function hasApprovalCue(lines) {
+    return Array.isArray(lines) && lines.some(line => {
+        const normalized = normalize(line);
+        return /requires approval|Do you want to proceed|Do you want to make this edit|Do you want to run this command|Do you want to allow|Allow\s*once|Always\s*allow/i.test(normalized)
+            || isButtonLine(normalized);
+    });
+}
+
+function screenHasReadyPromptWithoutApproval(screen) {
+    if (!screen || !Array.isArray(screen.lines) || screen.promptLineIndex < 0) return false;
+    const lines = screen.lines.map(line => line.text);
+    const afterPrompt = lines.slice(screen.promptLineIndex + 1);
+    if (hasApprovalCue(afterPrompt)) return false;
+    return true;
+}
+
 function stripContextPrefix(line) {
     return normalize(line)
         .replace(/^[⏺•]\s+/, '')
@@ -167,6 +183,7 @@ module.exports = function parseApproval(input) {
     const primaryScreen = getBufferScreen(input);
     const fallbackScreen = getTailScreen(input);
     const candidates = [];
+    const suppressRawFallback = screenHasReadyPromptWithoutApproval(primaryScreen);
 
     if (primaryScreen.lineCount > 0) {
         candidates.push({
@@ -174,7 +191,7 @@ module.exports = function parseApproval(input) {
             sourceText: String(input?.buffer || input?.screenText || ''),
         });
     }
-    if (fallbackScreen.lineCount > 0) {
+    if (!suppressRawFallback && fallbackScreen.lineCount > 0) {
         candidates.push({
             lines: fallbackScreen.lines.map(line => line.text),
             sourceText: String(input?.tail || input?.recentBuffer || ''),
@@ -185,9 +202,11 @@ module.exports = function parseApproval(input) {
     // the raw tail/buffer still contains Claude's complete approval UI. Search
     // those raw streams as secondary candidates so approval/auto-approval does
     // not depend on the renderer snapshot being perfect.
-    for (const key of ['tail', 'buffer', 'screenText', 'rawBuffer']) {
-        const text = typeof input?.[key] === 'string' ? input[key] : '';
-        if (text) candidates.push({ lines: text.split(/\r?\n/), sourceText: text });
+    if (!suppressRawFallback) {
+        for (const key of ['tail', 'buffer', 'screenText', 'rawBuffer']) {
+            const text = typeof input?.[key] === 'string' ? input[key] : '';
+            if (text) candidates.push({ lines: text.split(/\r?\n/), sourceText: text });
+        }
     }
 
     const seen = new Set();

@@ -1514,6 +1514,43 @@ test('claude-cli parse_output uses raw tail approval when the virtual screen mod
   });
 });
 
+test('claude-cli parse_approval ignores stale raw approval after visible prompt returns idle', () => {
+  const screenText = [
+    '✻ Churned for 9m 52s',
+    '',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '❯ 11111111111111111111111111111111111111111111111111111111',
+    '────────────────────────────────────────────────────────────────────────────────',
+    '  ➜ fix-codex-native-chat-source git:(fix/codex-native-chat-source)',
+    '  ⏵⏵ accept edits on (shift+tab to cycle)',
+  ].join('\n');
+  const staleRawBuffer = [
+    'Bash command',
+    '',
+    'rm -rf /tmp/adhdev-danger-test',
+    'Delete test directory',
+    '',
+    'Do you want to proceed?',
+    '❯ 1. Yes',
+    '2. Yes, and don’t ask again for: rm -rf /tmp/adhdev-danger-test',
+    '3. No',
+    '',
+    'Esc to cancel · Tab to amend · ctrl+e to explain',
+    '',
+    screenText,
+  ].join('\n');
+
+  assert.equal(parseApproval({
+    screenText,
+    buffer: screenText,
+    rawBuffer: staleRawBuffer,
+    tail: staleRawBuffer,
+    screen: buildScreenSnapshot(screenText),
+    bufferScreen: buildScreenSnapshot(screenText),
+  }), null);
+  assert.notEqual(detectStatus({ screenText, buffer: screenText, rawBuffer: staleRawBuffer }), 'waiting_approval');
+});
+
 test('claude-cli classifies Claude rate-limit options menu from debug bundle as waiting approval', () => {
   const screenText = [
     ' ▐▛███▜▌   Claude Code v2.1.84',
