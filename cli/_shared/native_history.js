@@ -539,13 +539,13 @@ function readCodexSessionRef(ref) {
         const role = String(payload.role || '').trim();
         if (role !== 'user' && role !== 'assistant') continue;
         const content = flattenCodexContent(payload.content);
-        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role, content, kind: 'standard', agent: 'codex-cli', historySessionId: ref.sessionId });
+        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role, content, kind: 'standard', agent: 'codex-cli', historySessionId: ref.sessionId, ...(ref.workspace ? { workspace: ref.workspace } : {}) });
       } else if (payloadType === 'function_call' || payloadType === 'custom_tool_call') {
         const content = summarizeCodexToolCall(payload);
-        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'codex-cli', historySessionId: ref.sessionId });
+        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'codex-cli', historySessionId: ref.sessionId, ...(ref.workspace ? { workspace: ref.workspace } : {}) });
       } else if (payloadType === 'function_call_output' || payloadType === 'custom_tool_call_output') {
         const content = codexToolOutputContent(payload);
-        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'codex-cli', historySessionId: ref.sessionId });
+        if (content) records.push({ ts: new Date(receivedAt).toISOString(), receivedAt, role: 'assistant', content, kind: 'tool', senderName: 'Tool', agent: 'codex-cli', historySessionId: ref.sessionId, ...(ref.workspace ? { workspace: ref.workspace } : {}) });
       }
     }
     return writeCache(codexReadCache, cacheKey, records);
@@ -560,7 +560,15 @@ function readCodexNativeHistory(input = {}) {
   const ref = resolveCodexSession(sessionId, workspace);
   if (!ref) return null;
   const messages = readCodexSessionRef(ref);
-  return messages ? { messages, sourcePath: ref.sourcePath, sourceMtimeMs: ref.sourceMtimeMs } : null;
+  return messages ? {
+    messages,
+    providerSessionId: ref.sessionId,
+    source: 'provider-native',
+    sourcePath: ref.sourcePath,
+    sourceMtimeMs: ref.sourceMtimeMs,
+    nativeHistoryCoverage: 'full',
+    workspace: ref.workspace,
+  } : null;
 }
 
 function listCodexNativeHistory() {
@@ -1034,6 +1042,7 @@ module.exports = {
   listCodexNativeHistory,
   readAntigravityNativeHistory,
   listAntigravityNativeHistory,
+  workspacePathsMatch,
   __clearCodexNativeHistoryCaches: clearCodexNativeHistoryCaches,
   __getCodexNativeHistoryCacheStats: getCodexNativeHistoryCacheStats,
 };

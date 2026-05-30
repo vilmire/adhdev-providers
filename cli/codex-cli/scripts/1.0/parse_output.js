@@ -270,23 +270,98 @@ function normalizeNativeMessage(message) {
 }
 
 function collectNativeMessages(input, fallbackSessionId) {
-    if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') return { messages: [], providerSessionId: fallbackSessionId || '' };
+    const requestedWorkspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
+    if (!nativeHistory || typeof nativeHistory.readCodexNativeHistory !== 'function') {
+        return { messages: [], providerSessionId: fallbackSessionId || '', requestedWorkspace };
+    }
     const workspace = String(input?.workspace || input?.workingDir || input?.args?.workspace || input?.args?.workingDir || '').trim();
-    const historySessionId = String(input?.historySessionId || input?.sessionId || input?.args?.historySessionId || input?.args?.sessionId || fallbackSessionId || '').trim();
-    if (!historySessionId && !workspace) return { messages: [], providerSessionId: fallbackSessionId || '' };
+    const explicitHistorySessionId = String(
+        input?.providerSessionId
+        || input?.historySessionId
+        || input?.args?.providerSessionId
+        || input?.args?.historySessionId
+        || fallbackSessionId
+        || '',
+    ).trim();
+    if (!explicitHistorySessionId) {
+        return {
+            messages: [],
+            providerSessionId: fallbackSessionId || '',
+            requestedWorkspace,
+            unsafeIdentity: {
+                code: 'transcript_unmapped',
+                reason: 'codex_native_history_requires_provider_session_id',
+            },
+        };
+    }
+    const historySessionId = explicitHistorySessionId;
     const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
     const records = Array.isArray(result?.messages) ? result.messages : [];
+    const sourceWorkspace = String(result?.workspace || records.find(record => record?.workspace)?.workspace || '').trim();
+    const resolvedProviderSessionId = String(result?.providerSessionId || records.find(record => record?.historySessionId)?.historySessionId || historySessionId || '').trim();
+    if (!result || result.source !== 'provider-native') {
+        return {
+            messages: [],
+            providerSessionId: fallbackSessionId || '',
+            requestedWorkspace,
+            sourceWorkspace,
+            unsafeIdentity: {
+                code: 'transcript_unmapped',
+                reason: result?.unavailableReason || 'codex_native_history_unavailable',
+            },
+        };
+    }
+    if (resolvedProviderSessionId && resolvedProviderSessionId !== historySessionId) {
+        return {
+            messages: [],
+            providerSessionId: fallbackSessionId || '',
+            requestedWorkspace,
+            sourceWorkspace,
+            unsafeIdentity: {
+                code: 'unsafe_alias',
+                reason: 'codex_native_session_id_mismatch',
+                requestedSessionId: historySessionId,
+                transcriptSessionId: resolvedProviderSessionId,
+            },
+        };
+    }
+    if (workspace && sourceWorkspace && nativeHistory.workspacePathsMatch && !nativeHistory.workspacePathsMatch(sourceWorkspace, workspace)) {
+        return {
+            messages: [],
+            providerSessionId: fallbackSessionId || '',
+            requestedWorkspace,
+            sourceWorkspace,
+            unsafeIdentity: {
+                code: 'ambiguous_session_identity',
+                reason: 'codex_native_workspace_mismatch',
+                requestedWorkspace: workspace,
+                transcriptWorkspace: sourceWorkspace,
+            },
+        };
+    }
     if (!historySessionId) {
         const promptText = String(input?.promptText || input?.scope?.prompt || input?.args?.promptText || '').trim();
         const previousMessages = Array.isArray(input?.messages) ? input.messages : [];
         const lastUser = [...previousMessages].reverse().find(m => m?.role === 'user' && String(m?.content || '').trim());
         const expectedPrompt = normalizeForCompare(promptText || lastUser?.content || '');
         const hasMatchingPrompt = expectedPrompt && records.some(record => record?.role === 'user' && normalizeForCompare(record.content) === expectedPrompt);
-        if (expectedPrompt && !hasMatchingPrompt) return { messages: [], providerSessionId: fallbackSessionId || '' };
+        if (expectedPrompt && !hasMatchingPrompt) return { messages: [], providerSessionId: fallbackSessionId || '', requestedWorkspace, sourceWorkspace };
     }
     const messages = records.map(normalizeNativeMessage).filter(Boolean);
-    const resolvedSessionId = String(records.find(record => record?.historySessionId)?.historySessionId || historySessionId || '').trim();
-    return { messages: dedupeMessages(messages), providerSessionId: resolvedSessionId || fallbackSessionId || '' };
+    return {
+        messages: dedupeMessages(messages),
+        providerSessionId: resolvedProviderSessionId || fallbackSessionId || '',
+        requestedWorkspace,
+        sourceWorkspace,
+    };
+}
+
+function requestedSessionWorkspace(input) {
+    return String(input?.sessionWorkspace || input?.actualWorkspace || input?.workingDir || input?.args?.sessionWorkspace || input?.args?.actualWorkspace || input?.args?.workingDir || '').trim() || undefined;
+}
+
+function requestedIntendedWorkspace(input) {
+    return String(input?.intendedWorkspace || input?.workspace || input?.args?.intendedWorkspace || input?.args?.workspace || '').trim() || undefined;
 }
 
 function comparableText(message) {
@@ -609,6 +684,18 @@ function parseOutput(input) {
         ...(controlValues ? { controlValues } : {}),
         providerSessionId: nativeSession.providerSessionId || visibleSessionId || undefined,
         ...(nativeSession.messages.length > 0 ? { transcriptAuthority: 'provider', coverage: 'full' } : {}),
+        transcriptProvenance: {
+            selected: nativeSession.messages.length > 0 ? 'native-history' : 'pty-parser',
+            provider: 'codex-cli',
+            sessionWorkspace: requestedSessionWorkspace(input),
+            intendedWorkspace: requestedIntendedWorkspace(input),
+            transcriptWorkspace: nativeSession.sourceWorkspace || undefined,
+            ...(nativeSession.providerSessionId ? { providerSessionId: nativeSession.providerSessionId } : {}),
+            ...(nativeSession.unsafeIdentity ? {
+                unsafeIdentity: nativeSession.unsafeIdentity,
+                identityStatus: nativeSession.unsafeIdentity.code,
+            } : {}),
+        },
     };
 }
 

@@ -1399,7 +1399,7 @@ test('detect_status: Codex returns idle when prompt-ready evidence is newer than
   );
 });
 
-test('parse_output: uses Codex native history by workspace before visible session id is known', () => {
+test('parse_output: rejects Codex native history by workspace before visible session id is known', () => {
   const previousHome = process.env.HOME;
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));
   const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-workspace-'));
@@ -1444,10 +1444,76 @@ test('parse_output: uses Codex native history by workspace before visible sessio
       messages: [],
     });
 
+    assert.equal(parsed.providerSessionId, undefined);
+    assert.equal(parsed.transcriptAuthority, undefined);
+    assert.equal(parsed.coverage, undefined);
+    assert.ok(!parsed.messages.some(message => message.role === 'assistant' && message.content.includes('UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧')));
+    assert.ok(parsed.messages.some(message => message.content.includes('truncated PTY-only text')));
+    assert.equal(parsed.transcriptProvenance.identityStatus, 'transcript_unmapped');
+    assert.equal(parsed.transcriptProvenance.unsafeIdentity.reason, 'codex_native_history_requires_provider_session_id');
+  } finally {
+    if (previousHome === undefined) {
+      delete process.env.HOME;
+    } else {
+      process.env.HOME = previousHome;
+    }
+    fs.rmSync(home, { recursive: true, force: true });
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+});
+
+test('parse_output: uses Codex native history only with matching provider session and workspace', () => {
+  const previousHome = process.env.HOME;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-home-'));
+  const workspace = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-codex-native-workspace-'));
+  const sessionId = '11111111-2222-4333-8444-555555555555';
+  const sessionDir = path.join(home, '.codex', 'sessions', '2026', '05', '28');
+  const sessionPath = path.join(sessionDir, `rollout-2026-05-28T00-00-00-${sessionId}.jsonl`);
+  fs.mkdirSync(sessionDir, { recursive: true });
+  fs.writeFileSync(sessionPath, [
+    JSON.stringify({
+      timestamp: '2026-05-28T00:00:00.000Z',
+      type: 'session_meta',
+      payload: { id: sessionId, cwd: workspace },
+    }),
+    JSON.stringify({
+      timestamp: '2026-05-28T00:00:01.000Z',
+      type: 'response_item',
+      payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'Preserve this output' }] },
+    }),
+    JSON.stringify({
+      timestamp: '2026-05-28T00:00:02.000Z',
+      type: 'response_item',
+      payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'RAW VERIFY RESULT\nUNICODE_SENTINEL=ADHDEV-CLI-VERIFY' }] },
+    }),
+  ].join('\n') + '\n', 'utf8');
+
+  try {
+    process.env.HOME = home;
+    const parsed = parseOutput({
+      providerSessionId: sessionId,
+      workspace,
+      workingDir: workspace,
+      screenText: [
+        '› Preserve this output',
+        '',
+        '• truncated PTY-only text',
+        '',
+        '›',
+        '',
+        `gpt-5.4 low · ${workspace}`,
+      ].join('\n'),
+      buffer: '',
+      recentBuffer: '',
+      promptText: 'Preserve this output',
+      messages: [],
+    });
+
     assert.equal(parsed.providerSessionId, sessionId);
     assert.equal(parsed.transcriptAuthority, 'provider');
     assert.equal(parsed.coverage, 'full');
-    assert.ok(parsed.messages.some(message => message.role === 'assistant' && message.content.includes('UNICODE_SENTINEL=⟦ADHDEV-CLI-VERIFY⟧')));
+    assert.equal(parsed.transcriptProvenance.selected, 'native-history');
+    assert.ok(parsed.messages.some(message => message.role === 'assistant' && message.content.includes('UNICODE_SENTINEL=ADHDEV-CLI-VERIFY')));
     assert.ok(!parsed.messages.some(message => message.content.includes('truncated PTY-only text')));
   } finally {
     if (previousHome === undefined) {
