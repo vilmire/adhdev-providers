@@ -65,6 +65,8 @@ function isShellChrome(line) {
 function isApprovalCue(line) {
     const trimmed = normalize(line);
     return /This command requires approval/i.test(trimmed)
+        || /^Settings Warning$/i.test(trimmed)
+        || /Claude Code settings/i.test(trimmed)
         || /New MCP server found in this project/i.test(trimmed)
         || /requires approval/i.test(trimmed)
         || /Do you want to (?:proceed|allow|run|make this edit|create)/i.test(trimmed)
@@ -326,6 +328,7 @@ module.exports = function detectStatus(stateOrInput, input) {
     if (rawStatus === null && activeLines.length === 0) {
         const tail = String(effectiveInput?.tail || '');
         if (/This command requires approval/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) rawStatus = 'waiting_approval';
+        else if (/Settings Warning|Claude Code settings/i.test(tail) && /Enter to confirm/i.test(tail) && /(^|\n)\s*[❯›>]?\s*\d+[.)]\s+/m.test(tail)) rawStatus = 'waiting_approval';
         else if (/Quick safety check|Is this a project you trust|Enter to confirm|Claude Code'?ll be able to read, edit, and execute files here/i.test(tail)) rawStatus = 'waiting_approval';
         else if (/esc to (?:interrupt|stop)/i.test(tail)) rawStatus = 'generating';
         else if (nonEmpty(tail.split(/\r?\n/u)).some(isSpinnerLine)) rawStatus = 'generating';

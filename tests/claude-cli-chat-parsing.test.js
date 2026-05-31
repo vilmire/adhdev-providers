@@ -1551,6 +1551,53 @@ test('claude-cli parse_approval ignores stale raw approval after visible prompt 
   assert.notEqual(detectStatus({ screenText, buffer: screenText, rawBuffer: staleRawBuffer }), 'waiting_approval');
 });
 
+test('claude-cli surfaces Settings Warning as an actionable Continue approval', () => {
+  const screenText = [
+    'Settings Warning',
+    'Claude Code detected project settings that may need review.',
+    'Fixing will edit .claude/settings.local.json automatically.',
+    '',
+    '❯ 1. Fix with Claude',
+    '  2. Continue',
+    '',
+    'Enter to confirm · Esc to cancel',
+  ].join('\n');
+
+  const input = {
+    screenText,
+    buffer: screenText,
+    tail: screenText,
+    screen: buildScreenSnapshot(screenText),
+  };
+  const modal = parseApproval(input);
+  const result = parseOutput({
+    ...input,
+    messages: [{ role: 'user', content: 'Continue the assigned task.' }],
+  });
+
+  assert.equal(detectStatus(input), 'waiting_approval');
+  assert.deepEqual(modal, {
+    message: 'Settings Warning Claude Code detected project settings that may need review. Fixing will edit .claude/settings.local.json automatically.',
+    buttons: ['Fix with Claude', 'Continue'],
+  });
+  assert.equal(result.status, 'waiting_approval');
+  assert.deepEqual(result.activeModal, modal);
+  assert.deepEqual(toMessages(result).map(({ role, kind, senderName, content }) => ({ role, kind, senderName, content })), [
+    {
+      role: 'user',
+      kind: 'standard',
+      senderName: undefined,
+      content: 'Continue the assigned task.',
+    },
+    {
+      role: 'assistant',
+      kind: 'system',
+      senderName: 'System',
+      content: 'Approval requested\nSettings Warning Claude Code detected project settings that may need review. Fixing will edit .claude/settings.local.json automatically.\n[Fix with Claude] [Continue]',
+    },
+  ]);
+});
+
 test('claude-cli classifies Claude rate-limit options menu from debug bundle as waiting approval', () => {
   const screenText = [
     ' ▐▛███▜▌   Claude Code v2.1.84',

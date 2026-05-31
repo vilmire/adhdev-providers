@@ -66,6 +66,12 @@ function isNewMCPServerCue(line) {
     return /New MCP server found in this project/i.test(trimmed);
 }
 
+function isSettingsWarningCue(line) {
+    const trimmed = normalize(line);
+    return /^Settings Warning$/i.test(trimmed)
+        || /Claude Code settings/i.test(trimmed);
+}
+
 function isApprovalQuestionLine(line) {
     const trimmed = normalize(line);
     return /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
@@ -86,10 +92,21 @@ function hasChoiceMenuStructure(lines) {
     return afterQuestion.slice(0, footerIndex).filter(isButtonLine).length >= 2;
 }
 
+function hasSettingsWarningMenu(lines) {
+    const warningIndex = findLastIndex(lines, isSettingsWarningCue);
+    if (warningIndex < 0) return false;
+    const afterWarning = lines.slice(warningIndex + 1);
+    const footerIndex = afterWarning.findIndex(isEnterConfirmCancelLine);
+    if (footerIndex < 0) return false;
+    const buttons = afterWarning.slice(0, footerIndex).filter(isButtonLine).map(normalizeButtonLabel);
+    return buttons.some(label => /^Continue$/i.test(label))
+        && buttons.some(label => /^Fix with Claude$/i.test(label));
+}
+
 function hasApprovalCue(lines) {
     return Array.isArray(lines) && lines.some(line => {
         const normalized = normalize(line);
-        return /requires approval|Do you want to proceed|Do you want to make this edit|Do you want to run this command|Do you want to allow|Allow\s*once|Always\s*allow/i.test(normalized)
+        return /requires approval|Do you want to proceed|Do you want to make this edit|Do you want to run this command|Do you want to allow|Allow\s*once|Always\s*allow|Settings Warning/i.test(normalized)
             || isButtonLine(normalized);
     });
 }
@@ -144,14 +161,16 @@ function parseApprovalFromLines(lines, sourceText) {
     const startupTrust = normalizedRecent.some(isStartupTrustCue);
     const choiceMenu = hasChoiceMenuStructure(recent);
     const mcpServer = normalizedRecent.some(isNewMCPServerCue);
+    const settingsWarning = hasSettingsWarningMenu(recent);
     const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
-    const hasApproval = startupTrust || choiceMenu || explicitApproval || mcpServer;
+    const hasApproval = startupTrust || choiceMenu || explicitApproval || mcpServer || settingsWarning;
     if (!hasApproval) return null;
 
     const questionIndex = findLastIndex(lines, isApprovalQuestionLine);
     const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
     const startupIndex = findLastIndex(lines, isStartupTrustCue);
     const mcpServerIndex = findLastIndex(lines, isNewMCPServerCue);
+    const settingsWarningIndex = findLastIndex(lines, isSettingsWarningCue);
     const rateLimitIndex = findLastIndex(lines, line => /You've hit your limit/i.test(normalize(line)));
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
     const startIndex = Math.max(0, (
@@ -161,6 +180,7 @@ function parseApprovalFromLines(lines, sourceText) {
                     : questionIndex >= 0 ? questionIndex - 4
                         : startupIndex >= 0 ? startupIndex
                             : mcpServerIndex >= 0 ? mcpServerIndex
+                                : settingsWarningIndex >= 0 ? settingsWarningIndex
                                 : lines.length - 8
     ));
     const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;

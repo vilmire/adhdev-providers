@@ -203,6 +203,10 @@
     ],
     "dialog": [
       {
+        "source": "Settings Warning",
+        "flags": "i"
+      },
+      {
         "source": "Quick safety check",
         "flags": "i"
       },
