@@ -435,3 +435,72 @@ test('antigravity native history script fails closed while listing opaque protob
   assert.equal(listed.sessions[0].nativeHistoryCoverage, 'unavailable');
   assert.equal(listed.sessions[0].unavailableReason, 'opaque_antigravity_protobuf_without_stable_schema');
 }));
+
+test('excludeInProgressTurn strips trailing tool_use without tool_result for claude-cli', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ac';
+  const workspace = '/workspaces/adhdev';
+  const sourcePath = path.join(home, '.claude', 'projects', '-workspaces-adhdev', `${sessionId}.jsonl`);
+  writeJsonl(sourcePath, [
+    // completed turn
+    { type: 'user', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:00.000Z', message: { content: [{ type: 'text', text: 'completed user' }] } },
+    { type: 'assistant', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:01.000Z', message: { content: [{ type: 'text', text: 'completed assistant' }] } },
+    // in-progress turn: tool_use with no following tool_result
+    { type: 'user', sessionId, cwd: workspace, timestamp: '2026-04-22T08:35:00.000Z', message: { content: [{ type: 'text', text: 'run a command' }] } },
+    { type: 'assistant', sessionId, cwd: workspace, timestamp: '2026-04-22T08:35:01.000Z', message: { content: [{ type: 'text', text: 'sure' }, { type: 'tool_use', name: 'Bash', input: { command: 'rm -rf /' } }] } },
+  ]);
+
+  // Without flag: includes in-progress messages
+  const full = claudeScripts.readNativeHistory({ historySessionId: sessionId, workspace });
+  const fullKinds = full.messages.map((m) => m.kind);
+  assert.ok(fullKinds.includes('tool'), 'should include tool record without flag');
+
+  // With flag: strips from last user onward (in-progress turn removed)
+  const filtered = claudeScripts.readNativeHistory({ historySessionId: sessionId, workspace, excludeInProgressTurn: true });
+  assert.deepEqual(filtered.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['system', 'session_start', workspace],
+    ['user', 'standard', 'completed user'],
+    ['assistant', 'standard', 'completed assistant'],
+  ]);
+}));
+
+test('excludeInProgressTurn does not strip completed turns ending with tool_result for claude-cli', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890ae';
+  const workspace = '/workspaces/adhdev';
+  const sourcePath = path.join(home, '.claude', 'projects', '-workspaces-adhdev', `${sessionId}.jsonl`);
+  writeJsonl(sourcePath, [
+    { type: 'user', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:00.000Z', message: { content: [{ type: 'text', text: 'user' }] } },
+    { type: 'assistant', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:01.000Z', message: { content: [{ type: 'tool_use', name: 'Bash', input: { command: 'pwd' } }] } },
+    // tool_result present → turn is complete
+    { type: 'user', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:02.000Z', message: { content: [{ type: 'tool_result', content: [{ type: 'text', text: '/workspaces' }] }] } },
+    { type: 'assistant', sessionId, cwd: workspace, timestamp: '2026-04-22T08:34:03.000Z', message: { content: [{ type: 'text', text: 'done' }] } },
+  ]);
+
+  const filtered = claudeScripts.readNativeHistory({ historySessionId: sessionId, workspace, excludeInProgressTurn: true });
+  // Last record is standard assistant — not stripped
+  const lastMsg = filtered.messages[filtered.messages.length - 1];
+  assert.equal(lastMsg.role, 'assistant');
+  assert.equal(lastMsg.kind, 'standard');
+  assert.equal(lastMsg.content, 'done');
+}));
+
+test('excludeInProgressTurn strips trailing tool_use for codex-cli', () => withTempHome((home) => {
+  const sessionId = '12345678-1234-4234-9234-1234567890af';
+  const workspace = '/workspaces/adhdev';
+  const sourcePath = path.join(home, '.codex', 'sessions', '2026', '04', '29', `rollout-2026-04-29T00-27-22-${sessionId}.jsonl`);
+  writeJsonl(sourcePath, [
+    { type: 'session_meta', timestamp: '2026-04-29T00:27:22.000Z', payload: { id: sessionId, cwd: workspace } },
+    // completed turn
+    { type: 'response_item', timestamp: '2026-04-29T00:27:23.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'user' }] } },
+    { type: 'response_item', timestamp: '2026-04-29T00:27:24.000Z', payload: { type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] } },
+    // in-progress: function_call without output
+    { type: 'response_item', timestamp: '2026-04-29T00:27:25.000Z', payload: { type: 'message', role: 'user', content: [{ type: 'input_text', text: 'run something' }] } },
+    { type: 'response_item', timestamp: '2026-04-29T00:27:26.000Z', payload: { type: 'function_call', name: 'shell', arguments: JSON.stringify({ command: 'ls' }) } },
+  ]);
+
+  const filtered = codexScripts.readNativeHistory({ historySessionId: sessionId, workspace, excludeInProgressTurn: true });
+  assert.deepEqual(filtered.messages.map((m) => [m.role, m.kind, m.content]), [
+    ['system', 'session_start', workspace],
+    ['user', 'standard', 'user'],
+    ['assistant', 'standard', 'ok'],
+  ]);
+}));
