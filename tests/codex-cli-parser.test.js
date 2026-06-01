@@ -428,6 +428,47 @@ test('codex provider detectStatus resets the idle settle timer when visible text
   }), 'idle');
 });
 
+test('codex provider detectStatus does not reset settled idle on raw buffer churn when the visible footer is idle', () => {
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const input = {
+    screenText: completedTurnScreen,
+    tail: completedTurnTail,
+    rawBuffer: `${completedTurnScreen}\nfunctions.exec_command({"cmd":"old"})`,
+    isWaitingForResponse: true,
+    now: 40_000,
+  };
+
+  assert.equal(codexScripts.detectStatus(state, input), 'generating');
+  assert.equal(codexScripts.detectStatus(state, {
+    ...input,
+    rawBuffer: `${input.rawBuffer}\nparser poll 1`,
+    now: 42_100,
+  }), 'idle');
+});
+
+test('codex detect_status trusts visible idle footer over stale raw tool activity', () => {
+  const screenText = [
+    '• Finished the task.',
+    '',
+    '›',
+    '',
+    'gpt-5.4 low · /private/tmp/adhdev-codex-test',
+  ].join('\n');
+  const rawBuffer = [
+    '› gpt-5.4 low · /private/tmp/adhdev-codex-test',
+    'functions.exec_command({"cmd":"old command"})',
+    'Waiting for command output',
+  ].join('\n');
+
+  assert.equal(detectStatus({
+    screenText,
+    tail: rawBuffer,
+    rawBuffer,
+    isWaitingForResponse: true,
+  }), 'idle');
+});
+
 test('codex provider parseSession returns idle immediately when a final assistant and prompt are visible', () => {
   const state = codexScripts.createState();
   state.lastProviderStatus = 'generating';

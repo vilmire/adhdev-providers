@@ -9,18 +9,25 @@ function loadModule(name) { try { return require(path.join(DIR, name)); } catch 
 
 const IDLE_SETTLE_MS = 2000;
 
-function normalizeStatusText(input) {
-    return [
-        input && input.screenText,
-        input && input.tail,
-        input && input.rawBuffer,
-    ]
-        .filter(Boolean)
-        .join('\n')
+function normalizeBasicStatusText(value) {
+    return String(value || '')
         .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(-4000);
+}
+
+function normalizeStatusText(input) {
+    const visibleText = [
+        input && input.screenText,
+        input && input.tail,
+    ]
+        .filter(Boolean)
+        .join('\n');
+    const source = hasVisibleIdlePrompt(input)
+        ? visibleText
+        : [visibleText, input && input.rawBuffer].filter(Boolean).join('\n');
+    return normalizeBasicStatusText(source);
 }
 
 function nowMs(input) {
@@ -48,7 +55,10 @@ function hasFinalAssistantMessage(parsed) {
 }
 
 function hasVisibleIdlePrompt(input) {
-    const text = normalizeStatusText(input);
+    const text = normalizeBasicStatusText([
+        input && input.screenText,
+        input && input.tail,
+    ].filter(Boolean).join('\n'));
     return /(?:^|\s)[›❯>]\s*(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·/i.test(text)
         || /(?:^|\s)(?:gpt-|o\d\b|codex-)[\w._-]*(?:\s+(?:none|minimal|low|medium|high|xhigh|max|fast))*\s+·\s*(?:\/|~)/i.test(text)
         || /(?:^|\s)[›❯]\s*(?:tab to queue message\b|$)/i.test(text);

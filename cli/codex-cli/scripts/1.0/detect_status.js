@@ -172,6 +172,24 @@ function hasReadyPrompt(raw) {
         || IDLE_FOOTER_RE.test(recentBlock);
 }
 
+function hasReadyFooter(raw) {
+    const rawText = String(raw || '');
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const recentBlock = lines.slice(-8).join('\n');
+    return IDLE_FOOTER_RE.test(recentBlock) || IDLE_FOOTER_MODEL_TOKEN_RE.test(recentBlock);
+}
+
+function hasRecentActiveGeneratingCue(raw) {
+    const rawText = String(raw || '');
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const recentBlock = lines.slice(-12).join('\n');
+    return GENERATING_ESC_RE.test(recentBlock)
+        || GENERATING_MCP_START_RE.test(recentBlock)
+        || GENERATING_SPINNER_RE.test(recentBlock)
+        || GENERATING_PROGRESS_GLYPH_RE.test(recentBlock)
+        || (GENERATING_BRAILLE_RE.test(recentBlock) && /(?:Working|Thinking|Esc to interrupt|Generating)/i.test(recentBlock));
+}
+
 function hasIdle(raw) {
     const rawText = String(raw || '');
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -231,6 +249,10 @@ module.exports = function detectStatus(input) {
     const recentRaw = raw || tail || screen;
 
     if (hasApproval(lines)) return 'waiting_approval';
+    // A currently visible Codex model footer is stronger evidence than stale raw
+    // buffer activity from an earlier turn. Do this before the isWaiting guard so
+    // rawBuffer churn cannot keep a completed turn generating forever.
+    if (screen && hasReadyFooter(screen) && !hasRecentActiveGeneratingCue(screen)) return 'idle';
     if (input?.isWaitingForResponse && hasActiveToolActivityAfterIdle(recentRaw)) return 'generating';
     if (screen && hasReadyPrompt(screen)) return 'idle';
     if (screen && hasStartupIdleScreen(screen)) return 'idle';
