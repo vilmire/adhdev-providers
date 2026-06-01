@@ -4,6 +4,7 @@
   "category": "cli",
   "transcriptAuthority": "provider",
   "transcriptContext": "tail",
+  "augmentStaleSnapshot": true,
   "aliases": [
     "hermes",
     "hermes-agent"

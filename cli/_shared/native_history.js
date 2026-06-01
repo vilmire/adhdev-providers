@@ -222,17 +222,20 @@ function readHermesSessionRef(ref) {
 function readHermesNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
   const workspace = input.workspace || input.args?.workspace;
+  const excludeInProgressTurn = input.excludeInProgressTurn === true || input.args?.excludeInProgressTurn === true;
   const ref = resolveHermesSession(sessionId, workspace);
   if (!ref) return null;
-  const messages = readHermesSessionRef(ref);
-  return messages ? {
+  let messages = readHermesSessionRef(ref);
+  if (!messages) return null;
+  if (excludeInProgressTurn) messages = trimIncompleteLastTurn(messages);
+  return {
     messages,
     providerSessionId: ref.sessionId,
     source: 'provider-native',
     sourcePath: ref.sourcePath,
     sourceMtimeMs: ref.sourceMtimeMs,
     nativeHistoryCoverage: 'full',
-  } : null;
+  };
 }
 
 function listHermesNativeHistory() {
@@ -363,13 +366,33 @@ function readClaudeSessionRef(ref) {
   }
 }
 
+/**
+ * When waiting_approval, strip records from the last user message onward if the
+ * very last record is kind='tool' (tool_use without a following tool_result).
+ * Keeps all previous completed turns visible; hides the in-progress tool call.
+ */
+function trimIncompleteLastTurn(records) {
+  if (!records || records.length === 0) return records;
+  const last = records[records.length - 1];
+  if (!last || !(last.role === 'assistant' && last.kind === 'tool')) return records;
+  // Last record is a tool record — the turn is in-progress. Strip from the last user message.
+  let lastUserIdx = -1;
+  for (let i = records.length - 1; i >= 0; i--) {
+    if (records[i].role === 'user') { lastUserIdx = i; break; }
+  }
+  return lastUserIdx === -1 ? [] : records.slice(0, lastUserIdx);
+}
+
 function readClaudeNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
   const workspace = input.workspace || input.args?.workspace;
+  const excludeInProgressTurn = input.excludeInProgressTurn === true || input.args?.excludeInProgressTurn === true;
   const ref = resolveClaudeSession(sessionId, workspace);
   if (!ref) return null;
-  const messages = readClaudeSessionRef(ref);
-  return messages ? { messages, sourcePath: ref.sourcePath, sourceMtimeMs: ref.sourceMtimeMs } : null;
+  let messages = readClaudeSessionRef(ref);
+  if (!messages) return null;
+  if (excludeInProgressTurn) messages = trimIncompleteLastTurn(messages);
+  return { messages, sourcePath: ref.sourcePath, sourceMtimeMs: ref.sourceMtimeMs };
 }
 
 function listClaudeNativeHistory() {
@@ -557,10 +580,13 @@ function readCodexSessionRef(ref) {
 function readCodexNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
   const workspace = input.workspace || input.args?.workspace;
+  const excludeInProgressTurn = input.excludeInProgressTurn === true || input.args?.excludeInProgressTurn === true;
   const ref = resolveCodexSession(sessionId, workspace);
   if (!ref) return null;
-  const messages = readCodexSessionRef(ref);
-  return messages ? {
+  let messages = readCodexSessionRef(ref);
+  if (!messages) return null;
+  if (excludeInProgressTurn) messages = trimIncompleteLastTurn(messages);
+  return {
     messages,
     providerSessionId: ref.sessionId,
     source: 'provider-native',
@@ -568,7 +594,7 @@ function readCodexNativeHistory(input = {}) {
     sourceMtimeMs: ref.sourceMtimeMs,
     nativeHistoryCoverage: 'full',
     workspace: ref.workspace,
-  } : null;
+  };
 }
 
 function listCodexNativeHistory() {

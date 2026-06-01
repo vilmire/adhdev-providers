@@ -49,6 +49,7 @@
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
   "submitStrategy": "wait_for_echo",
+  "requiresFinalAssistantBeforeIdle": true,
   "timeouts": {
     "idleFinishConfirm": 5000,
     "statusActivityHold": 5000
