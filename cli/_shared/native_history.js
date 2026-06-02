@@ -826,6 +826,17 @@ function resolveAntigravityTranscriptByWorkspacePrompt(workspace, promptText) {
   return null;
 }
 
+// Antigravity writes the user prompt to history.jsonl immediately but the
+// brain transcript.jsonl is written by the agent process and lags — sometimes
+// by a few minutes while the model is thinking. v1 used a 1-second grace
+// window which forced readChat to fall back to PTY for the whole "thinking"
+// period, even though native was already authoritative for everything up to
+// the latest prompt. The lag is observed up to ~3-5 minutes in practice, so
+// we extend the grace window. After the grace window expires we trust the
+// signal and reject the native read as stale (the user has likely typed a
+// new prompt the agent hasn't received yet).
+const ANTIGRAVITY_TRANSCRIPT_CATCHUP_GRACE_MS = 5 * 60_000;
+
 function antigravityTranscriptIsMissingNewerPrompt(ref, workspace, transcriptMessages) {
   const sourceMtimeMs = Number(ref?.sourceMtimeMs || 0);
   if (!sourceMtimeMs || !Array.isArray(transcriptMessages)) return false;
@@ -838,8 +849,14 @@ function antigravityTranscriptIsMissingNewerPrompt(ref, workspace, transcriptMes
       .filter(Boolean),
   );
   const history = readAntigravityCliPromptRows();
+  const now = Date.now();
   return history.rows
+    // Only consider prompts that are *both* newer than the transcript file
+    // AND older than the catchup grace window. A prompt within the grace
+    // window is the in-flight one the agent is still processing — we keep
+    // surfacing the native transcript as authoritative until it catches up.
     .filter((row) => row.receivedAt > sourceMtimeMs + 1000)
+    .filter((row) => now - row.receivedAt > ANTIGRAVITY_TRANSCRIPT_CATCHUP_GRACE_MS)
     .filter((row) => row.workspace && workspacePathsMatch(row.workspace, normalizedWorkspace))
     .some((row) => {
       const prompt = normalizeComparableText(row.display);
