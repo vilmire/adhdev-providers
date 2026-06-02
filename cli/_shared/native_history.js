@@ -884,7 +884,15 @@ function resolveAntigravityConversation(sessionId, workspace, promptText) {
         };
       }
     }
-    return resolveAntigravityTranscriptByWorkspacePrompt(workspace, promptText);
+    // (fix) Workspace+prompt fallback was returning a different conversation's
+    // transcript when the new session's own prompt happened to match an old
+    // session that recorded the same words. Only do the workspace fallback
+    // when no sessionId was supplied at all — when the caller declared a
+    // sessionId we must not surface a foreign conversation's history.
+    if (!normalized) {
+      return resolveAntigravityTranscriptByWorkspacePrompt(workspace, promptText);
+    }
+    return null;
   }
   rows.sort((a, b) => a.receivedAt - b.receivedAt);
   const latest = rows[rows.length - 1];
