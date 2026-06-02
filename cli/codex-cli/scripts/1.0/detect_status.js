@@ -61,13 +61,17 @@ const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with 
 const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s*\S|(?:^|\s)\d+\.\s*\S|Approve and run now|Always approve this session/i;
 const APPROVAL_FOOTER_RE = /Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 
-const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\(\d+s\b/i;
+// Matches Codex spinner labels and accepts elapsed times in any of the
+// following formats: `(12s`, `(8m 56s`, `(1h 2m 3s`. Previously only the
+// integer-seconds form was recognized so long-running operations missed
+// the generating signal once codex switched to mixed units.
+const GENERATING_SPINNER_RE = /(?:Thinking|Planning|Searching|Reading|Working|Analyzing|Inspecting|Responding|Following instructions clearly)[^\n]*\((?:\d+h\s+\d+m\s+\d+s|\d+m\s+\d+s|\d+s)\b/i;
 const GENERATING_MCP_START_RE = /Starting MCP servers?[^\n]*(?:\(\d+s\b|esc to interrupt|[◦◐◑◒◓◔◕◉●])/i;
 const GENERATING_ESC_RE = /Esc to interrupt/i;
 const GENERATING_BRAILLE_RE = /[⠁-⣿]/;
 const GENERATING_PROGRESS_GLYPH_RE = /(?:^|\n)\s*[◦◐◑◒◓◔◕◉●]\s*(?:$|\n|[A-Z[(])/;
 const GENERATING_PARTIAL_WORK_RE = /(?:^|\s)•\s*(?:W|Wo|Wor|Work|Worki|Workin|Working)\b/i;
-const ACTIVE_TOOL_ACTIVITY_RE = /(?:^|\n)\s*(?:[•·]\s*)?(?:functions\.)?(?:exec_command|write_stdin|apply_patch|view_image|read_mcp_resource|list_mcp_resources|mcp__[A-Za-z0-9_]+)\b|(?:^|\n)\s*(?:[•·]\s*)?(?:Running|Reading|Editing|Writing|Patching|Checking|Executing)\b/i;
+const ACTIVE_TOOL_ACTIVITY_RE = /(?:^|\n)\s*(?:[•·]\s*)?(?:functions\.)?(?:exec_command|write_stdin|apply_patch|view_image|read_mcp_resource|list_mcp_resources|mcp__[A-Za-z0-9_]+)\b|(?:^|\n)\s*(?:[•·]\s*)?(?:Running|Reading|Editing|Writing|Patching|Checking|Executing)\b|\b\d+\s+background\s+terminal\s+running\b|(?:^|\n)\s*(?:[•·]\s*)?Waited\s+for\s+background\s+terminal\b/i;
 
 const IDLE_SEND_RE = /⏎\s+send/i;
 const IDLE_PROMPT_LINE_RE = /^(?:>\s*|[›❯]\s*)$/;
@@ -249,11 +253,24 @@ module.exports = function detectStatus(input) {
     const recentRaw = raw || tail || screen;
 
     if (hasApproval(lines)) return 'waiting_approval';
+
+    // (fix) Generation cues win over the "ready footer / prompt" idle paths.
+    // Codex keeps the model footer + prompt input visible while a background
+    // tool (`exec_command(... &)` + sleep, `1 background terminal running`,
+    // etc.) is still pending. The prior order let `hasReadyPrompt` fire idle
+    // even though the user's screen literally showed
+    // `Working (Xs • esc to interrupt) · 1 background terminal running`.
+    // Trust the explicit generation signals first; only consider idle paths
+    // when no generation cue is anywhere in the live window.
+    if (hasRecentActiveGeneratingCue(screen) || hasRecentActiveGeneratingCue(recentRaw)) {
+        return 'generating';
+    }
+    if (input?.isWaitingForResponse && hasActiveToolActivityAfterIdle(recentRaw)) return 'generating';
+
     // A currently visible Codex model footer is stronger evidence than stale raw
     // buffer activity from an earlier turn. Do this before the isWaiting guard so
     // rawBuffer churn cannot keep a completed turn generating forever.
-    if (screen && hasReadyFooter(screen) && !hasRecentActiveGeneratingCue(screen)) return 'idle';
-    if (input?.isWaitingForResponse && hasActiveToolActivityAfterIdle(recentRaw)) return 'generating';
+    if (screen && hasReadyFooter(screen)) return 'idle';
     if (screen && hasReadyPrompt(screen)) return 'idle';
     if (screen && hasStartupIdleScreen(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
