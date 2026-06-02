@@ -19,16 +19,29 @@ function normalizeMessageIdentity(messages, status) {
       turnIndex += 1;
     }
 
+    // v2 identity emission. providerUnitKey is a SHA1 of stable content
+    // attributes so it does not change across re-reads of the same parsed
+    // line. v1 producers that already attached a providerUnitKey win
+    // (chat-history reads them via existing fields).
     const seed = [role, kind, senderName, index, content].join('\n');
     const providerUnitKey = typeof message?.providerUnitKey === 'string' && message.providerUnitKey
       ? message.providerUnitKey
-      : `cli-unit:${role}:${kind}:${index}:${stableHash(seed)}`;
+      : `v2-pty:${role}:${kind}:${index}:${stableHash(seed)}`;
     const bubbleId = typeof message?.bubbleId === 'string' && message.bubbleId
       ? message.bubbleId
-      : `cli-bubble:${providerUnitKey}`;
+      : `bubble:${providerUnitKey}`;
     const turnKey = typeof message?._turnKey === 'string' && message._turnKey
       ? message._turnKey
-      : `cli-turn:${turnIndex}`;
+      : `turn:${turnIndex}`;
+    // sequence: producer-supplied wins; otherwise monotonic per parse from
+    // the message's receivedAt/timestamp; otherwise positional.
+    const existingSeq = typeof message?.sequence === 'number' && Number.isFinite(message.sequence)
+      ? message.sequence
+      : null;
+    const tsCandidate = Number(message?.receivedAt || message?.timestamp || 0);
+    const sequence = existingSeq !== null
+      ? existingSeq
+      : (tsCandidate > 0 ? tsCandidate : index);
     const isStreamingTail = status === 'generating' && role === 'assistant' && index === list.length - 1;
     const bubbleState = typeof message?.bubbleState === 'string' && message.bubbleState
       ? message.bubbleState
@@ -38,6 +51,7 @@ function normalizeMessageIdentity(messages, status) {
       ...message,
       providerUnitKey,
       bubbleId,
+      sequence,
       _turnKey: turnKey,
       bubbleState,
     };

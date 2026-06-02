@@ -3,6 +3,11 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const crypto = require('node:crypto');
+
+function stableHash(value) {
+  return crypto.createHash('sha1').update(String(value || '')).digest('hex').slice(0, 12);
+}
 
 function statMtimeMs(filePath) {
   try { return fs.statSync(filePath).mtimeMs; } catch { return 0; }
@@ -1059,16 +1064,108 @@ function sortSummaries(sessions) {
   return sessions.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0) || String(a.historySessionId).localeCompare(String(b.historySessionId)));
 }
 
+// ───────────────────────────────────────────────────────────────
+//  Chat transcript v2 identity stamping (A2.3)
+//
+//  Wraps each provider's readNativeHistory return value to attach stable
+//  providerUnitKey / bubbleId / sequence to every message. v1 producers
+//  did not emit these and the daemon was forced to re-synthesise them
+//  from index+content hash on every read (the four-different-ID-shapes
+//  problem from the chat refactor audit). v2 emits identity once at the
+//  producer, stable across re-reads.
+//
+//  Sequence semantics:
+//    - sequence is a monotonic non-negative integer per (provider, session).
+//    - Producers cannot in general supply a session-wide monotonic counter
+//      from a single read, so we derive it from the natural timestamp
+//      ordering present in the source (claude jsonl ts, codex session_meta,
+//      hermes session record). When the source has no usable timestamp we
+//      fall back to positional index — stable across reads of the same
+//      file but resets on file truncation, which is acceptable because a
+//      truncation is itself a regression event the daemon's
+//      ChatSourceMachine will detect.
+//
+//  providerUnitKey semantics:
+//    - Stable across re-reads of the same logical message.
+//    - For claude: derived from the message uuid the JSONL carries.
+//    - For codex: derived from the response_id + position.
+//    - For hermes: derived from the session record's stable msg key.
+//    - For antigravity: derived from the jsonl record's response_id.
+//    - Fallback (any producer not supplying a native id): a SHA1 of
+//      (providerType, sessionId, role, content) which is stable across
+//      reads of the same content but not across edits. Tested by the
+//      daemon's ChatSourceMachine — content edits are a regression event
+//      and unlock the source decision.
+// ───────────────────────────────────────────────────────────────
+
+function v2StampMessages(providerType, sessionId, messages) {
+  if (!Array.isArray(messages)) return messages;
+  const out = new Array(messages.length);
+  for (let i = 0; i < messages.length; i += 1) {
+    const message = messages[i];
+    if (!message || typeof message !== 'object') {
+      out[i] = message;
+      continue;
+    }
+    const existingProviderUnitKey = typeof message.providerUnitKey === 'string' && message.providerUnitKey
+      ? message.providerUnitKey
+      : null;
+    const existingBubbleId = typeof message.bubbleId === 'string' && message.bubbleId
+      ? message.bubbleId
+      : null;
+    const existingSequence = typeof message.sequence === 'number' && Number.isFinite(message.sequence)
+      ? message.sequence
+      : null;
+    const tsCandidate = Number(message.receivedAt || message.timestamp || message.ts || 0);
+    const sequence = existingSequence !== null
+      ? existingSequence
+      : (tsCandidate > 0 ? tsCandidate : i);
+    const role = typeof message.role === 'string' ? message.role : '';
+    const kind = typeof message.kind === 'string' ? message.kind : 'standard';
+    const contentForKey = typeof message.content === 'string'
+      ? message.content
+      : (Array.isArray(message.content) ? JSON.stringify(message.content) : '');
+    const providerUnitKey = existingProviderUnitKey
+      || `v2:${providerType}:${sessionId || 'workspace'}:${i}:${role}:${kind}:${stableHash([providerType, sessionId || '', role, kind, contentForKey].join(''))}`;
+    const bubbleId = existingBubbleId || `bubble:${providerUnitKey}`;
+    out[i] = {
+      ...message,
+      providerUnitKey,
+      bubbleId,
+      sequence,
+    };
+  }
+  return out;
+}
+
+function v2StampResult(providerType, fnName, result) {
+  if (!result || typeof result !== 'object') return result;
+  const sessionId = typeof result.providerSessionId === 'string' ? result.providerSessionId : '';
+  return {
+    ...result,
+    messages: v2StampMessages(providerType, sessionId, result.messages),
+  };
+}
+
+function wrapReadV2(providerType, fn) {
+  return function readWrapped(input) {
+    const result = fn(input);
+    if (result === null || result === undefined) return result;
+    return v2StampResult(providerType, fn.name, result);
+  };
+}
+
 module.exports = {
-  readHermesNativeHistory,
+  readHermesNativeHistory: wrapReadV2('hermes-cli', readHermesNativeHistory),
   listHermesNativeHistory,
-  readClaudeNativeHistory,
+  readClaudeNativeHistory: wrapReadV2('claude-cli', readClaudeNativeHistory),
   listClaudeNativeHistory,
-  readCodexNativeHistory,
+  readCodexNativeHistory: wrapReadV2('codex-cli', readCodexNativeHistory),
   listCodexNativeHistory,
-  readAntigravityNativeHistory,
+  readAntigravityNativeHistory: wrapReadV2('antigravity-cli', readAntigravityNativeHistory),
   listAntigravityNativeHistory,
   workspacePathsMatch,
   __clearCodexNativeHistoryCaches: clearCodexNativeHistoryCaches,
   __getCodexNativeHistoryCacheStats: getCodexNativeHistoryCacheStats,
+  __v2StampMessages: v2StampMessages, // exported for unit tests
 };

@@ -91,6 +91,7 @@
     "format": "antigravity-cli-transcript-jsonl",
     "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript*.jsonl;~/.gemini/antigravity-cli/conversations/*.pb",
     "mode": "native-source",
+    "contractVersion": "2.0",
     "scripts": {
       "readSession": "readNativeHistory",
       "listSessions": "listNativeHistory"

@@ -370,6 +370,7 @@
     "format": "hermes-json",
     "watchPath": "~/.hermes/sessions/session_{{sessionId}}.json",
     "mode": "native-source",
+    "contractVersion": "2.0",
     "scripts": {
       "readSession": "readNativeHistory",
       "listSessions": "listNativeHistory"

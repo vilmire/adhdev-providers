@@ -301,6 +301,7 @@
     "format": "claude-jsonl",
     "watchPath": "~/.claude/projects/**/*.jsonl",
     "mode": "native-source",
+    "contractVersion": "2.0",
     "scripts": {
       "readSession": "readNativeHistory",
       "listSessions": "listNativeHistory"
