@@ -38,8 +38,16 @@ function hasHighTrafficError(text) {
 // looks like a settled `> ` prompt between tool result paints, and acting on
 // that as idle is what causes the "idle blip → coordinator thinks the run
 // finished" bug.
+// Patterns that mean the model is actively producing output on its own —
+// without these being visible we are definitely not generating.
+//
+// `esc to cancel` is deliberately NOT here on its own: antigravity paints
+// the literal text into the footer bar and leaves it there even after the
+// turn settles, so seeing it tells us nothing about whether the model is
+// still working. We treat it as evidence only when paired with a spinner
+// or with an explicit thinking/tool label below (see hasActiveGeneration
+// Signal).
 const ACTIVE_GENERATION_PATTERNS = [
-  /esc to cancel/i,
   /\bThinking\b/i,
   /\bRunning\b/i,
   /\bUsing\s+Tool/i,
@@ -76,7 +84,13 @@ function hasActiveGenerationSignal(text) {
 module.exports = function detectStatus(input) {
   const text = textOf(input);
   if (!text.trim()) return 'idle';
-  if (hasFeedbackPrompt(text)) return 'waiting_approval';
+  // The CLI experience feedback prompt is an *optional* survey the user
+  // can dismiss any time; it is not an action the model is waiting on. We
+  // used to return 'waiting_approval' here, which then failed the daemon's
+  // approval handshake (parseApproval returns null on the feedback shape)
+  // and left the session pinned to generating forever. Treat the feedback
+  // screen as idle so users can keep typing past it.
+  if (hasFeedbackPrompt(text)) return 'idle';
   if (hasHighTrafficError(text)) return 'error';
   if (parseApproval(input)) return 'waiting_approval';
 
