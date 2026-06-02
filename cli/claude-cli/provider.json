@@ -273,9 +273,23 @@
   "contractVersion": 2,
   "capabilities": {
     "input": {
-      "multipart": false,
+      "multipart": true,
       "mediaTypes": [
-        "text"
+        "text",
+        "image"
+      ],
+      "strategies": [
+        {
+          "mediaType": "image",
+          "strategies": [
+            "resource_link",
+            "text_fallback"
+          ],
+          "native": false,
+          "degradation": [
+            "text_fallback"
+          ]
+        }
       ]
     },
     "output": {
