@@ -286,19 +286,27 @@ function collectNativeMessages(input, fallbackSessionId) {
         || fallbackSessionId
         || '',
     ).trim();
-    if (!explicitHistorySessionId) {
+    // (fix) Codex 0.136+ no longer prints "session id: <uuid>" in its TUI banner,
+    // so the PTY-side extractor can't recover the rollout id. Fall back to
+    // workspace-scoped discovery — native_history.js already supports a
+    // workspace-only lookup that picks the newest rollout whose session_meta.cwd
+    // matches. Without this fallback, codex always falls back to PTY parsing.
+    if (!explicitHistorySessionId && !workspace) {
         return {
             messages: [],
             providerSessionId: fallbackSessionId || '',
             requestedWorkspace,
             unsafeIdentity: {
                 code: 'transcript_unmapped',
-                reason: 'codex_native_history_requires_provider_session_id',
+                reason: 'codex_native_history_requires_provider_session_id_or_workspace',
             },
         };
     }
     const historySessionId = explicitHistorySessionId;
-    const result = nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace });
+    const spawnAt = Number(input?.spawnAt || input?.args?.spawnAt) || 0;
+    const result = historySessionId
+        ? nativeHistory.readCodexNativeHistory({ historySessionId, sessionId: historySessionId, workspace, spawnAt })
+        : nativeHistory.readCodexNativeHistory({ workspace, spawnAt });
     const records = Array.isArray(result?.messages) ? result.messages : [];
     const sourceWorkspace = String(result?.workspace || records.find(record => record?.workspace)?.workspace || '').trim();
     const resolvedProviderSessionId = String(result?.providerSessionId || records.find(record => record?.historySessionId)?.historySessionId || historySessionId || '').trim();
@@ -314,7 +322,10 @@ function collectNativeMessages(input, fallbackSessionId) {
             },
         };
     }
-    if (resolvedProviderSessionId && resolvedProviderSessionId !== historySessionId) {
+    // Only treat a mismatch as unsafe when the caller actually supplied a
+    // historySessionId. When we discovered the rollout via workspace alone,
+    // resolvedProviderSessionId IS the authoritative id.
+    if (historySessionId && resolvedProviderSessionId && resolvedProviderSessionId !== historySessionId) {
         return {
             messages: [],
             providerSessionId: fallbackSessionId || '',

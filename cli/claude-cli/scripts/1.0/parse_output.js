@@ -865,7 +865,24 @@ module.exports = function parseOutput(input) {
     // ── Message extraction ───────────────────────────────────────────────────
     let visibleMessages;
     if (effectiveStatus === 'waiting_approval') {
-        visibleMessages = activeModal ? [makeApproval(activeModal)] : [];
+        // (fix) Previously we wiped every message during waiting_approval and
+        // only kept the synthetic approval bubble. Dashboard chat showed
+        // "0 messages" while the terminal clearly displayed the user prompt
+        // and the assistant's intro/tool-call. Keep the regular visible
+        // transcript and APPEND the approval bubble so the user can still
+        // see the conversation context they're being asked to approve.
+        if (hasAnchor) {
+            const visibleRegion = getVisibleAssistantRegion(visibleScreen);
+            visibleMessages = parseRegion(visibleRegion, promptText);
+            const transcriptRegion = getTranscriptAssistantRegion(transcriptSource, promptText);
+            const transcriptMessages = parseRegion(transcriptRegion, promptText);
+            if (shouldPreferTranscript(visibleMessages, transcriptMessages)) {
+                visibleMessages = transcriptMessages;
+            }
+        } else {
+            visibleMessages = [];
+        }
+        if (activeModal) visibleMessages.push(makeApproval(activeModal));
     } else if (hasAnchor) {
         const visibleRegion = getVisibleAssistantRegion(visibleScreen);
         visibleMessages = parseRegion(visibleRegion, promptText);

@@ -32,29 +32,36 @@ function hasHighTrafficError(text) {
   return /servers?\s+are\s+experiencing\s+high\s+traffic/i.test(String(text || ''));
 }
 
-// Patterns that mean the model is actively producing output. If any of these
-// are visible in the live buffer the status is generating regardless of how
-// the prompt line looks — antigravity's screen paints can briefly show what
-// looks like a settled `> ` prompt between tool result paints, and acting on
-// that as idle is what causes the "idle blip → coordinator thinks the run
-// finished" bug.
-// Patterns that mean the model is actively producing output on its own —
-// without these being visible we are definitely not generating.
+// Patterns that mean the model is actively producing output. These are only
+// trusted when present in the *live frame tail* (post-approval and post-tool
+// output can leave residual labels in scrollback). Tool output frequently
+// contains braille glyphs in progress bars; we only treat them as a generation
+// signal when they appear close to the prompt — usually as part of an active
+// spinner. The `liveFrameTail` slicing keeps scrollback braille from pinning
+// the status forever.
 //
 // `esc to cancel` is deliberately NOT here on its own: antigravity paints
 // the literal text into the footer bar and leaves it there even after the
 // turn settles, so seeing it tells us nothing about whether the model is
-// still working. We treat it as evidence only when paired with a spinner
-// or with an explicit thinking/tool label below (see hasActiveGeneration
-// Signal).
+// still working.
 const ACTIVE_GENERATION_PATTERNS = [
   /\bThinking\b/i,
   /\bRunning\b/i,
   /\bUsing\s+Tool/i,
   /\bPrioritizing\s+Tool/i,
-  // Braille spinner glyphs that the antigravity CLI paints while busy.
-  /[⠀-⣿]/,
 ];
+
+// Braille glyphs deserve a stricter scope. Tool result output (progress bars,
+// download UIs) often contains braille characters that have nothing to do with
+// the CLI spinner. Only treat them as a generation signal when they appear in
+// the last ~8 lines of the live frame, where the antigravity CLI paints its
+// real spinner.
+const BRAILLE_RE = /[⠀-⣿]/;
+function hasLiveBrailleSpinner(frameTail) {
+  const lines = frameTail.split(/\r?\n/);
+  const tail = lines.slice(-8).join('\n');
+  return BRAILLE_RE.test(tail);
+}
 
 // Restrict the search to the *current* render — the tail of the buffer
 // starting from the last separator line. Earlier-turn output and
@@ -78,7 +85,9 @@ function liveFrameTail(text) {
 function hasActiveGenerationSignal(text) {
   if (!text) return false;
   const frame = liveFrameTail(text);
-  return ACTIVE_GENERATION_PATTERNS.some((re) => re.test(frame));
+  if (ACTIVE_GENERATION_PATTERNS.some((re) => re.test(frame))) return true;
+  if (hasLiveBrailleSpinner(frame)) return true;
+  return false;
 }
 
 module.exports = function detectStatus(input) {

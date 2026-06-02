@@ -372,20 +372,29 @@ function readClaudeSessionRef(ref) {
 }
 
 /**
- * When waiting_approval, strip records from the last user message onward if the
- * very last record is kind='tool' (tool_use without a following tool_result).
- * Keeps all previous completed turns visible; hides the in-progress tool call.
+ * When waiting_approval, strip the trailing in-progress tool call so the
+ * user doesn't see a half-rendered tool record. We keep:
+ *   - all previous completed turns
+ *   - the user prompt that triggered the in-progress turn
+ *   - any assistant standard messages already emitted for the in-progress turn
+ *     (e.g. "I'll check the mesh status now.") so the dashboard can show what
+ *     the assistant is about to do
+ * and drop only the trailing assistant.kind === 'tool' records. Previously
+ * this function sliced from the last user message onward, which wiped the
+ * entire in-progress turn including the user prompt — the dashboard then
+ * showed "0 messages" while the terminal clearly displayed the conversation.
  */
 function trimIncompleteLastTurn(records) {
   if (!records || records.length === 0) return records;
   const last = records[records.length - 1];
   if (!last || !(last.role === 'assistant' && last.kind === 'tool')) return records;
-  // Last record is a tool record — the turn is in-progress. Strip from the last user message.
-  let lastUserIdx = -1;
-  for (let i = records.length - 1; i >= 0; i--) {
-    if (records[i].role === 'user') { lastUserIdx = i; break; }
+  let i = records.length - 1;
+  while (i >= 0) {
+    const r = records[i];
+    if (r && r.role === 'assistant' && r.kind === 'tool') { i -= 1; continue; }
+    break;
   }
-  return lastUserIdx === -1 ? [] : records.slice(0, lastUserIdx);
+  return records.slice(0, i + 1);
 }
 
 function readClaudeNativeHistory(input = {}) {
@@ -586,8 +595,15 @@ function readCodexNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
   const workspace = input.workspace || input.args?.workspace;
   const excludeInProgressTurn = input.excludeInProgressTurn === true || input.args?.excludeInProgressTurn === true;
+  const spawnAt = Number(input.spawnAt) || 0;
   const ref = resolveCodexSession(sessionId, workspace);
   if (!ref) return null;
+  // (fix) When workspace-only resolution picks a rollout that existed BEFORE
+  // the CLI process was spawned, the conversation we're seeing belongs to a
+  // previous run. Returning it stamps the wrong providerSessionId onto the
+  // fresh adapter, which then sticks forever. Grace allows codex up to ~3
+  // seconds to write its first session_meta row.
+  if (spawnAt > 0 && !sessionId && ref.sourceMtimeMs && ref.sourceMtimeMs < spawnAt - 3000) return null;
   let messages = readCodexSessionRef(ref);
   if (!messages) return null;
   if (excludeInProgressTurn) messages = trimIncompleteLastTurn(messages);
@@ -861,8 +877,29 @@ function antigravityTranscriptIsMissingNewerPrompt(ref, workspace, transcriptMes
     .some((row) => {
       const prompt = normalizeComparableText(row.display);
       if (!prompt || transcriptPrompts.has(prompt)) return false;
-      return !row.conversationId || row.conversationId === ref.sessionId;
+      // (fix) Skip system-generated structured-input file path prompts. The daemon
+      // writes a temp file like /var/folders/.../adhdev-input-*.txt and types
+      // that path into the CLI for image/text combos. Antigravity's brain unwraps
+      // the file contents into transcript so the literal path never appears as
+      // a USER_INPUT row. Treating it as a "missing newer prompt" tears down the
+      // native read for a prompt that is actually present in another form.
+      if (looksLikeStructuredInputFilePath(prompt)) return false;
+      // (fix) If the unseen prompt belongs to THIS session (conversationId
+      // matches ref.sessionId), it belongs to the same conversation. Trust the
+      // native transcript as the authoritative partial view — the agent simply
+      // hasn't echoed the prompt yet (or it's an unwrapped structured input).
+      // We only treat the transcript as stale for *foreign* unseen prompts.
+      if (row.conversationId && row.conversationId === ref.sessionId) return false;
+      return !row.conversationId;
     });
+}
+
+function looksLikeStructuredInputFilePath(text) {
+  if (!text || typeof text !== 'string') return false;
+  // Daemon materializes structured input to a temp file under the OS tmpdir
+  // and types its absolute path. Match the well-known prefixes/suffixes.
+  return /(?:^|\s)\/(?:var|tmp|private)\/[^\s]*adhdev-input[^\s]*\.(?:txt|md|json)(?:\s|$)/.test(text)
+    || /(?:^|\s)\/(?:var|tmp|private)\/[^\s]+\.(?:adhdev-input|adhdev-prompt)(?:\s|$)/.test(text);
 }
 
 function resolveAntigravityConversation(sessionId, workspace, promptText) {
@@ -943,8 +980,14 @@ function readAntigravityNativeHistory(input = {}) {
   const sessionId = input.historySessionId || input.sessionId || input.args?.historySessionId || input.args?.sessionId;
   const workspace = input.workspace || input.args?.workspace;
   const promptText = input.promptText || input.expectedPrompt || input.args?.promptText || input.args?.expectedPrompt;
+  const spawnAt = Number(input.spawnAt) || 0;
   const ref = resolveAntigravityConversation(sessionId, workspace, promptText);
   if (!ref || ref.unavailableReason) return null;
+  // (fix) Same pre-spawn-rollout guard as codex: if the only thing we found
+  // by workspace fallback is older than the current process, that's the
+  // PREVIOUS conversation's transcript and we must not stamp its UUID onto
+  // the brand-new adapter.
+  if (spawnAt > 0 && !sessionId && ref.sourceMtimeMs && ref.sourceMtimeMs < spawnAt - 3000) return null;
   if (ref.nativeHistoryCoverage === 'full') {
     const transcriptWorkspace = workspace || ref.workspace;
     const transcriptMessages = readAntigravityTranscriptRows(ref, transcriptWorkspace);

@@ -404,10 +404,24 @@ module.exports = function parseOutput(stateOrInput, maybeInput) {
     ...(transientError || {}),
     ...retry,
     ...(() => {
+      // (fix) Only pass historySessionId when the caller actually provided a
+      // provider-issued antigravity conversation UUID. input.sessionId is the
+      // ADHDev *runtime* sessionId (random v4 UUID per launch) — it does not
+      // exist under ~/.gemini/antigravity-cli/brain/. Passing it here used to
+      // make native_history.js fall through to the workspace-only resolver at
+      // the worst possible moment (right after launch, before agy has written
+      // the new brain/<conv-uuid>/transcript file), which then picked the
+      // PREVIOUS conversation's transcript and stamped its UUID onto the new
+      // adapter. The adapter caches the first non-empty providerSessionId, so
+      // a wrong stamp here meant every subsequent read_chat reused the old
+      // conversation forever.
+      const explicitHistorySessionId = input?.historySessionId || input?.providerSessionId;
+      const spawnAt = Number(input?.spawnAt || input?.args?.spawnAt) || 0;
       const native = nativeHistory.readAntigravityNativeHistory({
-        historySessionId: input?.historySessionId || input?.providerSessionId || input?.sessionId,
+        historySessionId: explicitHistorySessionId || undefined,
         workspace: input?.workspace || input?.workingDir,
         promptText,
+        spawnAt,
       });
       return native?.providerSessionId ? { providerSessionId: native.providerSessionId } : {};
     })(),

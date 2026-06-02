@@ -33,17 +33,18 @@ function isNoise(line) {
 }
 
 function normalizeButtonLabel(line) {
-    const trimmed = normalize(line)
+    // (fix) Do NOT rewrite button labels — surface them exactly as Claude Code
+    // renders them. The user explicitly wants to see "Yes, and don't ask again
+    // for adhdev-mesh - mesh_status commands in /Users/vilmire/Work/adhdev"
+    // rather than the daemon collapsing it to a generic "Always allow". We
+    // only strip the leading prompt arrow, the numbered prefix, and condense
+    // whitespace so the option index lookup works; the meaningful label text
+    // is preserved verbatim.
+    return normalize(line)
         .replace(/^[❯›>]\s*/, '')
         .replace(/^[([{]?\d+[)\].:\]-]?\s*/, '')
         .replace(/\s+/g, ' ')
         .trim();
-
-    if (/^Yes,\s+and\s+don['’]t\s+ask\s+again\b/i.test(trimmed)) return 'Always allow';
-    if (/^Allow\s*once\b/i.test(trimmed)) return 'Yes';
-    if (/^Yes\s*[-–—]/i.test(trimmed)) return 'Yes';
-    if (/^(?:Deny|Reject)\b/i.test(trimmed)) return 'No';
-    return trimmed;
 }
 
 function isButtonLine(line) {
@@ -133,8 +134,40 @@ function findLastIndex(lines, predicate) {
     return -1;
 }
 
+// (fix) Claude TUI frames approval prompts inside horizontal separator lines.
+// The assistant body above the last separator can contain spinner glyphs and
+// numbered lists that look like option labels — when we scan the whole frame
+// the modal's button window keeps flapping as the body redraws. Truncate to
+// the region from the LAST separator down so we only consider the live frame.
+function isSeparatorLine(text) {
+    const stripped = String(text || '').replace(/\s+/g, '');
+    if (stripped.length < 10) return false;
+    return /^[─━═]+$/.test(stripped);
+}
+
+function scopeToLastSeparator(lines) {
+    // Find the LAST separator (closes modal frame) and the second-to-last
+    // separator (opens modal frame). Return everything between them, plus
+    // a couple lines of trailing context for the footer.
+    const separatorIndexes = [];
+    for (let i = 0; i < lines.length; i += 1) {
+        if (isSeparatorLine(lines[i])) separatorIndexes.push(i);
+    }
+    if (separatorIndexes.length === 0) return lines;
+    if (separatorIndexes.length === 1) {
+        // Single separator — take everything after it.
+        return lines.slice(separatorIndexes[0]);
+    }
+    const openIdx = separatorIndexes[separatorIndexes.length - 2];
+    const closeIdx = separatorIndexes[separatorIndexes.length - 1];
+    // Include open separator through close separator + 2 footer lines.
+    return lines.slice(openIdx, Math.min(lines.length, closeIdx + 3));
+}
+
 function parseApprovalFromLines(lines, sourceText) {
     if (!Array.isArray(lines) || lines.length === 0) return null;
+    lines = scopeToLastSeparator(lines);
+    if (lines.length === 0) return null;
 
     const recent = takeLast(lines, 30);
     const normalizedRecent = recent.map(normalize).filter(Boolean);
@@ -173,29 +206,43 @@ function parseApprovalFromLines(lines, sourceText) {
     const settingsWarningIndex = findLastIndex(lines, isSettingsWarningCue);
     const rateLimitIndex = findLastIndex(lines, line => /You've hit your limit/i.test(normalize(line)));
     const actionIndex = findLastIndex(lines, line => /^(?:[⏺•]\s+)?(?:Bash|Write|Edit|MultiEdit|Read|Task|Glob|Grep|LS|NotebookEdit)\(/.test(stripContextPrefix(line)));
-    const startIndex = Math.max(0, (
-        actionIndex >= 0 ? actionIndex
-            : approvalIndex >= 0 ? approvalIndex - 2
-                : rateLimitIndex >= 0 && questionIndex >= 0 && questionIndex - rateLimitIndex <= 10 ? rateLimitIndex
-                    : questionIndex >= 0 ? questionIndex - 4
-                        : startupIndex >= 0 ? startupIndex
-                            : mcpServerIndex >= 0 ? mcpServerIndex
-                                : settingsWarningIndex >= 0 ? settingsWarningIndex
-                                : lines.length - 8
-    ));
-    const endIndex = questionIndex >= 0 ? questionIndex + 1 : lines.length;
+    const mcpToolIndex = findLastIndex(lines, line => /^[a-z][a-z0-9_-]*-[a-z][a-z0-9_-]*\s+\(MCP\)/i.test(stripContextPrefix(line)));
 
-    const context = [];
-    for (const line of lines.slice(startIndex, endIndex)) {
-        if (isNoise(line) || isButtonLine(line)) continue;
-        const trimmed = stripContextPrefix(line);
-        if (!trimmed) continue;
-        if (context[context.length - 1] !== trimmed) context.push(trimmed);
+    // (fix) The previous implementation concatenated up to three free-form
+    // prose lines from the screen as the modal message. Claude redraws the
+    // approval frame several times per second with subtly different wording
+    // ("Allow once" vs "Yes, and don't ask again for X commands in /path"),
+    // which made the modal signature in the daemon flap continuously: every
+    // re-render produced a new "approval_request" runtime system message and
+    // re-fired the autoApprove flow. We now surface a **stable structural
+    // label** — the action target (Bash command, MCP tool, etc.) and the
+    // approval category — instead of the prose around it.
+    let message = '';
+    if (startupIndex >= 0) {
+        message = 'Trust this folder?';
+    } else if (settingsWarningIndex >= 0) {
+        message = 'Settings warning';
+    } else if (mcpServerIndex >= 0) {
+        message = 'New MCP server detected';
+    } else if (rateLimitIndex >= 0) {
+        message = 'Rate limit reached';
+    } else if (actionIndex >= 0) {
+        const raw = stripContextPrefix(lines[actionIndex] || '');
+        message = `Approval requested: ${raw}`.slice(0, 200);
+    } else if (mcpToolIndex >= 0) {
+        const raw = stripContextPrefix(lines[mcpToolIndex] || '');
+        message = `Approval requested: ${raw}`.slice(0, 200);
+    } else if (approvalIndex >= 0) {
+        message = 'Approval requested';
+    } else if (questionIndex >= 0) {
+        message = 'Approval requested';
+    } else {
+        message = 'Claude Code approval required';
     }
 
     return {
-        message: context.slice(-3).join(' ').slice(0, 240) || 'Claude Code approval required',
-        buttons: buttons.length > 0 ? buttons : ['Allow once', 'Always allow', 'Deny'],
+        message,
+        buttons: buttons.length > 0 ? buttons : ['Yes', 'Always allow', 'No'],
     };
 }
 

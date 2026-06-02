@@ -67,17 +67,46 @@ function footerOrPrompt(line) {
     || /esc to cancel/i.test(text);
 }
 
+function isContinuationLine(text) {
+  // A wrapped button label continuation: indented, no numbered prefix, not a
+  // new question/footer/section header. Antigravity wraps long option labels
+  // ("Yes, and always allow in this conversation for commands that start
+  //  with ...") onto the next line, indented to align with the label text.
+  if (!text) return false;
+  if (footerOrPrompt(text)) return false;
+  if (/^>?\s*\d+\.\s/.test(text)) return false;
+  if (/^>\s*$/.test(text)) return false;
+  if (/\?$/.test(text)) return false;
+  if (/^(agy wants to run|file access|write|read|edit|delete|reason)[:.]/i.test(text)) return false;
+  return true;
+}
+
 function collectVisibleOptions(lines, startIndex) {
   const options = [];
+  let blankRunSinceLastOption = 0;
   for (let i = startIndex + 1; i < lines.length; i += 1) {
     const text = normalize(lines[i]);
-    if (!text) continue;
+    if (!text) {
+      // Tolerate a single blank line between numbered options — Antigravity
+      // sometimes pads between long options. Two consecutive blanks ends the
+      // option list.
+      if (options.length > 0 && ++blankRunSinceLastOption >= 2) break;
+      continue;
+    }
     if (footerOrPrompt(text)) break;
     const labels = visibleOptionLabels(text);
     if (labels.length > 0) {
+      blankRunSinceLastOption = 0;
       for (const label of labels) {
         if (!options.includes(label)) options.push(label);
       }
+      continue;
+    }
+    // Wrap continuation of the previous option's label.
+    if (options.length > 0 && isContinuationLine(text)) {
+      blankRunSinceLastOption = 0;
+      const last = options[options.length - 1];
+      options[options.length - 1] = `${last} ${text}`.trim();
       continue;
     }
     if (options.length > 0) break;
@@ -91,17 +120,28 @@ function buildGenericApproval(lines) {
     if (!question || footerOrPrompt(question) || !/\?$/.test(question)) continue;
 
     const buttons = [];
+    let blanks = 0;
     for (let i = questionIndex + 1; i < lines.length; i += 1) {
+      const text = normalize(lines[i]);
+      if (!text) {
+        if (buttons.length > 0 && ++blanks >= 2) break;
+        continue;
+      }
       const labels = visibleOptionLabels(lines[i]);
       if (labels.length > 0) {
+        blanks = 0;
         for (const label of labels) {
           if (!buttons.includes(label)) buttons.push(label);
         }
         continue;
       }
-      const text = normalize(lines[i]);
-      if (!text) continue;
       if (buttons.length > 0 && footerOrPrompt(text)) break;
+      if (buttons.length > 0 && isContinuationLine(text)) {
+        blanks = 0;
+        const last = buttons[buttons.length - 1];
+        buttons[buttons.length - 1] = `${last} ${text}`.trim();
+        continue;
+      }
       if (buttons.length > 0) break;
     }
     if (buttons.length < 2) continue;
@@ -131,7 +171,7 @@ module.exports = function parseApproval(input) {
   if (trustIndex >= 0) {
     const lineIndex = lines.findIndex((line) => /do you trust the files in this folder\?/i.test(normalize(line)));
     const buttons = collectVisibleOptions(lines, lineIndex >= 0 ? lineIndex : 0);
-    if (buttons.length < 2) return buildGenericApproval(lines);
+    if (buttons.length < 2) return null;
     return {
       message: 'Do you trust the files in this folder?',
       buttons,
@@ -154,7 +194,7 @@ module.exports = function parseApproval(input) {
   if (proceedIndex >= 0) {
     const lineIndex = lines.findIndex((line) => /do you want to proceed\?/i.test(normalize(line)));
     const buttons = collectVisibleOptions(lines, lineIndex >= 0 ? lineIndex : 0);
-    if (buttons.length < 2) return buildGenericApproval(lines);
+    if (buttons.length < 2) return null;
     const start = lines.findIndex((line) => /wants to run:/i.test(normalize(line)));
     const commandLines = [];
     if (start >= 0) {
@@ -173,5 +213,13 @@ module.exports = function parseApproval(input) {
     };
   }
 
-  return buildGenericApproval(lines);
+  // (fix) Do NOT fall back to buildGenericApproval here. AGY assistant answers
+  // routinely include numbered lists ending with "?" — buildGenericApproval
+  // misclassified those as approval modals, which made the state engine spin
+  // generating → waiting_approval → generating for the entire reply duration
+  // and pushed a "Approval requested" system message into the runtime chat
+  // every time. AGY's real approval prompts always use one of the explicit
+  // strings handled above (trust folder, trust project, do you want to
+  // proceed); no need for a generic fallback.
+  return null;
 };
