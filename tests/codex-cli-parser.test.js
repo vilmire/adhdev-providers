@@ -1612,3 +1612,85 @@ test('parse_output: uses Codex native history only with matching provider sessio
     fs.rmSync(workspace, { recursive: true, force: true });
   }
 });
+
+
+// ─── False-idle / premature-generating-cleared regression tests ───────────────
+
+test('detect_status: screen idle footer correctly returns idle even when raw buffer has preceding stale tool activity', () => {
+  // Regression for the scenario described in `9915ffc`:
+  // raw buffer retains older tool activity, but the SCREEN clearly shows the idle footer.
+  // The screen is the authoritative source; stale rawBuffer activity must not block idle.
+  const rawBuffer = [
+    '› gpt-4o · /help',
+    'functions.exec_command({"cmd":"old command"})',
+    'Waiting for command output',
+  ].join('\n');
+  const screen = '› gpt-4o · /help\n';
+  assert.equal(
+    detectStatus({ screenText: screen, tail: rawBuffer, rawBuffer, isWaitingForResponse: true }),
+    'idle',
+    'stale raw tool activity after idle footer must not prevent idle when screen confirms idle',
+  );
+});
+
+test('detect_status: screen idle footer is trusted over raw buffer when tool activity is BEFORE the idle footer', () => {
+  // The screen footer is the authoritative signal for idle detection.
+  // hasActiveToolActivityAfterIdle in hasGenerating() correctly handles the ordering:
+  // tool activity before the last idle footer → idle is correct (stale activity).
+  const rawWithToolBeforeFooter = [
+    'functions.exec_command({"cmd":"some command"})',
+    'Command output here',
+    '',
+    '> gpt-4o · /help',
+  ].join('\n');
+  const screen = '> gpt-4o · /help\n';
+  assert.equal(
+    detectStatus({ screenText: screen, tail: rawWithToolBeforeFooter, rawBuffer: rawWithToolBeforeFooter, isWaitingForResponse: true }),
+    'idle',
+    'tool activity before idle footer → screen footer correctly wins',
+  );
+});
+
+test('scripts.js settleStatus fast-path: confirmed final assistant + idle prompt returns idle immediately', () => {
+  // When Codex has a final (non-streaming) assistant message and idle footer is visible,
+  // the fast-path in settleStatus immediately returns idle without requiring the 2s debounce.
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const input = {
+    screenText: completedTurnScreen,
+    buffer: completedTurnScreen,
+    recentBuffer: completedTurnTail,
+    tail: completedTurnTail,
+    rawBuffer: completedTurnScreen,
+    messages: [],
+    isWaitingForResponse: true,
+    now: 30_000,
+  };
+  const result = codexScripts.parseSession(state, input);
+  // The fast-path fires: final assistant message + idle prompt visible → immediate idle
+  assert.equal(result && result.status, 'idle',
+    'fast-path: confirmed final assistant + visible idle footer returns idle without debounce wait');
+});
+
+test('scripts.js settleStatus: debounce path requires 2s stable idle when no final assistant (missing_final_assistant guard)', () => {
+  // When parse output does NOT have a final assistant message, the fast-path does not fire.
+  // The 2s settle debounce applies via shouldSettleIdle.
+  const state = codexScripts.createState();
+  state.lastProviderStatus = 'generating';
+  const idleFooter = '❯ gpt-4o · /help';
+  const input = {
+    screenText: idleFooter,
+    tail: idleFooter,
+    rawBuffer: idleFooter,
+    isWaitingForResponse: true,
+    now: 0,
+  };
+  // No messages — hasFinalAssistantMessage returns false → debounce path
+  const parsedNoAssistant = { status: 'idle', messages: [{ role: 'user', content: 'go' }] };
+  const r1 = codexScripts.parseSession(state, { ...input, ...parsedNoAssistant, now: 0 });
+  assert.equal((r1 || {}).status, 'generating', 'without final assistant, first observation → generating');
+  const r2 = codexScripts.parseSession(state, { ...input, ...parsedNoAssistant, now: 1500 });
+  assert.equal((r2 || {}).status, 'generating', 'at 1.5s < 2s debounce → still generating');
+  const r3 = codexScripts.parseSession(state, { ...input, ...parsedNoAssistant, now: 2100 });
+  assert.equal((r3 || {}).status, 'idle', 'after 2s stable → idle');
+});
