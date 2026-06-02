@@ -48,9 +48,29 @@ const ACTIVE_GENERATION_PATTERNS = [
   /[⠀-⣿]/,
 ];
 
+// Restrict the search to the *current* render — the tail of the buffer
+// starting from the last separator line. Earlier-turn output and
+// scrolled-out tool activity are not evidence the model is still
+// generating; only signals visible in the live frame count.
+function liveFrameTail(text) {
+  if (!text) return '';
+  // Antigravity paints two horizontal separator lines around the prompt bar.
+  // The most recent "──────…\n>" marks the start of the live frame; anything
+  // above it is scrollback (previous turn output).
+  const sepRe = /─{40,}\s*\n\s*>\s*(?:\n|─{40,})/g;
+  let lastIdx = -1;
+  let m;
+  while ((m = sepRe.exec(text)) !== null) lastIdx = m.index;
+  if (lastIdx >= 0) return text.slice(lastIdx);
+  // Fallback to a tail-only window so 8KB of scrollback can't claim the
+  // active signal forever.
+  return text.length > 1200 ? text.slice(-1200) : text;
+}
+
 function hasActiveGenerationSignal(text) {
   if (!text) return false;
-  return ACTIVE_GENERATION_PATTERNS.some((re) => re.test(text));
+  const frame = liveFrameTail(text);
+  return ACTIVE_GENERATION_PATTERNS.some((re) => re.test(frame));
 }
 
 module.exports = function detectStatus(input) {
@@ -65,21 +85,23 @@ module.exports = function detectStatus(input) {
   // mid-turn — every prompt-pattern check below is then a false positive.
   if (hasActiveGenerationSignal(text)) return 'generating';
 
-  // The settled-prompt check is also strict: BOTH recentBuffer AND
-  // settledBuffer must show the settled pattern. Earlier we OR'd them which
-  // meant a single transient frame showing `> ` was enough to flip the
-  // status to idle, and once the daemon emitted that idle the coordinator
-  // could fire a premature "completed" notification.
-  if (hasSettledIdlePrompt(input?.recentBuffer) && hasSettledIdlePrompt(input?.settledBuffer)) {
+  // No active-generation signal → trust the settled-prompt check. We OR
+  // recentBuffer and settledBuffer here: with the active-signal guard above
+  // it is no longer possible for a transient paint blip to fire idle while
+  // generation is still happening (the spinner glyph or "esc to cancel"
+  // would have short-circuited us into generating). Requiring BOTH buffers
+  // to settle was too strict and trapped real completions in generating
+  // forever — observed when the user's answer was fully rendered but the
+  // status never flipped back to idle.
+  if (hasSettledIdlePrompt(input?.recentBuffer) || hasSettledIdlePrompt(input?.settledBuffer)) {
     return 'idle';
   }
-  // No active-generation signal AND no clean settled prompt → stay
-  // generating-safe: when the screen is ambiguous prefer not to report
-  // completion. The fallback returns 'generating' (rather than 'idle')
-  // because a wrong-direction false report breaks coordinator completion
-  // semantics, while a brief over-report just delays the idle by one poll.
+  // Plain settled-prompt fallback on the full text (legacy path).
   if (/(^|\n)\s*>\s*(\n|$)/m.test(text) && /\?\s+for\s+shortcuts/i.test(text)) {
     return 'idle';
   }
+  // Genuinely ambiguous: no spinner, no settled prompt. Default to
+  // generating — coordinator false completion is a worse failure than a
+  // delayed idle that the next poll will resolve.
   return 'generating';
 };

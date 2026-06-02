@@ -127,7 +127,46 @@ function isFooterLine(line) {
     || /^gemini .*\(high\)$/i.test(text)
     || /^how's the cli experience so far\?/i.test(text)
     || /^\[[0-3]\]\s+good/i.test(text)
-    || isSeparator(text);
+    || isSeparator(text)
+    // Tip footer that antigravity paints under the prompt bar.
+    || /^└?\s*tip:\s*use\s+\/help/i.test(text)
+    || /^use\s+\/help\s+to see all commands/i.test(text);
+}
+
+// Lines that are chrome / spinner / tool-activity boilerplate rendered into
+// the assistant region while a turn is generating. These are visible in the
+// PTY but are not part of the assistant's reply — leaving them in the
+// transcript pollutes every readChat response until native catches up.
+//
+// Pattern catalogue (all observed in the wild on antigravity-cli):
+//   "Thought for 6s, 449 tokens"   ← chrome metadata above each tool step
+//   "▸ Thought for 1s, 573 tokens" ← same with the right-triangle prefix
+//   "Prioritizing Tool Usage"      ← spinner label
+//   "Prioritizing Tool Specificity"
+//   "● ListDir(/path) (ctrl+o to expand)"  ← tool invocation summary line
+//   "● Read(/path) (ctrl+o to expand)"
+//   "● Bash(cmd) (ctrl+o to expand)"
+//   "● Create(/path) (ctrl+o to expand)"
+//   "● Requested Permission: mcp(...)"
+//   "● ManageTask(...)"
+//   "⎿ result preview"             ← tool result preview marker
+//   "⣽ Loading..." / "⣽ Working..." / "⣽ Running..."  ← braille spinner
+const CHROME_ASSISTANT_LINE_PATTERNS = [
+  /^▸?\s*thought for\b/i,
+  /^prioritizing\s+tool\b/i,
+  /^[●○▸▶▷►]\s+(?:ListDir|Read|Write|Create|Edit|Bash|Search|Glob|Grep|TodoWrite|ManageTask|Requested\s+Permission|MCP|WebFetch|WebSearch)\b/i,
+  /^[●○▸▶▷►]\s+\w+\([^)]*\)\s*\(?(?:ctrl\+[a-z]\s+to\s+expand)?/i,
+  // Tool result preview marker (⎿). \b doesn't match across non-ASCII glyphs,
+  // so we anchor by glyph + whitespace explicitly.
+  /^⎿(?:\s|$)/,
+  /^[⠀-⣿]\s*(?:loading|working|running|thinking)\b/i,
+  /^[⠀-⣿]\s*$/,  // braille spinner glyph alone
+];
+
+function isChromeAssistantLine(line) {
+  const text = normalize(line);
+  if (!text) return false;
+  return CHROME_ASSISTANT_LINE_PATTERNS.some((re) => re.test(text));
 }
 
 function isHeaderNoise(line) {
@@ -146,7 +185,17 @@ function isHeaderNoise(line) {
     || /^yes,\s+i\s+trust\s+this/i.test(text)
     || /^no,\s+exit/i.test(text)
     || /^↑\/↓\s+navigate/i.test(text)
-    || /^accessing workspace:/i.test(text);
+    || /^accessing workspace:/i.test(text)
+    // Bubble header chrome painted by the dashboard / TUI between turns.
+    || /^antigravity\s+cli\s*\(coordinator\)$/i.test(text)
+    || /^\d{1,2}:\d{2}\s+(?:am|pm)$/i.test(text)
+    // Model header in two shapes:
+    //   "Gemini 3.1 Pro (High)"          ← provider-leading
+    //   "3.1 Pro (High) ANTIGRAVITY CLI (COORDINATOR)" ← version-leading +
+    //                                       trailing coordinator label
+    || /^(?:gemini|claude|gpt|llama)\s+[0-9.]+\s*(?:pro|flash|sonnet|opus|haiku)?\s*\(.*\)$/i.test(text)
+    || /^[0-9.]+\s+(?:pro|flash|sonnet|opus|haiku)\s+\([^)]+\)\s+antigravity\s+cli\s*\(coordinator\)$/i.test(text)
+    || /antigravity\s+cli\s*\(coordinator\)\s+\d{1,2}:\d{2}\s+(?:am|pm)/i.test(text);
 }
 
 function shouldStayInUserBlock(line) {
@@ -154,9 +203,11 @@ function shouldStayInUserBlock(line) {
   return !!text
     && !isPromptStart(line)
     && !isFooterLine(line)
+    && !isHeaderNoise(line)
+    && !isChromeAssistantLine(line)
     && !/^●\s+/.test(text)
     && !/^command$/i.test(text)
-    && !/^⎿\b/.test(text)
+    && !/^⎿(?:\s|$)/.test(text)
     && !/generating\.\.\./i.test(text);
 }
 
@@ -165,8 +216,7 @@ function shouldKeepAssistantLine(line) {
   return !!text
     && !isFooterLine(line)
     && !isHeaderNoise(line)
-    && !/^●\s+/.test(text)
-    && !/^⎿\b/.test(text);
+    && !isChromeAssistantLine(line);
 }
 
 function isLikelyChromeLine(line) {
@@ -204,7 +254,10 @@ function findPromptLineIndex(lines, promptText) {
 function collectMeaningfulLines(screenText) {
   return splitLines(screenText).filter((line) => {
     const text = normalize(line);
-    return !!text && !isFooterLine(line) && !isHeaderNoise(line);
+    return !!text
+      && !isFooterLine(line)
+      && !isHeaderNoise(line)
+      && !isChromeAssistantLine(line);
   });
 }
 
