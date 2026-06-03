@@ -9,6 +9,7 @@ on:
       - 'ide/**/provider.json'
       - 'extension/**/provider.json'
       - 'acp/**/provider.json'
+      - 'acp/**/provider.v1.json'
 
   # Allow manual trigger for backfills
   workflow_dispatch:
@@ -34,16 +35,13 @@ jobs:
           node-version: '22'
 
       - name: Install ajv for schema validation
-        run: |
-          mkdir -p .ci-deps && cd .ci-deps
-          npm init -y > /dev/null
-          npm install --no-save --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
+        run: npm install --prefix ci-deps --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
 
       - name: Publish providers to registry
         env:
           ADHDEV_REGISTRY_URL: ${{ vars.ADHDEV_REGISTRY_URL || 'https://api.adhf.dev/api/v1/registry' }}
           ADHDEV_PUBLISH_TOKEN: ${{ secrets.ADHDEV_PUBLISH_TOKEN }}
-          AJV_DIR: ${{ github.workspace }}/.ci-deps/node_modules
+          AJV_DIR: ${{ github.workspace }}/ci-deps/node_modules
           FILTER_TYPE: ${{ inputs.provider_type }}
         run: |
           node -e "
