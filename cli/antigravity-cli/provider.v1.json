@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.4",
+  "providerVersion": "1.1.5",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -65,10 +65,10 @@
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
-      "scriptDir": "scripts/1.0"
+      "scriptDir": "scripts/v1"
     }
   ],
-  "defaultScriptDir": "scripts/1.0",
+  "defaultScriptDir": "scripts/v1",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
@@ -181,6 +181,27 @@
         "error-detection"
       ],
       "onNoMatch": "preserve-last"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^▌\\s+(.*)$"
+      },
+      "userPrefix": {
+        "regex": "^>\\s+(.*)$"
+      },
+      "chromePatterns": [
+        {
+          "regex": "^How\\'s the CLI experience"
+        },
+        {
+          "regex": "\\? for shortcuts"
+        },
+        {
+          "regex": "^[─━]{40,}$"
+        }
+      ],
+      "scope": "buffer"
     }
   },
   "nativeHistory": {

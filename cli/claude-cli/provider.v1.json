@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.4",
+  "providerVersion": "1.1.5",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -76,10 +76,10 @@
   "compatibility": [
     {
       "ideVersion": ">=2.1.0",
-      "scriptDir": "scripts/1.0"
+      "scriptDir": "scripts/v1"
     }
   ],
-  "defaultScriptDir": "scripts/1.0",
+  "defaultScriptDir": "scripts/v1",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
@@ -151,6 +151,41 @@
         "settled-prompt"
       ],
       "onNoMatch": "idle"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^[⏺✻✶✳✢✽·•]\\s+(.*)$"
+      },
+      "userPrefix": {
+        "regex": "^[❯›>]\\s+(.*)$"
+      },
+      "toolPrefix": {
+        "regex": "^[⎿]\\s+(.*)$"
+      },
+      "chromePatterns": [
+        {
+          "regex": "^Tip:",
+          "flags": "i"
+        },
+        {
+          "regex": "^Update available",
+          "flags": "i"
+        },
+        {
+          "regex": "^➜\\s+",
+          "label": "shell-prompt"
+        },
+        {
+          "regex": "^⏵⏵\\s+accept edits on",
+          "flags": "i"
+        },
+        {
+          "regex": "^ctrl\\+g to edit in",
+          "flags": "i"
+        }
+      ],
+      "scope": "buffer"
     }
   },
   "nativeHistory": {
