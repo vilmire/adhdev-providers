@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.7",
+  "providerVersion": "1.1.8",
   "binary": "codex",
   "spawn": {
     "command": "bash",
@@ -205,17 +205,26 @@
     "transcriptPty": {
       "$schema": "adhdev:tui/transcript-pty@1",
       "assistantPrefix": {
-        "regex": "^>\\s+(.*)$"
+        "regex": "^(?:>|•)\\s+(.*)$"
       },
       "userPrefix": {
         "regex": "^[›❯]\\s+(.*)$"
       },
-      "toolPrefix": {
-        "regex": "^•\\s+(.*)$"
-      },
       "chromePatterns": [
         {
           "regex": "^OpenAI Codex",
+          "flags": "i"
+        },
+        {
+          "regex": "^Tip:",
+          "flags": "i"
+        },
+        {
+          "regex": "^Use /",
+          "flags": "i"
+        },
+        {
+          "regex": "^>\\s+You are in\\b",
           "flags": "i"
         },
         {
@@ -226,7 +235,7 @@
           "regex": "\\? for shortcuts"
         },
         {
-          "regex": "^[─━]+$"
+          "regex": "^[─━]{3,}$"
         }
       ],
       "scope": "buffer"
