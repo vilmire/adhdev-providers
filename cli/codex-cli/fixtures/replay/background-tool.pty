@@ -1,0 +1,22 @@
+Codex CLI v0.44.0
+Working (8s • esc to interrupt)
+1 background terminal running
+Preparing context.
+Loading project files.
+Reading configuration.
+Analyzing source structure.
+Checking imports.
+Resolving modules.
+Validating schema.
+Compiling types.
+Running linter.
+Formatting output.
+Generating response.
+Review complete.
+All checks passed.
+Background task finished.
+Output ready.
+
+›
+? for shortcuts
+tab to queue message

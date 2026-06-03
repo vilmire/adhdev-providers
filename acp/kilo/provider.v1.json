@@ -1,0 +1,96 @@
+{
+  "type": "kilo-acp",
+  "name": "Kilo (ACP)",
+  "category": "acp",
+  "displayName": "Kilo",
+  "icon": "🟢",
+  "install": "npm install -g @kilocode/cli",
+  "spawn": {
+    "command": "kilo",
+    "args": [
+      "acp"
+    ],
+    "shell": false
+  },
+  "auth": [
+    {
+      "type": "agent",
+      "id": "kilo-settings",
+      "name": "Kilo Settings",
+      "description": "Configure API keys through Kilo interactive setup"
+    }
+  ],
+  "settings": {
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls without user confirmation"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Alerts",
+      "description": "Show notification when Kilo requires approval"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "providerVersion": "1.0.1",
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  },
+  "tier": "declarative-only",
+  "session": {
+    "idlePattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:ready|done|taskComplete)\"",
+      "flags": "i",
+      "description": "Kilo Code finished a task turn"
+    },
+    "generatingPattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:thinking|toolCall|streaming)\"",
+      "flags": "i",
+      "description": "Kilo Code is generating or executing a tool"
+    },
+    "promptStyle": "mcp",
+    "errorPatterns": [
+      {
+        "regex": "\"method\"\\s*:\\s*\"agent/approvalRequired\"",
+        "flags": "i",
+        "verdict": "waiting_approval",
+        "description": "Kilo Code requires approval before running a tool"
+      }
+    ],
+    "$schema": "adhdev:acp/session-protocol@1"
+  }
+}

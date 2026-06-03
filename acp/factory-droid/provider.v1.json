@@ -1,0 +1,102 @@
+{
+  "type": "factory-droid-acp",
+  "name": "Factory Droid (ACP)",
+  "category": "acp",
+  "displayName": "Factory Droid",
+  "icon": "🏭",
+  "install": "npm install -g droid",
+  "spawn": {
+    "command": "droid",
+    "args": [
+      "exec",
+      "--output-format",
+      "acp"
+    ],
+    "shell": false,
+    "env": {
+      "DROID_DISABLE_AUTO_UPDATE": "1",
+      "FACTORY_DROID_AUTO_UPDATE_ENABLED": "false"
+    }
+  },
+  "auth": [
+    {
+      "type": "agent",
+      "id": "factory",
+      "name": "Factory Auth",
+      "description": "Authenticate with Factory AI account"
+    }
+  ],
+  "settings": {
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls without user confirmation"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Alerts",
+      "description": "Show notification when agent requires approval"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "providerVersion": "1.0.1",
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  },
+  "tier": "declarative-only",
+  "session": {
+    "idlePattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:ready|done|finished|completed)\"",
+      "flags": "i",
+      "description": "Agent finished a turn and is waiting for the next prompt"
+    },
+    "generatingPattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:thinking|toolCall|progress|streaming)\"",
+      "flags": "i",
+      "description": "Agent is actively working — emitting a notification or tool call"
+    },
+    "promptStyle": "mcp",
+    "errorPatterns": [
+      {
+        "regex": "\"method\"\\s*:\\s*\"agent/approvalRequired\"",
+        "flags": "i",
+        "verdict": "waiting_approval",
+        "description": "Agent is requesting user approval before proceeding"
+      }
+    ],
+    "$schema": "adhdev:acp/session-protocol@1"
+  }
+}

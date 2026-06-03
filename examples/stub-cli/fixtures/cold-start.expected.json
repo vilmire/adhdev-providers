@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "description": "Stub agent cold-start: splash → prompt → user submits → spinner → approval modal → settled prompt. Replay is cumulative — each anchor sees everything from the start of the PTY up to its sentinel.",
+  "providerType": "stub-cli",
+  "ptyFile": "cold-start.pty",
+  "terminal": { "cols": 80, "rows": 24 },
+  "anchors": [
+    {
+      "name": "splash visible",
+      "untilSentinel": "Welcome to stub-agent",
+      "expect": {
+        "detectStatus": null,
+        "parseApproval": null
+      },
+      "notes": "Splash banner alone — no spinner, no modal, no settled prompt yet. Builder returns null and the daemon's outer policy keeps last-known status."
+    },
+    {
+      "name": "prompt ready",
+      "untilSentinel": "stub> ",
+      "expect": {
+        "detectStatus": "idle",
+        "parseApproval": null
+      }
+    },
+    {
+      "name": "spinner showing",
+      "untilSentinel": "⠋ Thinking",
+      "expect": {
+        "detectStatus": "generating",
+        "parseApproval": null
+      },
+      "notes": "Spinner cue alone is sufficient to flip into generating."
+    },
+    {
+      "name": "approval modal",
+      "untilSentinel": "2. No, cancel",
+      "expect": {
+        "detectStatus": "waiting_approval",
+        "parseApproval": {
+          "message": "Approve this action?",
+          "buttons": ["Yes, run it", "No, cancel"]
+        }
+      },
+      "notes": "Sentinel extends past the buttons so the modal extractor has both header + options in scope."
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+name: Publish to Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cli/**/provider.json'
+      - 'cli/**/provider.v1.json'
+      - 'ide/**/provider.json'
+      - 'extension/**/provider.json'
+      - 'acp/**/provider.json'
+
+  # Allow manual trigger for backfills
+  workflow_dispatch:
+    inputs:
+      provider_type:
+        description: 'Provider type to publish (e.g. claude-cli). Leave empty to publish all.'
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install ajv for schema validation
+        run: |
+          mkdir -p .ci-deps && cd .ci-deps
+          npm init -y > /dev/null
+          npm install --no-save --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
+
+      - name: Publish providers to registry
+        env:
+          ADHDEV_REGISTRY_URL: ${{ vars.ADHDEV_REGISTRY_URL || 'https://api.adhf.dev/api/v1/registry' }}
+          ADHDEV_PUBLISH_TOKEN: ${{ secrets.ADHDEV_PUBLISH_TOKEN }}
+          AJV_DIR: ${{ github.workspace }}/.ci-deps/node_modules
+          FILTER_TYPE: ${{ inputs.provider_type }}
+        run: |
+          node -e "
+          const { readFileSync, readdirSync, statSync } = require('node:fs');
+          const { join } = require('node:path');
+          const Ajv = require(process.env.AJV_DIR + '/ajv/dist/2020.js').default;
+          const addFormats = require(process.env.AJV_DIR + '/ajv-formats').default;
+
+          const REGISTRY_URL = process.env.ADHDEV_REGISTRY_URL;
+          const TOKEN = process.env.ADHDEV_PUBLISH_TOKEN;
+          const FILTER = process.env.FILTER_TYPE || '';
+
+          if (!TOKEN) { console.error('ADHDEV_PUBLISH_TOKEN not set'); process.exit(1); }
+
+          const cliSchema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json', 'utf-8'));
+          const ajv = new Ajv({ allErrors: true, strict: false });
+          addFormats(ajv);
+          const validateCli = ajv.compile(cliSchema);
+
+          const TIER_MAP = {
+            'declarative-only': 'declarative-only',
+            'extended-legacy': 'extended-legacy',
+            'extended': 'extended',
+            'verified': 'verified',
+          };
+
+          // Infer tier from manifest
+          function inferTier(manifest) {
+            if (manifest.overrides) return 'extended';
+            if (manifest.compatibility?.some(c => c.scriptDir) && !manifest.tui) return 'extended-legacy';
+            if (manifest.tui && !manifest.overrides) return 'declarative-only';
+            return 'verified';
+          }
+
+          async function publishProvider(category, type, manifestPath) {
+            const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+            const version = manifest.providerVersion || '0.0.0';
+            const tier = inferTier(manifest);
+
+            // Schema check (CLI only for now)
+            let schemaValid = true;
+            if (category === 'cli') {
+              schemaValid = validateCli(manifest);
+              if (!schemaValid) {
+                console.log('  schema errors:', validateCli.errors?.map(e => e.message).join(', '));
+              }
+            }
+
+            const body = {
+              type,
+              category,
+              version,
+              name: manifest.name || type,
+              displayName: manifest.displayName || manifest.name || type,
+              tier,
+              taintLevel: manifest._taintLevel || 'clean',
+              schemaValid,
+              manifest,
+            };
+
+            const resp = await fetch(REGISTRY_URL + '/providers', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + TOKEN,
+              },
+              body: JSON.stringify(body),
+            });
+
+            const result = await resp.json();
+            if (resp.status === 201) console.log('  published', version, tier);
+            else if (resp.status === 200) console.log('  already_published', version);
+            else if (resp.status === 409) console.log('  conflict (version exists with different content)');
+            else console.error('  error', resp.status, JSON.stringify(result));
+          }
+
+          const CATEGORIES = ['cli', 'ide', 'extension', 'acp'];
+          const promises = [];
+
+          for (const category of CATEGORIES) {
+            let types;
+            try { types = readdirSync(category); } catch { continue; }
+            for (const type of types) {
+              if (type.startsWith('_')) continue;
+              if (FILTER && type !== FILTER) continue;
+
+              // Prefer provider.v1.json, fall back to provider.json
+              const v1Path = join(category, type, 'provider.v1.json');
+              const v0Path = join(category, type, 'provider.json');
+              let path;
+              try { statSync(v1Path); path = v1Path; } catch {
+                try { statSync(v0Path); path = v0Path; } catch { continue; }
+              }
+
+              console.log('Publishing', category + '/' + type, 'from', path);
+              promises.push(publishProvider(category, type, path));
+            }
+          }
+
+          Promise.allSettled(promises).then(results => {
+            const failed = results.filter(r => r.status === 'rejected');
+            if (failed.length) {
+              failed.forEach(r => console.error('FAILED:', r.reason));
+              process.exit(1);
+            }
+          });
+          "

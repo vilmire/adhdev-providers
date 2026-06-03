@@ -1,0 +1,131 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "claude-cli",
+  "name": "Claude Code",
+  "displayName": "Claude Code",
+  "category": "cli",
+  "aliases": ["claude", "claude-code"],
+  "icon": "🤖",
+  "status": "Stable",
+  "details": "Terminal only",
+  "engines": { "adhdev": "^1.0.0" },
+  "providerVersion": "1.1.0",
+  "disableUpstream": true,
+  "binary": "claude",
+  "spawn": {
+    "command": "claude",
+    "args": ["--permission-mode", "acceptEdits"],
+    "shell": true
+  },
+  "sendDelayMs": 700,
+  "submitStrategy": "wait_for_echo",
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "uuid",
+    "newSessionArgs": ["--session-id", "{{id}}"],
+    "resumeSessionArgs": ["--resume", "{{id}}"],
+    "resumeArgs": ["--continue"]
+  },
+  "approvalPositiveHints": [
+    "yes",
+    "allow once",
+    "approve",
+    "accept",
+    "use this mcp server",
+    "use this",
+    "trust",
+    "continue",
+    "run",
+    "proceed",
+    "confirm",
+    "allow",
+    "always allow"
+  ],
+  "compatibility": [
+    { "ideVersion": ">=2.1.0", "scriptDir": "scripts/v1" }
+  ],
+  "defaultScriptDir": "scripts/v1",
+  "tui": {
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        { "regex": "[\\u2800-\\u28ff]",                                                                        "description": "Braille spinner glyphs" },
+        { "regex": "esc to (?:cancel|interrupt|stop)",                                                          "flags": "i" },
+        { "regex": "generating\\.\\.\\.",                                                                       "flags": "i" },
+        { "regex": "Claude is (?:thinking|processing|working)",                                                 "flags": "i" },
+        { "regex": "Flummoxing|Finagling|Scurrying|Bloviating|Whatchamacallit(?:ing)?",                          "flags": "i" },
+        { "regex": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?", "flags": "i" }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 12
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "^[❯›>]\\s*$",
+      "flags": "m",
+      "withFooter": [
+        { "pattern": "? for shortcuts" }
+      ],
+      "scope": "last-n-lines",
+      "scopeWindowLines": 12
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "This command requires approval|Do you want to (?:proceed|allow|run|make this edit|create)|New MCP server found in this project|Quick safety check|Is this a project you trust",
+      "questionFlags": "i",
+      "questionVariants": [
+        { "regex": "^Settings Warning$", "flags": "im", "label": "settings-warning" },
+        { "regex": "\\(y/n\\)|\\[Y/n\\]",  "flags": "i",  "label": "y-n-fallback" }
+      ],
+      "buttonPattern": "^([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonFlags": "m"
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": ["modal", "spinner", "settled-prompt"],
+      "onNoMatch": "idle"
+    }
+  },
+  "nativeHistory": {
+    "$schema": "adhdev:native-history/claude-jsonl@1",
+    "format": "claude-jsonl",
+    "watchPath": "~/.claude/projects/**/*.jsonl",
+    "mode": "native-source",
+    "contractVersion": "2.0"
+  },
+  "overrides": {
+    "detectStatus": {
+      "$schema": "adhdev:override/cli-detect-status@1",
+      "path": "scripts/v1/detect_status.js",
+      "reason": "Stateful generating-hold (3000ms + 3-frame idle confirmation) not expressible by pure (input) → verdict primitives."
+    }
+  },
+  "settings": {
+    "notifications":              { "type": "boolean", "default": true,  "public": true, "label": "Notifications",                  "description": "Display notifications on state changes" },
+    "autoApprove":                { "type": "boolean", "default": false, "public": true, "label": "Auto Approve",                    "description": "Automatically approve tool execution without prompt" },
+    "approvalAlert":              { "type": "boolean", "default": true,  "public": true, "label": "Approval Notifications",          "description": "Show notification when approval is needed" },
+    "longGeneratingAlert":        { "type": "boolean", "default": true,  "public": true, "label": "Long Generation Alert",           "description": "Alert when generation takes too long" },
+    "longGeneratingThresholdSec": { "type": "number",  "default": 180,   "public": true, "label": "Long Generation Threshold (sec)", "min": 30, "max": 600 }
+  },
+  "capabilities": {
+    "input":  { "multipart": true, "mediaTypes": ["text", "image"] },
+    "output": { "richContent": false, "mediaTypes": ["text"] },
+    "controls": { "typedResults": true }
+  },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "auto_import",
+      "format": "claude_mcp_json",
+      "path": ".mcp.json",
+      "serverName": "adhdev-mesh"
+    }
+  }
+}

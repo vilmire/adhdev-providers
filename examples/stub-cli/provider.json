@@ -1,0 +1,67 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "stub-cli",
+  "name": "stub",
+  "displayName": "Stub CLI (Example)",
+  "category": "cli",
+  "icon": "🧪",
+  "status": "Experimental",
+  "details": "Minimal worked example demonstrating a declarative TUI provider. Real providers should follow this shape: tui block + nativeHistory (optional) + compatibility[].",
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "providerVersion": "0.1.0",
+  "binary": "stub-agent",
+  "versionCommand": "stub-agent --version",
+  "spawn": {
+    "command": "stub-agent",
+    "args": ["--tty"]
+  },
+  "sendKey": "\r",
+  "submitStrategy": "wait_for_echo",
+  "requirePromptEchoBeforeSubmit": true,
+  "timeouts": {
+    "generatingIdle": 1500,
+    "idleFinish": 800,
+    "maxResponse": 600000
+  },
+  "resume": {
+    "supported": false
+  },
+  "compatibility": [
+    { "ideVersion": ">=0.1.0", "scriptDir": "scripts/v1" }
+  ],
+  "defaultScriptDir": "scripts/v1",
+  "tui": {
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        { "regex": "(?:⠋|⠙|⠹|⠸|⠼|⠴|⠦|⠧|⠇|⠏)\\s+Thinking", "flags": "" },
+        { "regex": "^\\s*\\.\\.\\.\\s+working", "flags": "im" }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 8
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "^stub>\\s*$",
+      "flags": "m",
+      "scope": "last-n-lines",
+      "scopeWindowLines": 4
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "Approve\\s+this\\s+action\\?",
+      "questionFlags": "i",
+      "buttonPattern": "^\\s*\\d+\\.\\s+(.+)$",
+      "buttonFlags": "m",
+      "minButtons": 2,
+      "scope": "between-last-two-separators"
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": ["modal", "spinner", "settled-prompt"],
+      "onNoMatch": "idle"
+    }
+  }
+}

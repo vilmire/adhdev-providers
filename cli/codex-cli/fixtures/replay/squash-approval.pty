@@ -1,0 +1,29 @@
+Codex CLI v0.44.0
+
+doyoutrustthecontentsofthisdirectory1yescontinue2noquitpressentertocontinue
+
+Continuing with trusted directory.
+Processing files in project.
+Analyzing dependencies.
+Found 12 source files.
+Build configuration loaded.
+Checking types...
+No type errors found.
+Linting complete.
+All checks passed.
+Dependencies resolved.
+Ready to assist.
+Preparing environment.
+Indexing complete.
+Setup done.
+Loading model context.
+Model ready.
+Session initialized.
+Running tasks.
+Background work complete.
+Finalizing.
+Done.
+
+›
+? for shortcuts
+tab to queue message

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "description": "codex-cli: approval-squash path — the trust-folder modal is rendered as a compacted single-line blob; squash builder must recover message + buttons via parseApproval; detectStatus returns null (no regular modal/spinner cue) and the daemon's outer policy preserves last-known status",
+  "providerType": "codex-cli",
+  "ptyFile": "squash-approval.pty",
+  "terminal": { "cols": 80, "rows": 24 },
+  "anchors": [
+    {
+      "name": "squashed trust-folder modal",
+      "untilSentinel": "pressentertocontinue",
+      "expect": {
+        "detectStatus": null,
+        "parseApproval": {
+          "message": "Do you trust the contents of this directory?",
+          "buttons": ["Yes, continue", "No, quit"]
+        }
+      },
+      "notes": "The terminal has compacted the trust-folder modal into a single lowercase alnum blob. detectStatus returns null because the regular modal questionPattern does not match the compacted text; the daemon's outer state machine preserves the last-known status. parseApproval via the squash builder matches 'doyoutrustthecontentsofthisdirectory' cue + finds the '1yescontinue2noquit' button rule. This is the regression anchor for the squash detection path."
+    },
+    {
+      "name": "settled after squash",
+      "untilSentinel": "tab to queue message\n",
+      "expect": {
+        "detectStatus": "idle",
+        "parseApproval": null
+      },
+      "notes": "After the squashed modal and subsequent output scroll the compacted blob beyond the squash builder's 24-line tail window, parseApproval returns null. The settled prompt (›) with 'tab to queue message' footer triggers the settled-prompt primitive and detectStatus returns idle."
+    }
+  ]
+}

@@ -7,6 +7,10 @@
   "required": ["type", "name", "category", "binary", "spawn"],
   "additionalProperties": false,
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema URL — optional, lets editors validate the file. Conventionally https://registry.adhf.dev/schemas/v1/cli/provider.schema.json."
+    },
     "type": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]*$",

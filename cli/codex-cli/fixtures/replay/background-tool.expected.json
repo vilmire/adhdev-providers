@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "codex-cli: 'Working (8s)' spinner triggers generating; '1 background terminal running' line is visible alongside the spinner in the cumulative buffer; after sufficient output clears the window, idle is detected",
+  "providerType": "codex-cli",
+  "ptyFile": "background-tool.pty",
+  "terminal": { "cols": 80, "rows": 24 },
+  "anchors": [
+    {
+      "name": "working spinner active",
+      "untilSentinel": "Working (8s",
+      "expect": {
+        "detectStatus": "generating",
+        "parseApproval": null
+      },
+      "notes": "The 'Working (8s • esc to interrupt)' line matches the codex spinner pattern 'Working (\\d+s)'. detectStatus returns generating."
+    },
+    {
+      "name": "background terminal line visible",
+      "untilSentinel": "1 background terminal running",
+      "expect": {
+        "detectStatus": "generating",
+        "parseApproval": null
+      },
+      "notes": "The '1 background terminal running' line appears while the Working spinner is still in the 12-line tail window. detectStatus stays generating because the spinner cue is still visible. This is the key regression anchor: the declarative builder correctly identifies the generating state during background tool execution."
+    },
+    {
+      "name": "settled after background tool",
+      "untilSentinel": "tab to queue message\n",
+      "expect": {
+        "detectStatus": "idle",
+        "parseApproval": null
+      },
+      "notes": "After the background tool finishes and enough output pushes the spinner beyond the 12-line tail window, the settled prompt (›) appears with both '? for shortcuts' and 'tab to queue message' footers. Both withFooter entries must be present (footers.every rule). The builder correctly returns idle."
+    }
+  ]
+}

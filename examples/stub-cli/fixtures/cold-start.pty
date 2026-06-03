@@ -1,0 +1,17 @@
+Welcome to stub-agent v0.1.0
+Type a message to start, or /help for commands.
+
+stub> hello world
+⠋ Thinking...
+⠙ Thinking...
+
+The agent wants to run a command: `ls -la /tmp`
+
+────────────────────────────────────────
+Approve this action?
+
+  1. Yes, run it
+  2. No, cancel
+
+────────────────────────────────────────
+stub> 

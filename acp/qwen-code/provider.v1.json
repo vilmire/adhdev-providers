@@ -1,0 +1,102 @@
+{
+  "type": "qwen-code-acp",
+  "name": "Qwen Code (ACP)",
+  "category": "acp",
+  "displayName": "Qwen Code",
+  "icon": "🟦",
+  "install": "npm install -g @qwen-code/qwen-code  (requires DASHSCOPE_API_KEY)",
+  "spawn": {
+    "command": "qwen-code",
+    "args": [
+      "--acp",
+      "--experimental-skills"
+    ],
+    "shell": false
+  },
+  "auth": [
+    {
+      "type": "env_var",
+      "id": "dashscope",
+      "name": "DashScope API Key",
+      "vars": [
+        {
+          "name": "DASHSCOPE_API_KEY"
+        }
+      ],
+      "link": "https://dashscope.console.aliyun.com/apiKey"
+    }
+  ],
+  "settings": {
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls without user confirmation"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Alerts",
+      "description": "Show notification when Qwen Code requires approval"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "providerVersion": "1.0.1",
+  "contractVersion": 2,
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  },
+  "tier": "declarative-only",
+  "session": {
+    "idlePattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:ready|done)\"",
+      "flags": "i",
+      "description": "Qwen Code finished a turn"
+    },
+    "generatingPattern": {
+      "regex": "\"method\"\\s*:\\s*\"agent/(?:thinking|toolCall|streaming)\"",
+      "flags": "i",
+      "description": "Qwen Code is generating or executing a tool"
+    },
+    "promptStyle": "mcp",
+    "errorPatterns": [
+      {
+        "regex": "\"method\"\\s*:\\s*\"agent/approvalRequired\"",
+        "flags": "i",
+        "verdict": "waiting_approval",
+        "description": "Qwen Code requires approval before a tool runs"
+      }
+    ],
+    "$schema": "adhdev:acp/session-protocol@1"
+  }
+}

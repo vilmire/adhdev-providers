@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "description": "claude-cli: modal visible (This command requires approval) → detectStatus returns waiting_approval; modal dispatch order wins over prior spinner cue",
+  "providerType": "claude-cli",
+  "ptyFile": "approval-modal.pty",
+  "terminal": { "cols": 80, "rows": 24 },
+  "anchors": [
+    {
+      "name": "modal visible",
+      "untilSentinel": "3. Always allow",
+      "expect": {
+        "detectStatus": "waiting_approval"
+      },
+      "notes": "The 'This command requires approval' line triggers the modal question pattern. detectStatus returns waiting_approval because the modal group is checked first in the dispatch order (['modal', 'spinner', 'settled-prompt']), so even though the braille spinner and 'esc to interrupt' are in the accumulated buffer, the modal wins. Note: the claude-cli declarative buttonPattern uses capture group 1 for the optional ❯/›/> prefix, so parseApproval is intentionally not checked here — it is handled by the daemon's outer approval system."
+    }
+  ]
+}

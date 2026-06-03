@@ -1,3 +1,9 @@
+# Legacy / supplemental workflow.
+# The canonical provider registry is served from the API (publish-registry.yml → api.adhf.dev/api/v1/registry).
+# This workflow regenerates the flat registry.json file in the repo root for backwards compatibility
+# (tools that read registry.json directly from the repo). The file is written as a plain artifact —
+# no auto-commit or push. If the generated output changes it will show up as an unstaged diff and
+# can be committed as part of a normal PR.
 name: Generate Registry
 on:
   push:
@@ -10,7 +16,7 @@ jobs:
   generate-registry:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -49,13 +55,3 @@ jobs:
               json.dump(registry, f, indent=2, ensure_ascii=False)
           print(f'Generated registry.json with {len(registry[\"providers\"])} providers')
           "
-
-      - name: Commit registry.json
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add registry.json
-          git diff --cached --quiet || git commit -m "chore: auto-generate registry.json"
-          git push
-
-

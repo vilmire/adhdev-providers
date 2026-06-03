@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "description": "claude-cli: tool active (braille spinner + esc to interrupt) → generating; settled prompt (❯ + ? for shortcuts footer) → idle",
+  "providerType": "claude-cli",
+  "ptyFile": "generating-to-idle.pty",
+  "terminal": { "cols": 80, "rows": 24 },
+  "anchors": [
+    {
+      "name": "tool active",
+      "untilSentinel": "esc to interrupt",
+      "expect": {
+        "detectStatus": "generating",
+        "parseApproval": null
+      },
+      "notes": "Braille spinner (⣟) and 'esc to interrupt' footer are both present. Builder's spinner patterns match either cue independently."
+    },
+    {
+      "name": "settled prompt",
+      "untilSentinel": "? for shortcuts\n",
+      "expect": {
+        "detectStatus": "idle",
+        "parseApproval": null
+      },
+      "notes": "After the assistant turn completes, the ❯ prompt appears on its own line and the '? for shortcuts' footer confirms idle. Regression for sprint-2026-06: footer must be present for the settled-prompt primitive to fire."
+    }
+  ]
+}
