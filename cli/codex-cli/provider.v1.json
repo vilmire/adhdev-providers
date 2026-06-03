@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.9",
+  "providerVersion": "1.1.10",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -34,7 +34,7 @@
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
   "submitStrategy": "wait_for_echo",
-  "requiresFinalAssistantBeforeIdle": true,
+  "requiresFinalAssistantBeforeIdle": false,
   "timeouts": {
     "idleFinishConfirm": 5000,
     "statusActivityHold": 5000
