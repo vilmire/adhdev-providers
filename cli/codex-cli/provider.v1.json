@@ -22,13 +22,12 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.8",
+  "providerVersion": "1.1.9",
   "binary": "codex",
   "spawn": {
-    "command": "bash",
+    "command": "codex",
     "args": [
-      "-lc",
-      "exec codex --dangerously-bypass-approvals-and-sandbox"
+      "--dangerously-bypass-approvals-and-sandbox"
     ],
     "shell": false
   },
