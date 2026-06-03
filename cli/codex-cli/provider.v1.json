@@ -22,14 +22,14 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.5",
+  "providerVersion": "1.1.6",
   "binary": "codex",
   "spawn": {
     "command": "codex",
     "args": [
       "--dangerously-bypass-approvals-and-sandbox"
     ],
-    "shell": false
+    "shell": true
   },
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
