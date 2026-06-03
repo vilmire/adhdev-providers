@@ -35,6 +35,7 @@ module.exports.createState = () => ({
     lastGeneratingAt: 0,
     lastApprovalText: '',
     spinnerStabilityCount: 0,
+    consecutiveIdleFrames: 0,
 });
 
 function resolveInput(state, input) {

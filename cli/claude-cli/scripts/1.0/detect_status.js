@@ -294,8 +294,16 @@ function looksLikeActiveOutput(lines) {
 // ─── Generating hold duration (ms) after last spinner seen ───────────────────
 // Claude sometimes redraws the screen without a spinner for 1-2 frames between
 // tool steps. Without a hold, detect_status would snap to 'idle' during those
-// frames, causing the daemon to incorrectly believe the turn finished.
-const GENERATING_HOLD_MS = 1500;
+// frames, causing the daemon to incorrectly believe the turn finished. The
+// hold was 1500ms; bumped to 3000ms because longer tool steps (web fetch,
+// shell commands) regularly take >1.5s between spinner refreshes.
+const GENERATING_HOLD_MS = 3000;
+
+// Minimum consecutive idle frames required before we trust a raw 'idle'
+// result after a recent generating period. detect_status is polled at ~100ms,
+// so 3 frames ≈ 300ms of sustained idle evidence — enough to filter the
+// single-frame redraw flap, short enough not to delay real completion noticeably.
+const IDLE_CONFIRMATION_FRAMES = 3;
 
 module.exports = function detectStatus(stateOrInput, input) {
     // Support both call signatures:
@@ -338,9 +346,12 @@ module.exports = function detectStatus(stateOrInput, input) {
     if (rawStatus === null) rawStatus = 'idle';
 
     // ── State-based generating hold ──────────────────────────────────────────
-    // Update lastGeneratingAt whenever we see a hard generating signal.
+    // Update lastGeneratingAt whenever we see a hard generating signal and
+    // reset the idle confirmation counter — a real generating frame breaks
+    // any idle streak we were building toward.
     if (effectiveState && rawStatus === 'generating') {
         effectiveState.lastGeneratingAt = now;
+        effectiveState.consecutiveIdleFrames = 0;
     }
 
     // If rawStatus resolved to idle but we were confidently generating very
@@ -349,11 +360,24 @@ module.exports = function detectStatus(stateOrInput, input) {
     if (effectiveState && rawStatus === 'idle' && effectiveState.lastGeneratingAt > 0) {
         const msSinceGenerating = now - effectiveState.lastGeneratingAt;
         if (msSinceGenerating < GENERATING_HOLD_MS) {
+            // Track consecutive idle frames within the hold window. Require
+            // several before we trust the idle verdict, otherwise treat the
+            // frame as a transient redraw and keep reporting generating.
+            const prior = Number.isFinite(effectiveState.consecutiveIdleFrames)
+                ? effectiveState.consecutiveIdleFrames
+                : 0;
+            effectiveState.consecutiveIdleFrames = prior + 1;
             const hasStrongIdle = takeLast(activeLines, 4).some(isIdlePrompt)
                 && takeLast(activeLines, 6).some(isShellChrome);
-            if (!hasStrongIdle) {
+            const sustainedIdle = effectiveState.consecutiveIdleFrames >= IDLE_CONFIRMATION_FRAMES;
+            if (!hasStrongIdle && !sustainedIdle) {
                 return 'generating';
             }
+        }
+        // Outside the hold window: clear the counter so a future generating
+        // burst starts fresh next time it goes idle.
+        if (msSinceGenerating >= GENERATING_HOLD_MS) {
+            effectiveState.consecutiveIdleFrames = 0;
         }
     }
 
