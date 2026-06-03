@@ -254,6 +254,15 @@ module.exports = function detectStatus(input) {
 
     if (hasApproval(lines)) return 'waiting_approval';
 
+    // (fix 2026-06) When `screen` (post-terminal-emulation, source of truth
+    // for "what the user actually sees now") shows the codex startup idle
+    // screen — welcome box + starter prompt + idle footer — trust it
+    // unconditionally. codex 0.136 logs "Starting MCP servers ... esc to
+    // interrupt" lines during boot that linger in the ANSI raw buffer even
+    // after the screen redraws to idle. The raw-cue branch below would then
+    // pin status to `generating` forever despite the live screen being idle.
+    if (screen && hasStartupIdleScreen(screen)) return 'idle';
+
     // (fix) Generation cues win over the "ready footer / prompt" idle paths.
     // Codex keeps the model footer + prompt input visible while a background
     // tool (`exec_command(... &)` + sleep, `1 background terminal running`,
@@ -272,7 +281,6 @@ module.exports = function detectStatus(input) {
     // rawBuffer churn cannot keep a completed turn generating forever.
     if (screen && hasReadyFooter(screen)) return 'idle';
     if (screen && hasReadyPrompt(screen)) return 'idle';
-    if (screen && hasStartupIdleScreen(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
     if (hasIdle(screen || tail)) return 'idle';
     if (tail && hasIdle(tail)) return 'idle';
