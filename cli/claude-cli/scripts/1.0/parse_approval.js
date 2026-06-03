@@ -169,6 +169,12 @@ function parseApprovalFromLines(lines, sourceText) {
     lines = scopeToLastSeparator(lines);
     if (lines.length === 0) return null;
 
+    // (fix) Only treat the live, scoped frame as approval source. Previously
+    // explicitApproval scanned the entire raw buffer/tail/screenText, so an
+    // older "Do you want to proceed" line scrolled off the live frame still
+    // matched, falsely tripping auto-approval. Restrict to the scoped lines.
+    const scopedSourceText = lines.map(normalize).join('\n');
+
     const recent = takeLast(lines, 30);
     const normalizedRecent = recent.map(normalize).filter(Boolean);
     const lastPromptIndex = normalizedRecent.map((line, idx) => ({ line, idx }))
@@ -195,9 +201,19 @@ function parseApprovalFromLines(lines, sourceText) {
     const choiceMenu = hasChoiceMenuStructure(recent);
     const mcpServer = normalizedRecent.some(isNewMCPServerCue);
     const settingsWarning = hasSettingsWarningMenu(recent);
-    const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(sourceText || '');
+    const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(scopedSourceText);
     const hasApproval = startupTrust || choiceMenu || explicitApproval || mcpServer || settingsWarning;
     if (!hasApproval) return null;
+
+    // (fix) A real approval modal always renders structurally-valid buttons inside
+    // the live frame. If we found a cue but no buttons, treat it as prose that
+    // happens to mention approval-like phrases (e.g. the assistant explaining
+    // approval flow), not an active modal. Trust prompts and rate-limit menus
+    // ship buttons via startupTrust / choiceMenu / settingsWarning paths above,
+    // which all gate on button presence themselves.
+    if (explicitApproval && !startupTrust && !choiceMenu && !mcpServer && !settingsWarning && buttons.length === 0) {
+        return null;
+    }
 
     const questionIndex = findLastIndex(lines, isApprovalQuestionLine);
     const approvalIndex = findLastIndex(lines, line => /This command requires approval|requires approval/i.test(normalize(line)));
