@@ -36,8 +36,7 @@ jobs:
 
       - name: Validate all CLI provider manifests
         run: |
-          # Adapt validator path resolution for CI (ajv comes from .ci-deps not ../oss).
-          AJV_DIR="$PWD/.ci-deps/node_modules" node -e "
+          node -e "
             const Ajv = require(process.env.AJV_DIR + '/ajv/dist/2020.js').default;
             const addFormats = require(process.env.AJV_DIR + '/ajv-formats').default;
             const { readFileSync, readdirSync, statSync } = require('node:fs');
