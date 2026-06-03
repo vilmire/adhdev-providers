@@ -9,7 +9,7 @@
     "hermes",
     "hermes-agent"
   ],
-  "icon": "\u2695",
+  "icon": "⚕",
   "displayName": "Hermes Agent",
   "settings": {
     "notifications": {
@@ -54,7 +54,7 @@
       "id": "provider",
       "type": "select",
       "label": "Provider",
-      "icon": "\ud83c\udf10",
+      "icon": "🌐",
       "placement": "bar",
       "order": 10,
       "defaultValue": "auto",
@@ -127,7 +127,7 @@
       "id": "reasoning",
       "type": "select",
       "label": "Reasoning",
-      "icon": "\ud83e\udde0",
+      "icon": "🧠",
       "placement": "bar",
       "order": 20,
       "defaultValue": "none",
@@ -164,7 +164,7 @@
       "id": "yolo",
       "type": "toggle",
       "label": "YOLO",
-      "icon": "\u26a0",
+      "icon": "⚠",
       "placement": "bar",
       "order": 30,
       "defaultValue": false,
@@ -175,7 +175,7 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "\u271a",
+      "icon": "✚",
       "placement": "bar",
       "hidden": true,
       "order": 70,
@@ -188,7 +188,7 @@
       "id": "undo_last",
       "type": "action",
       "label": "Undo",
-      "icon": "\u21b6",
+      "icon": "↶",
       "placement": "bar",
       "order": 75,
       "invokeScript": "undoLast",
@@ -200,7 +200,7 @@
       "id": "retry_last",
       "type": "action",
       "label": "Retry",
-      "icon": "\u21ba",
+      "icon": "↺",
       "placement": "bar",
       "order": 80,
       "invokeScript": "retryLast",
@@ -250,7 +250,7 @@
         "flags": "i"
       },
       {
-        "source": "^\u276f\\s*$",
+        "source": "^❯\\s*$",
         "flags": "m"
       }
     ],
@@ -296,7 +296,7 @@
     ],
     "ready": [
       {
-        "source": "^\u276f\\s*$",
+        "source": "^❯\\s*$",
         "flags": "m"
       },
       {
@@ -320,7 +320,7 @@
   "defaultScriptDir": "scripts/1.0",
   "status": "Beta",
   "details": "Terminal only",
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "contractVersion": 2,
   "capabilities": {
     "input": {
@@ -375,5 +375,10 @@
       "readSession": "readNativeHistory",
       "listSessions": "listNativeHistory"
     }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
   }
 }

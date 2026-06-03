@@ -246,6 +246,32 @@
       "pattern": "^scripts/[^/]+$",
       "description": "Fallback when no compatibility[] entry matches."
     },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional code source pointer. When present, the daemon fetches script files (the `defaultScriptDir` + any `compatibility[].scriptDir`) from this GitHub repository on install so extended-tier providers can ship without bundling all bytes into the manifest. Verified / declarative-only providers can omit this entirely.",
+      "properties": {
+        "type": {
+          "const": "github",
+          "description": "Currently only `github` is supported."
+        },
+        "repo": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$",
+          "description": "GitHub repo as `owner/name`."
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Branch, tag, or — strongly recommended — a 40-char commit SHA so the package is reproducible."
+        },
+        "subdir": {
+          "type": "string",
+          "description": "Optional subdirectory inside the repo that contains this provider's tree (e.g. \"cli/claude-cli\"). When omitted the daemon uses `{category}/{type}` (current adhdev-providers layout)."
+        }
+      },
+      "required": ["type", "repo", "ref"]
+    },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,

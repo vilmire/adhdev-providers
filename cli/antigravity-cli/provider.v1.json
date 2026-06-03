@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.1",
+  "providerVersion": "1.1.2",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -259,5 +259,10 @@
       "instructions": "ADHDev will register the adhdev-mesh MCP server in Antigravity CLI via `agy mcp add` before launching a fresh coordinator session. You can verify with `agy mcp list`.",
       "template": "agy mcp add {{serverName}} -- {{adhdevMcpCommand}} mcp --mode ipc --repo-mesh {{meshId}}"
     }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
   }
 }
