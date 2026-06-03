@@ -4,16 +4,31 @@
   "name": "Codex CLI",
   "displayName": "Codex CLI",
   "category": "cli",
-  "aliases": ["codex"],
+  "aliases": [
+    "codex"
+  ],
   "icon": "🧠",
   "status": "Stable",
   "details": "Terminal only",
-  "engines": { "adhdev": "^1.0.0" },
-  "providerVersion": "1.1.0",
+  "links": {
+    "homepage": "https://openai.com/index/introducing-codex/",
+    "repo": "https://github.com/openai/codex",
+    "docs": "https://github.com/openai/codex#readme"
+  },
+  "install": {
+    "npm": "npm install -g @openai/codex",
+    "manual": "Then run `codex login` to authenticate."
+  },
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "providerVersion": "1.1.1",
   "binary": "codex",
   "spawn": {
     "command": "codex",
-    "args": ["--dangerously-bypass-approvals-and-sandbox"],
+    "args": [
+      "--dangerously-bypass-approvals-and-sandbox"
+    ],
     "shell": false
   },
   "sendDelayMs": 1200,
@@ -30,21 +45,44 @@
     "stopCommand": "exit",
     "shutdownGraceMs": 4000,
     "sessionIdFormat": "uuid",
-    "resumeSessionArgs": ["resume", "{{id}}"],
-    "resumeArgs": ["resume", "--last"]
+    "resumeSessionArgs": [
+      "resume",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "resume",
+      "--last"
+    ]
   },
   "compatibility": [
-    { "ideVersion": ">=0.42.0", "scriptDir": "scripts/v1" }
+    {
+      "ideVersion": ">=0.42.0",
+      "scriptDir": "scripts/v1"
+    }
   ],
   "defaultScriptDir": "scripts/v1",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
       "patterns": [
-        { "regex": "Working \\((?:\\d+h\\s+\\d+m\\s+\\d+s|\\d+m\\s+\\d+s|\\d+s)", "flags": "i", "description": "Codex elapsed-time Working line" },
-        { "regex": "esc to (?:cancel|interrupt|stop)",                              "flags": "i" },
-        { "regex": "Starting MCP servers \\(",                                       "flags": "i", "description": "Codex MCP boot spinner" },
-        { "regex": "[\\u2800-\\u28ff]",                                              "description": "Braille spinner" }
+        {
+          "regex": "Working \\((?:\\d+h\\s+\\d+m\\s+\\d+s|\\d+m\\s+\\d+s|\\d+s)",
+          "flags": "i",
+          "description": "Codex elapsed-time Working line"
+        },
+        {
+          "regex": "esc to (?:cancel|interrupt|stop)",
+          "flags": "i"
+        },
+        {
+          "regex": "Starting MCP servers \\(",
+          "flags": "i",
+          "description": "Codex MCP boot spinner"
+        },
+        {
+          "regex": "[\\u2800-\\u28ff]",
+          "description": "Braille spinner"
+        }
       ],
       "scope": "live-frame-tail",
       "scopeWindowLines": 12
@@ -54,8 +92,12 @@
       "regex": "^[›❯>]\\s*$",
       "flags": "m",
       "withFooter": [
-        { "pattern": "? for shortcuts" },
-        { "pattern": "tab to queue message" }
+        {
+          "pattern": "? for shortcuts"
+        },
+        {
+          "pattern": "tab to queue message"
+        }
       ],
       "scope": "last-n-lines",
       "scopeWindowLines": 12
@@ -65,8 +107,16 @@
       "questionPattern": "Do you trust the contents of this directory|Allow Codex to (?:run|apply)|Allow command\\?|Approve and run now|Always approve this session|Approaching rate limits",
       "questionFlags": "i",
       "questionVariants": [
-        { "regex": "Switch to gpt-[\\w.-]+ for lower credit usage", "flags": "i", "label": "rate-limit-switch" },
-        { "regex": "Update available!",                              "flags": "i", "label": "update-prompt" }
+        {
+          "regex": "Switch to gpt-[\\w.-]+ for lower credit usage",
+          "flags": "i",
+          "label": "rate-limit-switch"
+        },
+        {
+          "regex": "Update available!",
+          "flags": "i",
+          "label": "update-prompt"
+        }
       ],
       "buttonPattern": "^[\\s❯>▌]*\\d+\\.\\s+(.+)$",
       "buttonFlags": "m",
@@ -75,28 +125,80 @@
     "approvalSquash": {
       "$schema": "adhdev:tui/approval-squash@1",
       "cues": [
-        { "compact": "doyoutrustthecontentsofthisdirectory", "label": "trust-folder",     "messageWhenMatched": "Do you trust the contents of this directory?" },
-        { "compact": "workingwithuntrustedcontents",          "label": "untrusted-content", "messageWhenMatched": "Working with untrusted contents" },
-        { "compact": "switchtogpt",                            "kind": "regex", "label": "rate-limit", "messageWhenMatched": "Approaching rate limits" },
-        { "compact": "allowcodextorun",                        "label": "allow-run",        "messageWhenMatched": "Allow Codex to run this command?" },
-        { "compact": "allowcodextoapply",                      "label": "allow-apply",      "messageWhenMatched": "Allow Codex to apply this change?" },
-        { "compact": "allowcommand",                            "label": "allow-command",    "messageWhenMatched": "Allow command?" }
+        {
+          "compact": "doyoutrustthecontentsofthisdirectory",
+          "label": "trust-folder",
+          "messageWhenMatched": "Do you trust the contents of this directory?"
+        },
+        {
+          "compact": "workingwithuntrustedcontents",
+          "label": "untrusted-content",
+          "messageWhenMatched": "Working with untrusted contents"
+        },
+        {
+          "compact": "switchtogpt",
+          "kind": "regex",
+          "label": "rate-limit",
+          "messageWhenMatched": "Approaching rate limits"
+        },
+        {
+          "compact": "allowcodextorun",
+          "label": "allow-run",
+          "messageWhenMatched": "Allow Codex to run this command?"
+        },
+        {
+          "compact": "allowcodextoapply",
+          "label": "allow-apply",
+          "messageWhenMatched": "Allow Codex to apply this change?"
+        },
+        {
+          "compact": "allowcommand",
+          "label": "allow-command",
+          "messageWhenMatched": "Allow command?"
+        }
       ],
       "footers": [
-        { "compact": "pressentertocontinue" },
-        { "compact": "esctocancel" }
+        {
+          "compact": "pressentertocontinue"
+        },
+        {
+          "compact": "esctocancel"
+        }
       ],
       "buttonRules": [
-        { "compact": "1yescontinue2noquit",          "labels": ["Yes, continue", "No, quit"] },
-        { "compact": "1approveandrun2deny",          "labels": ["Approve and run", "Deny"] },
-        { "compact": "1alwaysapprove2approve3deny",  "labels": ["Always approve", "Approve", "Deny"] }
+        {
+          "compact": "1yescontinue2noquit",
+          "labels": [
+            "Yes, continue",
+            "No, quit"
+          ]
+        },
+        {
+          "compact": "1approveandrun2deny",
+          "labels": [
+            "Approve and run",
+            "Deny"
+          ]
+        },
+        {
+          "compact": "1alwaysapprove2approve3deny",
+          "labels": [
+            "Always approve",
+            "Approve",
+            "Deny"
+          ]
+        }
       ],
       "scope": "tail-window",
       "tailWindowLines": 24
     },
     "dispatchOrder": {
       "$schema": "adhdev:tui/dispatch-order@1",
-      "order": ["modal", "spinner", "settled-prompt"],
+      "order": [
+        "modal",
+        "spinner",
+        "settled-prompt"
+      ],
       "onNoMatch": "idle"
     }
   },
@@ -121,16 +223,60 @@
     }
   },
   "settings": {
-    "notifications":              { "type": "boolean", "default": true,  "public": true, "label": "Notifications",                  "description": "Display notifications on state changes" },
-    "autoApprove":                { "type": "boolean", "default": false, "public": true, "label": "Auto Approve",                    "description": "Automatically approve all tool calls" },
-    "approvalAlert":              { "type": "boolean", "default": true,  "public": true, "label": "Approval Notifications",          "description": "Show notification when approval is needed" },
-    "longGeneratingAlert":        { "type": "boolean", "default": true,  "public": true, "label": "Long Generation Alert",           "description": "Alert when generation takes too long" },
-    "longGeneratingThresholdSec": { "type": "number",  "default": 180,   "public": true, "label": "Long Generation Threshold (sec)", "min": 30, "max": 600 }
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
   },
   "capabilities": {
-    "input":    { "multipart": true, "mediaTypes": ["text", "image"] },
-    "output":   { "richContent": false, "mediaTypes": ["text"] },
-    "controls": { "typedResults": true }
+    "input": {
+      "multipart": true,
+      "mediaTypes": [
+        "text",
+        "image"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
   },
   "meshCoordinator": {
     "supported": true,

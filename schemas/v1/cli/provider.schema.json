@@ -65,6 +65,30 @@
       "type": "string",
       "description": "Short blurb shown in marketplace."
     },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "External links shown in the marketplace detail view.",
+      "properties": {
+        "homepage":  { "type": "string", "format": "uri", "description": "Provider home page." },
+        "repo":      { "type": "string", "format": "uri", "description": "Source repository (typically GitHub)." },
+        "docs":      { "type": "string", "format": "uri", "description": "Documentation root." },
+        "install":   { "type": "string", "format": "uri", "description": "Install guide page." },
+        "issues":    { "type": "string", "format": "uri", "description": "Issue tracker." }
+      }
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Install hints displayed in the marketplace. Each field is an optional CLI command users can run.",
+      "properties": {
+        "homebrew":  { "type": "string", "description": "Homebrew install command, e.g. \"brew install foo\"." },
+        "npm":       { "type": "string", "description": "npm install command, e.g. \"npm i -g foo\"." },
+        "pip":       { "type": "string", "description": "pip install command." },
+        "curl":      { "type": "string", "description": "curl/wget install one-liner." },
+        "manual":    { "type": "string", "description": "Free-form install note when no package manager applies." }
+      }
+    },
     "disableUpstream": {
       "type": "boolean",
       "description": "When true, daemon does not auto-sync this provider from registry. claude-cli uses this for explicit-version pinning."
