@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.3",
+  "providerVersion": "1.1.4",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -264,5 +264,15 @@
     "type": "github",
     "repo": "vilmire/adhdev-providers",
     "ref": "main"
+  },
+  "canonicalHistory": {
+    "format": "antigravity-cli-transcript-jsonl",
+    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript*.jsonl;~/.gemini/antigravity-cli/conversations/*.pb",
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   }
 }
