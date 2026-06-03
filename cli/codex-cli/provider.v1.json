@@ -200,6 +200,26 @@
         "settled-prompt"
       ],
       "onNoMatch": "idle"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^[>•]\\s+(.*)$"
+      },
+      "userPrefix": {
+        "regex": "^[▌›❯]\\s+(.*)$"
+      },
+      "chromePatterns": [
+        { "regex": "^>_\\s+OpenAI Codex", "flags": "i" },
+        { "regex": "^Tip:", "flags": "i" },
+        { "regex": "^Starting MCP servers?", "flags": "i" },
+        { "regex": "esc to interrupt", "flags": "i" },
+        { "regex": "^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+", "label": "box-drawing" },
+        { "regex": "model:\\s+", "flags": "i" },
+        { "regex": "directory:\\s+", "flags": "i" },
+        { "regex": "permissions:\\s+", "flags": "i" }
+      ],
+      "scope": "buffer"
     }
   },
   "nativeHistory": {
