@@ -1,0 +1,73 @@
+name: Validate CLI providers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cli/**'
+      - 'schemas/v1/cli/**'
+      - 'scripts/validate-cli-schema.mjs'
+      - '.github/workflows/validate-cli.yml'
+  pull_request:
+    paths:
+      - 'cli/**'
+      - 'schemas/v1/cli/**'
+      - 'scripts/validate-cli-schema.mjs'
+      - '.github/workflows/validate-cli.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # We need the oss/ submodule for the ajv dependency the validator loads.
+          # adhdev-providers is itself a submodule of adhdev-cloud; for now we
+          # bootstrap a minimal install on top.
+          submodules: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install ajv (minimal, isolated)
+        run: |
+          mkdir -p .ci-deps
+          cd .ci-deps
+          npm init -y > /dev/null
+          npm install --no-save --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
+
+      - name: Validate all CLI provider manifests
+        run: |
+          # Adapt validator path resolution for CI (ajv comes from .ci-deps not ../oss).
+          AJV_DIR="$PWD/.ci-deps/node_modules" node -e "
+            const Ajv = require(process.env.AJV_DIR + '/ajv/dist/2020.js').default;
+            const addFormats = require(process.env.AJV_DIR + '/ajv-formats').default;
+            const { readFileSync, readdirSync, statSync } = require('node:fs');
+            const { join } = require('node:path');
+            const schema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json','utf-8'));
+            const ajv = new Ajv({allErrors:true, strict:false});
+            addFormats(ajv);
+            const validate = ajv.compile(schema);
+            const production = new Set(['codex-cli','claude-cli','hermes-cli','antigravity-cli']);
+            let failed = 0;
+            for (const name of readdirSync('cli').filter(n => n !== '_shared')) {
+              const mp = join('cli', name, 'provider.json');
+              try { statSync(mp); } catch { continue; }
+              const data = JSON.parse(readFileSync(mp,'utf-8'));
+              const ok = validate(data);
+              const tier = production.has(name) ? '[production]' : '[experimental]';
+              if (ok) console.log('✓', tier.padEnd(15), name);
+              else {
+                failed++;
+                console.log('✗', tier.padEnd(15), name);
+                for (const e of validate.errors) console.log('  ', e.instancePath || '/', e.message);
+              }
+            }
+            console.log();
+            console.log('Failed:', failed);
+            process.exit(failed === 0 ? 0 : 1);
+          "
+        env:
+          AJV_DIR: ${{ github.workspace }}/.ci-deps/node_modules

@@ -1,0 +1,68 @@
+# CODEOWNERS for adhdev-providers
+#
+# This file declares default reviewers for every provider directory.
+# Adding your handle to a provider line lets you self-merge changes to it
+# (subject to repository branch protection rules).
+#
+# Format: <path> <@github-handle ...>
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-configuration/customizing-your-repository/about-code-owners
+
+# Default — anything not covered below.
+*                              @vilmire
+
+# Contract docs + schemas — change cautiously, must keep all production
+# providers passing validation.
+/docs/                         @vilmire
+/schemas/                      @vilmire
+/scripts/                      @vilmire
+/.github/                      @vilmire
+
+# Helpers and registry metadata are also project-wide.
+/cli/_shared/                  @vilmire
+/_helpers/                     @vilmire
+registry.json                  @vilmire
+validate.js                    @vilmire
+COMPATIBILITY.md               @vilmire
+CONTRIBUTING.md                @vilmire
+README.md                      @vilmire
+LICENSE                        @vilmire
+
+# ── Per-provider ownership ─────────────────────────────────────────────
+# Add a co-owner by appending their @github-handle to the relevant line
+# below. Co-owners can review and merge PRs touching their provider
+# without waiting for top-level maintainers.
+
+# CLI providers — production
+/cli/codex-cli/                @vilmire
+/cli/claude-cli/               @vilmire
+/cli/antigravity-cli/          @vilmire
+/cli/hermes-cli/               @vilmire
+
+# CLI providers — experimental
+/cli/aider-cli/                @vilmire
+/cli/cursor-cli/               @vilmire
+/cli/gemini-cli/               @vilmire
+/cli/github-copilot-cli/       @vilmire
+/cli/goose-cli/                @vilmire
+/cli/opencode-cli/             @vilmire
+
+# IDE providers
+/ide/antigravity/              @vilmire
+/ide/cursor/                   @vilmire
+/ide/kiro/                     @vilmire
+/ide/pearai/                   @vilmire
+/ide/trae/                     @vilmire
+/ide/vscode/                   @vilmire
+/ide/vscodium/                 @vilmire
+/ide/windsurf/                 @vilmire
+
+# Extension providers
+/extension/claude-code-vscode/ @vilmire
+/extension/cline/              @vilmire
+/extension/codex/              @vilmire
+/extension/roo-code/           @vilmire
+
+# ACP providers — owned by the same maintainer for now; community
+# contributors should add themselves here when they take over an
+# individual ACP entry.
+/acp/                          @vilmire

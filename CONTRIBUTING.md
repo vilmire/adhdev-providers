@@ -2,6 +2,40 @@
 
 > How to add new providers or improve existing ones for ADHDev.
 
+## Read this first
+
+External contributions follow the **CLI provider contract v1**:
+[`docs/provider-contract/cli/v1.md`](./docs/provider-contract/cli/v1.md).
+
+That document is the source of truth for what a CLI provider must
+export, what input it receives, and what it returns. It exists so you
+do not have to read the daemon-core source to get started.
+
+If you are looking at the implementations of the 4 production CLI
+providers (codex, claude, antigravity, hermes), the line-level audit
+in [`docs/provider-contract/cli/audit-cli-v1.md`](./docs/provider-contract/cli/audit-cli-v1.md)
+tells you which parts of each provider follow standard patterns
+(reusable in your own provider) vs which are provider-specific quirks.
+
+For the bigger picture of where this is going — the provider
+marketplace, the SDK packages (`@adhdev/provider-types`,
+`@adhdev/provider-schemas`), declarative vs override tier, trust
+model — see the design document at
+[`adhdev-cloud/docs/design/provider-marketplace.md`](../adhdev-cloud/docs/design/provider-marketplace.md).
+
+## Validation
+
+Every CLI provider must pass the v1 JSON schema. Validate locally:
+
+```bash
+node scripts/validate-cli-schema.mjs              # all CLI providers
+node scripts/validate-cli-schema.mjs my-cli       # a specific one
+```
+
+CI runs the same check on every PR (see
+`.github/workflows/validate-cli.yml`). PRs that break schema
+validation are blocked from merging.
+
 ## Quick Start
 
 ## Inventory vs Support
