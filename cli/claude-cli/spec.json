@@ -12,9 +12,9 @@
 
   "layout": {
     "sections": [
-      { "id": "footer",     "from_bottom": "10%" },
-      { "id": "modal_zone", "from_bottom": "50%", "until": { "section": "footer" } },
-      { "id": "body",       "from_top": 0,        "until": { "section": "modal_zone" } }
+      { "id": "footer",     "from_bottom": 3 },
+      { "id": "modal_zone", "from_bottom": 20, "until": { "section": "footer" } },
+      { "id": "body",       "from_top": 0,    "until": { "section": "modal_zone" } }
     ]
   },
 
@@ -25,7 +25,6 @@
       "when":           { "section": "footer",     "regex": "Esc to cancel" },
       "extract_title":  { "section": "modal_zone", "regex": "Do you want to ([^?]+)\\?" },
       "modal_buttons": {
-        "section": "modal_zone",
         "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
         "key_for_index": "{index}\r",
         "min_count": 2
