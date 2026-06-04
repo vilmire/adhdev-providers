@@ -1,0 +1,17 @@
+{
+  "description": "agy approval modal — bash exec permission, 2026-06-05",
+  "input": {
+    "screenText": "\n                  Antigravity CLI 1.0.5\n                  jasminenaka67@gmail.com (Google AI Ultra)\n                  Gemini 3.1 Pro (High)\n                  ~/Work/adhdev/oss/packages/daemon-core\n              \n\n────────────────────────────────────────────────────────────\n> run 'echo capture' in bash\n\n▸ Thought for 6s, 399 tokens\n  Prioritizing Tool Usage\n\n● Bash(bash -c 'echo capture') (ctrl+o to expand)\n\nCommand\n────────────────────────────────────────────────────────────────────────────────────────────────────\n\n  Requesting permission for: bash -c 'echo capture'\n\nDo you want to proceed?\n> 1. Yes\n  2. No\n\n  ↑/↓ Navigate · tab Amend · e edit command\n\nResume: agy --conversation=4fe0afa0-b20e-4746-90b6-aaa6d992524e (or -c)",
+    "buffer": "\n                  Antigravity CLI 1.0.5\n                  jasminenaka67@gmail.com (Google AI Ultra)\n                  Gemini 3.1 Pro (High)\n                  ~/Work/adhdev/oss/packages/daemon-core\n              \n\n────────────────────────────────────────────────────────────\n> run 'echo capture' in bash\n\n▸ Thought for 6s, 399 tokens\n  Prioritizing Tool Usage\n\n● Bash(bash -c 'echo capture') (ctrl+o to expand)\n\nCommand\n────────────────────────────────────────────────────────────────────────────────────────────────────\n\n  Requesting permission for: bash -c 'echo capture'\n\nDo you want to proceed?\n> 1. Yes\n  2. No\n\n  ↑/↓ Navigate · tab Amend · e edit command\n\nResume: agy --conversation=4fe0afa0-b20e-4746-90b6-aaa6d992524e (or -c)",
+    "tail": "\n                  Antigravity CLI 1.0.5\n                  jasminenaka67@gmail.com (Google AI Ultra)\n                  Gemini 3.1 Pro (High)\n                  ~/Work/adhdev/oss/packages/daemon-core\n              \n\n────────────────────────────────────────────────────────────\n> run 'echo capture' in bash\n\n▸ Thought for 6s, 399 tokens\n  Prioritizing Tool Usage\n\n● Bash(bash -c 'echo capture') (ctrl+o to expand)\n\nCommand\n────────────────────────────────────────────────────────────────────────────────────────────────────\n\n  Requesting permission for: bash -c 'echo capture'\n\nDo you want to proceed?\n> 1. Yes\n  2. No\n\n  ↑/↓ Navigate · tab Amend · e edit command\n\nResume: agy --conversation=4fe0afa0-b20e-4746-90b6-aaa6d992524e (or -c)",
+    "rawBuffer": "\n                  Antigravity CLI 1.0.5\n                  jasminenaka67@gmail.com (Google AI Ultra)\n                  Gemini 3.1 Pro (High)\n                  ~/Work/adhdev/oss/packages/daemon-core\n              \n\n────────────────────────────────────────────────────────────\n> run 'echo capture' in bash\n\n▸ Thought for 6s, 399 tokens\n  Prioritizing Tool Usage\n\n● Bash(bash -c 'echo capture') (ctrl+o to expand)\n\nCommand\n────────────────────────────────────────────────────────────────────────────────────────────────────\n\n  Requesting permission for: bash -c 'echo capture'\n\nDo you want to proceed?\n> 1. Yes\n  2. No\n\n  ↑/↓ Navigate · tab Amend · e edit command\n\nResume: agy --conversation=4fe0afa0-b20e-4746-90b6-aaa6d992524e (or -c)",
+    "isWaitingForResponse": true
+  },
+  "expected": {
+    "state": "approval",
+    "buttons": [
+      "Yes",
+      "No"
+    ]
+  }
+}

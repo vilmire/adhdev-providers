@@ -1,0 +1,65 @@
+{
+  "$schema": "adhdev:cli/spec@1",
+
+  "id": "antigravity-cli",
+  "name": "Antigravity CLI",
+  "binary": "agy",
+  "spawn_args": [],
+
+  "send_message": {
+    "submit_key": "\r"
+  },
+
+  "layout": {
+    "sections": [
+      { "id": "footer",     "from_bottom": 3 },
+      { "id": "modal_zone", "from_bottom": 18, "until": { "section": "footer" } },
+      { "id": "body",       "from_top": 0,    "until": { "section": "modal_zone" } }
+    ]
+  },
+
+  "states": [
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "when":           { "regex": "Requesting permission for|Do you want to proceed\\?" },
+      "extract_title":  { "regex": "Requesting permission for:\\s*([^\\n]+)" },
+      "modal_buttons": {
+        "pattern": "^\\s*(?:[>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+        "key_for_index": "{index}\r",
+        "min_count": 2
+      }
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "when": { "regex": "Generating\\.\\.\\.|esc to cancel" }
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "when": { "section": "footer", "regex": "\\? for shortcuts" }
+    }
+  ],
+  "default_state": "idle",
+
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": ["busy"],
+      "action": { "type": "send_keys", "keys": "\u001b" }
+    }
+  ],
+
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Antigravity",
+      "body": "{state.title}"
+    }
+  ],
+
+  "delegate": []
+}
