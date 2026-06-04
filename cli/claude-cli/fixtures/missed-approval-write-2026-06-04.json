@@ -1,0 +1,27 @@
+{
+  "description": "Missed approval — Claude Write modal with dashed inner separators. Captured 2026-06-04, issue #137.",
+  "origin": {
+    "bundle": "chat-debug-20260604T093009333Z-ff4ac6cb-01e2-43a3-b21a-18e6623564ad-247f6693.json",
+    "capturedAt": "2026-06-04T09:30:09.330Z",
+    "providerType": "claude-cli",
+    "claudeVersion": "Claude Code v2.1.150 / Opus 4.7"
+  },
+  "input": {
+    "buffer": " ▐▛███▜▌   Claude Code v2.1.150\n▝▜█████▛▘  Opus 4.7 (1M context) with high effort · Claude Max\n  ▘▘ ▝▝    ~/Work/adhdev\n\n❯ Create a tiny file at /tmp/adhdev-approval-test.txt with the single word\n  \"hello\" inside. Just do it — do not ask me, but Claude Code will still prompt\n   for write permission, which is expected.\n\n⏺ Write(/tmp/adhdev-approval-test.txt)\n\n────────────────────────────────────────────────────────────────────────────────\n Create file\n ../../../../tmp/adhdev-approval-test.txt\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n  1 hello\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n Do you want to create adhdev-approval-test.txt?\n ❯ 1. Yes\n   2. Yes, allow all edits in tmp/ during this session (shift+tab)\n   3. No\n\n Esc to cancel · Tab to amend",
+    "screenText": " ▐▛███▜▌   Claude Code v2.1.150\n▝▜█████▛▘  Opus 4.7 (1M context) with high effort · Claude Max\n  ▘▘ ▝▝    ~/Work/adhdev\n\n❯ Create a tiny file at /tmp/adhdev-approval-test.txt with the single word\n  \"hello\" inside. Just do it — do not ask me, but Claude Code will still prompt\n   for write permission, which is expected.\n\n⏺ Write(/tmp/adhdev-approval-test.txt)\n\n────────────────────────────────────────────────────────────────────────────────\n Create file\n ../../../../tmp/adhdev-approval-test.txt\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n  1 hello\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n Do you want to create adhdev-approval-test.txt?\n ❯ 1. Yes\n   2. Yes, allow all edits in tmp/ during this session (shift+tab)\n   3. No\n\n Esc to cancel · Tab to amend",
+    "rawBuffer": " ▐▛███▜▌   Claude Code v2.1.150\n▝▜█████▛▘  Opus 4.7 (1M context) with high effort · Claude Max\n  ▘▘ ▝▝    ~/Work/adhdev\n\n❯ Create a tiny file at /tmp/adhdev-approval-test.txt with the single word\n  \"hello\" inside. Just do it — do not ask me, but Claude Code will still prompt\n   for write permission, which is expected.\n\n⏺ Write(/tmp/adhdev-approval-test.txt)\n\n────────────────────────────────────────────────────────────────────────────────\n Create file\n ../../../../tmp/adhdev-approval-test.txt\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n  1 hello\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n Do you want to create adhdev-approval-test.txt?\n ❯ 1. Yes\n   2. Yes, allow all edits in tmp/ during this session (shift+tab)\n   3. No\n\n Esc to cancel · Tab to amend",
+    "tail": "❯ Create a tiny file at /tmp/adhdev-approval-test.txt with the single word\n  \"hello\" inside. Just do it — do not ask me, but Claude Code will still prompt\n   for write permission, which is expected.\n\n⏺ Write(/tmp/adhdev-approval-test.txt)\n\n────────────────────────────────────────────────────────────────────────────────\n Create file\n ../../../../tmp/adhdev-approval-test.txt\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n  1 hello\n╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌\n Do you want to create adhdev-approval-test.txt?\n ❯ 1. Yes\n   2. Yes, allow all edits in tmp/ during this session (shift+tab)\n   3. No\n\n Esc to cancel · Tab to amend",
+    "isWaitingForResponse": true
+  },
+  "expected": {
+    "parseApproval": {
+      "message": "Approval requested",
+      "buttons": [
+        "Yes",
+        "Yes, allow all edits in tmp/ during this session (shift+tab)",
+        "No"
+      ]
+    },
+    "detectStatus": "waiting_approval"
+  }
+}

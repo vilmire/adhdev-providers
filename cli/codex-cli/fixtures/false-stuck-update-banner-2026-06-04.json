@@ -1,0 +1,19 @@
+{
+  "description": "False stuck — codex update banner classified as waiting_approval. Captured 2026-06-04, issue #136. Fixed: parser now rejects banner via NONAPPROVAL_BANNER_RE.",
+  "origin": {
+    "bundle": "chat-debug-20260604T092815674Z-b8e82430-c90a-4223-9964-217511fd443f-356f8005.json",
+    "capturedAt": "2026-06-04T09:28:15.669Z",
+    "providerType": "codex-cli",
+    "codexVersion": "0.136.0 (with 0.137.0 update banner)"
+  },
+  "input": {
+    "buffer": "  ✨ Update available! 0.136.0 -> 0.137.0\n\n  Release notes: https://github.com/openai/codex/releases/latest\n\n› 1. Update now (runs `npm install -g @openai/codex`)\n  2. Skip\n  3. Skip until next version\n\n  Press enter to continue",
+    "screenText": "  ✨ Update available! 0.136.0 -> 0.137.0\n\n  Release notes: https://github.com/openai/codex/releases/latest\n\n› 1. Update now (runs `npm install -g @openai/codex`)\n  2. Skip\n  3. Skip until next version\n\n  Press enter to continue",
+    "rawBuffer": "  ✨ Update available! 0.136.0 -> 0.137.0\n\n  Release notes: https://github.com/openai/codex/releases/latest\n\n› 1. Update now (runs `npm install -g @openai/codex`)\n  2. Skip\n  3. Skip until next version\n\n  Press enter to continue",
+    "tail": "  ✨ Update available! 0.136.0 -> 0.137.0\n\n  Release notes: https://github.com/openai/codex/releases/latest\n\n› 1. Update now (runs `npm install -g @openai/codex`)\n  2. Skip\n  3. Skip until next version\n\n  Press enter to continue"
+  },
+  "expected": {
+    "parseApproval": null,
+    "detectStatus": null
+  }
+}

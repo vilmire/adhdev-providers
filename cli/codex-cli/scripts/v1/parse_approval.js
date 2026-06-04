@@ -51,15 +51,17 @@ function compactText(value) {
 
 function hasCompactApprovalCue(value) {
     const compact = compactText(value);
+    // (fix #136) "Update available!" and "Approaching rate limits" are codex
+    // *banners*, not ADHDev approval modals — codex handles their numbered
+    // 1/2/3 menus on its own input channel. If we classify them as
+    // waiting_approval the daemon reports a stuck session at launch even
+    // though the user is just looking at an upgrade nag.
     return compact.includes('doyoutrustthecontentsofthisdirectory')
         || compact.includes('workingwithuntrustedcontents')
         || compact.includes('youarerunningcodexin')
         || compact.includes('allowcodextorun')
         || compact.includes('allowcodextoapply')
-        || compact.includes('allowcommand')
-        || compact.includes('updateavailable')
-        || compact.includes('approachingratelimits')
-        || /switchtogpt[\w]+forlowercreditusage/.test(compact);
+        || compact.includes('allowcommand');
 }
 
 function hasCompactApprovalButton(value) {
@@ -105,7 +107,7 @@ function stripLeadMarker(s) {
 
 // ─── Line classifiers ───────────────────────────
 
-const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
+const CUE_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?/i;
 const BUTTON_RE = /^\d+\.\s*/;
 const FOOTER_RE = /⏎\s+send|⌃[JTC]\s+|Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 const BOX_RE = /^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+$/;
@@ -124,6 +126,11 @@ function normalizeButton(line) {
 
 // ─── Export ──────────────────────────────────────
 
+// (fix #136) Codex renders these banners as full-screen modal-looking
+// prompts with numbered options and "Press enter to continue" — they
+// pattern-match approval signatures but are NOT ADHDev approvals.
+const CODEX_NONAPPROVAL_BANNER_RE = /Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
+
 module.exports = function parseApproval(input) {
     const screen = String(input?.screenText || '');
     const text = [screen, input?.rawBuffer, input?.buffer, input?.tail]
@@ -136,6 +143,7 @@ module.exports = function parseApproval(input) {
     // Check if there's actually an approval screen visible
     const window = lines.slice(-24).map(normalize).filter(Boolean);
     const windowBlock = window.join('\n');
+    if (CODEX_NONAPPROVAL_BANNER_RE.test(windowBlock)) return null;
     const hasCue = window.some(l => CUE_RE.test(l) || hasCompactApprovalCue(l)) || hasCompactApprovalCue(windowBlock);
     const hasButton = window.some(l => isButton(l) || hasCompactApprovalButton(l)) || hasCompactApprovalButton(windowBlock);
     const hasFooter = window.some(l => FOOTER_RE.test(l) || hasCompactApprovalFooter(l)) || hasCompactApprovalFooter(windowBlock);

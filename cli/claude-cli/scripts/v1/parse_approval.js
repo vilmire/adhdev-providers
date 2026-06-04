@@ -75,7 +75,7 @@ function isSettingsWarningCue(line) {
 
 function isApprovalQuestionLine(line) {
     const trimmed = normalize(line);
-    return /Do you want to (?:proceed|make this edit|run this command|allow)/i.test(trimmed)
+    return /Do you want to (?:proceed|make this edit|run this command|allow|create|delete|remove|write|edit|modify|update|overwrite|replace|move|rename|read)/i.test(trimmed)
         || /^What do you want to do\??$/i.test(trimmed);
 }
 
@@ -142,6 +142,11 @@ function findLastIndex(lines, predicate) {
 function isSeparatorLine(text) {
     const stripped = String(text || '').replace(/\s+/g, '');
     if (stripped.length < 10) return false;
+    // Only count solid box-drawing separators (U+2500 ─, U+2501 ━, U+2550 ═).
+    // Claude also renders dashed lines (U+254C ╌, U+254D ╍) INSIDE approval
+    // modals to delimit file previews — those are intra-modal and must NOT
+    // close the scope, otherwise the button list below the dashed footer
+    // gets sliced off.
     return /^[─━═]+$/.test(stripped);
 }
 
@@ -201,7 +206,7 @@ function parseApprovalFromLines(lines, sourceText) {
     const choiceMenu = hasChoiceMenuStructure(recent);
     const mcpServer = normalizedRecent.some(isNewMCPServerCue);
     const settingsWarning = hasSettingsWarningMenu(recent);
-    const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(scopedSourceText);
+    const explicitApproval = /This command requires approval|Do you want to (?:proceed|make this edit|run this command|allow|create|delete|remove|write|edit|modify|update|overwrite|replace|move|rename|read)|Allow\s*once|Always\s*allow|\(y\/n\)|\[Y\/n\]/i.test(scopedSourceText);
     const hasApproval = startupTrust || choiceMenu || explicitApproval || mcpServer || settingsWarning;
     if (!hasApproval) return null;
 

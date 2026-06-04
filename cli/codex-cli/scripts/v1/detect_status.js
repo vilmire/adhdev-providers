@@ -30,15 +30,16 @@ function compactText(value) {
 
 function hasCompactApprovalCue(value) {
     const compact = compactText(value);
+    // (fix #136) Codex banners ("Update available!", "Approaching rate
+    // limits", model-switch nags) are not ADHDev-approval modals — codex
+    // handles them on its own input channel. Classifying them as
+    // waiting_approval traps the session at launch.
     return compact.includes('doyoutrustthecontentsofthisdirectory')
         || compact.includes('workingwithuntrustedcontents')
         || compact.includes('youarerunningcodexin')
         || compact.includes('allowcodextorun')
         || compact.includes('allowcodextoapply')
-        || compact.includes('allowcommand')
-        || compact.includes('updateavailable')
-        || compact.includes('approachingratelimits')
-        || /switchtogpt[\w]+forlowercreditusage/.test(compact);
+        || compact.includes('allowcommand');
 }
 
 function hasCompactApprovalButton(value) {
@@ -57,7 +58,7 @@ function hasCompactApprovalFooter(value) {
 
 // ─── Matchers ────────────────────────────────────
 
-const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?|Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
+const APPROVAL_RE = /Do you trust the contents of this directory\?|Working with untrusted contents|You are running Codex in|Allow Codex to (?:run|apply)|Allow command\?/i;
 const APPROVAL_BUTTON_RE = /^(?:[▌>›❯]\s*)?\d+\.\s*\S|(?:^|\s)\d+\.\s*\S|Approve and run now|Always approve this session/i;
 const APPROVAL_FOOTER_RE = /Press [Ee]nter to (?:continue|confirm)|Esc to cancel/i;
 
@@ -132,9 +133,15 @@ function hasActiveToolActivityAfterIdle(rawText) {
     return lastTool > lastIdlePromptIndex(source);
 }
 
+// (fix #136) Banners that look like approvals but are not handled via the
+// ADHDev approval channel. If the visible window contains one of these,
+// suppress the waiting_approval verdict outright.
+const NONAPPROVAL_BANNER_RE = /Update available!|Approaching rate limits|Switch to gpt-[\w.-]+ for lower credit usage/i;
+
 function hasApproval(lines) {
     const window = lines.slice(-18);
     const block = window.join('\n');
+    if (NONAPPROVAL_BANNER_RE.test(block)) return false;
     const hasCue = window.some(l => APPROVAL_RE.test(l) || hasCompactApprovalCue(l)) || hasCompactApprovalCue(block);
     const hasButton = window.some(l => APPROVAL_BUTTON_RE.test(l) || hasCompactApprovalButton(l)) || hasCompactApprovalButton(block);
     const hasFooter = window.some(l => APPROVAL_FOOTER_RE.test(l) || hasCompactApprovalFooter(l)) || hasCompactApprovalFooter(block);
