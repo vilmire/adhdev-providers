@@ -1,27 +1,91 @@
 {
   "$schema": "adhdev:cli/spec@1",
+
   "id": "claude-cli",
+  "name": "Claude Code",
   "binary": "claude",
   "spawn_args": ["--permission-mode", "default"],
-  "send": {
-    "submit": "\r"
+
+  "send_message": {
+    "submit_key": "\r"
   },
-  "decision": {
-    "numbered_choice_pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
-    "footer_patterns": [
-      "Esc to cancel"
-    ],
-    "min_choices": 2,
-    "choice_key": "{index}\r"
-  },
-  "busy": {
-    "patterns": [
-      "esc to interrupt"
+
+  "layout": {
+    "sections": [
+      { "id": "footer",     "from_bottom": "10%" },
+      { "id": "modal_zone", "from_bottom": "50%", "until": { "section": "footer" } },
+      { "id": "body",       "from_top": 0,        "until": { "section": "modal_zone" } }
     ]
   },
-  "idle": {
-    "patterns": [
-      "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
-    ]
-  }
+
+  "states": [
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "when":           { "section": "footer",     "regex": "Esc to cancel" },
+      "extract_title":  { "section": "modal_zone", "regex": "Do you want to ([^?]+)\\?" },
+      "modal_buttons": {
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+        "key_for_index": "{index}\r",
+        "min_count": 2
+      }
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "when": { "section": "footer", "regex": "esc to interrupt" }
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "when": { "section": "footer", "regex": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)" }
+    }
+  ],
+  "default_state": "idle",
+
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": ["busy"],
+      "action": { "type": "send_keys", "keys": "\u0003" }
+    },
+    {
+      "id": "set_model",
+      "label": "Model",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "open_picker",
+        "trigger_keys": "/model\r",
+        "wait_for": { "section": "modal_zone", "regex": "Select a model" },
+        "extract_choices": {
+          "section": "modal_zone",
+          "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+        },
+        "submit_key": "{index}\r"
+      }
+    },
+    {
+      "id": "attach_image",
+      "label": "📎",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "attach_image",
+        "method": "tempfile_then_keys",
+        "keys_template": "{path}\r"
+      }
+    }
+  ],
+
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Claude Code",
+      "body": "{state.title}"
+    }
+  ],
+
+  "delegate": []
 }
