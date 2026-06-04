@@ -61,5 +61,24 @@
     }
   ],
 
-  "delegate": []
+  "delegate": [],
+
+  "native_history": {
+    "format": "jsonl_lines",
+    "location": {
+      "directory": "~/.gemini/antigravity-cli/brain",
+      "file_pattern": "*",
+      "pick": "newest_by_mtime"
+    },
+    "message_extractor": {
+      "role_field": "type",
+      "content_field": "content",
+      "timestamp_field": "created_at",
+      "skip_if": [
+        { "field": "type", "equals": "CONVERSATION_HISTORY" },
+        { "field": "type", "equals": "SYSTEM_NOTIFICATION" },
+        { "field": "status", "equals": "REJECTED" }
+      ]
+    }
+  }
 }

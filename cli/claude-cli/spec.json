@@ -86,5 +86,23 @@
     }
   ],
 
-  "delegate": []
+  "delegate": [],
+
+  "native_history": {
+    "format": "jsonl_lines",
+    "location": {
+      "directory": "~/.claude/projects/{cwd_slug:dashes}",
+      "file_pattern": "*.jsonl",
+      "pick": "newest_by_mtime"
+    },
+    "message_extractor": {
+      "role_field": "message.role",
+      "content_field": "message.content",
+      "timestamp_field": "timestamp",
+      "skip_if": [
+        { "field": "type", "equals": "file-history-snapshot" },
+        { "field": "isMeta", "equals": true }
+      ]
+    }
+  }
 }

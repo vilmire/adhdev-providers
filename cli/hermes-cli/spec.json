@@ -86,5 +86,19 @@
     }
   ],
 
-  "delegate": []
+  "delegate": [],
+
+  "native_history": {
+    "format": "json_single",
+    "location": {
+      "directory": "~/.hermes/sessions",
+      "file_pattern": "session_*.json",
+      "pick": "newest_by_mtime"
+    },
+    "message_extractor": {
+      "container_path": "messages",
+      "role_field": "role",
+      "content_field": "content"
+    }
+  }
 }

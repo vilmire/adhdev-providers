@@ -113,5 +113,24 @@
     }
   ],
 
-  "delegate": []
+  "delegate": [],
+
+  "native_history": {
+    "format": "jsonl_lines",
+    "location": {
+      "directory": "~/.codex/sessions/{year}/{month}/{day}",
+      "file_pattern": "*.jsonl",
+      "pick": "newest_by_mtime"
+    },
+    "message_extractor": {
+      "role_field": "payload.role",
+      "content_field": "payload.content",
+      "content_text_path": "[0].text",
+      "timestamp_field": "timestamp",
+      "skip_if": [
+        { "field": "type", "equals": "session_meta" },
+        { "field": "type", "equals": "event_msg" }
+      ]
+    }
+  }
 }
