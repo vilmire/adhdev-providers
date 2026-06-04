@@ -2,6 +2,7 @@
   "$schema": "adhdev:cli/spec@1",
   "id": "claude-cli",
   "binary": "claude",
+  "spawn_args": ["--permission-mode", "default"],
   "send": {
     "submit": "\r"
   },
