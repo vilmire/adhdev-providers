@@ -76,10 +76,10 @@
   "compatibility": [
     {
       "ideVersion": ">=2.1.0",
-      "scriptDir": "scripts/1.0"
+      "scriptDir": "scripts/v1"
     }
   ],
-  "defaultScriptDir": "scripts/1.0",
+  "defaultScriptDir": "scripts/v1",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
@@ -193,7 +193,11 @@
     "format": "claude-jsonl",
     "watchPath": "~/.claude/projects/**/*.jsonl",
     "mode": "native-source",
-    "contractVersion": "2.0"
+    "contractVersion": "2.0",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
   },
   "overrides": {},
   "settings": {
@@ -265,15 +269,5 @@
     "type": "github",
     "repo": "vilmire/adhdev-providers",
     "ref": "main"
-  },
-  "canonicalHistory": {
-    "format": "claude-jsonl",
-    "watchPath": "~/.claude/projects/**/*.jsonl",
-    "mode": "native-source",
-    "contractVersion": "2.0",
-    "scripts": {
-      "readSession": "readNativeHistory",
-      "listSessions": "listNativeHistory"
-    }
   }
 }
