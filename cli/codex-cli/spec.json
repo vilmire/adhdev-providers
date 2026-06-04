@@ -1,0 +1,29 @@
+{
+  "$schema": "adhdev:cli/spec@1",
+  "id": "codex-cli",
+  "binary": "codex",
+  "spawn_args": ["--dangerously-bypass-approvals-and-sandbox"],
+  "send": {
+    "submit": "\r\n"
+  },
+  "decision": {
+    "numbered_choice_pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+    "footer_patterns": [
+      "Press enter to continue",
+      "Esc to cancel"
+    ],
+    "min_choices": 2,
+    "choice_key": "{index}\r"
+  },
+  "busy": {
+    "patterns": [
+      "esc to interrupt",
+      "Working\\s*\\("
+    ]
+  },
+  "idle": {
+    "patterns": [
+      "tab to queue message"
+    ]
+  }
+}
