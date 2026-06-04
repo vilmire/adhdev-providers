@@ -65,10 +65,10 @@
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
-      "scriptDir": "scripts/v1"
+      "scriptDir": "scripts/1.0"
     }
   ],
-  "defaultScriptDir": "scripts/v1",
+  "defaultScriptDir": "scripts/1.0",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",

@@ -57,10 +57,10 @@
   "compatibility": [
     {
       "ideVersion": ">=0.42.0",
-      "scriptDir": "scripts/v1"
+      "scriptDir": "scripts/1.0"
     }
   ],
-  "defaultScriptDir": "scripts/v1",
+  "defaultScriptDir": "scripts/1.0",
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
@@ -238,13 +238,7 @@
       "listSessions": "listNativeHistory"
     }
   },
-  "overrides": {
-    "detectStatus": {
-      "$schema": "adhdev:override/cli-detect-status@1",
-      "path": "scripts/v1/detect_status.js",
-      "reason": "Stateful idle-settle hold (2s + 3-frame confirmation). Codex shows the model footer (`› gpt-4o · /…`) while background tools run (`1 background terminal running`); without a temporal hold detect_status flips to idle prematurely. Same pattern as claude-cli's generating-hold; not expressible by pure (input) → verdict primitives."
-    }
-  },
+  "overrides": {},
   "settings": {
     "notifications": {
       "type": "boolean",
