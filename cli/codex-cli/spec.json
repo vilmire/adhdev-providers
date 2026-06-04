@@ -1,29 +1,46 @@
 {
   "$schema": "adhdev:cli/spec@1",
-
   "id": "codex-cli",
   "name": "Codex CLI",
   "binary": "codex",
   "spawn_args": [],
-
   "send_message": {
     "submit_key": "\r\n"
   },
-
   "layout": {
     "sections": [
-      { "id": "footer",     "from_bottom": "15%" },
-      { "id": "modal_zone", "from_bottom": "60%", "until": { "section": "footer" } },
-      { "id": "body",       "from_top": 0,        "until": { "section": "modal_zone" } }
+      {
+        "id": "footer",
+        "from_bottom": "15%"
+      },
+      {
+        "id": "modal_zone",
+        "from_bottom": "60%",
+        "until": {
+          "section": "footer"
+        }
+      },
+      {
+        "id": "body",
+        "from_top": 0,
+        "until": {
+          "section": "modal_zone"
+        }
+      }
     ]
   },
-
   "states": [
     {
       "id": "trust",
       "label": "Trust required",
-      "when":           { "section": "modal_zone", "regex": "Do you trust the contents of this directory\\?" },
-      "extract_title":  { "section": "modal_zone", "regex": "(Do you trust the contents of this directory\\?)" },
+      "when": {
+        "section": "modal_zone",
+        "regex": "Do you trust the contents of this directory\\?"
+      },
+      "extract_title": {
+        "section": "modal_zone",
+        "regex": "(Do you trust the contents of this directory\\?)"
+      },
       "modal_buttons": {
         "section": "modal_zone",
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
@@ -33,8 +50,12 @@
     {
       "id": "update_banner",
       "label": "Update available",
-      "when":           { "regex": "Update available!" },
-      "extract_title":  { "regex": "Update available! ([^\\n]+)" },
+      "when": {
+        "regex": "Update available!"
+      },
+      "extract_title": {
+        "regex": "Update available! ([^\\n]+)"
+      },
       "modal_buttons": {
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
         "key_for_index": "{index}\r"
@@ -43,8 +64,14 @@
     {
       "id": "approval",
       "label": "Approval requested",
-      "when":           { "section": "footer",     "regex": "Allow command\\?|Allow Codex to" },
-      "extract_title":  { "section": "modal_zone", "regex": "(Allow command\\?|Allow Codex to [^\\n]+)" },
+      "when": {
+        "section": "footer",
+        "regex": "Allow command\\?|Allow Codex to"
+      },
+      "extract_title": {
+        "section": "modal_zone",
+        "regex": "(Allow command\\?|Allow Codex to [^\\n]+)"
+      },
       "modal_buttons": {
         "section": "modal_zone",
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
@@ -54,31 +81,46 @@
     {
       "id": "busy",
       "label": "Working",
-      "when": { "section": "footer", "regex": "esc to interrupt|Working \\(" }
+      "when": {
+        "section": "footer",
+        "regex": "esc to interrupt|Working \\("
+      }
     },
     {
       "id": "idle",
       "label": "Ready",
-      "when": { "section": "footer", "regex": "tab to queue message|⏎\\s+send" }
+      "when": {
+        "section": "footer",
+        "regex": "tab to queue message|⏎\\s+send"
+      }
     }
   ],
   "default_state": "idle",
-
   "control_bar": [
     {
       "id": "stop",
       "label": "Stop",
-      "visible_when_state": ["busy"],
-      "action": { "type": "send_keys", "keys": "\u0003" }
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
     },
     {
       "id": "set_model",
       "label": "Model",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "open_picker",
         "trigger_keys": "/model\r",
-        "wait_for": { "section": "modal_zone", "regex": "Select a model|switch to a different model" },
+        "wait_for": {
+          "section": "modal_zone",
+          "regex": "Select a model|switch to a different model"
+        },
         "extract_choices": {
           "section": "modal_zone",
           "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
@@ -89,7 +131,9 @@
     {
       "id": "attach_image",
       "label": "📎",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "attach_image",
         "method": "tempfile_then_keys",
@@ -97,7 +141,6 @@
       }
     }
   ],
-
   "notifications": [
     {
       "id": "approval_needed",
@@ -112,25 +155,8 @@
       "body": "{state.title}"
     }
   ],
-
   "delegate": [],
-
   "native_history": {
-    "format": "jsonl_lines",
-    "location": {
-      "directory": "~/.codex/sessions/{year}/{month}/{day}",
-      "file_pattern": "*.jsonl",
-      "pick": "newest_by_mtime"
-    },
-    "message_extractor": {
-      "role_field": "payload.role",
-      "content_field": "payload.content",
-      "content_text_path": "[0].text",
-      "timestamp_field": "timestamp",
-      "skip_if": [
-        { "field": "type", "equals": "session_meta" },
-        { "field": "type", "equals": "event_msg" }
-      ]
-    }
+    "reader": "codex-cli"
   }
 }

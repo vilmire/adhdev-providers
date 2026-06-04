@@ -1,30 +1,47 @@
 {
   "$schema": "adhdev:cli/spec@1",
-
   "id": "hermes-cli",
   "name": "Hermes Agent",
   "binary": "hermes",
-  "spawn_args": ["chat"],
-
+  "spawn_args": [
+    "chat"
+  ],
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 500
   },
-
   "layout": {
     "sections": [
-      { "id": "footer",     "from_bottom": 4 },
-      { "id": "modal_zone", "from_bottom": 16, "until": { "section": "footer" } },
-      { "id": "body",       "from_top": 0,    "until": { "section": "modal_zone" } }
+      {
+        "id": "footer",
+        "from_bottom": 4
+      },
+      {
+        "id": "modal_zone",
+        "from_bottom": 16,
+        "until": {
+          "section": "footer"
+        }
+      },
+      {
+        "id": "body",
+        "from_top": 0,
+        "until": {
+          "section": "modal_zone"
+        }
+      }
     ]
   },
-
   "states": [
     {
       "id": "approval",
       "label": "Approval requested",
-      "when":           { "regex": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)" },
-      "extract_title":  { "regex": "(?:Approval required|Permission required|Approve and run|Do you want to [^\\n?]+\\??)" },
+      "when": {
+        "regex": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)"
+      },
+      "extract_title": {
+        "regex": "(?:Approval required|Permission required|Approve and run|Do you want to [^\\n?]+\\??)"
+      },
       "modal_buttons": {
         "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
         "key_for_index": "{index}\r",
@@ -34,49 +51,73 @@
     {
       "id": "busy",
       "label": "Generating",
-      "when": { "regex": "msg=interrupt|Ctrl\\+C cancel|cogitating|Initializing agent" }
+      "when": {
+        "regex": "msg=interrupt|Ctrl\\+C cancel|cogitating|Initializing agent"
+      }
     },
     {
       "id": "idle",
       "label": "Ready",
-      "when": { "section": "footer", "regex": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)" }
+      "when": {
+        "section": "footer",
+        "regex": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+      }
     }
   ],
   "default_state": "idle",
-
   "control_bar": [
     {
       "id": "stop",
       "label": "Stop",
-      "visible_when_state": ["busy"],
-      "action": { "type": "send_keys", "keys": "\u0003" }
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
     },
     {
       "id": "queue",
       "label": "Queue message",
-      "visible_when_state": ["busy"],
-      "action": { "type": "send_keys", "keys": "/queue\r" }
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "/queue\r"
+      }
     },
     {
       "id": "background",
       "label": "Background",
-      "visible_when_state": ["busy"],
-      "action": { "type": "send_keys", "keys": "/bg\r" }
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "/bg\r"
+      }
     },
     {
       "id": "set_model",
       "label": "Model",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "open_picker",
         "trigger_keys": "/model\r",
-        "wait_for": { "regex": "Select a model|switch model|Model picker" },
-        "extract_choices": { "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$" },
+        "wait_for": {
+          "regex": "Select a model|switch model|Model picker"
+        },
+        "extract_choices": {
+          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+        },
         "submit_key": "{index}\r"
       }
     }
   ],
-
   "notifications": [
     {
       "id": "approval_needed",
@@ -85,20 +126,8 @@
       "body": "{state.title}"
     }
   ],
-
   "delegate": [],
-
   "native_history": {
-    "format": "json_single",
-    "location": {
-      "directory": "~/.hermes/sessions",
-      "file_pattern": "session_*.json",
-      "pick": "newest_by_mtime"
-    },
-    "message_extractor": {
-      "container_path": "messages",
-      "role_field": "role",
-      "content_field": "content"
-    }
+    "reader": "hermes-cli"
   }
 }

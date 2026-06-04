@@ -1,29 +1,49 @@
 {
   "$schema": "adhdev:cli/spec@1",
-
   "id": "claude-cli",
   "name": "Claude Code",
   "binary": "claude",
-  "spawn_args": ["--permission-mode", "default"],
-
+  "spawn_args": [
+    "--permission-mode",
+    "default"
+  ],
   "send_message": {
     "submit_key": "\r"
   },
-
   "layout": {
     "sections": [
-      { "id": "footer",     "from_bottom": 3 },
-      { "id": "modal_zone", "from_bottom": 20, "until": { "section": "footer" } },
-      { "id": "body",       "from_top": 0,    "until": { "section": "modal_zone" } }
+      {
+        "id": "footer",
+        "from_bottom": 3
+      },
+      {
+        "id": "modal_zone",
+        "from_bottom": 20,
+        "until": {
+          "section": "footer"
+        }
+      },
+      {
+        "id": "body",
+        "from_top": 0,
+        "until": {
+          "section": "modal_zone"
+        }
+      }
     ]
   },
-
   "states": [
     {
       "id": "approval",
       "label": "Approval requested",
-      "when":           { "section": "footer",     "regex": "Esc to cancel" },
-      "extract_title":  { "section": "modal_zone", "regex": "Do you want to ([^?]+)\\?" },
+      "when": {
+        "section": "footer",
+        "regex": "Esc to cancel"
+      },
+      "extract_title": {
+        "section": "modal_zone",
+        "regex": "Do you want to ([^?]+)\\?"
+      },
       "modal_buttons": {
         "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
         "key_for_index": "{index}\r",
@@ -33,31 +53,46 @@
     {
       "id": "busy",
       "label": "Generating",
-      "when": { "section": "footer", "regex": "esc to interrupt" }
+      "when": {
+        "section": "footer",
+        "regex": "esc to interrupt"
+      }
     },
     {
       "id": "idle",
       "label": "Ready",
-      "when": { "section": "footer", "regex": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)" }
+      "when": {
+        "section": "footer",
+        "regex": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
+      }
     }
   ],
   "default_state": "idle",
-
   "control_bar": [
     {
       "id": "stop",
       "label": "Stop",
-      "visible_when_state": ["busy"],
-      "action": { "type": "send_keys", "keys": "\u0003" }
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
     },
     {
       "id": "set_model",
       "label": "Model",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "open_picker",
         "trigger_keys": "/model\r",
-        "wait_for": { "section": "modal_zone", "regex": "Select a model" },
+        "wait_for": {
+          "section": "modal_zone",
+          "regex": "Select a model"
+        },
         "extract_choices": {
           "section": "modal_zone",
           "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
@@ -68,7 +103,9 @@
     {
       "id": "attach_image",
       "label": "📎",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "attach_image",
         "method": "tempfile_then_keys",
@@ -76,7 +113,6 @@
       }
     }
   ],
-
   "notifications": [
     {
       "id": "approval_needed",
@@ -85,24 +121,8 @@
       "body": "{state.title}"
     }
   ],
-
   "delegate": [],
-
   "native_history": {
-    "format": "jsonl_lines",
-    "location": {
-      "directory": "~/.claude/projects/{cwd_slug:dashes}",
-      "file_pattern": "*.jsonl",
-      "pick": "newest_by_mtime"
-    },
-    "message_extractor": {
-      "role_field": "message.role",
-      "content_field": "message.content",
-      "timestamp_field": "timestamp",
-      "skip_if": [
-        { "field": "type", "equals": "file-history-snapshot" },
-        { "field": "isMeta", "equals": true }
-      ]
-    }
+    "reader": "claude-cli"
   }
 }
