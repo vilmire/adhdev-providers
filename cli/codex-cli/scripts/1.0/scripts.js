@@ -123,16 +123,26 @@ function settleStatus(state, input, parsed) {
 
     const now = nowMs(input);
     const candidate = state.idleCandidate;
-    if (!candidate || candidate.signature !== signature) {
+    // (fix) Carry `since` forward when the signature changes — the screen
+    // can vary by 1ch between frames (cursor blink, footer timestamp,
+    // background tool progress lines) and the prior implementation
+    // reset `since` on every variation, so the IDLE_SETTLE_MS window
+    // never elapsed and detect_status stayed pinned to `generating`
+    // forever once a user turn started. Treat any idle verdict in the
+    // window as a continuation of the same idle observation.
+    const candidateSince = (candidate && Number.isFinite(candidate.since)) ? candidate.since : now;
+    if (!candidate) {
         state.idleCandidate = { signature, since: now };
-        state.settledIdleSignature = '';
         state.lastProviderStatus = 'generating';
         return typeof parsed === 'string'
             ? 'generating'
             : { ...parsed, status: 'generating', parsedStatus: parsed.parsedStatus === 'idle' ? 'generating' : parsed.parsedStatus };
     }
+    if (candidate.signature !== signature) {
+        state.idleCandidate = { signature, since: candidateSince };
+    }
 
-    if (now - candidate.since < IDLE_SETTLE_MS) {
+    if (now - candidateSince < IDLE_SETTLE_MS) {
         state.lastProviderStatus = 'generating';
         return typeof parsed === 'string'
             ? 'generating'

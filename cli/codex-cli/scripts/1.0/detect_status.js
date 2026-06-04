@@ -254,31 +254,33 @@ module.exports = function detectStatus(input) {
 
     if (hasApproval(lines)) return 'waiting_approval';
 
-    // (fix 2026-06) When `screen` (post-terminal-emulation, source of truth
-    // for "what the user actually sees now") shows the codex startup idle
-    // screen — welcome box + starter prompt + idle footer — trust it
-    // unconditionally. codex 0.136 logs "Starting MCP servers ... esc to
-    // interrupt" lines during boot that linger in the ANSI raw buffer even
-    // after the screen redraws to idle. The raw-cue branch below would then
-    // pin status to `generating` forever despite the live screen being idle.
+    // (fix 2026-06) When the post-terminal-emulation `screen` is the codex
+    // startup idle screen — welcome box + starter prompt + idle footer —
+    // trust it unconditionally. codex 0.136 logs "Starting MCP servers ...
+    // esc to interrupt" lines during boot that linger in the ANSI raw
+    // buffer even after the screen redraws to idle.
     if (screen && hasStartupIdleScreen(screen)) return 'idle';
 
-    // (fix) Generation cues win over the "ready footer / prompt" idle paths.
-    // Codex keeps the model footer + prompt input visible while a background
-    // tool (`exec_command(... &)` + sleep, `1 background terminal running`,
-    // etc.) is still pending. The prior order let `hasReadyPrompt` fire idle
-    // even though the user's screen literally showed
-    // `Working (Xs • esc to interrupt) · 1 background terminal running`.
-    // Trust the explicit generation signals first; only consider idle paths
-    // when no generation cue is anywhere in the live window.
+    // (fix 2026-06-followup) Same principle for ANY frame where `screen`
+    // is unambiguously idle: a fresh model footer line AND no spinner cue
+    // ON THE SCREEN ITSELF. The raw buffer keeps stale "esc to interrupt"
+    // lines from earlier turns (and from background tool runs that have
+    // since completed). If `screen` shows a clean ready footer and the
+    // screen-only generating-cue check is clean, the live state is idle
+    // regardless of what raw history says — the user is staring at a
+    // settled prompt right now.
+    if (screen && hasReadyFooter(screen) && !hasRecentActiveGeneratingCue(screen)) return 'idle';
+    if (screen && hasReadyPrompt(screen) && !hasRecentActiveGeneratingCue(screen)) return 'idle';
+
+    // Beyond that, fall back to the historical raw-buffer checks so a
+    // mid-turn `Working (12s · esc to interrupt) · 1 background terminal
+    // running` still wins over a stale-looking footer.
     if (hasRecentActiveGeneratingCue(screen) || hasRecentActiveGeneratingCue(recentRaw)) {
         return 'generating';
     }
     if (input?.isWaitingForResponse && hasActiveToolActivityAfterIdle(recentRaw)) return 'generating';
 
-    // A currently visible Codex model footer is stronger evidence than stale raw
-    // buffer activity from an earlier turn. Do this before the isWaiting guard so
-    // rawBuffer churn cannot keep a completed turn generating forever.
+    // Final idle paths (no screen, tail-only, etc.)
     if (screen && hasReadyFooter(screen)) return 'idle';
     if (screen && hasReadyPrompt(screen)) return 'idle';
     if (hasGenerating(lines, recentRaw)) return 'generating';
