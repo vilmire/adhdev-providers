@@ -65,7 +65,8 @@
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
-      "scriptDir": "scripts/v1"
+      "scriptDir": "scripts/v1",
+      "spec": "specs/1.0.json"
     }
   ],
   "defaultScriptDir": "scripts/v1",

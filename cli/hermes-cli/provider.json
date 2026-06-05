@@ -313,6 +313,11 @@
   },
   "compatibility": [
     {
+      "ideVersion": ">=0.14.0",
+      "scriptDir": "scripts/1.0",
+      "spec": "specs/0.14.json"
+    },
+    {
       "ideVersion": ">=0.8.0",
       "scriptDir": "scripts/1.0"
     }

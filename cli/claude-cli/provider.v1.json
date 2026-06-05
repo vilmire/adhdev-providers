@@ -8,7 +8,7 @@
     "claude",
     "claude-code"
   ],
-  "icon": "\ud83e\udd16",
+  "icon": "🤖",
   "status": "Stable",
   "details": "Terminal only",
   "links": {
@@ -76,7 +76,8 @@
   "compatibility": [
     {
       "ideVersion": ">=2.1.0",
-      "scriptDir": "scripts/v1"
+      "scriptDir": "scripts/v1",
+      "spec": "specs/2.1.json"
     }
   ],
   "defaultScriptDir": "scripts/v1",
@@ -105,7 +106,7 @@
           "flags": "i"
         },
         {
-          "regex": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)\u2026?",
+          "regex": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?",
           "flags": "i"
         }
       ],
@@ -114,7 +115,7 @@
     },
     "settledPrompt": {
       "$schema": "adhdev:tui/settled-prompt@1",
-      "regex": "^[\u276f\u203a>]\\s*$",
+      "regex": "^[❯›>]\\s*$",
       "flags": "m",
       "withFooter": [
         {
@@ -140,7 +141,7 @@
           "label": "y-n-fallback"
         }
       ],
-      "buttonPattern": "^([\u276f\u203a>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonPattern": "^([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
       "buttonFlags": "m"
     },
     "dispatchOrder": {
@@ -155,13 +156,13 @@
     "transcriptPty": {
       "$schema": "adhdev:tui/transcript-pty@1",
       "assistantPrefix": {
-        "regex": "^[\u23fa\u273b\u2736\u2733\u2722\u273d\u00b7\u2022]\\s+(.*)$"
+        "regex": "^[⏺✻✶✳✢✽·•]\\s+(.*)$"
       },
       "userPrefix": {
-        "regex": "^[\u276f\u203a>]\\s+(.*)$"
+        "regex": "^[❯›>]\\s+(.*)$"
       },
       "toolPrefix": {
-        "regex": "^[\u23bf]\\s+(.*)$"
+        "regex": "^[⎿]\\s+(.*)$"
       },
       "chromePatterns": [
         {
@@ -173,11 +174,11 @@
           "flags": "i"
         },
         {
-          "regex": "^\u279c\\s+",
+          "regex": "^➜\\s+",
           "label": "shell-prompt"
         },
         {
-          "regex": "^\u23f5\u23f5\\s+accept edits on",
+          "regex": "^⏵⏵\\s+accept edits on",
           "flags": "i"
         },
         {

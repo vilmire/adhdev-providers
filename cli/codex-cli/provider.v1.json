@@ -56,6 +56,11 @@
   },
   "compatibility": [
     {
+      "ideVersion": ">=0.137.0",
+      "scriptDir": "scripts/v1",
+      "spec": "specs/0.137.json"
+    },
+    {
       "ideVersion": ">=0.42.0",
       "scriptDir": "scripts/v1"
     }
@@ -210,17 +215,52 @@
         "regex": "^[▌›❯]\\s+(.*)$"
       },
       "chromePatterns": [
-        { "regex": "^>_\\s+OpenAI Codex", "flags": "i" },
-        { "regex": "^Tip:", "flags": "i" },
-        { "regex": "^Starting MCP servers?", "flags": "i" },
-        { "regex": "esc to interrupt", "flags": "i" },
-        { "regex": "^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+", "label": "box-drawing" },
-        { "regex": "model:\\s+", "flags": "i" },
-        { "regex": "directory:\\s+", "flags": "i" },
-        { "regex": "permissions:\\s+", "flags": "i" },
-        { "regex": "^[▌›❯>]\\s*$", "label": "standalone-prompt-marker" },
-        { "regex": "^(?:gpt-|o\\d|codex-)[\\w._-]+(?:\\s+(?:none|minimal|low|medium|high|xhigh|max|fast))?\\s+·", "flags": "i", "label": "model-footer" },
-        { "regex": "^Find and fix a bug in @filename|^Improve documentation in @filename|^Write tests for @filename|^Explain this codebase|^Summarize recent commits|^Implement \\{feature\\}|^Use /skills|^Run /review on my current changes", "flags": "i", "label": "starter-prompt-suggestion" }
+        {
+          "regex": "^>_\\s+OpenAI Codex",
+          "flags": "i"
+        },
+        {
+          "regex": "^Tip:",
+          "flags": "i"
+        },
+        {
+          "regex": "^Starting MCP servers?",
+          "flags": "i"
+        },
+        {
+          "regex": "esc to interrupt",
+          "flags": "i"
+        },
+        {
+          "regex": "^[─═╭╮╰╯│┌┐└┘├┤┬┴┼]+",
+          "label": "box-drawing"
+        },
+        {
+          "regex": "model:\\s+",
+          "flags": "i"
+        },
+        {
+          "regex": "directory:\\s+",
+          "flags": "i"
+        },
+        {
+          "regex": "permissions:\\s+",
+          "flags": "i"
+        },
+        {
+          "regex": "^[▌›❯>]\\s*$",
+          "label": "standalone-prompt-marker"
+        },
+        {
+          "regex": "^(?:gpt-|o\\d|codex-)[\\w._-]+(?:\\s+(?:none|minimal|low|medium|high|xhigh|max|fast))?\\s+·",
+          "flags": "i",
+          "label": "model-footer"
+        },
+        {
+          "regex": "^Find and fix a bug in @filename|^Improve documentation in @filename|^Write tests for @filename|^Explain this codebase|^Summarize recent commits|^Implement \\{feature\\}|^Use /skills|^Run /review on my current changes",
+          "flags": "i",
+          "label": "starter-prompt-suggestion"
+        }
       ],
       "scope": "buffer"
     }
