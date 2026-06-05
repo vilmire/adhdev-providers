@@ -7,6 +7,9 @@
   "send_message": {
     "submit_key": "\r"
   },
+  "debounce": {
+    "busy_hold_ms": 4000
+  },
   "layout": {
     "sections": [
       {

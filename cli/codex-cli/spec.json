@@ -3,10 +3,14 @@
   "id": "codex-cli",
   "name": "Codex CLI",
   "binary": "codex",
+  "cli_version_range": ">=0.137.0",
   "spawn_args": [],
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200
+  },
+  "debounce": {
+    "busy_hold_ms": 4000
   },
   "layout": {
     "sections": [

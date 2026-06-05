@@ -3,12 +3,16 @@
   "id": "claude-cli",
   "name": "Claude Code",
   "binary": "claude",
+  "cli_version_range": ">=2.1.0",
   "spawn_args": [
     "--permission-mode",
     "default"
   ],
   "send_message": {
     "submit_key": "\r"
+  },
+  "debounce": {
+    "busy_hold_ms": 6000
   },
   "layout": {
     "sections": [

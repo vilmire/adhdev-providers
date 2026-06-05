@@ -3,12 +3,16 @@
   "id": "hermes-cli",
   "name": "Hermes Agent",
   "binary": "hermes",
+  "cli_version_range": ">=0.14.0",
   "spawn_args": [
     "chat"
   ],
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 500
+  },
+  "debounce": {
+    "busy_hold_ms": 2000
   },
   "layout": {
     "sections": [
