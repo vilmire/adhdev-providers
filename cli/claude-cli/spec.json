@@ -14,7 +14,7 @@
     "sections": [
       {
         "id": "footer",
-        "from_bottom": 3
+        "from_bottom": 8
       },
       {
         "id": "modal_zone",
@@ -37,8 +37,8 @@
       "id": "approval",
       "label": "Approval requested",
       "when": {
-        "section": "footer",
-        "regex": "Esc to cancel"
+        "section": "modal_zone",
+        "regex": "Do you want to [^?]+\\?"
       },
       "extract_title": {
         "section": "modal_zone",
@@ -51,11 +51,24 @@
       }
     },
     {
+      "id": "picker",
+      "label": "Picker open",
+      "when": {
+        "section": "modal_zone",
+        "regex": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+      },
+      "modal_buttons": {
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+        "key_for_index": "{index}\r"
+      }
+    },
+    {
       "id": "busy",
       "label": "Generating",
       "when": {
         "section": "footer",
-        "regex": "esc to interrupt"
+        "regex": "[✶✻*]\\s*[A-Z][a-z]+(ing|ed)…|esc to interrupt|↓\\s*\\d+\\s*tokens|↑\\s*\\d+\\s*tokens"
       }
     },
     {
