@@ -5,7 +5,8 @@
   "binary": "codex",
   "spawn_args": [],
   "send_message": {
-    "submit_key": "\r\n"
+    "submit_key": "\r",
+    "delay_ms_before_submit": 200
   },
   "layout": {
     "sections": [
@@ -157,6 +158,17 @@
   ],
   "delegate": [],
   "native_history": {
-    "reader": "codex-cli"
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.codex/sessions/{yyyy}/{mm}/{dd}",
+      "file_pattern": "rollout-*.jsonl",
+      "session_id_from": "filename_uuid",
+      "message_filter": { "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>')" },
+      "message_map": {
+        "role": "$.payload.role",
+        "content": "$.payload.content[0].text",
+        "timestamp_ms": "$.timestamp"
+      }
+    }
   }
 }

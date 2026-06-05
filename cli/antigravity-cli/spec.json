@@ -85,6 +85,18 @@
   ],
   "delegate": [],
   "native_history": {
-    "reader": "antigravity-cli"
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.gemini/antigravity-cli/brain/*/.system_generated/logs",
+      "file_pattern": "transcript.jsonl",
+      "message_filter": { "where": "$.type == 'USER_INPUT' || ($.type == 'PLANNER_RESPONSE' && $.content != null)" },
+      "message_map": {
+        "role": "$.source",
+        "content": "$.content",
+        "timestamp_ms": "$.created_at",
+        "content_strip": ["ADDITIONAL_METADATA", "USER_SETTINGS_CHANGE"],
+        "content_unwrap": ["USER_REQUEST"]
+      }
+    }
   }
 }

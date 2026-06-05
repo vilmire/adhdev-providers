@@ -123,6 +123,16 @@
   ],
   "delegate": [],
   "native_history": {
-    "reader": "claude-cli"
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.claude/projects/{cwd_dashed}/{session_id}.jsonl",
+      "session_id_from": "filename_uuid",
+      "message_filter": { "where": "$.type == 'user' || $.type == 'assistant'" },
+      "message_map": {
+        "role": "$.message.role",
+        "content": "$.message.content",
+        "timestamp_ms": "$.timestamp"
+      }
+    }
   }
 }
