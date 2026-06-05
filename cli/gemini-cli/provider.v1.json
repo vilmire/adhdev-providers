@@ -1,0 +1,207 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "gemini-cli",
+  "name": "Gemini CLI",
+  "displayName": "Gemini CLI",
+  "category": "cli",
+  "aliases": [
+    "gemini"
+  ],
+  "icon": "♊",
+  "status": "Beta",
+  "details": "Terminal only",
+  "providerVersion": "1.0.0",
+  "contractVersion": 2,
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "binary": "gemini",
+  "spawn": {
+    "command": "gemini",
+    "args": [
+      "--yolo"
+    ],
+    "shell": true,
+    "env": {}
+  },
+  "submitStrategy": "wait_for_echo",
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "exit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeArgs": [
+      "--resume",
+      "latest"
+    ]
+  },
+  "patterns": {
+    "prompt": [
+      {
+        "source": "\\?\\s*for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "^>\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "[›❯]\\s*$",
+        "flags": "m"
+      },
+      {
+        "source": "sandbox",
+        "flags": "i"
+      },
+      {
+        "source": "Type your message",
+        "flags": "i"
+      }
+    ],
+    "generating": [
+      {
+        "source": "[\\u2800-\\u28ff]",
+        "flags": ""
+      },
+      {
+        "source": "Thinking",
+        "flags": "i"
+      },
+      {
+        "source": "Generating",
+        "flags": "i"
+      },
+      {
+        "source": "esc to (cancel|interrupt|stop)",
+        "flags": "i"
+      }
+    ],
+    "approval": [
+      {
+        "source": "Allow\\s*once",
+        "flags": "i"
+      },
+      {
+        "source": "Always\\s*allow",
+        "flags": "i"
+      },
+      {
+        "source": "\\(y/n\\)",
+        "flags": "i"
+      },
+      {
+        "source": "\\[Y/n\\]",
+        "flags": "i"
+      },
+      {
+        "source": "Run\\s*this\\s*command",
+        "flags": "i"
+      },
+      {
+        "source": "Deny",
+        "flags": "i"
+      },
+      {
+        "source": "auto-?approve",
+        "flags": "i"
+      }
+    ],
+    "ready": [
+      {
+        "source": "\\?\\s*for\\s*shortcuts",
+        "flags": "i"
+      },
+      {
+        "source": "sandbox",
+        "flags": "i"
+      }
+    ]
+  },
+  "approvalKeys": {
+    "0": "y",
+    "1": "a",
+    "2": "n"
+  },
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "scriptDir": "scripts/1.0"
+    }
+  ],
+  "defaultScriptDir": "scripts/1.0",
+  "settings": {
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls without user confirmation"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": false
+    }
+  },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "manual",
+      "serverName": "adhdev-mesh",
+      "requiresRestart": true,
+      "instructions": "ADHDev will register the adhdev-mesh MCP server in Gemini CLI via `gemini mcp add` before launching a fresh coordinator session. You can verify with `gemini mcp list`.",
+      "template": "gemini mcp add {{serverName}} {{adhdevMcpCommand}} mcp --mode ipc --repo-mesh {{meshId}}"
+    },
+    "systemPromptInjection": {
+      "mode": "context_file",
+      "path": "GEMINI.md",
+      "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->"
+    }
+  }
+}
