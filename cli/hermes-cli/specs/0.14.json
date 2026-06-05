@@ -136,7 +136,7 @@
   "native_history": {
     "source": {
       "kind": "sqlite",
-      "path": "~/.hermes/state.db",
+      "path": "${HERMES_HOME:-~/.hermes}/state.db",
       "session_query": "SELECT id FROM sessions WHERE source = 'cli' AND message_count > 0 AND started_at >= ? ORDER BY started_at DESC LIMIT 1",
       "message_query": "SELECT role, content, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND content IS NOT NULL AND content != '' AND role IN ('user', 'assistant', 'system') ORDER BY timestamp ASC, id ASC",
       "message_map": {
