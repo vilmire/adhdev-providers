@@ -275,11 +275,15 @@
   "meshCoordinator": {
     "supported": true,
     "mcpConfig": {
-      "mode": "manual",
-      "serverName": "adhdev-mesh",
-      "requiresRestart": true,
-      "instructions": "ADHDev will register the adhdev-mesh MCP server in Antigravity CLI via `agy mcp add` before launching a fresh coordinator session. You can verify with `agy mcp list`.",
-      "template": "agy mcp add {{serverName}} -- {{adhdevMcpCommand}} mcp --mode ipc --repo-mesh {{meshId}}"
+      "mode": "auto_import",
+      "format": "claude_mcp_json",
+      "path": "~/.gemini/config/mcp_config.json",
+      "serverName": "adhdev-mesh"
+    },
+    "systemPromptInjection": {
+      "mode": "context_file",
+      "path": "AGENTS.md",
+      "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->"
     }
   },
   "source": {

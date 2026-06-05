@@ -18,11 +18,11 @@
     "sections": [
       {
         "id": "footer",
-        "from_bottom": 8
+        "from_bottom": 3
       },
       {
         "id": "modal_zone",
-        "from_bottom": 20,
+        "from_bottom": 11,
         "until": {
           "section": "footer"
         }
@@ -63,7 +63,7 @@
       },
       "modal_buttons": {
         "section": "modal_zone",
-        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
         "key_for_index": "{index}\r"
       }
     },

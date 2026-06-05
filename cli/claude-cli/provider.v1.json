@@ -264,6 +264,10 @@
       "format": "claude_mcp_json",
       "path": ".mcp.json",
       "serverName": "adhdev-mesh"
+    },
+    "systemPromptInjection": {
+      "mode": "cli_arg",
+      "flag": "--append-system-prompt"
     }
   },
   "source": {

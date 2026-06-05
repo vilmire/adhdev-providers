@@ -93,6 +93,7 @@
       "kind": "jsonl",
       "path": "~/.gemini/antigravity-cli/brain/*/.system_generated/logs",
       "file_pattern": "transcript.jsonl",
+      "recent_window_ms": 86400000,
       "message_filter": { "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null" },
       "message_map": {
         "role": "$.source",
