@@ -10,13 +10,13 @@
     "delay_ms_before_submit": 200
   },
   "debounce": {
-    "busy_hold_ms": 4000
+    "busy_hold_ms": 8000
   },
   "layout": {
     "sections": [
       {
         "id": "footer",
-        "from_bottom": "15%"
+        "from_bottom": 6
       },
       {
         "id": "modal_zone",
