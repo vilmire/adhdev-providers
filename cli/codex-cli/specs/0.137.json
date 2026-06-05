@@ -87,7 +87,6 @@
       "id": "busy",
       "label": "Working",
       "when": {
-        "section": "footer",
         "regex": "esc to interrupt|Working \\("
       }
     },
