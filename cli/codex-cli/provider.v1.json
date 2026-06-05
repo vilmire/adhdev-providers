@@ -280,6 +280,13 @@
   },
   "overrides": {},
   "settings": {
+    "showCoordinatorSystemPrompt": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Show system prompt message",
+      "description": "Show the AGENTS.md / developer_instructions block as a user-role message in the chat. Off by default — the prompt is still visible via the chat header's ⓘ Session Info dialog."
+    },
     "notifications": {
       "type": "boolean",
       "default": true,

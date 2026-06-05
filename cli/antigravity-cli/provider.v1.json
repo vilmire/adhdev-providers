@@ -217,6 +217,13 @@
     }
   },
   "settings": {
+    "showCoordinatorSystemPrompt": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Show system prompt message",
+      "description": "Show the mesh coordinator system prompt as a chat message. Off by default — the prompt is still visible via the chat header's ⓘ Session Info dialog."
+    },
     "notifications": {
       "type": "boolean",
       "default": true,
