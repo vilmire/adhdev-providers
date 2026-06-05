@@ -18,7 +18,7 @@
     "sections": [
       {
         "id": "footer",
-        "from_bottom": 4
+        "from_bottom": 7
       },
       {
         "id": "modal_zone",
@@ -56,7 +56,8 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "regex": "msg=interrupt|Ctrl\\+C cancel|cogitating|Initializing agent"
+        "section": "footer",
+        "regex": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.\\.\\."
       }
     },
     {
