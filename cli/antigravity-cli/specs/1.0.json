@@ -93,7 +93,7 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "regex": "\\bThinking\\b|\\bRunning\\b|\\bUsing\\s+Tool\\b|\\bPrioritizing\\s+Tool\\b|[\\u2800-\\u28ff]|esc to cancel"
+        "regex": "[\\u2800-\\u28ff]|esc to cancel"
       }
     },
     {
