@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.13",
+  "providerVersion": "1.1.14",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -154,5 +154,10 @@
       "flag": "-c",
       "template": "developer_instructions={prompt_json}"
     }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
   }
 }
