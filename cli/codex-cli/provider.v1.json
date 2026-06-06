@@ -26,9 +26,7 @@
   "binary": "codex",
   "spawn": {
     "command": "codex",
-    "args": [
-      "--dangerously-bypass-approvals-and-sandbox"
-    ],
+    "args": [],
     "shell": false
   },
   "sendDelayMs": 1200,
@@ -63,6 +61,102 @@
       "ideVersion": ">=0.42.0"
     }
   ],
+  "tui": {
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        {
+          "regex": "Working \\("
+        },
+        {
+          "regex": "Starting MCP servers \\("
+        },
+        {
+          "regex": "esc to interrupt",
+          "flags": "i"
+        }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 12
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "^[❯›>]\\s*$",
+      "flags": "m",
+      "withFooter": [
+        {
+          "pattern": "? for shortcuts"
+        },
+        {
+          "pattern": "tab to queue message"
+        }
+      ],
+      "scope": "last-n-lines",
+      "scopeWindowLines": 12
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|Do you trust the contents of this directory\\?|Approaching rate limits|Switch to .+ for lower credit usage",
+      "questionFlags": "i",
+      "questionVariants": [
+        {
+          "regex": "enter to submit \\| esc to cancel",
+          "flags": "i",
+          "label": "submit-footer"
+        }
+      ],
+      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonLabelGroup": 2,
+      "buttonFlags": "m",
+      "scope": "window-around-question",
+      "scopeWindowLines": 18
+    },
+    "approvalSquash": {
+      "$schema": "adhdev:tui/approval-squash@1",
+      "cues": [
+        {
+          "compact": "doyoutrustthecontentsofthisdirectory",
+          "messageWhenMatched": "Do you trust the contents of this directory?"
+        },
+        {
+          "compact": "approachingratelimits",
+          "messageWhenMatched": "Approaching rate limits"
+        }
+      ],
+      "footers": [
+        {
+          "compact": "pressentertocontinue"
+        }
+      ],
+      "buttonRules": [
+        {
+          "compact": "1yescontinue2noquit",
+          "labels": [
+            "Yes, continue",
+            "No, quit"
+          ]
+        },
+        {
+          "compact": "1approveandrun2deny",
+          "labels": [
+            "Approve and run",
+            "Deny"
+          ]
+        }
+      ],
+      "scope": "tail-window",
+      "tailWindowLines": 24
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": [
+        "modal",
+        "spinner",
+        "settled-prompt"
+      ],
+      "onNoMatch": "preserve-last"
+    }
+  },
   "nativeHistory": {
     "$schema": "adhdev:native-history/codex-rollout@1",
     "format": "codex-rollout",

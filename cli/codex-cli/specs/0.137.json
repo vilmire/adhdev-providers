@@ -71,11 +71,11 @@
       "label": "Approval requested",
       "when": {
         "section": "modal_zone",
-        "regex": "Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel"
+        "regex": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel"
       },
       "extract_title": {
         "section": "modal_zone",
-        "regex": "(Allow command\\?|Allow Codex to [^\\n]+|Allow the [^\\n]+ MCP server to run tool [^\\n]+)"
+        "regex": "(Would you like to run the following command\\?|Allow command\\?|Allow Codex to [^\\n]+|Allow the [^\\n]+ MCP server to run tool [^\\n]+)"
       },
       "modal_buttons": {
         "section": "modal_zone",

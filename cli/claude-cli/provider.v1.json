@@ -139,7 +139,8 @@
           "label": "y-n-fallback"
         }
       ],
-      "buttonPattern": "^([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonLabelGroup": 2,
       "buttonFlags": "m"
     },
     "dispatchOrder": {
