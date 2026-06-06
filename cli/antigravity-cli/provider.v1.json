@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.6",
+  "providerVersion": "1.2.0",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -65,146 +65,9 @@
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
-      "scriptDir": "scripts/v1",
       "spec": "specs/1.0.json"
     }
   ],
-  "defaultScriptDir": "scripts/v1",
-  "tui": {
-    "spinner": {
-      "$schema": "adhdev:tui/spinner@1",
-      "patterns": [
-        {
-          "regex": "\\bThinking\\b",
-          "flags": "i"
-        },
-        {
-          "regex": "\\bRunning\\b",
-          "flags": "i"
-        },
-        {
-          "regex": "\\bUsing\\s+Tool\\b",
-          "flags": "i"
-        },
-        {
-          "regex": "\\bPrioritizing\\s+Tool\\b",
-          "flags": "i"
-        },
-        {
-          "regex": "[\\u2800-\\u28ff]",
-          "description": "Braille spinner; restricted by scope to the live frame to avoid scrollback braille from tool output"
-        }
-      ],
-      "scope": "live-frame-tail",
-      "scopeWindowLines": 8
-    },
-    "settledPrompt": {
-      "$schema": "adhdev:tui/settled-prompt@1",
-      "regex": "^>\\s*$",
-      "flags": "m",
-      "withFooter": [
-        {
-          "pattern": "? for shortcuts"
-        }
-      ],
-      "scope": "last-n-lines",
-      "scopeWindowLines": 8
-    },
-    "modal": {
-      "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Do you want to proceed\\?",
-      "questionFlags": "i",
-      "buttonPattern": "^>?\\s*\\d+\\.\\s+(.+)$",
-      "buttonFlags": "m",
-      "inlineButtonPattern": "\\[\\d+\\]\\s+([^\\[]+?)(?=\\s+\\[\\d+\\]|$)",
-      "inlineButtonFlags": "gi",
-      "contextHeader": {
-        "regex": "agy wants to run:\\s*([^\\n]+)",
-        "flags": "i"
-      },
-      "continuationLines": true,
-      "scope": "window-around-question",
-      "scopeWindowLines": 16,
-      "minButtons": 2
-    },
-    "visibleRegion": {
-      "$schema": "adhdev:tui/visible-region@1",
-      "scope": "between-anchors",
-      "anchors": {
-        "top": {
-          "pattern": "─{40,}\\s*\\n\\s*>\\s*",
-          "flags": "m"
-        },
-        "bottom": {
-          "pattern": "─{40,}\\s*$",
-          "flags": "m"
-        }
-      },
-      "selectAnchor": "last",
-      "stripCues": [
-        "adhdev:tui/footer-chrome@1",
-        "adhdev:tui/welcome-screen@1"
-      ]
-    },
-    "welcomeScreen": {
-      "$schema": "adhdev:tui/welcome-screen@1",
-      "cues": [
-        {
-          "pattern": "how's the cli experience so far\\?",
-          "flags": "i"
-        },
-        {
-          "pattern": "\\[0\\]\\s+skip",
-          "flags": "i"
-        }
-      ],
-      "dismissAfter": {
-        "onPromptMarker": true,
-        "onUserEcho": true
-      }
-    },
-    "errorDetection": {
-      "$schema": "adhdev:tui/error-detection@1",
-      "patterns": [
-        {
-          "regex": "servers?\\s+are\\s+experiencing\\s+high\\s+traffic",
-          "flags": "i",
-          "verdict": "error"
-        }
-      ]
-    },
-    "dispatchOrder": {
-      "$schema": "adhdev:tui/dispatch-order@1",
-      "order": [
-        "modal",
-        "spinner",
-        "settled-prompt",
-        "error-detection"
-      ],
-      "onNoMatch": "preserve-last"
-    },
-    "transcriptPty": {
-      "$schema": "adhdev:tui/transcript-pty@1",
-      "assistantPrefix": {
-        "regex": "^▌\\s+(.*)$"
-      },
-      "userPrefix": {
-        "regex": "^>\\s+(.*)$"
-      },
-      "chromePatterns": [
-        {
-          "regex": "^How\\'s the CLI experience"
-        },
-        {
-          "regex": "\\? for shortcuts"
-        },
-        {
-          "regex": "^[─━]{40,}$"
-        }
-      ],
-      "scope": "buffer"
-    }
-  },
   "nativeHistory": {
     "$schema": "adhdev:native-history/anthropic-cli-transcript@1",
     "format": "antigravity-cli-transcript-jsonl",

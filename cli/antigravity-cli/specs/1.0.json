@@ -3,23 +3,24 @@
   "id": "antigravity-cli",
   "name": "Antigravity CLI",
   "binary": "agy",
+  "cli_version_range": ">=1.0.0",
   "spawn_args": [],
   "send_message": {
     "submit_key": "\r"
   },
   "debounce": {
-    "busy_hold_ms": 4000,
+    "busy_hold_ms": 5000,
     "startup_grace_ms": 15000
   },
   "layout": {
     "sections": [
       {
         "id": "footer",
-        "from_bottom": 3
+        "from_bottom": 1
       },
       {
         "id": "modal_zone",
-        "from_bottom": 18,
+        "from_bottom": 24,
         "until": {
           "section": "footer"
         }
@@ -35,16 +36,55 @@
   },
   "states": [
     {
+      "id": "trust_folder",
+      "label": "Trust folder",
+      "when": {
+        "section": "modal_zone",
+        "regex": "Do you trust the files in this folder\\?"
+      },
+      "extract_title": {
+        "section": "modal_zone",
+        "regex": "(Do you trust the files in this folder\\?)"
+      },
+      "modal_buttons": {
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[>›]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+        "key_for_index": "{index}\r",
+        "min_count": 2
+      }
+    },
+    {
+      "id": "trust_project",
+      "label": "Trust project contents",
+      "when": {
+        "section": "modal_zone",
+        "regex": "Do you trust the contents of this project\\?"
+      },
+      "extract_title": {
+        "section": "modal_zone",
+        "regex": "(Do you trust the contents of this project\\?)"
+      },
+      "modal_buttons": {
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[>›]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+        "key_for_index": "{index}\r",
+        "min_count": 2
+      }
+    },
+    {
       "id": "approval",
       "label": "Approval requested",
       "when": {
-        "regex": "Requesting permission for|Do you want to proceed\\?"
+        "section": "modal_zone",
+        "regex": "Do you want to proceed\\?"
       },
       "extract_title": {
-        "regex": "Requesting permission for:\\s*([^\\n]+)"
+        "section": "modal_zone",
+        "regex": "(agy wants to run:[^\\n]+|Do you want to proceed\\?)"
       },
       "modal_buttons": {
-        "pattern": "^\\s*(?:[>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[>›]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
         "key_for_index": "{index}\r",
         "min_count": 2
       }
@@ -53,7 +93,7 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "regex": "Generating\\.\\.\\.|esc to cancel"
+        "regex": "\\bThinking\\b|\\bRunning\\b|\\bUsing\\s+Tool\\b|\\bPrioritizing\\s+Tool\\b|[\\u2800-\\u28ff]|esc to cancel"
       }
     },
     {
@@ -84,6 +124,18 @@
       "id": "approval_needed",
       "when_state": "approval",
       "title": "Approval needed in Antigravity",
+      "body": "{state.title}"
+    },
+    {
+      "id": "trust_folder_needed",
+      "when_state": "trust_folder",
+      "title": "Antigravity needs to trust this folder",
+      "body": "{state.title}"
+    },
+    {
+      "id": "trust_project_needed",
+      "when_state": "trust_project",
+      "title": "Antigravity needs to trust this project",
       "body": "{state.title}"
     }
   ],
