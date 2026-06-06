@@ -34,7 +34,7 @@
     ],
     "shell": true
   },
-  "sendDelayMs": 700,
+  "sendDelayMs": 1200,
   "submitStrategy": "wait_for_echo",
   "timeouts": {
     "idleFinishConfirm": 5000,
