@@ -20,7 +20,7 @@
       },
       {
         "id": "modal_zone",
-        "from_bottom": 18,
+        "from_bottom": 36,
         "until": {
           "section": "footer"
         }
@@ -49,6 +49,7 @@
       "modal_buttons": {
         "section": "modal_zone",
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+        "continuation_lines": true,
         "key_for_index": "{index}\r"
       }
     },
@@ -80,6 +81,7 @@
       "modal_buttons": {
         "section": "modal_zone",
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+        "continuation_lines": true,
         "key_for_index": "{index}\r"
       }
     },

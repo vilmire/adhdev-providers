@@ -109,7 +109,8 @@
       "buttonLabelGroup": 2,
       "buttonFlags": "m",
       "scope": "window-around-question",
-      "scopeWindowLines": 18
+      "scopeWindowLines": 36,
+      "continuationLines": true
     },
     "approvalSquash": {
       "$schema": "adhdev:tui/approval-squash@1",
