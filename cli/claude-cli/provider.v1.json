@@ -139,7 +139,7 @@
           "label": "y-n-fallback"
         }
       ],
-      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+((?:Yes|No|Continue|Cancel|Skip|Use this(?: mcp server)?|Fix with Claude|Allow|Deny|Reject|Always allow)\\b.*)$",
       "buttonLabelGroup": 2,
       "buttonFlags": "m"
     },
