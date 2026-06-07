@@ -91,6 +91,13 @@
       }
     },
     {
+      "id": "signing_in",
+      "label": "Signing in",
+      "when": {
+        "regex": "Signing in"
+      }
+    },
+    {
       "id": "busy",
       "label": "Generating",
       "when": {
