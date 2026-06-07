@@ -86,6 +86,13 @@
       }
     },
     {
+      "id": "starting_mcp",
+      "label": "Starting MCP servers",
+      "when": {
+        "regex": "Starting MCP servers"
+      }
+    },
+    {
       "id": "busy",
       "label": "Working",
       "when": {
