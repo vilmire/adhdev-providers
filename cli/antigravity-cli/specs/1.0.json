@@ -6,7 +6,8 @@
   "cli_version_range": ">=1.0.0",
   "spawn_args": [],
   "send_message": {
-    "submit_key": "\r"
+    "submit_key": "\r",
+    "delay_ms_before_submit": 200
   },
   "debounce": {
     "busy_hold_ms": 5000,
