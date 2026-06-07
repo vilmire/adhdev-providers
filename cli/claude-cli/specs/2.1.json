@@ -23,10 +23,7 @@
       },
       {
         "id": "modal_zone",
-        "from_bottom": 11,
-        "until": {
-          "section": "footer"
-        }
+        "from_bottom": 11
       },
       {
         "id": "body",
@@ -50,6 +47,7 @@
         "regex": "Do you want to ([^?]+)\\?"
       },
       "modal_buttons": {
+        "section": "modal_zone",
         "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
         "key_for_index": "{index}\r",
         "min_count": 2
