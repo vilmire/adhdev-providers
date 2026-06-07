@@ -72,7 +72,7 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "regex": "[✶✻*]\\s*[A-Z][a-z]+(ing|ed)…|esc to interrupt|↓\\s*\\d+\\s*tokens|↑\\s*\\d+\\s*tokens"
+        "regex": "[✶✻✷✤✦✧✢*·]\\s*[A-Z][a-z]+(ing|ed)…|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
       }
     },
     {
