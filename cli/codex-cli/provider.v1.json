@@ -242,7 +242,7 @@
       "serverName": "adhdev-mesh",
       "requiresRestart": true,
       "instructions": "ADHDev will register the adhdev-mesh MCP server in Codex via `codex mcp add` before launching a fresh coordinator session. You can verify with `codex mcp list`.",
-      "template": "codex mcp add {{serverName}} -- {{adhdevMcpCommand}} mcp --mode ipc --repo-mesh {{meshId}}"
+      "template": "codex mcp add {{serverName}} -- {{adhdevMcpCommand}} {{adhdevMcpArgs}}"
     },
     "systemPromptInjection": {
       "mode": "config_override",
