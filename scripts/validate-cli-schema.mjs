@@ -2,7 +2,7 @@
 /**
  * CLI provider JSON Schema validator.
  *
- * Validates every provider.json under cli/ against
+ * Validates every provider.v1.json under cli/ against
  * schemas/v1/cli/provider.schema.json.
  *
  * Exit code 0 on success, 1 on any validation failure.
@@ -13,6 +13,7 @@
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -54,7 +55,9 @@ function listProviders() {
     .map((name) => ({
       name,
       dir: join(CLI_ROOT, name),
-      manifest: join(CLI_ROOT, name, 'provider.json'),
+      manifest: existsSync(join(CLI_ROOT, name, 'provider.v1.json'))
+        ? join(CLI_ROOT, name, 'provider.v1.json')
+        : join(CLI_ROOT, name, 'provider.json'),
     }))
     .filter((entry) => statSync(entry.dir).isDirectory());
 }

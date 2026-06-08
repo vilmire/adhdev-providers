@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.14",
+  "providerVersion": "1.1.15",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -248,6 +248,17 @@
       "mode": "config_override",
       "flag": "-c",
       "template": "developer_instructions={prompt_json}"
+    },
+    "delegatedWorkerIsolation": {
+      "args": [
+        {
+          "mode": "config_override",
+          "flag": "-c",
+          "key": "mcp_servers.adhdev-mesh.enabled",
+          "value": "false",
+          "dedupeKey": "mcp_servers.adhdev-mesh"
+        }
+      ]
     }
   },
   "source": {

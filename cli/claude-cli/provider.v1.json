@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.7",
+  "providerVersion": "1.1.8",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -274,6 +274,15 @@
     "systemPromptInjection": {
       "mode": "cli_arg",
       "flag": "--append-system-prompt"
+    },
+    "delegatedWorkerIsolation": {
+      "args": [
+        {
+          "mode": "empty_mcp_config",
+          "flag": "--mcp-config",
+          "strictFlag": "--strict-mcp-config"
+        }
+      ]
     }
   },
   "source": {
