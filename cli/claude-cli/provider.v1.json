@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.8",
+  "providerVersion": "1.1.9",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {

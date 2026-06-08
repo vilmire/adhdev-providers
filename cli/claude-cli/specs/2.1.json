@@ -13,7 +13,11 @@
     "delay_ms_before_submit": 200
   },
   "debounce": {
-    "busy_hold_ms": 6000
+    "busy_hold_ms": 6000,
+    "completion_idle_after": {
+      "regex": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b",
+      "hold_ms": 5000
+    }
   },
   "layout": {
     "sections": [
