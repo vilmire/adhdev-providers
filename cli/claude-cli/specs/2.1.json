@@ -140,6 +140,7 @@
       "body": "{state.title}"
     }
   ],
+  "requiresFinalAssistantBeforeIdle": true,
   "delegate": [],
   "native_history": {
     "source": {
