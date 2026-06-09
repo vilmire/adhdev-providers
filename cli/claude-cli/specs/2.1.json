@@ -25,11 +25,7 @@
     "sections": [
       {
         "id": "footer",
-        "anchor_regex": "^[❯›>]",
-        "anchor_context": {
-          "prev": "^[─╌─]+$",
-          "next": "^[─╌─]+$"
-        }
+        "anchor_regex": "^[❯›>]"
       },
       {
         "id": "modal_zone",
