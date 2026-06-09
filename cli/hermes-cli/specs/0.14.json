@@ -12,7 +12,7 @@
     "delay_ms_before_submit": 500
   },
   "debounce": {
-    "busy_hold_ms": 2000,
+    "busy_hold_ms": 4000,
     "startup_grace_ms": 15000
   },
   "layout": {
@@ -58,7 +58,7 @@
       "label": "Generating",
       "when": {
         "section": "footer",
-        "regex": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.\\.\\."
+        "regex": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.{2,3}"
       }
     },
     {

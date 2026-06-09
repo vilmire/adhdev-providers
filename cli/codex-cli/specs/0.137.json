@@ -10,7 +10,8 @@
     "delay_ms_before_submit": 200
   },
   "debounce": {
-    "busy_hold_ms": 8000
+    "busy_hold_ms": 8000,
+    "idle_hold_ms": 1500
   },
   "layout": {
     "sections": [
