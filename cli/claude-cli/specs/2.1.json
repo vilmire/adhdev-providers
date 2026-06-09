@@ -83,7 +83,7 @@
       "label": "Generating",
       "when": {
         "section": "body",
-        "regex": "[✶✻✷✤✦✧✢*·\\u2800-\\u28ff]\\s*[A-Z][a-z]+(ing|ed)[….]|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
+        "regex": "[✶✻✷✤✦✧✢\\u2800-\\u28ff]\\s+\\S|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
       }
     },
     {
