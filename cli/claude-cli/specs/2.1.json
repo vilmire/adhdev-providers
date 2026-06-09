@@ -108,7 +108,7 @@
       ],
       "action": {
         "type": "send_keys",
-        "keys": ""
+        "keys": "\u0003"
       }
     },
     {
