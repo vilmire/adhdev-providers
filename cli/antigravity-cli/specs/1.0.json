@@ -11,6 +11,7 @@
   },
   "debounce": {
     "busy_hold_ms": 5000,
+    "idle_hold_ms": 1500,
     "startup_grace_ms": 15000
   },
   "layout": {
