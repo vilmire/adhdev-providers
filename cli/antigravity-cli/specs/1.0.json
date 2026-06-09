@@ -91,9 +91,18 @@
       }
     },
     {
+      "id": "idle",
+      "label": "Ready",
+      "when": {
+        "section": "footer",
+        "regex": "\\? for shortcuts"
+      }
+    },
+    {
       "id": "signing_in",
       "label": "Signing in",
       "when": {
+        "section": "body",
         "regex": "Signing in"
       }
     },
@@ -101,15 +110,8 @@
       "id": "busy",
       "label": "Generating",
       "when": {
+        "section": "body",
         "regex": "[\\u2800-\\u28ff]|esc to cancel"
-      }
-    },
-    {
-      "id": "idle",
-      "label": "Ready",
-      "when": {
-        "section": "footer",
-        "regex": "\\? for shortcuts"
       }
     }
   ],

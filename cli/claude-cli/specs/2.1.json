@@ -71,18 +71,19 @@
       }
     },
     {
-      "id": "busy",
-      "label": "Generating",
-      "when": {
-        "regex": "[✶✻✷✤✦✧✢*·]\\s*[A-Z][a-z]+(ing|ed)…|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
-      }
-    },
-    {
       "id": "idle",
       "label": "Ready",
       "when": {
         "section": "footer",
         "regex": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
+      }
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "when": {
+        "section": "body",
+        "regex": "[✶✻✷✤✦✧✢*·]\\s*[A-Z][a-z]+(ing|ed)…|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
       }
     }
   ],
