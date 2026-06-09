@@ -111,7 +111,6 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "section": "body",
         "regex": "[\\u2800-\\u28ff]|esc to cancel"
       }
     }

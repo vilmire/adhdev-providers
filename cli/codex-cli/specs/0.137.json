@@ -17,7 +17,7 @@
     "sections": [
       {
         "id": "footer",
-        "anchor_regex": "tab to queue message|⏎\\s+send|^\\s*>\\s*$"
+        "anchor_regex": "tab to queue message|⏎\\s+send|^\\s*[›>]\\s*$"
       },
       {
         "id": "modal_zone",
