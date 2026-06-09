@@ -168,7 +168,6 @@
       "body": "{state.title}"
     }
   ],
-  "requiresFinalAssistantBeforeIdle": true,
   "delegate": [],
   "native_history": {
     "source": {
@@ -176,7 +175,9 @@
       "path": "~/.codex/sessions/{yyyy}/{mm}/{dd}",
       "file_pattern": "rollout-*.jsonl",
       "session_id_from": "filename_uuid",
-      "message_filter": { "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>')" },
+      "message_filter": {
+        "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>')"
+      },
       "message_map": {
         "role": "$.payload.role",
         "content": "$.payload.content[0].text",
