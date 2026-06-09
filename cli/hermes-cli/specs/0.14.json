@@ -19,7 +19,7 @@
     "sections": [
       {
         "id": "footer",
-        "from_bottom": 7
+        "anchor_regex": "^[❯>]"
       },
       {
         "id": "modal_zone",
