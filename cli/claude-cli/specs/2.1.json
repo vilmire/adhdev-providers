@@ -31,7 +31,7 @@
       {
         "id": "modal_zone",
         "anchor_regex": "^[─╌]+$",
-        "until_regex": "^[❯›>]",
+        "until_regex": "^\\s*[❯›>➜]",
         "anchor_last": true,
         "anchor_context": {
           "next": "^(?![─╌]+$)"
@@ -43,6 +43,13 @@
         "until": {
           "section": "modal_zone"
         }
+      },
+      {
+        "id": "status_bar",
+        "from_bottom": 8,
+        "until": {
+          "section": "footer"
+        }
       }
     ]
   },
@@ -51,16 +58,24 @@
       "id": "approval",
       "label": "Approval requested",
       "when": {
-        "section": "modal_zone",
-        "regex": "(?:^|\\n)\\s*[❯›>]?\\s*1\\.\\s*.+(?:\\n|$)"
+        "section": "footer",
+        "regex": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
       },
       "extract_title": {
-        "section": "modal_zone",
-        "regex": "([^\\n?]{5,}\\?)"
+        "regex": "([^\\n?]{5,}\\?)(?=[\\s\\S]*?❯\\s*1\\.)"
       },
       "modal_buttons": {
-        "section": "modal_zone",
-        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
+        "section": "footer",
+        "patterns": [
+          {
+            "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
+            "flags": "gm"
+          },
+          {
+            "pattern": "(?:(?:^|\\s)[❯›>]\\s*|\\s{2,})(\\d+)\\.\\s*(.+?)(?=\\s{2,}\\d+\\.|\\s*$)",
+            "flags": "g"
+          }
+        ],
         "key_for_index": "{index}\r",
         "min_count": 2
       }
@@ -82,8 +97,8 @@
       "id": "busy",
       "label": "Generating",
       "when": {
-        "section": "body",
-        "regex": "[✶✻✷✤✦✧✢\\u2800-\\u28ff]\\s+\\S|esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|\\((?:\\d+m\\s+)?\\d+s\\s+·"
+        "section": "status_bar",
+        "regex": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens"
       }
     },
     {
