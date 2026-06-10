@@ -62,7 +62,9 @@
         "regex": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
       },
       "extract_title": {
-        "regex": "([^\\n?]{5,}\\?)(?=[\\s\\S]*?❯\\s*1\\.)"
+        "section": "modal_zone",
+        "regex": "^(?![─╌\\s]*$)(.+)$",
+        "flags": "m"
       },
       "modal_buttons": {
         "section": "modal_zone",
@@ -90,7 +92,7 @@
       "label": "Generating",
       "when": {
         "section": "status_bar",
-        "regex": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens"
+        "regex": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|✢\\s+\\w"
       }
     },
     {
