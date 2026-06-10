@@ -77,10 +77,6 @@
     {
       "ideVersion": ">=2.1.0",
       "spec": "specs/3.0.json"
-    },
-    {
-      "ideVersion": ">=2.1.0",
-      "spec": "specs/2.1.json"
     }
   ],
   "tui": {
