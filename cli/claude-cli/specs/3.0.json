@@ -30,7 +30,7 @@
       "until": "modal"
     },
     "status": {
-      "from_bottom": 8,
+      "from_bottom": 4,
       "until": "footer"
     }
   },
@@ -113,6 +113,7 @@
     "busy_hold_ms": 6000,
     "idle_hold_ms": 1500,
     "completion_marker": {
+      "section": "body",
       "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b",
       "hold_ms": 5000,
       "force_after_ms": 8000
