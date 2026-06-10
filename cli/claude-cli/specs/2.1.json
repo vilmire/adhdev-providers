@@ -51,6 +51,7 @@
       "id": "approval",
       "label": "Approval requested",
       "when": {
+        "section": "modal_zone",
         "regex": "(?:^|\\n)\\s*[❯›>]?\\s*1\\.\\s*.+(?:\\n|$)"
       },
       "extract_title": {
@@ -58,6 +59,7 @@
         "regex": "([^\\n?]{5,}\\?)"
       },
       "modal_buttons": {
+        "section": "modal_zone",
         "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
         "key_for_index": "{index}\r",
         "min_count": 2
