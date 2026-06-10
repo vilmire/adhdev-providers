@@ -31,7 +31,7 @@
       {
         "id": "modal_zone",
         "anchor_regex": "^[─╌]+$",
-        "until_regex": "^\\s*[❯›>➜]",
+        "until_regex": "^\\s*[❯›>➜](?!\\s*\\d+\\.)",
         "anchor_last": true,
         "anchor_context": {
           "next": "^(?![─╌]+$)"
@@ -65,17 +65,9 @@
         "regex": "([^\\n?]{5,}\\?)(?=[\\s\\S]*?❯\\s*1\\.)"
       },
       "modal_buttons": {
-        "section": "footer",
-        "patterns": [
-          {
-            "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
-            "flags": "gm"
-          },
-          {
-            "pattern": "(?:(?:^|\\s)[❯›>]\\s*|\\s{2,})(\\d+)\\.\\s*(.+?)(?=\\s{2,}\\d+\\.|\\s*$)",
-            "flags": "g"
-          }
-        ],
+        "section": "modal_zone",
+        "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
+        "flags": "gm",
         "key_for_index": "{index}\r",
         "min_count": 2
       }
