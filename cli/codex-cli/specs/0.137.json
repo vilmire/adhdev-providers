@@ -40,15 +40,12 @@
       "id": "trust",
       "label": "Trust required",
       "when": {
-        "section": "modal_zone",
         "regex": "Do you trust the contents of this directory\\?"
       },
       "extract_title": {
-        "section": "modal_zone",
         "regex": "(Do you trust the contents of this directory\\?)"
       },
       "modal_buttons": {
-        "section": "modal_zone",
         "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
         "continuation_lines": true,
         "key_for_index": "{index}\r"
