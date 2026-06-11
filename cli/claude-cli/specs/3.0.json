@@ -106,7 +106,7 @@
           },
           {
             "section": "body",
-            "not_matches": "⏺|✳|Thinking\\.\\.\\.|Working\\.\\.\\.|Philosophising\\.\\.\\."
+            "matches": "✻\\s+\\w+(?:\\s+\\w+)?\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b"
           }
         ]
       }
