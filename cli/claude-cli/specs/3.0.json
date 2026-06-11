@@ -103,6 +103,10 @@
           {
             "section": "footer",
             "matches": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
+          },
+          {
+            "section": "body",
+            "not_matches": "⏺|✳|Thinking\\.\\.\\.|Working\\.\\.\\.|Philosophising\\.\\.\\."
           }
         ]
       }
