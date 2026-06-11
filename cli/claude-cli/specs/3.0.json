@@ -115,7 +115,7 @@
   "default_state": "idle",
   "timing": {
     "busy_hold_ms": 6000,
-    "idle_hold_ms": 1500,
+    "idle_hold_ms": 3000,
     "screen_active_hold_ms": 2000,
     "completion_marker": {
       "section": "body",
