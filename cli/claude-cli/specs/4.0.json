@@ -141,6 +141,10 @@
             }
           },
           {
+            "section": "body",
+            "matches": "✻\\s+\\w.*?for\\s+\\d+[smh](?:\\s+\\d+[smh])*(?!.*\\btoken)"
+          },
+          {
             "stable_ms": 6000,
             "cursor_above": 4
           }
