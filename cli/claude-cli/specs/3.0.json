@@ -105,8 +105,13 @@
       "when": {
         "all": [
           {
-            "section": "footer",
-            "matches": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
+            "section": "body",
+            "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\s*$"
+          },
+          {
+            "cursor_above": 5,
+            "changed": false,
+            "stable_ms": 2000
           }
         ]
       }
