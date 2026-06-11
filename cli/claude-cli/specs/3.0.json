@@ -89,6 +89,10 @@
             "matches": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|✢\\s+\\w"
           },
           {
+            "section": "body",
+            "matches": "⎿[\\s\\u00a0]|(?:^|\\n)\\s*[·✢✳✶✽✷✸✹]\\s+\\w"
+          },
+          {
             "cursor_above": 3,
             "changed": true
           }
@@ -103,10 +107,6 @@
           {
             "section": "footer",
             "matches": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
-          },
-          {
-            "section": "body",
-            "matches": "✻\\s+\\w+(?:\\s+\\w+)?\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b"
           }
         ]
       }
