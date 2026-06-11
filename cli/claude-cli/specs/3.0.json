@@ -107,6 +107,10 @@
           {
             "section": "footer",
             "matches": "(?:^|\\n)\\s*[❯›>]\\s*(?:\\n|$)"
+          },
+          {
+            "section": "body",
+            "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b"
           }
         ]
       }
