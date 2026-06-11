@@ -131,7 +131,7 @@
       "label": "busy→idle",
       "from": "busy",
       "to": "idle",
-      "min_hold_ms": 400,
+      "min_hold_ms": 800,
       "when": {
         "all": [
           {
@@ -141,7 +141,7 @@
             }
           },
           {
-            "stable_ms": 1200,
+            "stable_ms": 3000,
             "cursor_above": 4
           }
         ]
