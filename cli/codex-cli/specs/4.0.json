@@ -1,0 +1,347 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "codex-cli",
+  "name": "Codex CLI",
+  "binary": "codex",
+  "cli_version_range": ">=0.137.0",
+  "spawn_args": [],
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 200
+  },
+  "sections": {
+    "footer": {
+      "anchor": "tab to queue message|⏎\\s+send|^\\s*[›>]\\s*$",
+      "anchor_last": true
+    },
+    "modal": {
+      "from_bottom": 36,
+      "until": "footer"
+    },
+    "body": {
+      "from_top": 0,
+      "until": "modal"
+    },
+    "status": {
+      "from_bottom": 4,
+      "until": "footer"
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Working",
+      "status": "generating"
+    },
+    {
+      "id": "mcp_init",
+      "label": "Starting MCP",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+          "flags": "gm",
+          "continuation_lines": true,
+          "key_for_index": "{index}\r",
+          "min_count": 2
+        }
+      }
+    },
+    {
+      "id": "trust",
+      "label": "Trust required",
+      "modal": true,
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r",
+          "min_count": 2
+        }
+      }
+    },
+    {
+      "id": "picker",
+      "label": "Picker open",
+      "modal": true,
+      "extract": {
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r"
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup-grace",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 5000
+      }
+    },
+    {
+      "label": "→trust",
+      "from": ["starting", "idle", "busy", "mcp_init"],
+      "to": "trust",
+      "priority": 110,
+      "when": {
+        "section": "modal",
+        "matches": "Do you trust the contents of this directory\\?|Update available!"
+      }
+    },
+    {
+      "label": "→approval",
+      "from": ["starting", "idle", "busy", "mcp_init"],
+      "to": "approval",
+      "priority": 100,
+      "when": {
+        "section": "modal",
+        "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel"
+      }
+    },
+    {
+      "label": "→picker",
+      "from": ["idle", "busy"],
+      "to": "picker",
+      "priority": 100,
+      "when": {
+        "section": "modal",
+        "matches": "Select a model|switch to a different model"
+      }
+    },
+    {
+      "label": "→mcp_init",
+      "from": ["starting", "idle"],
+      "to": "mcp_init",
+      "when": {
+        "section": "body",
+        "matches": "Starting MCP servers \\("
+      }
+    },
+    {
+      "label": "mcp_init→busy",
+      "from": "mcp_init",
+      "to": "busy",
+      "when": {
+        "section": "body",
+        "matches": "Working \\(|esc to interrupt"
+      }
+    },
+    {
+      "label": "mcp_init→idle",
+      "from": "mcp_init",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "body",
+              "matches": "Starting MCP servers \\("
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "Working \\("
+            }
+          },
+          {
+            "stable_ms": 1500,
+            "cursor_above": 4
+          }
+        ]
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": "idle",
+      "to": "busy",
+      "when": {
+        "any": [
+          {
+            "section": "body",
+            "matches": "Working \\("
+          },
+          {
+            "section": "body",
+            "matches": "esc to interrupt"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "body",
+              "matches": "Working \\("
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "Starting MCP servers \\("
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "esc to interrupt"
+            }
+          },
+          {
+            "stable_ms": 1500,
+            "cursor_above": 4
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy",
+      "from": ["approval", "trust", "picker"],
+      "to": "busy",
+      "when": {
+        "section": "body",
+        "matches": "Working \\(|esc to interrupt"
+      }
+    },
+    {
+      "label": "approval→idle",
+      "from": ["approval", "trust", "picker"],
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you trust the contents of this directory\\?|Update available!"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Select a model|switch to a different model"
+            }
+          },
+          {
+            "stable_ms": 800,
+            "cursor_above": 5
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": ["busy", "mcp_init"],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
+    },
+    {
+      "id": "set_model",
+      "label": "Model",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "open_picker",
+        "trigger_keys": "/model\r",
+        "wait_for": {
+          "section": "modal",
+          "regex": "Select a model|switch to a different model"
+        },
+        "extract_choices": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+        },
+        "submit_key": "{index}\r"
+      }
+    },
+    {
+      "id": "attach_image",
+      "label": "📎",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "attach_image",
+        "method": "tempfile_then_keys",
+        "keys_template": "{path}\r"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Codex",
+      "body": "{state.title}"
+    },
+    {
+      "id": "trust_needed",
+      "when_state": "trust",
+      "title": "Codex needs to trust this directory",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.codex/sessions/{yyyy}/{mm}/{dd}",
+      "file_pattern": "rollout-*.jsonl",
+      "session_id_from": "filename_uuid",
+      "message_filter": {
+        "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>')"
+      },
+      "message_map": {
+        "role": "$.payload.role",
+        "content": "$.payload.content[0].text",
+        "timestamp_ms": "$.timestamp"
+      }
+    }
+  }
+}

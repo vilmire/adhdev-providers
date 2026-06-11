@@ -1,0 +1,285 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "antigravity-cli",
+  "name": "Antigravity CLI",
+  "binary": "agy",
+  "cli_version_range": ">=1.0.0",
+  "spawn_args": [],
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 200
+  },
+  "sections": {
+    "footer": {
+      "from_bottom": 1
+    },
+    "modal": {
+      "from_bottom": 24,
+      "until": "footer"
+    },
+    "body": {
+      "from_top": 0,
+      "until": "modal"
+    },
+    "status": {
+      "from_bottom": 4,
+      "until": "footer"
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "signing_in",
+      "label": "Signing in",
+      "status": "generating"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[>›]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r",
+          "min_count": 2
+        }
+      }
+    },
+    {
+      "id": "trust",
+      "label": "Trust required",
+      "modal": true,
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[>›]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r",
+          "min_count": 2
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup-grace",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 15000
+      }
+    },
+    {
+      "label": "starting→signing_in",
+      "from": "starting",
+      "to": "signing_in",
+      "when": {
+        "section": "body",
+        "matches": "Signing in"
+      }
+    },
+    {
+      "label": "signing_in→idle",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "body",
+              "matches": "Signing in"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "\\? for shortcuts"
+          }
+        ]
+      }
+    },
+    {
+      "label": "→trust",
+      "from": ["starting", "idle", "busy"],
+      "to": "trust",
+      "priority": 110,
+      "when": {
+        "section": "modal",
+        "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+      }
+    },
+    {
+      "label": "→approval",
+      "from": ["starting", "idle", "busy"],
+      "to": "approval",
+      "priority": 100,
+      "when": {
+        "section": "modal",
+        "matches": "Do you want to proceed\\?"
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": "idle",
+      "to": "busy",
+      "when": {
+        "any": [
+          {
+            "section": "body",
+            "matches": "[\\u2800-\\u28ff]"
+          },
+          {
+            "section": "footer",
+            "matches": "esc to cancel"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "body",
+              "matches": "[\\u2800-\\u28ff]"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "esc to cancel"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "\\? for shortcuts"
+          },
+          {
+            "stable_ms": 1500,
+            "cursor_above": 4
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy",
+      "from": ["approval", "trust"],
+      "to": "busy",
+      "when": {
+        "any": [
+          {
+            "section": "body",
+            "matches": "[\\u2800-\\u28ff]"
+          },
+          {
+            "section": "footer",
+            "matches": "esc to cancel"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→idle",
+      "from": ["approval", "trust"],
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you want to proceed\\?"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "\\? for shortcuts"
+          },
+          {
+            "stable_ms": 800,
+            "cursor_above": 5
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": ["busy"],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u001b"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Antigravity",
+      "body": "{state.title}"
+    },
+    {
+      "id": "trust_needed",
+      "when_state": "trust",
+      "title": "Antigravity needs to trust this folder",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.gemini/antigravity-cli/brain/*/.system_generated/logs",
+      "file_pattern": "transcript.jsonl",
+      "recent_window_ms": 86400000,
+      "message_filter": {
+        "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null"
+      },
+      "message_map": {
+        "role": "$.source",
+        "content": "$.content",
+        "timestamp_ms": "$.created_at",
+        "content_strip": ["ADDITIONAL_METADATA", "USER_SETTINGS_CHANGE"],
+        "content_unwrap": ["USER_REQUEST"]
+      }
+    }
+  }
+}

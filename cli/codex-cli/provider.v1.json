@@ -55,7 +55,7 @@
   "compatibility": [
     {
       "ideVersion": ">=0.137.0",
-      "spec": "specs/0.137.json"
+      "spec": "specs/4.0.json"
     },
     {
       "ideVersion": ">=0.42.0"

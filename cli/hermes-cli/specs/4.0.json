@@ -1,0 +1,290 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "hermes-cli",
+  "name": "Hermes Agent",
+  "binary": "hermes",
+  "cli_version_range": ">=0.14.0",
+  "spawn_args": ["chat"],
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 500
+  },
+  "sections": {
+    "footer": {
+      "anchor": "^[❯>]",
+      "anchor_last": true
+    },
+    "modal": {
+      "from_bottom": 16,
+      "until": "footer"
+    },
+    "body": {
+      "from_top": 0,
+      "until": "modal"
+    },
+    "status": {
+      "from_bottom": 4,
+      "until": "footer"
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r",
+          "min_count": 2
+        }
+      }
+    },
+    {
+      "id": "picker",
+      "label": "Picker open",
+      "modal": true,
+      "extract": {
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}\r"
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup-grace",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "all": [
+          {
+            "elapsed_ms": 3000
+          },
+          {
+            "any": [
+              {
+                "section": "footer",
+                "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+              },
+              {
+                "section": "body",
+                "matches": "Welcome to Hermes Agent"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "startup-timeout",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 15000
+      }
+    },
+    {
+      "label": "→approval",
+      "from": ["starting", "idle", "busy"],
+      "to": "approval",
+      "priority": 100,
+      "when": {
+        "section": "modal",
+        "matches": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Dangerous Command|Allow once|Allow for this session|Add to permanent allowlist"
+      }
+    },
+    {
+      "label": "→picker",
+      "from": ["idle", "busy"],
+      "to": "picker",
+      "priority": 100,
+      "when": {
+        "section": "modal",
+        "matches": "Select a model|switch model|Model picker"
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": "idle",
+      "to": "busy",
+      "when": {
+        "any": [
+          {
+            "section": "footer",
+            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer"
+          },
+          {
+            "section": "footer",
+            "matches": "musing\\.{2,3}"
+          },
+          {
+            "section": "footer",
+            "matches": "Enter to interrupt"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 400,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "footer",
+              "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.{2,3}|Enter to interrupt"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+          },
+          {
+            "stable_ms": 1500,
+            "cursor_above": 4
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy",
+      "from": ["approval", "picker"],
+      "to": "busy",
+      "when": {
+        "any": [
+          {
+            "section": "footer",
+            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.{2,3}|Enter to interrupt"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→idle",
+      "from": ["approval", "picker"],
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Dangerous Command|Allow once|Allow for this session|Add to permanent allowlist"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Select a model|switch model|Model picker"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+          },
+          {
+            "stable_ms": 800,
+            "cursor_above": 5
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": ["busy"],
+      "action": {
+        "type": "send_keys",
+        "keys": ""
+      }
+    },
+    {
+      "id": "queue",
+      "label": "Queue message",
+      "visible_when_state": ["busy"],
+      "action": {
+        "type": "send_keys",
+        "keys": "/queue\r"
+      }
+    },
+    {
+      "id": "background",
+      "label": "Background",
+      "visible_when_state": ["busy"],
+      "action": {
+        "type": "send_keys",
+        "keys": "/bg\r"
+      }
+    },
+    {
+      "id": "set_model",
+      "label": "Model",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "open_picker",
+        "trigger_keys": "/model\r",
+        "wait_for": {
+          "section": "modal",
+          "regex": "Select a model|switch model|Model picker"
+        },
+        "extract_choices": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+        },
+        "submit_key": "{index}\r"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Hermes",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "source": {
+      "kind": "sqlite",
+      "path": "${HERMES_HOME:-~/.hermes}/state.db",
+      "session_query": "SELECT id FROM sessions WHERE source = 'cli' AND message_count > 0 AND started_at >= ? ORDER BY started_at DESC LIMIT 1",
+      "message_query": "SELECT role, content, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND content IS NOT NULL AND content != '' AND role IN ('user', 'assistant', 'system') ORDER BY timestamp ASC, id ASC",
+      "message_map": {
+        "role": "$.role",
+        "content": "$.content",
+        "timestamp_ms": "$.ts_ms"
+      }
+    }
+  }
+}

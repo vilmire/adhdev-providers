@@ -65,7 +65,7 @@
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
-      "spec": "specs/1.0.json"
+      "spec": "specs/4.0.json"
     }
   ],
   "nativeHistory": {
