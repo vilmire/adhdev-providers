@@ -123,38 +123,26 @@
       "from": "idle",
       "to": "busy",
       "when": {
-        "any": [
-          {
-            "section": "status",
-            "matches": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|✢\\s+\\w"
-          },
-          {
-            "section": "body",
-            "matches": "⎿[\\s\\u00a0]|(?:^|\\n)\\s*[·✢✳✶✽✷✸✹]\\s+\\w"
-          }
-        ]
+        "section": "body",
+        "matches": "(?:^|\\n)\\s*[·✢✳✶✽✷✸✹⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+\\w.*?(?:…|\\.\\.\\.)"
       }
     },
     {
       "label": "busy→idle",
       "from": "busy",
       "to": "idle",
-      "min_hold_ms": 500,
+      "min_hold_ms": 400,
       "when": {
         "all": [
           {
-            "section": "body",
-            "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s"
-          },
-          {
             "not": {
-              "section": "status",
-              "matches": "esc to interrupt|[↓↑]\\s*\\d+(?:[.,]\\d+)?\\s*[kKmM]?\\s*tokens|[·✢✳✶✽✷✸✹]\\s+\\w"
+              "section": "body",
+              "matches": "(?:^|\\n)\\s*[·✢✳✶✽✷✸✹⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+\\w.*?(?:…|\\.\\.\\.)"
             }
           },
           {
             "stable_ms": 1200,
-            "cursor_above": 5
+            "cursor_above": 4
           }
         ]
       }
@@ -168,7 +156,7 @@
       "to": "busy",
       "when": {
         "section": "body",
-        "matches": "⎿[\\s\\u00a0]|(?:^|\\n)\\s*[·✢✳✶✽✷✸✹]\\s+\\w"
+        "matches": "(?:^|\\n)\\s*[·✢✳✶✽✷✸✹⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+\\w.*?(?:…|\\.\\.\\.)"
       }
     },
     {
