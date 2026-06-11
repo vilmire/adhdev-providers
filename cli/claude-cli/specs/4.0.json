@@ -158,6 +158,7 @@
         "picker"
       ],
       "to": "busy",
+      "min_hold_ms": 1500,
       "when": {
         "section": "body",
         "matches": "(?:^|\\n)\\s*[·✢✳✶✽✷✸✹⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+\\w.*?(?:…|\\.\\.\\.)"
