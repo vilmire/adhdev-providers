@@ -119,7 +119,7 @@
     "screen_active_hold_ms": 2000,
     "completion_marker": {
       "section": "body",
-      "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\b",
+      "matches": "✻\\s+\\w+ed\\s+for\\s+(?:\\d+h\\s+)?(?:\\d+m\\s+)?\\d+s\\s*$",
       "hold_ms": 2000,
       "force_after_ms": 8000
     }
