@@ -258,7 +258,7 @@
   "native_history": {
     "source": {
       "kind": "jsonl",
-      "path": "~/.claude/projects/{cwd_dashed}/{session_id}.jsonl",
+      "path": "~/.claude/projects/{cwd_claude_project}/{session_id}.jsonl",
       "session_id_from": "filename_uuid",
       "message_filter": {
         "where": "$.type == 'user' || $.type == 'assistant'"
