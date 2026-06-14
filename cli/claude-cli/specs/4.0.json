@@ -18,11 +18,15 @@
       "anchor_last": true
     },
     "modal": {
-      "anchor": "^[─╌]+$",
+      "anchor": [
+        "^[─╌]+$",
+        "\\S"
+      ],
       "anchor_last": true,
-      "anchor_context": {
-        "next": "^(?![─╌]+$)"
-      },
+      "anchor_context": [
+        { "next": "^(?![─╌]+$)" },
+        { "next": "^\\s*[❯›>➜]?\\s*1\\.\\s" }
+      ],
       "until": "^\\s*[❯›>➜](?!\\s*\\d+\\.)"
     },
     "body": {
