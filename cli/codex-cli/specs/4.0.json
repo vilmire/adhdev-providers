@@ -15,12 +15,18 @@
       "anchor_last": true
     },
     "modal": {
-      "from_bottom": 36,
+      "anchor": "Do you trust the contents of this directory\\?|Update available!|Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Select a model|switch to a different model",
+      "anchor_last": true,
+      "until": "footer"
+    },
+    "options": {
+      "anchor": "^\\s*(?:[›>]\\s*)?\\d+\\.\\s",
+      "anchor_last": true,
       "until": "footer"
     },
     "body": {
       "from_top": 0,
-      "until": "modal"
+      "until": "footer"
     },
     "status": {
       "from_bottom": 4,

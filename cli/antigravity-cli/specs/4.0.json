@@ -5,6 +5,8 @@
   "binary": "agy",
   "cli_version_range": ">=1.0.0",
   "spawn_args": [],
+  "send_on_spawn": ["\u001b[I"],
+  "send_on_spawn_delay_ms": 250,
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200
