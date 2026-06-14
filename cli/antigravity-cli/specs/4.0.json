@@ -89,6 +89,26 @@
   ],
   "transitions": [
     {
+      "label": "starting→idle-ready",
+      "from": "starting",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "body",
+              "matches": "Signing in"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "\\? for shortcuts"
+          }
+        ]
+      }
+    },
+    {
       "label": "startup-grace",
       "from": "starting",
       "to": "idle",
