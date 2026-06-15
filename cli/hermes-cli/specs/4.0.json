@@ -9,22 +9,23 @@
     "submit_key": "\r",
     "delay_ms_before_submit": 500
   },
+  "_sections_note": "Measured live against Hermes Agent v0.14.0 on 2026-06-15 via /api/cli/debug/hermes-cli. The OLD spec used `footer { anchor: '^[❯>]', anchor_last:true }` plus `modal { from_bottom:16, until:'footer' }` and `status { from_bottom:4, until:'footer' }`. That footer anchor ONLY matches the bare idle prompt line `❯`; in BUSY the prompt line renders as `⚕ ❯ msg=interrupt · ...` and in APPROVAL it renders as `⚠ ❯`, neither of which starts with ❯/>. When the footer anchor fails, evaluator.ts defaults the section to the whole screen (from=0), so every `until:'footer'` section clamps toLine = footer.fromLine = 0 and starves to ZERO lines. Measured proof at a live `⚠️  Dangerous Command` modal: status=generating (WRONG), sections[modal].text='' (0 lines), →approval condResult=FALSE — FSM stuck in busy. Fix mirrors the codex rewrite: `modal` self-anchors on its own landmark with no `until`; `body` is the whole screen; busy/idle/approval guards run against those self-contained sections. Every anchor string below was seen verbatim in live screen capture.",
   "sections": {
-    "footer": {
-      "anchor": "^[❯>]",
-      "anchor_last": true
-    },
     "modal": {
-      "from_bottom": 16,
-      "until": "footer"
+      "anchor": "⚠️\\s*Dangerous Command|Dangerous Command|Approval required|Permission required|Allow once|Allow for this session|Add to permanent allowlist|↑/↓ to select, Enter to confirm|Select a model|switch model|Model picker"
     },
     "body": {
-      "from_top": 0,
-      "until": "modal"
+      "from_top": 0
+    },
+    "composer": {
+      "anchor": "^\\s*[❯>]\\s*$",
+      "anchor_last": true,
+      "lines": 1
     },
     "status": {
-      "from_bottom": 4,
-      "until": "footer"
+      "anchor": "^\\s*⚕\\s.*│",
+      "anchor_last": true,
+      "lines": 1
     }
   },
   "states": [
@@ -55,7 +56,7 @@
         },
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+          "pattern": "^\\s*(?:│\\s*)?(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*(?:│\\s*)?$",
           "flags": "gm",
           "key_for_index": "{index}\r",
           "min_count": 2
@@ -69,7 +70,7 @@
       "extract": {
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$",
+          "pattern": "^\\s*(?:│\\s*)?(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*(?:│\\s*)?$",
           "flags": "gm",
           "key_for_index": "{index}\r"
         }
@@ -89,12 +90,12 @@
           {
             "any": [
               {
-                "section": "footer",
-                "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
-              },
-              {
                 "section": "body",
                 "matches": "Welcome to Hermes Agent"
+              },
+              {
+                "section": "composer",
+                "matches": "[❯>]"
               }
             ]
           }
@@ -116,7 +117,7 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Dangerous Command|Allow once|Allow for this session|Add to permanent allowlist"
+        "matches": "Dangerous Command|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Allow once|Allow for this session|Add to permanent allowlist"
       }
     },
     {
@@ -134,20 +135,8 @@
       "from": "idle",
       "to": "busy",
       "when": {
-        "any": [
-          {
-            "section": "footer",
-            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer"
-          },
-          {
-            "section": "footer",
-            "matches": "musing\\.{2,3}"
-          },
-          {
-            "section": "footer",
-            "matches": "Enter to interrupt"
-          }
-        ]
+        "section": "body",
+        "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
       }
     },
     {
@@ -159,13 +148,13 @@
         "all": [
           {
             "not": {
-              "section": "footer",
-              "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.{2,3}|Enter to interrupt"
+              "section": "body",
+              "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
             }
           },
           {
-            "section": "footer",
-            "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+            "section": "composer",
+            "matches": "[❯>]"
           },
           {
             "stable_ms": 1500,
@@ -179,10 +168,16 @@
       "from": ["approval", "picker"],
       "to": "busy",
       "when": {
-        "any": [
+        "all": [
           {
-            "section": "footer",
-            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|musing\\.{2,3}|Enter to interrupt"
+            "not": {
+              "section": "modal",
+              "matches": "Dangerous Command|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Allow once|Allow for this session|Add to permanent allowlist|Select a model|switch model|Model picker"
+            }
+          },
+          {
+            "section": "body",
+            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
           }
         ]
       }
@@ -197,7 +192,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Approve and run|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Dangerous Command|Allow once|Allow for this session|Add to permanent allowlist"
+              "matches": "Dangerous Command|Approval required|Permission required|Do you want to (?:proceed|allow|run|create|edit|delete|modify)|Allow once|Allow for this session|Add to permanent allowlist"
             }
           },
           {
@@ -207,8 +202,8 @@
             }
           },
           {
-            "section": "footer",
-            "matches": "(?:^|\\n)\\s*[❯>]\\s*(?:\\n|$)"
+            "section": "composer",
+            "matches": "[❯>]"
           },
           {
             "stable_ms": 800,
@@ -259,7 +254,7 @@
         },
         "extract_choices": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+          "pattern": "^\\s*(?:│\\s*)?(?:[❯>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*(?:│\\s*)?$"
         },
         "submit_key": "{index}\r"
       }
