@@ -11,21 +11,17 @@
     "submit_key": "\r",
     "delay_ms_before_submit": 200
   },
+  "_sections_note": "MEASURED 2026-06-15 against agy 1.0.8 (Gemini 3.1 Pro). The old spec used positional windows: footer=from_bottom:1, modal=from_bottom:24 until:footer, body=from_top:0 until:modal, status=from_bottom:4 until:footer. Real screens proved two failures: (1) modal=from_bottom:24 is content junk — at idle (~11-line screen) it clamps to the whole banner+composer, and after a turn it is the response tail (e.g. 'We smoothly transition to twelve.'), so extract.title.first_line grabbed the wrong line (the echoed prompt '> Run this...') and buttons were polluted -> activeModal came back null. Fix: modal now anchors on its OWN landmark ('Do you want to proceed?' / 'Requesting permission for:') and runs to end-of-screen (no until). (2) body=from_top:0 until:modal starved to 0 lines whenever the screen is short (idle + early generating), so every body braille check was dead. Fix: body is the whole screen. The footer anchor '? for shortcuts' / 'esc to cancel' DID match live and is kept.",
   "sections": {
     "footer": {
       "from_bottom": 1
     },
     "modal": {
-      "from_bottom": 24,
-      "until": "footer"
+      "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?",
+      "anchor_last": true
     },
     "body": {
-      "from_top": 0,
-      "until": "modal"
-    },
-    "status": {
-      "from_bottom": 4,
-      "until": "footer"
+      "from_top": 0
     }
   },
   "states": [
@@ -162,7 +158,7 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Do you want to proceed\\?"
+        "matches": "Do you want to proceed\\?|Requesting permission for:"
       }
     },
     {
@@ -173,7 +169,7 @@
         "any": [
           {
             "section": "body",
-            "matches": "[\\u2800-\\u28ff]"
+            "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
           },
           {
             "section": "footer",
@@ -191,8 +187,8 @@
         "all": [
           {
             "not": {
-              "section": "body",
-              "matches": "[\\u2800-\\u28ff]"
+              "section": "modal",
+              "matches": "Do you want to proceed\\?|Requesting permission for:"
             }
           },
           {
@@ -217,14 +213,30 @@
       "from": ["approval", "trust"],
       "to": "busy",
       "when": {
-        "any": [
+        "all": [
           {
-            "section": "body",
-            "matches": "[\\u2800-\\u28ff]"
+            "not": {
+              "section": "modal",
+              "matches": "Do you want to proceed\\?|Requesting permission for:"
+            }
           },
           {
-            "section": "footer",
-            "matches": "esc to cancel"
+            "not": {
+              "section": "modal",
+              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+            }
+          },
+          {
+            "any": [
+              {
+                "section": "body",
+                "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+              },
+              {
+                "section": "footer",
+                "matches": "esc to cancel"
+              }
+            ]
           }
         ]
       }
@@ -239,7 +251,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?"
+              "matches": "Do you want to proceed\\?|Requesting permission for:"
             }
           },
           {
@@ -249,12 +261,14 @@
             }
           },
           {
-            "section": "footer",
-            "matches": "\\? for shortcuts"
+            "not": {
+              "section": "footer",
+              "matches": "esc to cancel"
+            }
           },
           {
-            "stable_ms": 800,
-            "cursor_above": 5
+            "section": "footer",
+            "matches": "\\? for shortcuts"
           }
         ]
       }
