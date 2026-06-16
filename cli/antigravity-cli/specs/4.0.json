@@ -5,6 +5,10 @@
   "binary": "agy",
   "cli_version_range": ">=1.0.0",
   "spawn_args": [],
+  "pre_launch_trust": {
+    "settings_path": "~/.gemini/antigravity-cli/settings.json",
+    "key": "trustedWorkspaces"
+  },
   "send_on_spawn": ["\u001b[I"],
   "send_on_spawn_delay_ms": 250,
   "send_message": {
