@@ -36,10 +36,6 @@
     "body": {
       "from_top": 0,
       "until": "modal"
-    },
-    "status": {
-      "from_bottom": 20,
-      "until": "footer"
     }
   },
   "states": [
