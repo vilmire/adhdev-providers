@@ -24,8 +24,12 @@
       ],
       "anchor_last": true,
       "anchor_context": [
-        { "next": "^(?![─╌]+$)" },
-        { "next": "^\\s*[❯›>➜]?\\s*1\\.\\s" }
+        {
+          "next": "^(?![─╌]+$)"
+        },
+        {
+          "next": "^\\s*[❯›>➜]?\\s*1\\.\\s"
+        }
       ],
       "until": "^\\s*[❯›>➜](?!\\s*\\d+\\.)"
     },
@@ -34,7 +38,7 @@
       "until": "modal"
     },
     "status": {
-      "from_bottom": 4,
+      "from_bottom": 20,
       "until": "footer"
     }
   },
