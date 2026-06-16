@@ -299,6 +299,24 @@
       }
     },
     {
+      "id": "set_mode",
+      "label": "Mode",
+      "visible_when_state": ["idle"],
+      "action": {
+        "type": "open_picker",
+        "trigger_keys": "/approvals\r",
+        "wait_for": {
+          "section": "modal",
+          "regex": "Select Approval Mode|Choose what Codex can do|approval mode|Switch approval"
+        },
+        "extract_choices": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+        },
+        "submit_key": "{index}\r"
+      }
+    },
+    {
       "id": "attach_image",
       "label": "📎",
       "visible_when_state": ["idle"],

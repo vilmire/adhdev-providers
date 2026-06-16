@@ -242,6 +242,17 @@
       }
     },
     {
+      "id": "cycle_mode",
+      "label": "Mode",
+      "visible_when_state": [
+        "idle"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u001b[Z"
+      }
+    },
+    {
       "id": "attach_image",
       "label": "📎",
       "visible_when_state": [
