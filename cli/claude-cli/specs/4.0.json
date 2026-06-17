@@ -228,7 +228,7 @@
         "trigger_keys": "/model\r",
         "wait_for": {
           "section": "modal",
-          "regex": "Select a model"
+          "regex": "Select (?:a |an )?model"
         },
         "extract_choices": {
           "section": "modal",
