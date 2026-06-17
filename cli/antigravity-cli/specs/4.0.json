@@ -311,14 +311,20 @@
       "file_pattern": "transcript.jsonl",
       "recent_window_ms": 86400000,
       "message_filter": {
-        "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null"
+        "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null || $.type == 'RUN_COMMAND' && $.status == 'DONE' || $.type == 'LIST_DIRECTORY' && $.status == 'DONE' || $.type == 'CODE_ACTION' && $.status == 'DONE'"
       },
       "message_map": {
         "role": "$.source",
         "content": "$.content",
         "timestamp_ms": "$.created_at",
         "content_strip": ["ADDITIONAL_METADATA", "USER_SETTINGS_CHANGE"],
-        "content_unwrap": ["USER_REQUEST"]
+        "content_unwrap": ["USER_REQUEST"],
+        "tools": {
+          "block_type": "$.type",
+          "call_types": [],
+          "result_types": ["RUN_COMMAND", "LIST_DIRECTORY", "CODE_ACTION"],
+          "result_content": "$.content"
+        }
       }
     }
   }

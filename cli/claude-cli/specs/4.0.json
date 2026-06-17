@@ -281,7 +281,8 @@
       "message_map": {
         "role": "$.message.role",
         "content": "$.message.content",
-        "timestamp_ms": "$.timestamp"
+        "timestamp_ms": "$.timestamp",
+        "tools": {}
       }
     }
   }

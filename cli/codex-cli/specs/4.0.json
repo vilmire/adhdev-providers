@@ -349,12 +349,18 @@
       "file_pattern": "rollout-*.jsonl",
       "session_id_from": "filename_uuid",
       "message_filter": {
-        "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>')"
+        "where": "$.type == 'response_item' && $.payload.type == 'message' && !startsWith($.payload.content[0].text, '<environment_context>') || $.type == 'response_item' && $.payload.type == 'function_call' || $.type == 'response_item' && $.payload.type == 'function_call_output' || $.type == 'response_item' && $.payload.type == 'custom_tool_call' || $.type == 'response_item' && $.payload.type == 'custom_tool_call_output'"
       },
       "message_map": {
         "role": "$.payload.role",
         "content": "$.payload.content[0].text",
-        "timestamp_ms": "$.timestamp"
+        "timestamp_ms": "$.timestamp",
+        "tools": {
+          "block_type": "$.payload.type",
+          "call_name": "$.payload.name",
+          "call_args": "$.payload.arguments",
+          "result_content": "$.payload.output"
+        }
       }
     }
   }
