@@ -137,7 +137,7 @@
       "label": "busy→idle",
       "from": "busy",
       "to": "idle",
-      "min_hold_ms": 800,
+      "min_hold_ms": 2500,
       "when": {
         "all": [
           {
