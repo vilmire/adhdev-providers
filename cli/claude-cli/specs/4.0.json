@@ -107,7 +107,8 @@
       "when": {
         "section": "footer",
         "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
-      }
+      },
+      "min_hold_ms": 500
     },
     {
       "label": "→picker",
