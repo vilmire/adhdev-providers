@@ -19,16 +19,16 @@
     },
     "modal": {
       "anchor": [
-        "\\S",
-        "^[─╌]+$"
+        "^[─╌]+$",
+        "\\S"
       ],
       "anchor_last": true,
       "anchor_context": [
         {
-          "next": "^\\s*[❯›>➜]?\\s*1\\.\\s"
+          "next": "^(?![─╌]+$)"
         },
         {
-          "next": "^(?![─╌]+$)"
+          "next": "^\\s*[❯›>➜]?\\s*1\\.\\s"
         }
       ],
       "until": "^\\s*[❯›>➜](?!\\s*\\d+\\.)"
@@ -107,8 +107,7 @@
       "when": {
         "section": "footer",
         "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
-      },
-      "min_hold_ms": 500
+      }
     },
     {
       "label": "→picker",
@@ -137,7 +136,7 @@
       "label": "busy→idle",
       "from": "busy",
       "to": "idle",
-      "min_hold_ms": 2500,
+      "min_hold_ms": 800,
       "when": {
         "all": [
           {
