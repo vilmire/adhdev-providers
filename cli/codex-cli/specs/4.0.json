@@ -12,7 +12,7 @@
   "_sections_note": "MEASURED against live codex 0.139.0 (2026-06-15). The old footer anchor (tab to queue message|⏎ send|^[›>]$) matched NOTHING this codex renders, so footer defaulted to the whole screen and every `until: footer` section (modal/body/options/status) collapsed to EMPTY — the FSM could never see the approval modal or the Working spinner and sat in idle forever. The modal section now anchors directly on its own landmark with NO `until` (the guard regexes are modal-specific, so a whole-screen fallback in non-modal frames is harmless). body is the whole screen (Working/esc-to-interrupt only appear while generating). See docs/guides/CLI_SPEC_MEASURED_REWRITE.md.",
   "sections": {
     "modal": {
-      "anchor": "Do you trust the contents of this directory\\?|Update available!|Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel|Select a model|switch to a different model"
+      "anchor": "Do you trust the contents of this directory\\?|Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel|Select a model|switch to a different model"
     },
     "composer": {
       "anchor": "^›\\s",
@@ -112,7 +112,7 @@
       "priority": 110,
       "when": {
         "section": "modal",
-        "matches": "Do you trust the contents of this directory\\?|Update available!"
+        "matches": "Do you trust the contents of this directory\\?"
       }
     },
     {
@@ -253,7 +253,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you trust the contents of this directory\\?|Update available!"
+              "matches": "Do you trust the contents of this directory\\?"
             }
           },
           {
