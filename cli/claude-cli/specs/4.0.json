@@ -147,7 +147,7 @@
           },
           {
             "section": "body",
-            "matches": "✻\\s+\\w.*?for\\s+\\d+[smh](?:\\s+\\d+[smh])*(?!.*\\btoken)"
+            "matches": "✻\\s+\\w[^\\n]*?\\bfor\\s+\\d+[smh](?:\\s+\\d+[smh])*(?![^\\n]*\\btokens?\\b)(?![^\\n]*[↑↓])[^\\n]*(?:\\n(?![^\\n]*(?:[·✢✳✶✽✷✸✹⠀-⣿]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.)|esc to (?:interrupt|stop)|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))[^\\n]*)*$"
           },
           {
             "stable_ms": 6000,
