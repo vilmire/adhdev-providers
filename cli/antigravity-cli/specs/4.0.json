@@ -11,6 +11,7 @@
   },
   "send_on_spawn": ["\u001b[I"],
   "send_on_spawn_delay_ms": 250,
+  "refocus_when_stalled_ms": 1800,
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200
