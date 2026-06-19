@@ -136,7 +136,7 @@
       "to": "busy",
       "when": {
         "section": "body",
-        "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
+        "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
       }
     },
     {
@@ -149,7 +149,7 @@
           {
             "not": {
               "section": "body",
-              "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
+              "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
             }
           },
           {
@@ -177,7 +177,7 @@
           },
           {
             "section": "body",
-            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt"
+            "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
           }
         ]
       }
