@@ -141,7 +141,6 @@
         "all": [
           {
             "not": {
-              "section": "body",
               "matches": "(?:(?:^|\\n)\\s*[·✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w.*?(?:…|\\.\\.\\.))|esc to (?:interrupt|stop)"
             }
           },
@@ -150,7 +149,7 @@
             "matches": "✻\\s+\\w[^\\n]*?\\bfor\\s+\\d+[smh](?:\\s+\\d+[smh])*(?![^\\n]*\\btokens?\\b)(?![^\\n]*[↑↓])[^\\n]*(?:\\n(?![^\\n]*(?:[·✢✳✶✽✷✸✹⠀-⣿]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.)|esc to (?:interrupt|stop)|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))[^\\n]*)*$"
           },
           {
-            "stable_ms": 6000,
+            "stable_ms": 8000,
             "cursor_above": 4
           }
         ]
