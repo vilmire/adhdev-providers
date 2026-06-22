@@ -159,7 +159,8 @@
           "section": "modal",
           "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
         },
-        "submit_key": "{index}\r"
+        "submit_key": "{index}\r",
+        "select_mode": "arrow_keys"
       }
     },
     {
