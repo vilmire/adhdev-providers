@@ -163,8 +163,18 @@
       "to": "busy",
       "min_hold_ms": 1500,
       "when": {
-        "section": "body",
-        "matches": "(?:(?:^|\\n)\\s*[·✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
+        "all": [
+          {
+            "not": {
+              "section": "footer",
+              "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+            }
+          },
+          {
+            "section": "body",
+            "matches": "(?:(?:^|\\n)\\s*[·✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
+          }
+        ]
       }
     },
     {
