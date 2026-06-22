@@ -137,6 +137,11 @@
           "regex": "\\(y/n\\)|\\[Y/n\\]",
           "flags": "i",
           "label": "y-n-fallback"
+        },
+        {
+          "regex": "^\\s*[❯›]\\s*\\d+[.)]\\s+(?:Yes|No|Continue|Cancel|Skip|Use this|Fix with Claude|Allow|Deny|Reject|Always allow|Proceed)\\b",
+          "flags": "m",
+          "label": "approval-button-block"
         }
       ],
       "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+((?:Yes|No|Continue|Cancel|Skip|Use this(?: mcp server)?|Fix with Claude|Allow|Deny|Reject|Always allow)\\b.*)$",
