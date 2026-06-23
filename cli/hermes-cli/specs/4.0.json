@@ -49,6 +49,7 @@
       "id": "approval",
       "label": "Approval requested",
       "modal": true,
+      "modal_kind": "approval",
       "extract": {
         "title": {
           "section": "modal",
@@ -67,6 +68,7 @@
       "id": "picker",
       "label": "Picker open",
       "modal": true,
+      "modal_kind": "picker",
       "extract": {
         "buttons": {
           "section": "modal",

@@ -38,6 +38,7 @@
     {
       "id": "approval",
       "label": "Approval requested",
+      "modal_kind": "approval",
       "when": {
         "all": [
           {
@@ -64,6 +65,7 @@
     {
       "id": "picker",
       "label": "Picker open",
+      "modal_kind": "picker",
       "when": {
         "all": [
           {

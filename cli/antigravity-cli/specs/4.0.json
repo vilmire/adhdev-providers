@@ -55,6 +55,7 @@
       "id": "approval",
       "label": "Approval requested",
       "modal": true,
+      "modal_kind": "approval",
       "extract": {
         "title": {
           "section": "modal",
@@ -73,6 +74,7 @@
       "id": "trust",
       "label": "Trust required",
       "modal": true,
+      "modal_kind": "approval",
       "extract": {
         "title": {
           "section": "modal",
