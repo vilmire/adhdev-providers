@@ -108,8 +108,23 @@
       "to": "approval",
       "priority": 100,
       "when": {
-        "section": "footer",
-        "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+        "all": [
+          {
+            "section": "footer",
+            "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+          },
+          {
+            "any": [
+              {
+                "section": "footer",
+                "matches": "Esc to cancel\\b"
+              },
+              {
+                "matches": "Do you want to proceed\\?"
+              }
+            ]
+          }
+        ]
       }
     },
     {
@@ -197,6 +212,12 @@
             }
           },
           {
+            "not": {
+              "section": "footer",
+              "matches": "Esc to cancel\\b"
+            }
+          },
+          {
             "section": "body",
             "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
           }
@@ -217,6 +238,12 @@
             "not": {
               "section": "footer",
               "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "Esc to cancel\\b"
             }
           },
           {
