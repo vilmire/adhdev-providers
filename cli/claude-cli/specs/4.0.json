@@ -158,6 +158,29 @@
       }
     },
     {
+      "label": "busy→idle-quiet",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
+            }
+          },
+          {
+            "not": {
+              "matches": "[↑↓]\\s*[\\d.]+[km]?\\s*tokens?"
+            }
+          },
+          {
+            "stable_ms": 12000
+          }
+        ]
+      }
+    },
+    {
       "label": "approval→busy",
       "from": [
         "approval",
