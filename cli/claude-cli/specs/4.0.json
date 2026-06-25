@@ -218,6 +218,15 @@
             }
           },
           {
+            "not": {
+              "matches": "Do you want to proceed\\?"
+            }
+          },
+          {
+            "stable_ms": 700,
+            "cursor_above": 12
+          },
+          {
             "section": "body",
             "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
           }
