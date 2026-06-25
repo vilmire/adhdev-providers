@@ -28,7 +28,7 @@
           "next": "^(?![─╌]+$)"
         },
         {
-          "next": "^\\s*[❯›>➜]?\\s*1\\.\\s"
+          "next": "^\\s*[❯›➜]?\\s*1\\.\\s"
         }
       ],
       "until": "^\\s*[❯›>➜](?!\\s*\\d+\\.)"
@@ -67,7 +67,7 @@
         },
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
+          "pattern": "^\\s*(?:[❯›]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
           "flags": "gm",
           "key_for_index": "{index}\r",
           "min_count": 2,
@@ -83,7 +83,7 @@
       "extract": {
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
+          "pattern": "^\\s*(?:[❯›]\\s*)?(\\d+)\\.\\s*(.+?)\\s*$",
           "key_for_index": "{index}\r"
         }
       }
@@ -111,7 +111,7 @@
         "all": [
           {
             "section": "footer",
-            "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+            "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
           },
           {
             "any": [
@@ -208,7 +208,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+              "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
             }
           },
           {
@@ -246,7 +246,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "(?:^|\\n)\\s*[❯›>]\\s*1\\.\\s*.+"
+              "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
             }
           },
           {
@@ -302,7 +302,7 @@
         },
         "extract_choices": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
+          "pattern": "^\\s*(?:[❯›]\\s*)?(\\d+)\\.\\s+(.+?)\\s*$"
         },
         "submit_key": "{index}\r",
         "select_mode": "arrow_keys"
