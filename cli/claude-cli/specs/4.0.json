@@ -95,7 +95,7 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 4000
+        "elapsed_ms": 8000
       }
     },
     {
