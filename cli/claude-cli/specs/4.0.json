@@ -140,7 +140,10 @@
     },
     {
       "label": "idle→busy",
-      "from": "idle",
+      "from": [
+        "idle",
+        "starting"
+      ],
       "to": "busy",
       "min_hold_ms": 1000,
       "when": {
