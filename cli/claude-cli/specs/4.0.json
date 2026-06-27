@@ -114,15 +114,13 @@
             "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
           },
           {
-            "any": [
-              {
-                "section": "footer",
-                "matches": "Esc to cancel\\b"
-              },
-              {
-                "matches": "Do you want to proceed\\?"
-              }
-            ]
+            "section": "footer",
+            "matches": "Esc to cancel\\b"
+          },
+          {
+            "not": {
+              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|esc to (?:interrupt|stop)"
+            }
           }
         ]
       }
