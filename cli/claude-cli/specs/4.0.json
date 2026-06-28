@@ -111,11 +111,11 @@
         "all": [
           {
             "section": "footer",
-            "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
+            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
           },
           {
             "section": "footer",
-            "matches": "Esc to cancel\\b"
+            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
           },
           {
             "not": {
@@ -209,13 +209,13 @@
           {
             "not": {
               "section": "footer",
-              "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
+              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
             }
           },
           {
             "not": {
               "section": "footer",
-              "matches": "Esc to cancel\\b"
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
             }
           },
           {
@@ -246,13 +246,13 @@
           {
             "not": {
               "section": "footer",
-              "matches": "(?:^|\\n)\\s*[❯›]\\s*1\\.\\s*.+"
+              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
             }
           },
           {
             "not": {
               "section": "footer",
-              "matches": "Esc to cancel\\b"
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
             }
           },
           {
