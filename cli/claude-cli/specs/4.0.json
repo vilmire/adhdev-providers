@@ -225,7 +225,7 @@
           },
           {
             "stable_ms": 700,
-            "cursor_above": 12
+            "cursor_above": 1
           },
           {
             "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|esc to (?:interrupt|stop)"
