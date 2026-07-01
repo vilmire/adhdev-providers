@@ -275,8 +275,8 @@
     "source": {
       "kind": "sqlite",
       "path": "${HERMES_HOME:-~/.hermes}/state.db",
-      "session_query": "SELECT id FROM sessions WHERE source = 'cli' AND message_count > 0 AND started_at >= ? ORDER BY started_at DESC LIMIT 1",
-      "message_query": "SELECT role, content, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND content IS NOT NULL AND content != '' AND role IN ('user', 'assistant', 'system', 'tool') ORDER BY timestamp ASC, id ASC",
+      "session_query": "SELECT id FROM sessions WHERE source = 'cli' AND EXISTS (SELECT 1 FROM messages m WHERE m.session_id = sessions.id) AND started_at >= ? - 2 ORDER BY started_at DESC LIMIT 1",
+      "message_query": "SELECT role, COALESCE(NULLIF(content, ''), tool_calls) AS content, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND ((content IS NOT NULL AND content != '') OR (tool_calls IS NOT NULL AND tool_calls != '')) AND role IN ('user', 'assistant', 'system', 'tool') ORDER BY timestamp ASC, id ASC",
       "message_map": {
         "role": "$.role",
         "content": "$.content",
