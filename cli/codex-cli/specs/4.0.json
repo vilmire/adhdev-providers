@@ -105,7 +105,35 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 5000
+        "any": [
+          {
+            "all": [
+              {
+                "section": "body",
+                "matches": "(?:^|\\n)›\\s"
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "Starting MCP servers \\("
+                }
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "Working \\(|esc to interrupt"
+                }
+              },
+              {
+                "stable_ms": 1500,
+                "cursor_above": 4
+              }
+            ]
+          },
+          {
+            "elapsed_ms": 8000
+          }
+        ]
       }
     },
     {
