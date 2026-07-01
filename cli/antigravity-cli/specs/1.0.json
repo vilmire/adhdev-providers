@@ -150,27 +150,8 @@
     }
   ],
   "delegate": [],
+  "_native_history_note": "MUST use the built-in `reader: antigravity-cli` (see specs/4.0.json). Antigravity stores conversations in per-session SQLite dbs (conversations/<uuid>.db, protobuf step_payload BLOBs) while brain transcript.jsonl is written empty; the declarative jsonl source surfaces 0 assistant messages + providerSessionId=null. The antigravity-cli reader decodes the .db and falls back to brain/.pb.",
   "native_history": {
-    "source": {
-      "kind": "jsonl",
-      "path": "~/.gemini/antigravity-cli/brain/*/.system_generated/logs",
-      "file_pattern": "transcript.jsonl",
-      "recent_window_ms": 86400000,
-      "message_filter": {
-        "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null"
-      },
-      "message_map": {
-        "role": "$.source",
-        "content": "$.content",
-        "timestamp_ms": "$.created_at",
-        "content_strip": [
-          "ADDITIONAL_METADATA",
-          "USER_SETTINGS_CHANGE"
-        ],
-        "content_unwrap": [
-          "USER_REQUEST"
-        ]
-      }
-    }
+    "reader": "antigravity-cli"
   }
 }

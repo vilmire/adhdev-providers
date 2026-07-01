@@ -307,28 +307,8 @@
     }
   ],
   "delegate": [],
+  "_native_history_note": "MUST use the built-in `reader: antigravity-cli`, NOT a declarative `source`. Current antigravity (agy >=1.0) stores each conversation in a per-session SQLite db at conversations/<uuid>.db whose messages live in protobuf `step_payload` BLOBs (step_type 14=user, 15=assistant), while brain/*/.system_generated/logs/transcript.jsonl is written EMPTY (0 bytes). The declarative jsonl/sqlite executor can neither decode the protobuf blobs nor recover from the empty jsonl, so a `source` block here surfaces 0 assistant messages and providerSessionId=null (verified live on win32 2026-07-01). The antigravity-cli reader (native-history/antigravity-cli-transcript.ts, dispatched via resolveAntigravityPath) decodes the .db protobuf and falls back to brain jsonl / .pb, so it must own this read path.",
   "native_history": {
-    "source": {
-      "kind": "jsonl",
-      "path": "~/.gemini/antigravity-cli/brain/*/.system_generated/logs",
-      "file_pattern": "transcript.jsonl",
-      "recent_window_ms": 86400000,
-      "message_filter": {
-        "where": "$.type == 'USER_INPUT' || $.type == 'PLANNER_RESPONSE' && $.content != null || $.type == 'RUN_COMMAND' && $.status == 'DONE' || $.type == 'LIST_DIRECTORY' && $.status == 'DONE' || $.type == 'CODE_ACTION' && $.status == 'DONE'"
-      },
-      "message_map": {
-        "role": "$.source",
-        "content": "$.content",
-        "timestamp_ms": "$.created_at",
-        "content_strip": ["ADDITIONAL_METADATA", "USER_SETTINGS_CHANGE"],
-        "content_unwrap": ["USER_REQUEST"],
-        "tools": {
-          "block_type": "$.type",
-          "call_types": [],
-          "result_types": ["RUN_COMMAND", "LIST_DIRECTORY", "CODE_ACTION"],
-          "result_content": "$.content"
-        }
-      }
-    }
+    "reader": "antigravity-cli"
   }
 }
