@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.9",
+  "providerVersion": "1.2.0",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -34,6 +34,10 @@
     ],
     "shell": true
   },
+  "modelLaunchArgs": [
+    "--model",
+    "{{model}}"
+  ],
   "sendDelayMs": 1200,
   "submitStrategy": "wait_for_echo",
   "timeouts": {
