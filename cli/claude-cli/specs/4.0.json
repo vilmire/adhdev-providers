@@ -168,7 +168,8 @@
             "matches": "✻\\s+\\w[^\\n]*?\\bfor\\s+\\d+[smh](?:\\s+\\d+[smh])*(?![^\\n]*\\btokens?\\b)(?![^\\n]*[↑↓])[^\\n]*(?:\\n(?![^\\n]*(?:[✢✳✶✽✷✸✹⠀-⣿]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.)|esc to (?:interrupt|stop)|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))[^\\n]*)*$"
           },
           {
-            "stable_ms": 8000
+            "stable_ms": 8000,
+            "ignore_lines": "^\\s*✻\\s+\\w[^\\n]*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
           }
         ]
       }
@@ -191,7 +192,8 @@
             }
           },
           {
-            "stable_ms": 12000
+            "stable_ms": 12000,
+            "ignore_lines": "^\\s*✻\\s+\\w[^\\n]*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
           }
         ]
       }
