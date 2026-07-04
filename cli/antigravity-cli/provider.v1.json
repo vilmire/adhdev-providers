@@ -71,7 +71,7 @@
   "nativeHistory": {
     "$schema": "adhdev:native-history/anthropic-cli-transcript@1",
     "format": "antigravity-cli-transcript-jsonl",
-    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript*.jsonl;~/.gemini/antigravity-cli/conversations/*.pb",
+    "watchPath": "~/.gemini/antigravity-cli/history.jsonl;~/.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript*.jsonl;~/.gemini/antigravity-cli/conversations/*.pb;~/.gemini/antigravity-cli/conversations/*.db",
     "mode": "native-source",
     "contractVersion": "2.0",
     "scripts": {
