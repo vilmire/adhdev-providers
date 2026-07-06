@@ -43,7 +43,7 @@
     {
       "id": "mcp_init",
       "label": "Starting MCP",
-      "status": "generating"
+      "status": "idle"
     },
     {
       "id": "approval",
