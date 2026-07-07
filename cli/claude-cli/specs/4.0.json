@@ -115,7 +115,7 @@
           },
           {
             "section": "footer",
-            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b||Do you want"
+            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|Do you want"
           },
           {
             "not": {
