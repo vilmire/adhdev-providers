@@ -29,6 +29,15 @@
     "args": [],
     "shell": false
   },
+  "thinkingLaunchArgs": [
+    "-c",
+    "model_reasoning_effort={{level}}"
+  ],
+  "thinkingLevelMap": {
+    "low": "low",
+    "medium": "medium",
+    "high": "high"
+  },
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
   "submitStrategy": "wait_for_echo",

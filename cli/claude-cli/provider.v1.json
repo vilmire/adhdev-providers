@@ -38,6 +38,13 @@
     "--model",
     "{{model}}"
   ],
+  "thinkingLaunchArgs": [
+    "--effort",
+    "{{level}}"
+  ],
+  "thinkingLevelMap": {
+    "high": "high"
+  },
   "sendDelayMs": 1200,
   "submitStrategy": "wait_for_echo",
   "timeouts": {
