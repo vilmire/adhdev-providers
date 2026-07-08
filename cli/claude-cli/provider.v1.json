@@ -39,6 +39,7 @@
     "{{model}}"
   ],
   "modelOptions": [
+    "fable",
     "opus",
     "sonnet",
     "haiku"
