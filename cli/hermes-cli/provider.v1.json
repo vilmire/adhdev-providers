@@ -26,6 +26,7 @@
     "shell": true,
     "env": {}
   },
+  "thinkingControlId": "reasoning",
   "sendDelayMs": 500,
   "sendKey": "\r",
   "requirePromptEchoBeforeSubmit": true,

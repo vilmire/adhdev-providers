@@ -29,6 +29,10 @@
     "args": [],
     "shell": false
   },
+  "modelLaunchArgs": [
+    "-c",
+    "model={{model}}"
+  ],
   "thinkingLaunchArgs": [
     "-c",
     "model_reasoning_effort={{level}}"
