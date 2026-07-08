@@ -51,6 +51,12 @@
   "thinkingLevelMap": {
     "high": "high"
   },
+  "thinkingLevelOptions": [
+    "low",
+    "medium",
+    "high",
+    "max"
+  ],
   "sendDelayMs": 1200,
   "submitStrategy": "wait_for_echo",
   "timeouts": {

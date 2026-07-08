@@ -27,6 +27,14 @@
     "env": {}
   },
   "thinkingControlId": "reasoning",
+  "thinkingLevelOptions": [
+    "none",
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+  ],
   "sendDelayMs": 500,
   "sendKey": "\r",
   "requirePromptEchoBeforeSubmit": true,

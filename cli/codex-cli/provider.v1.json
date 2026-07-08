@@ -49,6 +49,13 @@
     "medium": "medium",
     "high": "high"
   },
+  "thinkingLevelOptions": [
+    "minimal",
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+  ],
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
   "submitStrategy": "wait_for_echo",
