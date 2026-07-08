@@ -38,6 +38,11 @@
     "--model",
     "{{model}}"
   ],
+  "modelOptions": [
+    "opus",
+    "sonnet",
+    "haiku"
+  ],
   "thinkingLaunchArgs": [
     "--effort",
     "{{level}}"
