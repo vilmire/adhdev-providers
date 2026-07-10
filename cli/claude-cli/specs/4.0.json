@@ -134,8 +134,18 @@
       "to": "picker",
       "priority": 100,
       "when": {
-        "section": "modal",
-        "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+        "all": [
+          {
+            "section": "modal",
+            "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|don't ask again\\b"
+            }
+          }
+        ]
       }
     },
     {
