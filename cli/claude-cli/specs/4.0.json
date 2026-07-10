@@ -205,7 +205,7 @@
         "picker"
       ],
       "to": "busy",
-      "min_hold_ms": 1500,
+      "min_hold_ms": 2500,
       "when": {
         "all": [
           {
@@ -222,11 +222,17 @@
           },
           {
             "not": {
-              "matches": "Do you want to proceed\\?"
+              "section": "modal",
+              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|during this session\\b|don't ask again\\b"
             }
           },
           {
-            "stable_ms": 700,
+            "not": {
+              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\s*\\(shift"
+            }
+          },
+          {
+            "stable_ms": 1200,
             "cursor_above": 1
           },
           {
