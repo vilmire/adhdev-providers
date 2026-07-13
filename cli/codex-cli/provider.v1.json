@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.15",
+  "providerVersion": "1.1.16",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -34,6 +34,7 @@
     "model={{model}}"
   ],
   "modelOptions": [
+    "gpt-5.6-sol",
     "gpt-5.5",
     "gpt-5.4",
     "gpt-5.4-mini",
