@@ -113,12 +113,13 @@
       "$schema": "adhdev:tui/spinner@1",
       "patterns": [
         {
-          "regex": "Auto\\s*\\n\\s*~/",
-          "description": "Status bar present during generation (cell-by-cell render — match heuristic)"
+          "regex": "\\bWorking\\b",
+          "description": "Generation indicator: a braille glyph + 'Working' shown while the agent runs (observed: cursor-agent v2026.07.09)"
         },
         {
-          "regex": "esc to (?:cancel|interrupt|stop)",
-          "flags": "i"
+          "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+          "flags": "i",
+          "description": "Interrupt hint (e.g. 'ctrl+c to stop') present only during a run"
         }
       ],
       "scope": "live-frame-tail",
@@ -126,17 +127,18 @@
     },
     "settledPrompt": {
       "$schema": "adhdev:tui/settled-prompt@1",
-      "regex": "(?:Auto|[a-z0-9._-]+)\\s*\\n\\s*~/[^\\n]*\\s*·\\s*[^\\n]+",
+      "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*\\n\\s*(?:~|/)[^\\n]+$",
       "flags": "m",
       "scope": "last-n-lines",
-      "scopeWindowLines": 8
+      "scopeWindowLines": 8,
+      "description": "Idle footer: mode label line ('Auto · 7.7%') followed by the workspace path line ('/abs/path' or '~/...'). Present only when settled — the 'Working' spinner line replaces the mode label during generation."
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Run this command|Allow|Do you want to|Trust|approve|Approve",
+      "questionPattern": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
       "questionFlags": "i",
-      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
-      "buttonLabelGroup": 2,
+      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)\\s*[│┃|]?\\s*$",
+      "buttonLabelGroup": 1,
       "buttonFlags": "m",
       "scope": "window-around-question",
       "scopeWindowLines": 20
@@ -149,8 +151,33 @@
         "settled-prompt"
       ],
       "onNoMatch": "preserve-last"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^\\s*(\\S.*)$",
+        "description": "cursor-agent renders assistant output as plain lines with no distinctive bullet — capture any non-empty body line. Chrome (footer, spinner, input box) is excluded via chromePatterns. Minimal so parseSession is synthesized instead of failing with 'parseSession unavailable'."
+      },
+      "chromePatterns": [
+        { "regex": "\\bWorking\\b", "label": "spinner-working" },
+        { "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)", "flags": "i", "label": "interrupt-hint" },
+        { "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*·", "label": "mode-footer" },
+        { "regex": "^\\s*(?:~|/)[^\\n]*$", "label": "workspace-path" },
+        { "regex": "^\\s*[╭╰│>❯›]", "label": "input-box-chrome" }
+      ],
+      "stripLeadingChrome": true,
+      "scope": "buffer"
     }
   },
+  "approvalPositiveHints": [
+    "trust",
+    "trust this workspace",
+    "allow",
+    "approve",
+    "accept",
+    "run",
+    "yes"
+  ],
   "overrides": {},
   "settings": {
     "showCoordinatorSystemPrompt": {

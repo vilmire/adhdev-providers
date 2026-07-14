@@ -39,7 +39,7 @@
     "supported": true,
     "stopStrategy": "ctrl_c",
     "shutdownGraceMs": 4000,
-    "sessionIdFormat": "ses_*",
+    "sessionIdFormat": "string",
     "resumeSessionArgs": [
       "--session",
       "{{id}}"
@@ -103,8 +103,26 @@
         "settled-prompt"
       ],
       "onNoMatch": "preserve-last"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^\\s*[▌▎▏│┃]\\s{2,}(?!Ask anything|Build\\b|Plan\\b)(\\S.*)$",
+        "description": "opencode renders each message body inside a left-accent bar ('┃'/'▌') followed by two spaces. The idle composer placeholder ('Ask anything…') and the mode/model status chips ('Build …', 'Plan …') share the accent bar and are excluded. Chat is authoritative from nativeHistory (transcriptAuthority=provider); this PTY extraction only keeps live status/parseSession available."
+      },
+      "chromePatterns": [
+        { "regex": "Ask\\s+anything", "flags": "i", "label": "composer-placeholder" },
+        { "regex": "^\\s*[╹╻▀▄]", "label": "composer-frame" },
+        { "regex": "Build\\s+·|Plan\\s+·|Antigravity Manager", "label": "mode-model-chip" },
+        { "regex": "tab\\s+agents|ctrl\\+p\\s+commands|esc\\s+interrupt", "flags": "i", "label": "footer-hints" },
+        { "regex": "^\\s*[▣◆■⬝]", "label": "status-chip-glyph" },
+        { "regex": "\\[retrying in \\d+s", "label": "retry-banner" }
+      ],
+      "stripLeadingChrome": true,
+      "scope": "buffer"
     }
   },
+  "transcriptAuthority": "provider",
   "overrides": {},
   "settings": {
     "showCoordinatorSystemPrompt": {
