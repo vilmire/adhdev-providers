@@ -1,0 +1,176 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "opencode",
+  "name": "opencode",
+  "displayName": "opencode",
+  "category": "cli",
+  "aliases": [
+    "open-code"
+  ],
+  "icon": "◆",
+  "status": "Beta",
+  "details": "Terminal only",
+  "links": {
+    "homepage": "https://opencode.ai",
+    "docs": "https://opencode.ai/docs"
+  },
+  "install": {
+    "manual": "Install opencode via `curl -fsSL https://opencode.ai/install | sh`, then run `opencode auth` to authenticate."
+  },
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "providerVersion": "1.0.0",
+  "binary": "opencode",
+  "spawn": {
+    "command": "opencode",
+    "args": [],
+    "shell": false
+  },
+  "sendDelayMs": 1200,
+  "sendKey": "\r",
+  "submitStrategy": "wait_for_echo",
+  "requiresFinalAssistantBeforeIdle": true,
+  "timeouts": {
+    "idleFinishConfirm": 6000,
+    "statusActivityHold": 6000
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "ctrl_c",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "ses_*",
+    "resumeSessionArgs": [
+      "--session",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
+  "nativeHistory": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "session_query": "SELECT id FROM session ORDER BY time_updated DESC LIMIT 1",
+      "message_query": "SELECT json_extract(m.data, '$.role') AS role, group_concat(CASE WHEN json_extract(p.data, '$.type') = 'text' THEN json_extract(p.data, '$.text') ELSE NULL END, '') AS content, m.time_created AS timestamp_ms FROM message m JOIN part p ON p.message_id = m.id WHERE m.session_id = ? AND json_extract(p.data, '$.type') IN ('text', 'reasoning') GROUP BY m.id HAVING content IS NOT NULL AND content != '' ORDER BY m.time_created",
+      "message_map": {
+        "role": "$.role",
+        "content": "$.content",
+        "timestamp_ms": "$.timestamp_ms"
+      }
+    }
+  },
+  "tui": {
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        {
+          "regex": "esc\\s+interrupt",
+          "flags": "i",
+          "description": "Footer interrupt hint — present only during generation"
+        },
+        {
+          "regex": "[■⬝]{2,}",
+          "description": "Animated block-dot progress bar in footer"
+        }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 8
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "Ask\\s+anything",
+      "flags": "i",
+      "scope": "last-n-lines",
+      "scopeWindowLines": 8,
+      "description": "Input placeholder text visible only when idle"
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "Allow|Run|approve|Do you want to|Trust|permission",
+      "questionFlags": "i",
+      "scope": "window-around-question",
+      "scopeWindowLines": 20
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": [
+        "modal",
+        "spinner",
+        "settled-prompt"
+      ],
+      "onNoMatch": "preserve-last"
+    }
+  },
+  "overrides": {},
+  "settings": {
+    "showCoordinatorSystemPrompt": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Show system prompt message",
+      "description": "Show the AGENTS.md block as a user-role message in the chat. Off by default — the prompt is still visible via the chat header's ⓘ Session Info dialog."
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
+  }
+}

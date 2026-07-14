@@ -1,0 +1,251 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "kimi",
+  "name": "Kimi Code",
+  "displayName": "Kimi Code",
+  "category": "cli",
+  "aliases": [
+    "kimi-code",
+    "kimi-cli"
+  ],
+  "icon": "🌙",
+  "status": "Beta",
+  "details": "Terminal only",
+  "links": {
+    "homepage": "https://kimi.ai",
+    "docs": "https://kimi.ai/kimi-code"
+  },
+  "install": {
+    "manual": "Install Kimi Code, then run `kimi login` to authenticate."
+  },
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "providerVersion": "1.0.0",
+  "binary": "kimi",
+  "spawn": {
+    "command": "/Users/vilmire/.kimi-code/bin/kimi",
+    "args": [],
+    "shell": false
+  },
+  "modelLaunchArgs": [
+    "-m",
+    "{{model}}"
+  ],
+  "modelOptions": [
+    "kimi-for-coding",
+    "kimi-for-coding-highspeed"
+  ],
+  "sendDelayMs": 1200,
+  "sendKey": "\r",
+  "submitStrategy": "wait_for_echo",
+  "requiresFinalAssistantBeforeIdle": true,
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "ctrl_d",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "session_uuid",
+    "resumeSessionArgs": [
+      "-S",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
+  "tui": {
+    "welcomeScreen": {
+      "$schema": "adhdev:tui/welcome-screen@1",
+      "pattern": "Migrate from kimi-cli",
+      "dismissKey": "escape",
+      "settleAfterMs": 1500
+    },
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        {
+          "regex": "[🌑🌒🌓🌔🌕🌖🌗🌘]",
+          "description": "Moon phase cycle spinner"
+        },
+        {
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]",
+          "description": "Braille MCP connecting spinner"
+        },
+        {
+          "regex": "kimi-for-coding(?:-highspeed)?\\s+thinking",
+          "flags": "i",
+          "description": "Status bar thinking state"
+        },
+        {
+          "regex": "ctrl\\+c:\\s*cancel",
+          "flags": "i",
+          "description": "Cancel hint in status bar — present only while generating"
+        },
+        {
+          "regex": "MCP server .+ connecting",
+          "flags": "i"
+        }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 12
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "│\\s*>\\s*│",
+      "flags": "m",
+      "scope": "last-n-lines",
+      "scopeWindowLines": 8
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "Allow|Deny|approve|Do you want to|run.*command|execute",
+      "questionFlags": "i",
+      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonLabelGroup": 2,
+      "buttonFlags": "m",
+      "scope": "window-around-question",
+      "scopeWindowLines": 20
+    },
+    "approvalSquash": {
+      "$schema": "adhdev:tui/approval-squash@1",
+      "buttonRules": [
+        {
+          "compact": "1allow2allowforsession3reject4rejectwithfeedback",
+          "labels": [
+            "Allow",
+            "Allow for session",
+            "Reject",
+            "Reject with feedback"
+          ]
+        }
+      ],
+      "scope": "tail-window",
+      "tailWindowLines": 20
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^●\\s+(.*)$",
+        "description": "Filled circle bullet — assistant response lines"
+      },
+      "userPrefix": {
+        "regex": "^✨\\s+(.*)$",
+        "description": "Sparkle echo — user turn echo"
+      },
+      "chromePatterns": [
+        {
+          "regex": "^[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:",
+          "label": "spinner-tip"
+        },
+        {
+          "regex": "^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+MCP server",
+          "label": "mcp-spinner"
+        },
+        {
+          "regex": "kimi-for-coding(?:-highspeed)?\\s+(?:thinking|idle)",
+          "flags": "i",
+          "label": "status-bar"
+        },
+        {
+          "regex": "context:\\s*\\d+\\.\\d+%",
+          "label": "context-meter"
+        },
+        {
+          "regex": "^╭|^╰|^│\\s*>|^╰────",
+          "label": "input-box-chrome"
+        },
+        {
+          "regex": "MCP server .+ connected",
+          "flags": "i",
+          "label": "mcp-connected"
+        },
+        {
+          "regex": "✦\\s+High Speed mode",
+          "label": "highspeed-banner"
+        }
+      ],
+      "scope": "buffer"
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": [
+        "modal",
+        "spinner",
+        "settled-prompt"
+      ],
+      "onNoMatch": "preserve-last"
+    }
+  },
+  "overrides": {},
+  "settings": {
+    "showCoordinatorSystemPrompt": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Show system prompt message",
+      "description": "Show the AGENTS.md block as a user-role message in the chat."
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve all tool calls (passes --yolo to kimi)"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "capabilities": {
+    "input": {
+      "multipart": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
+  }
+}

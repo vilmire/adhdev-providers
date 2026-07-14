@@ -301,15 +301,23 @@
     "cursor-cli": {
       "providerVersion": "1.0.0",
       "category": "cli",
-      "name": "Cursor CLI",
+      "name": "Cursor Agent",
       "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
+      "details": "Terminal only"
+    },
+    "kimi": {
+      "providerVersion": "1.0.0",
+      "category": "cli",
+      "name": "Kimi Code",
+      "status": "Beta",
+      "details": "Terminal only"
+    },
+    "opencode": {
+      "providerVersion": "1.0.0",
+      "category": "cli",
+      "name": "opencode",
+      "status": "Beta",
+      "details": "Terminal only"
     },
     "gemini-cli": {
       "providerVersion": "1.0.0",
