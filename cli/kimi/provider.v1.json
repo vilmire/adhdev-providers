@@ -46,9 +46,9 @@
   },
   "resume": {
     "supported": true,
-    "stopStrategy": "ctrl_d",
+    "stopStrategy": "ctrl_c",
     "shutdownGraceMs": 4000,
-    "sessionIdFormat": "session_uuid",
+    "sessionIdFormat": "string",
     "resumeSessionArgs": [
       "-S",
       "{{id}}"
@@ -60,34 +60,27 @@
   "tui": {
     "welcomeScreen": {
       "$schema": "adhdev:tui/welcome-screen@1",
-      "pattern": "Migrate from kimi-cli",
-      "dismissKey": "escape",
-      "settleAfterMs": 1500
+      "cues": [
+        { "pattern": "Welcome to Kimi Code" },
+        { "pattern": "Migrate from kimi-cli" },
+        { "pattern": "High Speed mode is ready" }
+      ]
     },
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
       "patterns": [
         {
-          "regex": "[🌑🌒🌓🌔🌕🌖🌗🌘]",
-          "description": "Moon phase cycle spinner"
+          "regex": "[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:",
+          "description": "Moon-phase spinner cycling next to '· Tip:' — the sole reliable generation indicator (observed kimi-code v0.24)"
         },
         {
-          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]",
-          "description": "Braille MCP connecting spinner"
-        },
-        {
-          "regex": "kimi-for-coding(?:-highspeed)?\\s+thinking",
-          "flags": "i",
-          "description": "Status bar thinking state"
-        },
-        {
-          "regex": "ctrl\\+c:\\s*cancel",
-          "flags": "i",
-          "description": "Cancel hint in status bar — present only while generating"
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+MCP server",
+          "description": "Braille spinner while an MCP server is connecting at startup"
         },
         {
           "regex": "MCP server .+ connecting",
-          "flags": "i"
+          "flags": "i",
+          "description": "MCP connect activity during boot"
         }
       ],
       "scope": "live-frame-tail",
@@ -129,20 +122,20 @@
     "transcriptPty": {
       "$schema": "adhdev:tui/transcript-pty@1",
       "assistantPrefix": {
-        "regex": "^●\\s+(.*)$",
-        "description": "Filled circle bullet — assistant response lines"
+        "regex": "^\\s*●\\s+(.*)$",
+        "description": "Filled circle bullet (rendered with one leading pad space) — assistant response lines"
       },
       "userPrefix": {
-        "regex": "^✨\\s+(.*)$",
-        "description": "Sparkle echo — user turn echo"
+        "regex": "^\\s*✨\\s+(.*)$",
+        "description": "Sparkle echo (one leading pad space) — user turn echo"
       },
       "chromePatterns": [
         {
-          "regex": "^[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:",
+          "regex": "^\\s*[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:",
           "label": "spinner-tip"
         },
         {
-          "regex": "^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+MCP server",
+          "regex": "^\\s*[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+MCP server",
           "label": "mcp-spinner"
         },
         {
@@ -155,17 +148,25 @@
           "label": "context-meter"
         },
         {
-          "regex": "^╭|^╰|^│\\s*>|^╰────",
+          "regex": "^\\s*(?:╭|╰|│\\s*>|╰────)",
           "label": "input-box-chrome"
         },
         {
-          "regex": "MCP server .+ connected",
+          "regex": "MCP server .+ (?:connected|connecting)",
           "flags": "i",
           "label": "mcp-connected"
         },
         {
           "regex": "✦\\s+High Speed mode",
           "label": "highspeed-banner"
+        },
+        {
+          "regex": "Welcome to Kimi Code|Send /help for help|^\\s*Directory:|^\\s*Session:|^\\s*Model:|^\\s*Version:",
+          "label": "welcome-banner"
+        },
+        {
+          "regex": "\\(\\d+ more lines?, ctrl\\+o to expand\\)",
+          "label": "collapsed-hint"
         }
       ],
       "scope": "buffer"
