@@ -91,7 +91,7 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Allow|Run|approve|Do you want to|Trust|permission",
+      "questionPattern": "Run this command|Do you want to run|Allow|approve|Do you want to|Trust|permission",
       "questionFlags": "i",
       "scope": "window-around-question",
       "scopeWindowLines": 20
