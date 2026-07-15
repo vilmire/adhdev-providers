@@ -166,7 +166,11 @@
         { "regex": "^\\s*(?:Auto|Plan|Ask)\\s*$", "label": "mode-label-idle" },
         { "regex": "^\\s*→\\s+Add a follow-up", "flags": "i", "label": "follow-up-hint" },
         { "regex": "^\\s*Tip:", "flags": "i", "label": "tip-hint" },
+        { "regex": "^\\s*Cursor Agent\\s*$", "label": "startup-banner" },
+        { "regex": "^\\s*v\\d+\\.\\d", "label": "version-line" },
         { "regex": "^\\s*(?:~|/)[^\\n]*$", "label": "workspace-path" },
+        { "regex": "·\\s*$", "label": "workspace-path-continuation" },
+        { "regex": "^\\s*[A-Za-z][\\w.-]*/[\\w./-]+\\s*$", "label": "git-branch-footer" },
         { "regex": "^\\s*[╭╰│>❯›]", "label": "input-box-chrome" }
       ],
       "stripLeadingChrome": true,
