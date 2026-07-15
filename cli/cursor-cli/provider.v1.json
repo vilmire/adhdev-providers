@@ -108,6 +108,25 @@
       "--continue"
     ]
   },
+  "transcriptAuthority": "provider",
+  "nativeHistory": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.cursor/projects/*/agent-transcripts/*",
+      "file_pattern": "*.jsonl",
+      "session_id_from": "filename_uuid",
+      "workspace_from_input": true,
+      "message_map": {
+        "role": "$.role",
+        "content": "$.message.content",
+        "content_strip": ["timestamp"],
+        "content_unwrap": ["user_query"],
+        "tools": {}
+      }
+    }
+  },
   "tui": {
     "spinner": {
       "$schema": "adhdev:tui/spinner@1",
