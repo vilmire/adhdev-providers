@@ -95,9 +95,9 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Allow|Deny|approve|Do you want to|run.*command|execute",
+      "questionPattern": "Run this command\\?|Do you want to|run.*command|execute|Apply this edit|Make this edit",
       "questionFlags": "i",
-      "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+(.+)$",
+      "buttonPattern": "^\\s*([❯›>▶●•]\\s*)?\\d+[.)]\\s+(.+)$",
       "buttonLabelGroup": 2,
       "buttonFlags": "m",
       "scope": "window-around-question",
@@ -106,6 +106,15 @@
     "approvalSquash": {
       "$schema": "adhdev:tui/approval-squash@1",
       "buttonRules": [
+        {
+          "compact": "1approveonce2approveforthissession3reject4rejectwithfeedback",
+          "labels": [
+            "Approve once",
+            "Approve for this session",
+            "Reject",
+            "Reject with feedback"
+          ]
+        },
         {
           "compact": "1allow2allowforsession3reject4rejectwithfeedback",
           "labels": [
