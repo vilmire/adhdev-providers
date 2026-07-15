@@ -156,7 +156,7 @@
       "$schema": "adhdev:tui/modal@1",
       "questionPattern": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
       "questionFlags": "i",
-      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)\\s*[│┃|]?\\s*$",
+      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)|(\\S[^│┃|]*?)\\s*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\))\\s*[│┃|]?\\s*$",
       "buttonLabelGroup": 1,
       "buttonFlags": "m",
       "scope": "window-around-question",
