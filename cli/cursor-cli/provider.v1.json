@@ -156,12 +156,16 @@
       "$schema": "adhdev:tui/transcript-pty@1",
       "assistantPrefix": {
         "regex": "^\\s*(\\S.*)$",
-        "description": "cursor-agent renders assistant output as plain lines with no distinctive bullet — capture any non-empty body line. Chrome (footer, spinner, input box) is excluded via chromePatterns. Minimal so parseSession is synthesized instead of failing with 'parseSession unavailable'."
+        "description": "cursor-agent renders the assistant answer as a plain no-background line with no distinctive bullet — capture any non-empty body line. The user's submitted message and composer echo are rendered inside a colored box and are classified as USER turns via userBackgroundSgr BEFORE this permissive rule runs, so they no longer leak into an assistant bubble. Remaining chrome (footer, spinner, follow-up hint, mode label, workspace path, input box, tips) is excluded via chromePatterns."
       },
+      "userBackgroundSgr": ["48;5;233", "48;5;235"],
       "chromePatterns": [
         { "regex": "\\bWorking\\b", "label": "spinner-working" },
         { "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)", "flags": "i", "label": "interrupt-hint" },
         { "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*·", "label": "mode-footer" },
+        { "regex": "^\\s*(?:Auto|Plan|Ask)\\s*$", "label": "mode-label-idle" },
+        { "regex": "^\\s*→\\s+Add a follow-up", "flags": "i", "label": "follow-up-hint" },
+        { "regex": "^\\s*Tip:", "flags": "i", "label": "tip-hint" },
         { "regex": "^\\s*(?:~|/)[^\\n]*$", "label": "workspace-path" },
         { "regex": "^\\s*[╭╰│>❯›]", "label": "input-box-chrome" }
       ],
