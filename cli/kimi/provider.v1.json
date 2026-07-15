@@ -95,7 +95,7 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Run this command\\?|Do you want to|run.*command|execute|Apply this edit|Make this edit",
+      "questionPattern": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?",
       "questionFlags": "i",
       "buttonPattern": "^\\s*([❯›>▶●•]\\s*)?\\d+[.)]\\s+(.+)$",
       "buttonLabelGroup": 2,
