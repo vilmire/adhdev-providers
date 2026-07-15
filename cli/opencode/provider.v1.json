@@ -1,8 +1,8 @@
 {
   "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
   "type": "opencode",
-  "name": "opencode",
-  "displayName": "opencode",
+  "name": "Opencode Code",
+  "displayName": "Opencode Code",
   "category": "cli",
   "aliases": [
     "open-code"
