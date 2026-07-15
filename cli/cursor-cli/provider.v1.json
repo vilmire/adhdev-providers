@@ -158,7 +158,7 @@
         "regex": "^\\s*(\\S.*)$",
         "description": "cursor-agent renders the assistant answer as a plain no-background line with no distinctive bullet — capture any non-empty body line. The user's submitted message and composer echo are rendered inside a colored box and are classified as USER turns via userBackgroundSgr BEFORE this permissive rule runs, so they no longer leak into an assistant bubble. Remaining chrome (footer, spinner, follow-up hint, mode label, workspace path, input box, tips) is excluded via chromePatterns."
       },
-      "userBackgroundSgr": ["48;5;233", "48;5;235"],
+      "userBackgroundSgr": ["*"],
       "chromePatterns": [
         { "regex": "\\bWorking\\b", "label": "spinner-working" },
         { "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)", "flags": "i", "label": "interrupt-hint" },
