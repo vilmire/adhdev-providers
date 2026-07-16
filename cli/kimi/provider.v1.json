@@ -57,6 +57,39 @@
       "--continue"
     ]
   },
+  "transcriptAuthority": "provider",
+  "nativeHistory": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.kimi-code/sessions/*/session_*/agents/main",
+      "file_pattern": "wire.jsonl",
+      "session_id_from": "dir_uuid",
+      "workspace_from_sidecar": {
+        "rel_path": "../../state.json",
+        "workspace_path": "$.workDir"
+      },
+      "records": [
+        {
+          "where": "$.type == \"turn.prompt\"",
+          "message_map": {
+            "role": "user",
+            "content": "$.input",
+            "timestamp_ms": "$.time"
+          }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"content.part\" && $.event.part.type == \"text\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.part.text",
+            "timestamp_ms": "$.time"
+          }
+        }
+      ]
+    }
+  },
   "tui": {
     "welcomeScreen": {
       "$schema": "adhdev:tui/welcome-screen@1",
