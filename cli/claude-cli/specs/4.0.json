@@ -179,7 +179,7 @@
           },
           {
             "stable_ms": 8000,
-            "ignore_lines": "^\\s*✻\\s+\\w[^\\n]*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
+            "ignore_lines": "^\\s*✻\\s+\\w(?:(?!\\bfor\\s+\\d)[^\\n])*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
           }
         ]
       }
@@ -203,7 +203,7 @@
           },
           {
             "stable_ms": 12000,
-            "ignore_lines": "^\\s*✻\\s+\\w[^\\n]*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
+            "ignore_lines": "^\\s*✻\\s+\\w(?:(?!\\bfor\\s+\\d)[^\\n])*$|^\\s*[↑↓]\\s*[\\d.]+[km]?\\s*tokens?[^\\n]*$"
           }
         ]
       }
