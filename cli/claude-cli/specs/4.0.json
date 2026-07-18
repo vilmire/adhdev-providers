@@ -118,9 +118,16 @@
             "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|Do you want"
           },
           {
-            "not": {
-              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|esc to (?:interrupt|stop)"
-            }
+            "any": [
+              {
+                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+              },
+              {
+                "not": {
+                  "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|esc to (?:interrupt|stop)"
+                }
+              }
+            ]
           }
         ]
       }
