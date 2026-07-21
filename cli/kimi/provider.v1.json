@@ -191,7 +191,7 @@
           "label": "status-bar"
         },
         {
-          "regex": "context:\\s*\\d+\\.\\d+%",
+          "regex": "context:\\s*\\d+(?:\\.\\d+)?%",
           "label": "context-meter"
         },
         {
