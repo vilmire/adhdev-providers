@@ -34,7 +34,8 @@
   ],
   "modelOptions": [
     "kimi-for-coding",
-    "kimi-for-coding-highspeed"
+    "kimi-for-coding-highspeed",
+    "k3"
   ],
   "sendDelayMs": 1200,
   "sendKey": "\r",
@@ -114,6 +115,10 @@
           "regex": "MCP server .+ connecting",
           "flags": "i",
           "description": "MCP connect activity during boot"
+        },
+        {
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+working\\.\\.\\.",
+          "description": "Braille spinner + 'working...' — observed live during K3 tool-execution phases (kimi-code v0.28.1); distinct from the MCP-connect braille spinner above"
         }
       ],
       "scope": "live-frame-tail",
@@ -203,8 +208,17 @@
           "label": "highspeed-banner"
         },
         {
+          "regex": "✦\\s+Use Kimi K3 with .+ thinking effort|Run /model to switch to K3",
+          "flags": "i",
+          "label": "k3-onboarding-banner"
+        },
+        {
           "regex": "Welcome to Kimi Code|Send /help for help|^\\s*Directory:|^\\s*Session:|^\\s*Model:|^\\s*Version:",
           "label": "welcome-banner"
+        },
+        {
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+working\\.\\.\\.",
+          "label": "working-spinner"
         },
         {
           "regex": "\\(\\d+ more lines?, ctrl\\+o to expand\\)",
