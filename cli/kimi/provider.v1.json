@@ -33,9 +33,9 @@
     "{{model}}"
   ],
   "modelOptions": [
-    "kimi-for-coding",
-    "kimi-for-coding-highspeed",
-    "k3"
+    "kimi-code/kimi-for-coding",
+    "kimi-code/kimi-for-coding-highspeed",
+    "kimi-code/k3"
   ],
   "sendDelayMs": 1200,
   "sendKey": "\r",
