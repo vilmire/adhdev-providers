@@ -29,6 +29,40 @@
     "args": [],
     "shell": false
   },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "caution",
+        "label": "Workspace write",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "워크스페이스 쓰기 자동, 명령은 확인",
+        "launchArgs": [
+          "-s",
+          "workspace-write",
+          "-a",
+          "on-request"
+        ]
+      },
+      {
+        "id": "yolo",
+        "label": "Bypass approvals and sandbox",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "샌드박스+승인 전부 우회",
+        "launchArgs": [
+          "--dangerously-bypass-approvals-and-sandbox"
+        ]
+      }
+    ]
+  },
   "modelLaunchArgs": [
     "-c",
     "model={{model}}"

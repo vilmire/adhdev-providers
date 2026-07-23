@@ -28,6 +28,27 @@
     "args": [],
     "shell": false
   },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "force",
+        "label": "Force",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "모든 명령을 강제 허용",
+        "launchArgs": [
+          "--force"
+        ]
+      }
+    ]
+  },
   "modelLaunchArgs": [
     "--model",
     "{{model}}"

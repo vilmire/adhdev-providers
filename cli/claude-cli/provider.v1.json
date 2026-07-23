@@ -34,6 +34,58 @@
     ],
     "shell": true
   },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "accept-edits",
+        "label": "Accept edits",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "파일 편집을 자동 수락합니다",
+        "launchArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      },
+      {
+        "id": "auto",
+        "label": "Auto",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "자동 권한 모드",
+        "launchArgs": [
+          "--permission-mode",
+          "auto"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      },
+      {
+        "id": "yolo",
+        "label": "Bypass permissions",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "모든 권한 확인을 우회합니다. 신뢰된 워크스페이스에서만.",
+        "launchArgs": [
+          "--permission-mode",
+          "bypassPermissions"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      }
+    ]
+  },
   "modelLaunchArgs": [
     "--model",
     "{{model}}"

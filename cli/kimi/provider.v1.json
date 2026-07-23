@@ -28,6 +28,37 @@
     "args": [],
     "shell": false
   },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "yolo",
+        "label": "YOLO",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "도구 호출 자동 승인(질문은 가능)",
+        "launchArgs": [
+          "--yolo"
+        ]
+      },
+      {
+        "id": "auto",
+        "label": "Auto (fully autonomous)",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "완전 자율 — 질문하지 않음",
+        "launchArgs": [
+          "--auto"
+        ]
+      }
+    ]
+  },
   "modelLaunchArgs": [
     "-m",
     "{{model}}"

@@ -121,6 +121,41 @@
         }
       }
     },
+    "autoApproveModes": {
+      "type": "object",
+      "description": "Provider-specific auto-approve choices and their launch/runtime strategy.",
+      "required": ["default", "modes"],
+      "additionalProperties": false,
+      "properties": {
+        "default": { "type": "string", "minLength": 1 },
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/autoApproveMode" }
+        }
+      }
+    },
+    "modelLaunchArgs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "modelOptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "thinkingLaunchArgs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "thinkingLevelMap": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "thinkingLevelOptions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "thinkingControlId": { "type": "string" },
     "sendDelayMs": {
       "type": "number",
       "minimum": 0,
@@ -477,6 +512,36 @@
     }
   },
   "$defs": {
+    "autoApproveMode": {
+      "type": "object",
+      "required": ["id", "label", "strategy", "risk"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "strategy": { "enum": ["pty-parse-default", "launch-args", "post-boot-command"] },
+        "risk": { "enum": ["safe", "caution", "dangerous"] },
+        "warning": { "type": "string", "minLength": 1 },
+        "launchArgs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "removeArgs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "strategy": { "const": "launch-args" } }, "required": ["strategy"] },
+          "then": { "required": ["launchArgs"], "properties": { "launchArgs": { "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "risk": { "const": "dangerous" } }, "required": ["risk"] },
+          "then": { "required": ["warning"] }
+        }
+      ]
+    },
     "patternList": {
       "type": "array",
       "items": {
