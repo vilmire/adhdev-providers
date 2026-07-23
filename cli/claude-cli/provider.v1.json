@@ -52,6 +52,10 @@
         "launchArgs": [
           "--permission-mode",
           "acceptEdits"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
         ]
       },
       {
