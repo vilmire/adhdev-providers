@@ -127,8 +127,14 @@
             "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|Do you want"
           },
           {
+            "not": {
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+            }
+          },
+          {
             "any": [
               {
+                "section": "footer",
                 "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
               },
               {
@@ -144,23 +150,39 @@
     {
       "label": "→picker",
       "from": [
+        "starting",
         "idle",
         "busy",
         "approval_resolving"
       ],
       "to": "picker",
-      "priority": 100,
+      "priority": 110,
       "when": {
-        "all": [
+        "any": [
           {
-            "section": "modal",
-            "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+            "all": [
+              {
+                "section": "modal",
+                "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+              },
+              {
+                "not": {
+                  "section": "modal",
+                  "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|don't ask again\\b"
+                }
+              }
+            ]
           },
           {
-            "not": {
-              "section": "modal",
-              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|don't ask again\\b"
-            }
+            "all": [
+              {
+                "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+              },
+              {
+                "section": "footer",
+                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
+              }
+            ]
           }
         ]
       }
