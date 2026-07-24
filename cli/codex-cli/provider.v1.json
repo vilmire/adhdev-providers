@@ -130,18 +130,19 @@
       "$schema": "adhdev:tui/spinner@1",
       "patterns": [
         {
-          "regex": "Working \\("
+          "regex": "(?:Working|Thinking) \\((?:[\\u2800-\\u28FF]|\\d)",
+          "description": "Live spinner header: 'Working (' / 'Thinking (' immediately followed by a braille animation glyph (U+2800–U+28FF) or an elapsed-time digit. Requiring the glyph/digit distinguishes the animated spinner from assistant prose that merely contains the word 'Working ('."
         },
         {
           "regex": "Starting MCP servers \\("
         },
         {
-          "regex": "esc to interrupt",
-          "flags": "i"
+          "regex": "[•·]\\s*esc to interrupt\\)",
+          "flags": "i",
+          "description": "The spinner footer suffix as it renders inside the live status parens ('… • esc to interrupt)'). Anchoring on the leading bullet/middot separator and the trailing ')' avoids matching plain assistant prose such as 'press esc to interrupt the run'."
         }
       ],
-      "scope": "live-frame-tail",
-      "scopeWindowLines": 12
+      "scope": "whole-screen"
     },
     "settledPrompt": {
       "$schema": "adhdev:tui/settled-prompt@1",

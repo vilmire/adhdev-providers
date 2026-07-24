@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "codex-cli: 'Working (8s)' spinner triggers generating; '1 background terminal running' line is visible alongside the spinner in the cumulative buffer; after sufficient output clears the window, idle is detected",
+  "description": "codex-cli: 'Working (8s)' spinner triggers generating; '1 background terminal running' line is visible alongside the spinner; at turn end the TUI clears/redraws the screen (ESC[2J ESC[H) so the live spinner is gone from the rendered grid and the settled composer reads idle. The spinner scope is whole-screen (mission f2f6da1b): a spinner that merely scrolled out of the bottom rows but is still on the grid must stay generating; only a genuine turn-end redraw that removes the spinner settles to idle.",
   "providerType": "codex-cli",
   "ptyFile": "background-tool.pty",
   "terminal": { "cols": 80, "rows": 24 },
@@ -21,7 +21,7 @@
         "detectStatus": "generating",
         "parseApproval": null
       },
-      "notes": "The '1 background terminal running' line appears while the Working spinner is still in the 12-line tail window. detectStatus stays generating because the spinner cue is still visible. This is the key regression anchor: the declarative builder correctly identifies the generating state during background tool execution."
+      "notes": "The '1 background terminal running' line appears while the Working spinner is still on the rendered grid. detectStatus stays generating because the spinner cue is still visible anywhere on screen (whole-screen scope). This is the key regression anchor: the declarative builder correctly identifies the generating state during background tool execution, including the mid-tool-call valley where the spinner has scrolled above the bottom rows."
     },
     {
       "name": "settled after background tool",
@@ -30,7 +30,7 @@
         "detectStatus": "idle",
         "parseApproval": null
       },
-      "notes": "After the background tool finishes and enough output pushes the spinner beyond the 12-line tail window, the settled prompt (›) appears with both '? for shortcuts' and 'tab to queue message' footers. Both withFooter entries must be present (footers.every rule). The builder correctly returns idle."
+      "notes": "At turn end codex clears/redraws the screen (ESC[2J ESC[H), so the live spinner line is genuinely gone from the rendered grid and the settled prompt (›) appears with both '? for shortcuts' and 'tab to queue message' footers. Both withFooter entries must be present (footers.every rule). detectStatus returns idle because — under whole-screen scope — no spinner cue remains anywhere on the grid. (Pre-fix this relied on the spinner merely leaving the 12-line tail, the same flaw as the mid-tool-call valley; the redraw models a real turn-end where the spinner is actually removed.)"
     }
   ]
 }
