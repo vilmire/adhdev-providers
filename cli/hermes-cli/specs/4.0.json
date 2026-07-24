@@ -26,8 +26,12 @@
       "anchor": "^\\s*⚕\\s.*│",
       "anchor_last": true,
       "lines": 1
+    },
+    "status_tail": {
+      "from_bottom": 4
     }
   },
+  "_selfmatch_note": "SPINNER-BODY-SELFMATCH fix (sibling of the claude-cli rc.6 status_tail anchoring). Hermes' busy cues (`msg=interrupt` / `Enter to interrupt` / `/steer` / `Ctrl+C cancel` / `musing...`) render on the bottom footer/status prompt line (`❯ msg=interrupt · ...` or `⚕ … │`). They used to be checked as unanchored literals against the whole-screen `body` section, so an assistant answer that quoted or explained those strings self-matched → idle→busy false-fired and busy→idle's not-clause read TRUE forever → infinite generating. The `status` anchor section only exists while the `⚕` status line is drawn; when it is absent the anchor fails and the section defaults to whole-screen (the very trap documented in _sections_note), so a not-clause scoped to `status` would still self-match at idle. The fix instead scopes every busy-cue check to a bounded bottom window `status_tail` (from_bottom:4 — the same status window the retired `status:{from_bottom:4}` used), which never falls back to whole-screen. See claude-cli/specs/4.0.json status_tail.",
   "states": [
     {
       "id": "starting",
@@ -137,7 +141,7 @@
       "from": "idle",
       "to": "busy",
       "when": {
-        "section": "body",
+        "section": "status_tail",
         "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
       }
     },
@@ -150,7 +154,7 @@
         "all": [
           {
             "not": {
-              "section": "body",
+              "section": "status_tail",
               "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
             }
           },
@@ -178,7 +182,7 @@
             }
           },
           {
-            "section": "body",
+            "section": "status_tail",
             "matches": "msg=interrupt|Ctrl\\+C cancel|/steer|Enter to interrupt|musing\\.\\.\\."
           }
         ]

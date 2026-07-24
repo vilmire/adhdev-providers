@@ -21,8 +21,12 @@
     },
     "body": {
       "from_top": 0
+    },
+    "status_tail": {
+      "from_bottom": 12
     }
   },
+  "_selfmatch_note": "SPINNER-BODY-SELFMATCH fix (sibling of the claude-cli rc.6 status_tail anchoring). The busy cues `Working (` / `esc to interrupt` used to be checked as unanchored literals against the whole-screen `body` section. When an assistant answer quoted or explained those strings (an RCA about codex's own spinner), the body self-matched → idle→busy false-fired and busy→idle's not-clause read TRUE forever → infinite generating. The fix scopes every busy-cue check to `status_tail` (from_bottom:12 — the same live status/prompt window codex's tui.settledPrompt already trusts, scopeWindowLines:12) and anchors the cue on codex's animated-spinner shape: `Working (`/`Thinking (` immediately followed by a braille glyph (U+2800–U+28FF) or an elapsed-time digit, OR the footer `· esc to interrupt)` inside the live status parens (leading bullet/middot + trailing `)`). Both anchors mirror provider.v1.json tui.spinner so prose can no longer self-match. See claude-cli/specs/4.0.json status_tail.",
   "states": [
     {
       "id": "starting",
@@ -120,8 +124,8 @@
               },
               {
                 "not": {
-                  "section": "body",
-                  "matches": "Working \\(|esc to interrupt"
+                  "section": "status_tail",
+                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
                 }
               },
               {
@@ -180,8 +184,8 @@
       "from": "mcp_init",
       "to": "busy",
       "when": {
-        "section": "body",
-        "matches": "Working \\(|esc to interrupt"
+        "section": "status_tail",
+        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
       }
     },
     {
@@ -199,8 +203,8 @@
           },
           {
             "not": {
-              "section": "body",
-              "matches": "Working \\("
+              "section": "status_tail",
+              "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
             }
           },
           {
@@ -215,16 +219,8 @@
       "from": "idle",
       "to": "busy",
       "when": {
-        "any": [
-          {
-            "section": "body",
-            "matches": "Working \\("
-          },
-          {
-            "section": "body",
-            "matches": "esc to interrupt"
-          }
-        ]
+        "section": "status_tail",
+        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
       }
     },
     {
@@ -236,20 +232,14 @@
         "all": [
           {
             "not": {
-              "section": "body",
-              "matches": "Working \\("
+              "section": "status_tail",
+              "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
             }
           },
           {
             "not": {
               "section": "body",
               "matches": "Starting MCP servers \\("
-            }
-          },
-          {
-            "not": {
-              "section": "body",
-              "matches": "esc to interrupt"
             }
           },
           {
@@ -264,8 +254,8 @@
       "from": ["approval", "trust", "picker"],
       "to": "busy",
       "when": {
-        "section": "body",
-        "matches": "Working \\(|esc to interrupt"
+        "section": "status_tail",
+        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
       }
     },
     {
