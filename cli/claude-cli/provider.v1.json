@@ -115,6 +115,7 @@
   ],
   "sendDelayMs": 1200,
   "submitStrategy": "wait_for_echo",
+  "requiresFinalAssistantBeforeIdle": false,
   "timeouts": {
     "idleFinishConfirm": 5000,
     "statusActivityHold": 5000

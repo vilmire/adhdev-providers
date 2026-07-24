@@ -27,6 +27,7 @@
   "sendKey": "\r",
   "submitStrategy": "wait_for_echo",
   "requirePromptEchoBeforeSubmit": true,
+  "holdCompletionForTranscript": true,
   "approvalKeys": {
     "3": "0\r"
   },
