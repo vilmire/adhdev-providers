@@ -3,12 +3,12 @@
   "name": "Gemini CLI (ACP)",
   "category": "acp",
   "displayName": "Gemini (ACP)",
-  "icon": "\u264a",
+  "icon": "♊",
   "install": "npm install -g @google/gemini-cli",
   "spawn": {
     "command": "gemini",
     "args": [
-      "--experimental-acp"
+      "--acp"
     ],
     "shell": false
   },

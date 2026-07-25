@@ -3,13 +3,12 @@
   "name": "Qwen Code (ACP)",
   "category": "acp",
   "displayName": "Qwen Code",
-  "icon": "\ud83d\udfe6",
+  "icon": "🟦",
   "install": "npm install -g @qwen-code/qwen-code  (requires DASHSCOPE_API_KEY)",
   "spawn": {
     "command": "qwen-code",
     "args": [
-      "--acp",
-      "--experimental-skills"
+      "--acp"
     ],
     "shell": false
   },
