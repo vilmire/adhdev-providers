@@ -29,13 +29,6 @@
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
-    "autohand-acp": {
-      "providerVersion": "1.0.0",
-      "category": "acp",
-      "name": "Autohand Code (ACP)",
-      "status": "Stable",
-      "details": "Agent Client Protocol (ACP)"
-    },
     "blackbox-ai-acp": {
       "providerVersion": "1.0.0",
       "category": "acp",
@@ -68,13 +61,6 @@
       "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Codex (ACP)",
-      "status": "Stable",
-      "details": "Agent Client Protocol (ACP)"
-    },
-    "corust-agent-acp": {
-      "providerVersion": "1.0.0",
-      "category": "acp",
-      "name": "Corust Agent (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },
@@ -166,13 +152,6 @@
       "providerVersion": "1.0.0",
       "category": "acp",
       "name": "Kimi CLI (ACP)",
-      "status": "Stable",
-      "details": "Agent Client Protocol (ACP)"
-    },
-    "minion-code-acp": {
-      "providerVersion": "1.0.0",
-      "category": "acp",
-      "name": "Minion Code (ACP)",
       "status": "Stable",
       "details": "Agent Client Protocol (ACP)"
     },

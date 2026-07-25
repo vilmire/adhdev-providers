@@ -213,13 +213,11 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | `amp` | Amp (Sourcegraph) | ❓ | ❓ | ❓ | | |
 | `auggie` | Auggie (Augment Code) | ❓ | ❓ | ❓ | | |
 | `autodev` | AutoDev | ❓ | ❓ | ❓ | | |
-| `autohand` | Autohand Code | ❓ | ❓ | ❓ | | |
 | `blackbox-ai` | Blackbox AI | ❓ | ❓ | ❓ | | |
 | `claude-agent` | Claude Code (ACP) | ❓ | ❓ | ❓ | | |
 | `cline-acp` | Cline (ACP) | ❓ | ❓ | ❓ | | |
 | `codebuddy` | Codebuddy Code | ❓ | ❓ | ❓ | | |
 | `codex-cli` | Codex CLI (ACP) | ❓ | ❓ | ❓ | | |
-| `corust-agent` | Corust Agent | ❓ | ❓ | ❓ | | |
 | `crow-cli` | crow-cli | ❓ | ❓ | ❓ | | |
 | `cursor-acp` | Cursor (ACP) | ⚠️ | ❓ | ❓ | cursor-agent `2026.03.25-933d5a6` | macOS partial: launch, send/read chat, approval, model/mode changes, and stop validated; reconnect and resume still unverified |
 | `deepagents` | Deep Agents | ❓ | ❓ | ❓ | | |
@@ -233,7 +231,6 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | `junie` | Junie (JetBrains) | ❓ | ❓ | ❓ | | |
 | `kilo` | Kilo Code | ❓ | ❓ | ❓ | | |
 | `kimi-cli` | Kimi Code CLI | ❓ | ❓ | ❓ | | |
-| `minion-code` | Minion Code | ❓ | ❓ | ❓ | | |
 | `mistral-vibe` | Mistral Vibe CLI | ❓ | ❓ | ❓ | | |
 | `nova` | Nova | ❓ | ❓ | ❓ | | |
 | `openclaw` | OpenClaw | ❓ | ❓ | ❓ | | Requires running Gateway |

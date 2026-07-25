@@ -8,7 +8,7 @@
   "spawn": {
     "command": "gemini",
     "args": [
-      "--experimental-acp"
+      "--acp"
     ],
     "shell": false
   },

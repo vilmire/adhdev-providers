@@ -8,8 +8,7 @@
   "spawn": {
     "command": "qwen-code",
     "args": [
-      "--acp",
-      "--experimental-skills"
+      "--acp"
     ],
     "shell": false
   },
