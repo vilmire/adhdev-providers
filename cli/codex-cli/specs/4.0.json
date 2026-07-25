@@ -23,9 +23,13 @@
       "from_top": 0
     },
     "status_tail": {
-      "from_bottom": 12
+      "anchor": "^›\\s",
+      "anchor_last": true,
+      "above": 12,
+      "anchor_miss": "empty"
     }
   },
+  "_statustail_note": "STATUS-TAIL-REANCHOR (CODEX-FSM-DEGENERATE-STABLE RCA, defect 1). status_tail used to be a landmark-less from_bottom:12, but the FSM's viewport snapshot is blank-trimmed (ghostty-vt-backend getText → trimBlankEnds), so from_bottom counts from the LAST NON-BLANK line, not the terminal bottom — on long output the 12-line window filled with body text and the live `Working (…)` spinner escaped ABOVE it, so busy→idle's not-clause read 'no spinner' while the worker was still generating (live: false generating_completed at duration=402s). The section is now anchored on the composer landmark (`^›\\s`, anchor_last — the same anchor the `composer` section uses) and extends 12 lines ABOVE it (`above`), so the window pins to the live status block regardless of output volume. `anchor_miss: empty` resolves the section to EMPTY on frames where the composer is momentarily absent (mid-redraw) instead of the whole-screen fallback — a whole-screen status_tail would re-open SPINNER-BODY-SELFMATCH (assistant prose quoting `esc to interrupt` matching the busy cue). NOT a return to whole-screen `body`: the window stays narrow and landmark-fixed.",
   "_selfmatch_note": "SPINNER-BODY-SELFMATCH fix (sibling of the claude-cli rc.6 status_tail anchoring). The busy cues `Working (` / `esc to interrupt` used to be checked as unanchored literals against the whole-screen `body` section. When an assistant answer quoted or explained those strings (an RCA about codex's own spinner), the body self-matched → idle→busy false-fired and busy→idle's not-clause read TRUE forever → infinite generating. The fix scopes every busy-cue check to `status_tail` (from_bottom:12 — the same live status/prompt window codex's tui.settledPrompt already trusts, scopeWindowLines:12) and anchors the cue on codex's animated-spinner shape: `Working (`/`Thinking (` immediately followed by a braille glyph (U+2800–U+28FF) or an elapsed-time digit, OR the footer `· esc to interrupt)` inside the live status parens (leading bullet/middot + trailing `)`). Both anchors mirror provider.v1.json tui.spinner so prose can no longer self-match. See claude-cli/specs/4.0.json status_tail.",
   "states": [
     {
