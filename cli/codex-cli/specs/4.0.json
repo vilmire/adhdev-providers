@@ -31,6 +31,7 @@
   },
   "_statustail_note": "STATUS-TAIL-REANCHOR (CODEX-FSM-DEGENERATE-STABLE RCA, defect 1). status_tail used to be a landmark-less from_bottom:12, but the FSM's viewport snapshot is blank-trimmed (ghostty-vt-backend getText → trimBlankEnds), so from_bottom counts from the LAST NON-BLANK line, not the terminal bottom — on long output the 12-line window filled with body text and the live `Working (…)` spinner escaped ABOVE it, so busy→idle's not-clause read 'no spinner' while the worker was still generating (live: false generating_completed at duration=402s). The section is now anchored on the composer landmark (`^›\\s`, anchor_last — the same anchor the `composer` section uses) and extends 12 lines ABOVE it (`above`), so the window pins to the live status block regardless of output volume. `anchor_miss: empty` resolves the section to EMPTY on frames where the composer is momentarily absent (mid-redraw) instead of the whole-screen fallback — a whole-screen status_tail would re-open SPINNER-BODY-SELFMATCH (assistant prose quoting `esc to interrupt` matching the busy cue). NOT a return to whole-screen `body`: the window stays narrow and landmark-fixed.",
   "_selfmatch_note": "SPINNER-BODY-SELFMATCH fix (sibling of the claude-cli rc.6 status_tail anchoring). The busy cues `Working (` / `esc to interrupt` used to be checked as unanchored literals against the whole-screen `body` section. When an assistant answer quoted or explained those strings (an RCA about codex's own spinner), the body self-matched → idle→busy false-fired and busy→idle's not-clause read TRUE forever → infinite generating. The fix scopes every busy-cue check to `status_tail` (from_bottom:12 — the same live status/prompt window codex's tui.settledPrompt already trusts, scopeWindowLines:12) and anchors the cue on codex's animated-spinner shape: `Working (`/`Thinking (` immediately followed by a braille glyph (U+2800–U+28FF) or an elapsed-time digit, OR the footer `· esc to interrupt)` inside the live status parens (leading bullet/middot + trailing `)`). Both anchors mirror provider.v1.json tui.spinner so prose can no longer self-match. See claude-cli/specs/4.0.json status_tail.",
+  "_busyidle_fallback_note": "BUSY-IDLE-BOUNDED-FALLBACK (CODEX-FSM-BUSY-WEDGE RCA, 2026-07-26). Live evidence: a completed session (final response + composer `› …` returned) sat in busy for 22+ min with busy→idle firing 0 times; mesh debug showed condResult=false with remainingMs≈1342 on the all(3), which only the stable_ms leaf can produce (regex/not leaves report 0) — a benign post-generation repaint inside the cursor_above:4 window kept resetting regionLastChangedAt every frame, faster than stable_ms=1500 (fsm-driver.ts trackRegionChanges). The wake scheduler kept re-evaluating; the stable clock simply never accumulated. busy→idle is now an `any` of two arms: arm 1 is the ORIGINAL strict guard, byte-equivalent (not tail spinner, not MCP-init, stable 1500/cursor_above 4) so quiet completions still idle at ~1.5s; arm 2 is a bounded fallback — the same spinner/MCP-init vetoes PLUS a modal veto (regex synthesized from the →approval/→trust/→picker transition patterns above to avoid drift) PLUS elapsed_ms:30000 — so once every active marker (Working|Thinking spinner, esc to interrupt, MCP init, trust/approval/picker modal) is absent for 30s since busy entry, idle commits even if the stable window never settles. Safety invariants: a live spinner, MCP init, or any modal vetoes BOTH arms (no false idle during generation/approval); the fallback never consults transcript signals (final_assistant_present is NOT used) so transcript unavailability changes nothing. During a >30s generation the live spinner keeps arm 2 vetoed; modal appearances are additionally caught by the priority 100/110 →approval/→trust/→picker transitions before either arm matters.",
   "states": [
     {
       "id": "starting",
@@ -233,22 +234,51 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
+        "any": [
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
-            }
+            "all": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+                }
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "Starting MCP servers \\("
+                }
+              },
+              {
+                "stable_ms": 1500,
+                "cursor_above": 4
+              }
+            ]
           },
           {
-            "not": {
-              "section": "body",
-              "matches": "Starting MCP servers \\("
-            }
-          },
-          {
-            "stable_ms": 1500,
-            "cursor_above": 4
+            "all": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+                }
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "Starting MCP servers \\("
+                }
+              },
+              {
+                "not": {
+                  "section": "modal",
+                  "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
+                }
+              },
+              {
+                "elapsed_ms": 30000
+              }
+            ]
           }
         ]
       }
