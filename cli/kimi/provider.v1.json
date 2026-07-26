@@ -118,6 +118,35 @@
             "content": "$.event.part.text",
             "timestamp_ms": "$.time"
           }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"tool.call\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.name",
+            "timestamp_ms": "$.time",
+            "tools": {
+              "block_type": "$.event.type",
+              "call_types": ["tool.call"],
+              "result_types": ["tool.result"],
+              "call_name": "$.event.name",
+              "call_args": "$.event.args"
+            }
+          }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"tool.result\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.type",
+            "timestamp_ms": "$.time",
+            "tools": {
+              "block_type": "$.event.type",
+              "call_types": ["tool.call"],
+              "result_types": ["tool.result"],
+              "result_content": "$.event.result.output"
+            }
+          }
         }
       ]
     }
