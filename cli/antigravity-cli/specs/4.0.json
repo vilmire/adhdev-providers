@@ -29,6 +29,7 @@
       "from_top": 0
     }
   },
+  "_busyidle_fallback_note": "BUSY-IDLE-BOUNDED-FALLBACK (AGY-SPEC-BUSY-WEDGE RCA, 2026-07-26). Same wedge family as the codex-cli fix: after a completed turn, a benign repaint inside the cursor_above:4 window keeps resetting the stable clock faster than stable_ms=1500, so the strict all(4) never passes and the session wedges in busy forever (the wake scheduler keeps re-evaluating; the stable leaf is the only blocker). The exact benign ticker string is NOT yet captured, so NO speculative ignore_lines is added. busy→idle is now an `any` of two arms: arm 1 is the ORIGINAL strict guard, byte-equivalent (not approval modal, not footer `esc to cancel`, footer `? for shortcuts`, stable 1500/cursor_above 4) so quiet completions still idle at ~1.5s; arm 2 is a bounded fallback — the same modal/esc-to-cancel vetoes, the same `? for shortcuts` requirement (load-bearing: it is present during generating and approval too, so it is NOT an idle signal on its own), PLUS a veto on the live activity marker reusing the idle→busy braille `Generating|Running|Thinking` regex on the same body section (drift-free), PLUS elapsed_ms:60000 — so with no active marker and no modal, idle commits within 60s of busy entry even if the stable region never settles. Safety invariants: approval modal (also caught by the priority-100 →approval / priority-110 →trust transitions first), footer `esc to cancel`, or a live braille activity marker each veto BOTH arms (no false idle during generation/approval); the fallback never consults transcript signals (final_assistant_present is NOT used). Known conservative gap: a STALE braille line lingering in the viewport scrollback also vetoes arm 2 — that fails safe (stays busy), never false-idle.",
   "states": [
     {
       "id": "starting",
@@ -195,26 +196,59 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
+        "any": [
           {
-            "not": {
-              "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:"
-            }
+            "all": [
+              {
+                "not": {
+                  "section": "modal",
+                  "matches": "Do you want to proceed\\?|Requesting permission for:"
+                }
+              },
+              {
+                "not": {
+                  "section": "footer",
+                  "matches": "esc to cancel"
+                }
+              },
+              {
+                "section": "footer",
+                "matches": "\\? for shortcuts"
+              },
+              {
+                "stable_ms": 1500,
+                "cursor_above": 4
+              }
+            ]
           },
           {
-            "not": {
-              "section": "footer",
-              "matches": "esc to cancel"
-            }
-          },
-          {
-            "section": "footer",
-            "matches": "\\? for shortcuts"
-          },
-          {
-            "stable_ms": 1500,
-            "cursor_above": 4
+            "all": [
+              {
+                "not": {
+                  "section": "modal",
+                  "matches": "Do you want to proceed\\?|Requesting permission for:"
+                }
+              },
+              {
+                "not": {
+                  "section": "footer",
+                  "matches": "esc to cancel"
+                }
+              },
+              {
+                "section": "footer",
+                "matches": "\\? for shortcuts"
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+                }
+              },
+              {
+                "elapsed_ms": 60000
+              }
+            ]
           }
         ]
       }
