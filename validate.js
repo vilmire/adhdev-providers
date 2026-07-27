@@ -377,21 +377,54 @@ function scanDir(dir) {
   }
 }
 
-const args = process.argv.slice(2);
-
-if (args.length > 0) {
-  for (const arg of args) {
-    const filePath = path.resolve(arg);
-    if (!fs.existsSync(filePath)) {
-      fail(arg, 'file not found');
-      continue;
-    }
-    validate(filePath);
+async function validateChannels() {
+  const channelsDir = path.join(__dirname, 'channels');
+  if (!fs.existsSync(channelsDir)) return;
+  let lib;
+  try {
+    lib = await import('./scripts/lib/provider-channels.mjs');
+  } catch (error) {
+    warn('channels', `channel manifest validation unavailable — ${error.message}`);
+    return;
   }
-} else {
-  console.log('🔍 Validating all providers...\n');
-  scanDir(process.cwd());
+  for (const channel of lib.CHANNELS) {
+    const file = path.join(channelsDir, `${channel}.json`);
+    if (!fs.existsSync(file)) continue;
+    const rel = path.relative(process.cwd(), file);
+    let channelErrors;
+    try {
+      channelErrors = lib.validateChannelManifest(file);
+    } catch (error) {
+      channelErrors = [error.message];
+    }
+    if (channelErrors.length === 0) {
+      console.log(`✅ ${rel}: channel manifest valid`);
+    } else {
+      for (const message of channelErrors) fail(rel, message);
+    }
+  }
 }
 
-console.log(`\n━━━ Result: ${validated} passed, ${errors} errors, ${warnings} warnings ━━━`);
-process.exit(errors > 0 ? 1 : 0);
+async function main() {
+  const args = process.argv.slice(2);
+
+  if (args.length > 0) {
+    for (const arg of args) {
+      const filePath = path.resolve(arg);
+      if (!fs.existsSync(filePath)) {
+        fail(arg, 'file not found');
+        continue;
+      }
+      validate(filePath);
+    }
+  } else {
+    console.log('🔍 Validating all providers...\n');
+    scanDir(process.cwd());
+    await validateChannels();
+  }
+
+  console.log(`\n━━━ Result: ${validated} passed, ${errors} errors, ${warnings} warnings ━━━`);
+  process.exit(errors > 0 ? 1 : 0);
+}
+
+main();
