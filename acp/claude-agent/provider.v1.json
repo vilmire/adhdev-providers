@@ -3,6 +3,7 @@
   "name": "Claude Agent (ACP)",
   "category": "acp",
   "displayName": "Claude Agent",
+  "aliases": ["claude-acp"],
   "icon": "🟠",
   "install": "npm install -g @zed-industries/claude-agent-acp  (requires ANTHROPIC_API_KEY)",
   "spawn": {
