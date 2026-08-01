@@ -1,0 +1,109 @@
+name: Validate channel manifests
+
+# Channel-manifest drift gate.
+#
+# The failure this blocks: a commit edits a provider artifact (adding an alias,
+# fixing a spec) but does not regenerate the matching `bundleDigest` in
+# channels/*.json. The manifest then keeps pointing at the pre-edit tree hash,
+# the daemon faithfully serves that stale object, and the change never reaches
+# users. Nothing else in CI notices — validate-cli.yml only schema-checks CLI
+# manifests, and publish-registry.yml happily uploads bytes for a manifest
+# entry whose digest no longer describes the source.
+#
+# This job recomputes the canonical 'adhdev-provider-tree-sha256-v1' digest for
+# every entry in every channel manifest from the git-tracked source tree and
+# fails if any recorded digest disagrees. It is local-only: no registry access,
+# no tokens, no secrets.
+#
+# Fix when this fails: regenerate the manifests
+#   node scripts/generate-channels.mjs
+# and commit the updated channels/*.json alongside the artifact change.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/provider.json'
+      - '**/provider.v1.json'
+      - '**/scripts.js'
+      - 'channels/**'
+      - 'schemas/v1/channels/**'
+      - 'scripts/validate-channels.mjs'
+      - 'scripts/lib/provider-channels.mjs'
+      - '.github/workflows/validate-channels.yml'
+  pull_request:
+    paths:
+      - '**/provider.json'
+      - '**/provider.v1.json'
+      - '**/scripts.js'
+      - 'channels/**'
+      - 'schemas/v1/channels/**'
+      - 'scripts/validate-channels.mjs'
+      - 'scripts/lib/provider-channels.mjs'
+      - '.github/workflows/validate-channels.yml'
+  workflow_dispatch:
+
+jobs:
+  validate-channels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # The canonical digest is computed over `git ls-files` output, so the
+      # checkout must be a real git repo with the full tracked tree. Depth 1 is
+      # sufficient — only the working tree at this commit is hashed.
+      #
+      # scripts/lib/provider-channels.mjs resolves ajv/ajv-formats/semver from
+      # the SURROUNDING workspace ('../oss/node_modules', then
+      # '../node_modules') because this repo is normally a submodule of the
+      # adhdev monorepo and carries no node_modules of its own. Standalone in
+      # CI, neither path exists, so we check out into a subdirectory and
+      # install the deps at the workspace root — which is exactly the
+      # '../node_modules' the library already looks for. No library change.
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+          path: repo
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install validator dependencies (ajv, ajv-formats, semver)
+        run: npm install --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 semver@^7.6.0 > /dev/null
+
+      # Toolchain preflight — this gate must only ever be red for real drift.
+      #
+      # validate-channels.mjs exits 1 both for a genuine digest mismatch AND
+      # for "could not locate ajv", and the two are indistinguishable by exit
+      # code. Without this check a broken dependency step would look exactly
+      # like permanent drift, and the gate would be ignored as noise. Assert
+      # the deps actually resolve from where the library searches before
+      # trusting any validation result.
+      - name: Preflight — validator dependencies resolve
+        working-directory: repo
+        run: |
+          node -e "
+            const { createRequire } = require('node:module');
+            const { resolve } = require('node:path');
+            const req = createRequire(resolve(process.cwd(), 'scripts/lib/x.mjs'));
+            const base = resolve(process.cwd(), '..', 'node_modules');
+            for (const m of ['ajv/dist/2020.js', 'ajv-formats', 'semver']) {
+              req(resolve(base, m));
+              console.log('✓ resolved', m);
+            }
+            console.log('Preflight OK — a failure below is real manifest drift, not a toolchain gap.');
+          "
+
+      # Validates channels/stable.json and channels/preview.json.
+      #
+      # Both are covered deliberately. stable entries are digest-identical
+      # promotions of preview entries (promotedFrom copies the digest verbatim
+      # and never rebuilds), so source-tree drift propagates into BOTH
+      # manifests at once. Gating only preview would leave stable pointing at
+      # the same stale object.
+      - name: Validate channel manifests (recompute every bundleDigest)
+        working-directory: repo
+        run: node scripts/validate-channels.mjs
