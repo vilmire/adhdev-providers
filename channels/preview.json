@@ -95,11 +95,11 @@
     },
     {
       "providerType": "claude-agent-acp",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "acp",
-      "bundleDigest": "sha256:c118b0cd6e572a6d8257ba8a57c1852ca099818d570774e1c69974777dc411a2",
+      "bundleDigest": "sha256:187bd869d4b8617ea0c589ed02eeaf043db711ee242fb346bd954f13bb47b9ec",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-07-27T08:56:00.124Z",
+      "publishedAt": "2026-08-01T09:47:09.044Z",
       "name": "Claude Agent (ACP)",
       "compatibility": {
         "contractVersion": 2
