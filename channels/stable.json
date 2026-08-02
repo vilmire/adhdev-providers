@@ -149,7 +149,7 @@
       "providerType": "claude-cli",
       "providerVersion": "1.2.2",
       "category": "cli",
-      "bundleDigest": "sha256:d7510fe00c0e8879516fe72be4b830ac3709711d21720c00001d249555a5f7a1",
+      "bundleDigest": "sha256:05b020e297968d8f6d8df473072e9c67b6c34f01d2c91bbe2a35d4800f9323af",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-07-27T08:56:00.124Z",
       "name": "Claude Code",
@@ -160,7 +160,7 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:d7510fe00c0e8879516fe72be4b830ac3709711d21720c00001d249555a5f7a1",
+        "bundleDigest": "sha256:05b020e297968d8f6d8df473072e9c67b6c34f01d2c91bbe2a35d4800f9323af",
         "promotedAt": "2026-07-27T08:56:00.124Z"
       }
     },

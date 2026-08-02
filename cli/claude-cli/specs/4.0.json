@@ -14,7 +14,7 @@
   },
   "sections": {
     "footer": {
-      "anchor": "^[❯›>]",
+      "anchor": "^(?:[❯›>]|[│|]\\s*[❯›>])",
       "anchor_last": true
     },
     "modal": {
