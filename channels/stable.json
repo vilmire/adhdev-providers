@@ -547,16 +547,16 @@
     },
     {
       "providerType": "kimi",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "cli",
-      "bundleDigest": "sha256:12c8c0cb69cd5044df4e1aacd502dda0589de964554dbc39999d178b83a9b601",
+      "bundleDigest": "sha256:a1dc1b16d603e10f4dec54cc25308286a23a61925c358a0699ef1cd5f8423ce9",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-07-27T08:56:00.124Z",
+      "publishedAt": "2026-08-03T10:01:24.118Z",
       "name": "Kimi Code",
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:12c8c0cb69cd5044df4e1aacd502dda0589de964554dbc39999d178b83a9b601",
-        "promotedAt": "2026-07-27T08:56:00.124Z"
+        "bundleDigest": "sha256:a1dc1b16d603e10f4dec54cc25308286a23a61925c358a0699ef1cd5f8423ce9",
+        "promotedAt": "2026-08-03T10:01:24.118Z"
       }
     },
     {
