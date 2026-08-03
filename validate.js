@@ -246,7 +246,79 @@ function validateNoMachineSpecificPaths(rel, mod) {
   }
 }
 
-function validateV1ManifestPaths(filePath) {
+// ── v1 manifest structure ───────────────────────────────────────────────────
+// provider.v1.json previously reached this file for the machine-specific-path
+// check ONLY, bypassing structural validation entirely. That gap is why the
+// kimi manifest's owner-home absolute path passed validation from its first
+// commit and shipped to a public channel.
+//
+// The cli JSON Schema (schemas/v1/cli/provider.schema.json) is NOT applied to
+// every v1 manifest, deliberately: it declares `required: [type, name, category,
+// binary, spawn]` with `additionalProperties: false`, and all 32 acp manifests
+// fail it — they carry no `binary` and use acp-only fields (`auth`, `tier`,
+// `session`). Forcing it would produce 32 false failures, not coverage. The
+// publish workflow makes the same split explicit ("Schema check (CLI only for
+// now)"), and only the 7 cli manifests self-declare that $schema.
+//
+// So structure is checked in two tiers:
+//   1. Category-agnostic invariants below — every v1 manifest, all 39.
+//   2. The full cli JSON Schema — applied by scripts/validate-cli-schema.mjs
+//      to cli/ only, where it is the declared contract.
+// An acp schema does not exist yet; when one is authored, wire it in here
+// alongside the cli tier rather than widening the cli schema.
+
+const V1_REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion'];
+
+function validateV1Structure(rel, mod) {
+  if (!mod || typeof mod !== 'object' || Array.isArray(mod)) {
+    fail(rel, 'v1 manifest must be a JSON object');
+    return;
+  }
+
+  for (const field of V1_REQUIRED_FIELDS) {
+    if (mod[field] === undefined || mod[field] === null || mod[field] === '') {
+      fail(rel, `missing required field '${field}'`);
+    } else if (typeof mod[field] !== 'string') {
+      fail(rel, `'${field}' must be a string (got ${JSON.stringify(mod[field])})`);
+    }
+  }
+
+  if (mod.category !== undefined && !VALID_CATEGORIES.includes(mod.category)) {
+    fail(rel, `invalid category '${mod.category}' (must be: ${VALID_CATEGORIES.join(', ')})`);
+  }
+
+  if (typeof mod.providerVersion === 'string' && !/^\d+\.\d+\.\d+$/.test(mod.providerVersion)) {
+    warn(rel, `providerVersion should be semver (got ${JSON.stringify(mod.providerVersion)})`);
+  }
+
+  // contractVersion is absent on 6 of 39 manifests today, so a missing value
+  // warns rather than fails; a non-numeric one is always wrong.
+  if (mod.contractVersion === undefined) {
+    warn(rel, 'contractVersion missing (expected the typed contract baseline, 2)');
+  } else if (typeof mod.contractVersion !== 'number') {
+    fail(rel, `contractVersion must be a number (got ${JSON.stringify(mod.contractVersion)})`);
+  }
+
+  // Every v1 manifest describes a spawned process; without a command the
+  // provider cannot start at all.
+  if (!mod.spawn || typeof mod.spawn !== 'object' || Array.isArray(mod.spawn)) {
+    fail(rel, 'spawn must be an object');
+  } else if (typeof mod.spawn.command !== 'string' || !mod.spawn.command.trim()) {
+    fail(rel, 'spawn.command is required and must be a non-empty string');
+  }
+
+  if (mod.capabilities !== undefined
+    && (!mod.capabilities || typeof mod.capabilities !== 'object' || Array.isArray(mod.capabilities))) {
+    fail(rel, 'capabilities must be an object when present');
+  }
+
+  if (mod.aliases !== undefined
+    && (!Array.isArray(mod.aliases) || mod.aliases.some((a) => typeof a !== 'string'))) {
+    fail(rel, 'aliases must be an array of strings when present');
+  }
+}
+
+function validateV1Manifest(filePath) {
   const rel = path.relative(process.cwd(), filePath);
   let mod;
   try {
@@ -255,7 +327,19 @@ function validateV1ManifestPaths(filePath) {
     fail(rel, `parse error — ${error.message}`);
     return;
   }
+
+  const before = errors;
+  validateV1Structure(rel, mod);
+  // v1 manifests are published to the same public channels as legacy ones, so
+  // the machine-specific path check must cover them too.
   validateNoMachineSpecificPaths(rel, mod);
+
+  if (errors === before) {
+    validated++;
+    const type = typeof mod.type === 'string' ? mod.type : '(no type)';
+    const category = typeof mod.category === 'string' ? mod.category : '?';
+    console.log(`✅ ${rel}: ${type} (${category}) — v1 manifest`);
+  }
 }
 
 function validateProvider(providerDir, rel, mod) {
@@ -441,10 +525,7 @@ function scanDir(dir) {
     } else if (entry.name === 'provider.json') {
       validate(full);
     } else if (entry.name === 'provider.v1.json') {
-      // v1 manifests carry their own schema (scripts/validate-cli-schema.mjs),
-      // but they are published to the same public channels, so the
-      // machine-specific path check must cover them too.
-      validateV1ManifestPaths(full);
+      validateV1Manifest(full);
     }
   }
 }
@@ -487,7 +568,13 @@ async function main() {
         fail(arg, 'file not found');
         continue;
       }
-      validate(filePath);
+      // Route by filename so an explicitly-named v1 manifest gets the v1 rules
+      // instead of the legacy ones (which would reject it for acp-only fields).
+      if (path.basename(filePath) === 'provider.v1.json') {
+        validateV1Manifest(filePath);
+      } else {
+        validate(filePath);
+      }
     }
   } else {
     console.log('🔍 Validating all providers...\n');
