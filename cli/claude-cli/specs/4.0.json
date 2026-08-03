@@ -95,6 +95,11 @@
       "id": "approval_resolving",
       "label": "Approval resolving",
       "status": "approval"
+    },
+    {
+      "id": "approval_vanished",
+      "label": "Approval clearing",
+      "status": "approval"
     }
   ],
   "transitions": [
@@ -249,10 +254,7 @@
     },
     {
       "label": "approval→resolving",
-      "from": [
-        "approval",
-        "picker"
-      ],
+      "from": "approval",
       "to": "approval_resolving",
       "min_hold_ms": 2500,
       "when": {
@@ -353,6 +355,102 @@
             "cursor_above": 5
           }
         ]
+      }
+    },
+    {
+      "label": "approval→vanished",
+      "from": [
+        "approval",
+        "picker"
+      ],
+      "to": "approval_vanished",
+      "priority": 90,
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "footer",
+              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+            }
+          },
+          {
+            "not": {
+              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+            }
+          },
+          {
+            "not": {
+              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\s*\\(shift"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+            }
+          },
+          {
+            "not": {
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "vanished→approval-modal-returned",
+      "from": "approval_vanished",
+      "to": "approval",
+      "priority": 120,
+      "when": {
+        "any": [
+          {
+            "section": "footer",
+            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
+          },
+          {
+            "section": "footer",
+            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+          },
+          {
+            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+          },
+          {
+            "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\s*\\(shift"
+          }
+        ]
+      }
+    },
+    {
+      "label": "vanished→busy",
+      "from": "approval_vanished",
+      "to": "busy",
+      "priority": 100,
+      "when": {
+        "section": "status_tail",
+        "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))"
+      }
+    },
+    {
+      "label": "vanished→idle",
+      "from": "approval_vanished",
+      "to": "idle",
+      "priority": 10,
+      "when": {
+        "elapsed_ms": 1200
       }
     }
   ],
