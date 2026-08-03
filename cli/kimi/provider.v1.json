@@ -148,6 +148,20 @@
             }
           }
         }
+      ],
+      "usage_records": [
+        {
+          "where": "$.type == \"usage.record\"",
+          "usage_map": {
+            "mode": "delta",
+            "input_tokens": "$.usage.inputOther",
+            "output_tokens": "$.usage.output",
+            "cache_read_tokens": "$.usage.inputCacheRead",
+            "cache_creation_tokens": "$.usage.inputCacheCreation",
+            "model": "$.model",
+            "timestamp_ms": "$.time"
+          }
+        }
       ]
     }
   },
