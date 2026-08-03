@@ -21,10 +21,10 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.1",
+  "providerVersion": "1.0.2",
   "binary": "kimi",
   "spawn": {
-    "command": "/Users/vilmire/.kimi-code/bin/kimi",
+    "command": "kimi",
     "args": [],
     "shell": false
   },

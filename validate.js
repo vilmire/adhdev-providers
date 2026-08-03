@@ -193,6 +193,71 @@ function validateControl(rel, control, inventory) {
   return { errors: localErrors, warnings: localWarnings };
 }
 
+// A literal user segment is the defect. A wildcard one (`C:\Users\*\...`) is the
+// portable discovery form IDE providers already rely on, so `*` is allowed.
+const USER_SEGMENT = String.raw`(?!\*)[^/\\\s"*]+`;
+const MACHINE_SPECIFIC_PATH_PATTERNS = [
+  { re: new RegExp(String.raw`(^|[^\w])/Users/${USER_SEGMENT}`), label: 'macOS home directory' },
+  { re: new RegExp(String.raw`(^|[^\w])/home/${USER_SEGMENT}`), label: 'Linux home directory' },
+  { re: new RegExp(String.raw`[A-Za-z]:[\\/]+Users[\\/]+${USER_SEGMENT}`), label: 'Windows home directory' },
+  { re: /%USERPROFILE%/i, label: 'Windows %USERPROFILE% expansion' },
+  { re: /\$HOME\b/, label: '$HOME shell expansion' },
+];
+
+/**
+ * Manifests are published to a public channel and run on every user's machine,
+ * so a hard-coded home directory is both a functional break (it only resolves on
+ * the author's box) and a privacy leak (it ships the author's username).
+ *
+ * Per-machine locations belong in the user's `executablePath` setting, never in
+ * the manifest. Tilde-relative paths (`~/.codex/sessions`) stay legal — they are
+ * the portable form and are already used by watchPath/nativeHistory.
+ */
+function validateNoMachineSpecificPaths(rel, mod) {
+  const walk = (value, jsonPath) => {
+    if (typeof value === 'string') {
+      for (const { re, label } of MACHINE_SPECIFIC_PATH_PATTERNS) {
+        if (re.test(value)) {
+          fail(
+            rel,
+            `${jsonPath} contains a machine-specific path (${label}): ${JSON.stringify(value)}. ` +
+              'Use a bare binary name resolved via PATH, or a "~/"-relative path. ' +
+              'Machine-specific locations belong in the executablePath setting, not a published manifest.',
+          );
+          return;
+        }
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, i) => walk(item, `${jsonPath}[${i}]`));
+      return;
+    }
+    if (value && typeof value === 'object') {
+      for (const [key, child] of Object.entries(value)) walk(child, `${jsonPath}.${key}`);
+    }
+  };
+
+  for (const [key, value] of Object.entries(mod)) {
+    // Prose fields legitimately quote example paths (install instructions,
+    // human-facing descriptions); only structural fields are enforced.
+    if (key === 'install' || key === 'details' || key === 'links') continue;
+    walk(value, key);
+  }
+}
+
+function validateV1ManifestPaths(filePath) {
+  const rel = path.relative(process.cwd(), filePath);
+  let mod;
+  try {
+    mod = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch (error) {
+    fail(rel, `parse error — ${error.message}`);
+    return;
+  }
+  validateNoMachineSpecificPaths(rel, mod);
+}
+
 function validateProvider(providerDir, rel, mod) {
   for (const field of REQUIRED_FIELDS) {
     if (mod[field] === undefined || mod[field] === null || mod[field] === '') {
@@ -293,6 +358,8 @@ function validateProvider(providerDir, rel, mod) {
     }
   }
 
+  validateNoMachineSpecificPaths(rel, mod);
+
   if (mod.defaultScriptDir) {
     const defaultDir = path.join(providerDir, mod.defaultScriptDir);
     if (!fs.existsSync(defaultDir)) {
@@ -373,6 +440,11 @@ function scanDir(dir) {
       scanDir(full);
     } else if (entry.name === 'provider.json') {
       validate(full);
+    } else if (entry.name === 'provider.v1.json') {
+      // v1 manifests carry their own schema (scripts/validate-cli-schema.mjs),
+      // but they are published to the same public channels, so the
+      // machine-specific path check must cover them too.
+      validateV1ManifestPaths(full);
     }
   }
 }
