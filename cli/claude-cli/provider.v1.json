@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.2",
+  "providerVersion": "1.2.3",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -226,7 +226,9 @@
       ],
       "buttonPattern": "^\\s*([❯›>]\\s*)?\\d+[.)]\\s+((?:Yes|No|Continue|Cancel|Skip|Use this(?: mcp server)?|Fix with Claude|Allow|Deny|Reject|Always allow)\\b.*)$",
       "buttonLabelGroup": 2,
-      "buttonFlags": "m"
+      "buttonFlags": "m",
+      "scope": "window-around-question",
+      "scopeWindowLines": 48
     },
     "dispatchOrder": {
       "$schema": "adhdev:tui/dispatch-order@1",
