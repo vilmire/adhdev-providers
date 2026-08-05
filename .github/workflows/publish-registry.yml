@@ -4,12 +4,16 @@ on:
   push:
     branches: [main]
     paths:
-      - 'cli/**/provider.json'
-      - 'cli/**/provider.v1.json'
-      - 'ide/**/provider.json'
-      - 'extension/**/provider.json'
-      - 'acp/**/provider.json'
-      - 'acp/**/provider.v1.json'
+      # Whole artifact trees, not just the manifests: the published
+      # bundleDigest covers every git-tracked file under <category>/<dir>, so
+      # a fixtures/scripts/specs change also moves the digest. Triggering only
+      # on provider*.json let the registry digest drift stale against the
+      # transport tarball — the daemon then refused activation with
+      # DIGEST_MISMATCH and the provider silently froze (kimi, 2026-08).
+      - 'cli/**'
+      - 'ide/**'
+      - 'extension/**'
+      - 'acp/**'
 
   # Allow manual trigger for backfills
   workflow_dispatch:
@@ -56,6 +60,17 @@ jobs:
 
           if (!TOKEN) { console.error('ADHDEV_PUBLISH_TOKEN not set'); process.exit(1); }
 
+          // Canonical tree-digest library (scripts/lib/provider-channels.mjs).
+          // Every publish MUST carry the verified artifact identity
+          // (bundleDigest + digestAlgorithm): a digest-less row lands as
+          // channel=stable + 'legacy-unverified' at the server boundary, and
+          // the daemon's verified channel sync refuses to activate such rows
+          // — which is exactly how the stable channel was frozen with no
+          // .store ever created. Loading the lib lazily keeps `node -e` in
+          // CommonJS while importing the ESM lib.
+          const { pathToFileURL } = require('node:url');
+          const channelLibPromise = import(pathToFileURL(join(process.cwd(), 'scripts/lib/provider-channels.mjs')).href);
+
           const cliSchema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json', 'utf-8'));
           const ajv = new Ajv({ allErrors: true, strict: false });
           addFormats(ajv);
@@ -81,6 +96,12 @@ jobs:
             const version = manifest.providerVersion || '0.0.0';
             const tier = inferTier(manifest);
 
+            // Canonical digest over the git-tracked artifact tree at this
+            // commit — the same construction the daemon recomputes from the
+            // extracted tarball before activation.
+            const { computeProviderTreeDigest, DIGEST_ALGORITHM } = await channelLibPromise;
+            const bundleDigest = computeProviderTreeDigest(category + '/' + type);
+
             // Schema check (CLI only for now)
             let schemaValid = true;
             if (category === 'cli') {
@@ -94,6 +115,9 @@ jobs:
               type,
               category,
               version,
+              channel: 'stable',
+              bundleDigest,
+              digestAlgorithm: DIGEST_ALGORITHM,
               name: manifest.name || type,
               displayName: manifest.displayName || manifest.name || type,
               tier,
@@ -113,8 +137,8 @@ jobs:
 
             const result = await resp.json();
             if (resp.status === 201) console.log('  published', version, tier);
-            else if (resp.status === 200) console.log('  already_published', version);
-            else if (resp.status === 409) console.log('  conflict (version exists with different content)');
+            else if (resp.status === 200) console.log(' ', result.status || 'already_published', version);
+            else if (resp.status === 409) console.error('  conflict:', version, '— version exists with different content (legacy digest-less rows are immutable; bump providerVersion to publish a verified row)');
             else console.error('  error', resp.status, JSON.stringify(result));
           }
 
