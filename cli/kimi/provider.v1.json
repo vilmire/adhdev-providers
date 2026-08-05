@@ -83,7 +83,7 @@
     "sessionIdFormat": "string",
     "resumeSessionArgs": [
       "-S",
-      "{{id}}"
+      "session_{{id}}"
     ],
     "resumeArgs": [
       "--continue"
