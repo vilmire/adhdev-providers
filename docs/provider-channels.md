@@ -74,7 +74,10 @@ reinterpretation.
 ## Initial channel contents
 
 `node scripts/generate-channels.mjs` builds both manifests from the provider
-artifacts (directories with a `provider.json`/`provider.v1.json`). Source of
+artifacts (directories with a `provider.json`/`provider.v1.json`). When both
+exist, **`provider.v1.json` wins** — the same v1-first precedence the daemon
+runtime (`locateArtifactDir`) and the registry publish workflow use; a
+v0-first read pins the channel to the stale legacy version. Source of
 truth for `providerType`/`providerVersion`/`category`/`compatibility` is the
 artifact manifest itself — note this can be newer than the summary in
 `registry.json` (e.g. `claude-cli`). Registry entries without an artifact

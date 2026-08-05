@@ -3,8 +3,10 @@
  * Generate channels/stable.json and channels/preview.json from the provider
  * artifacts tracked in this repo (Stage 1 — schema/data only).
  *
- * Source of truth: each artifact directory's provider.json / provider.v1.json
- * (type, providerVersion, category, compatibility). Registry-only entries
+ * Source of truth: each artifact directory's provider.v1.json (preferred) or
+ * provider.json legacy fallback (type, providerVersion, category,
+ * compatibility) — the same v1-first precedence the daemon runtime and the
+ * registry publish workflow use. Registry-only entries
  * without an artifact directory are excluded — they cannot carry a verifiable
  * canonical digest, and the channel schema fails closed rather than admitting
  * unverifiable digests.

@@ -155,3 +155,18 @@ test('channel must agree between path and content', async () => {
     assert.match(output(result), /channel mismatch/);
   });
 });
+
+test('artifact manifest precedence: provider.v1.json wins over legacy provider.json', async () => {
+  const lib = await import('../scripts/lib/provider-channels.mjs');
+  withTempDir((dir) => {
+    // The daemon runtime (locateArtifactDir) and the registry publish
+    // workflow both prefer provider.v1.json; the channel tooling must agree,
+    // or channels pin the stale legacy version (all acp/* froze at 1.0.0).
+    fs.writeFileSync(path.join(dir, 'provider.json'), JSON.stringify({ type: 'x-cli', providerVersion: '1.0.0' }));
+    fs.writeFileSync(path.join(dir, 'provider.v1.json'), JSON.stringify({ type: 'x-cli', providerVersion: '1.0.1' }));
+    assert.equal(lib.readArtifactManifest(dir).providerVersion, '1.0.1');
+    // provider.json remains the fallback when no v1 manifest exists.
+    fs.rmSync(path.join(dir, 'provider.v1.json'));
+    assert.equal(lib.readArtifactManifest(dir).providerVersion, '1.0.0');
+  });
+});

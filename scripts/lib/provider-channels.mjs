@@ -110,8 +110,16 @@ export function computeProviderTreeDigest(relDir) {
   return `sha256:${hash.digest('hex')}`;
 }
 
-function readArtifactManifest(dir) {
-  for (const name of ['provider.json', 'provider.v1.json']) {
+/**
+ * Read the artifact manifest in a provider directory. The v1 manifest wins
+ * when both exist: it is the current contract and the same precedence the
+ * daemon runtime (locateArtifactDir) and the registry publish workflow use.
+ * Reading provider.json first silently pins the channel to the stale legacy
+ * version (this froze every acp/* provider at 1.0.0 while their v1 manifests
+ * had moved on).
+ */
+export function readArtifactManifest(dir) {
+  for (const name of ['provider.v1.json', 'provider.json']) {
     const file = join(dir, name);
     if (!existsSync(file)) continue;
     try {
