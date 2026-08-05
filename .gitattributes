@@ -1,0 +1,7 @@
+# Provider trees are hashed byte-for-byte (computeProviderTreeDigest) and the
+# digests are published to the registry, then verified by recomputation.
+# Force LF so Windows checkouts (core.autocrlf=true) don't munge text files
+# into CRLF, which otherwise breaks digest verification and leaves the
+# checkout perpetually dirty, blocking submodule update / ff.
+# text=auto keeps any future binary file untouched.
+* text=auto eol=lf
