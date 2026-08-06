@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.4",
+  "providerVersion": "1.0.5",
   "binary": "kimi",
   "spawn": {
     "command": "kimi",
@@ -253,6 +253,7 @@
       "chromePatterns": [
         {
           "regex": "^\\s*[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:",
+          "flags": "u",
           "label": "spinner-tip"
         },
         {
@@ -297,6 +298,56 @@
         {
           "regex": "\\(\\d+ more lines?, ctrl\\+o to expand\\)",
           "label": "collapsed-hint"
+        },
+        {
+          "regex": "\\bK\\d+\\s+thinking:\\s*\\S+",
+          "flags": "i",
+          "label": "status-bar-k3"
+        },
+        {
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+thinking\\.\\.\\.",
+          "label": "thinking-spinner"
+        },
+        {
+          "regex": "^\\s*[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*$",
+          "flags": "u",
+          "label": "spinner-glyph"
+        },
+        {
+          "regex": "Press Ctrl\\+B to run in background",
+          "flags": "i",
+          "label": "background-hint"
+        },
+        {
+          "regex": "\\.\\.\\.\\s*\\(\\d+ earlier lines\\)",
+          "label": "panel-overflow"
+        },
+        {
+          "regex": "\\+\\d+\\s+more\\b.*ctrl\\+t to expand",
+          "flags": "i",
+          "label": "collapsed-todo-hint"
+        },
+        {
+          "regex": "↑\\s*to edit\\b|ctrl-s to steer",
+          "flags": "i",
+          "label": "steer-hint"
+        },
+        {
+          "regex": "^\\s*❯\\s+\\S",
+          "label": "queued-input-echo"
+        },
+        {
+          "regex": "^\\s*[─━═]{8,}\\s*$",
+          "label": "panel-rule"
+        },
+        {
+          "regex": "^\\s*Todo\\s*$",
+          "label": "todo-panel-header"
+        },
+        {
+          "regex": "^\\s*[○✓✗◌◯☐☑✔]\\s+\\S",
+          "flags": "u",
+          "label": "todo-panel-item"
         }
       ],
       "scope": "buffer"
