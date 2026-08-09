@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.5",
+  "providerVersion": "1.0.6",
   "binary": "kimi",
   "spawn": {
     "command": "kimi",
@@ -127,8 +127,12 @@
             "timestamp_ms": "$.time",
             "tools": {
               "block_type": "$.event.type",
-              "call_types": ["tool.call"],
-              "result_types": ["tool.result"],
+              "call_types": [
+                "tool.call"
+              ],
+              "result_types": [
+                "tool.result"
+              ],
               "call_name": "$.event.name",
               "call_args": "$.event.args"
             }
@@ -142,8 +146,12 @@
             "timestamp_ms": "$.time",
             "tools": {
               "block_type": "$.event.type",
-              "call_types": ["tool.call"],
-              "result_types": ["tool.result"],
+              "call_types": [
+                "tool.call"
+              ],
+              "result_types": [
+                "tool.result"
+              ],
               "result_content": "$.event.result.output"
             }
           }
@@ -169,9 +177,15 @@
     "welcomeScreen": {
       "$schema": "adhdev:tui/welcome-screen@1",
       "cues": [
-        { "pattern": "Welcome to Kimi Code" },
-        { "pattern": "Migrate from kimi-cli" },
-        { "pattern": "High Speed mode is ready" }
+        {
+          "pattern": "Welcome to Kimi Code"
+        },
+        {
+          "pattern": "Migrate from kimi-cli"
+        },
+        {
+          "pattern": "High Speed mode is ready"
+        }
       ]
     },
     "spinner": {
@@ -429,5 +443,19 @@
     "type": "github",
     "repo": "vilmire/adhdev-providers",
     "ref": "main"
+  },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "auto_import",
+      "format": "claude_mcp_json",
+      "path": ".kimi-code/mcp.json",
+      "serverName": "adhdev-mesh"
+    },
+    "systemPromptInjection": {
+      "mode": "context_file",
+      "path": "AGENTS.md",
+      "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->"
+    }
   }
 }
