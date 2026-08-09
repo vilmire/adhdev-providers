@@ -21,11 +21,13 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "binary": "cursor-agent",
   "spawn": {
     "command": "cursor-agent",
-    "args": [],
+    "args": [
+      "--trust"
+    ],
     "shell": false
   },
   "autoApproveModes": {
@@ -142,8 +144,12 @@
       "message_map": {
         "role": "$.role",
         "content": "$.message.content",
-        "content_strip": ["timestamp"],
-        "content_unwrap": ["user_query"],
+        "content_strip": [
+          "timestamp"
+        ],
+        "content_unwrap": [
+          "user_query"
+        ],
         "tools": {}
       }
     }
@@ -198,20 +204,61 @@
         "regex": "^\\s*(\\S.*)$",
         "description": "cursor-agent renders the assistant answer as a plain no-background line with no distinctive bullet — capture any non-empty body line. The user's submitted message and composer echo are rendered inside a colored box and are classified as USER turns via userBackgroundSgr BEFORE this permissive rule runs, so they no longer leak into an assistant bubble. Remaining chrome (footer, spinner, follow-up hint, mode label, workspace path, input box, tips) is excluded via chromePatterns."
       },
-      "userBackgroundSgr": ["*"],
+      "userBackgroundSgr": [
+        "*"
+      ],
       "chromePatterns": [
-        { "regex": "\\bWorking\\b", "label": "spinner-working" },
-        { "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)", "flags": "i", "label": "interrupt-hint" },
-        { "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*·", "label": "mode-footer" },
-        { "regex": "^\\s*(?:Auto|Plan|Ask)\\s*$", "label": "mode-label-idle" },
-        { "regex": "^\\s*→\\s+Add a follow-up", "flags": "i", "label": "follow-up-hint" },
-        { "regex": "^\\s*Tip:", "flags": "i", "label": "tip-hint" },
-        { "regex": "^\\s*Cursor Agent\\s*$", "label": "startup-banner" },
-        { "regex": "^\\s*v\\d+\\.\\d", "label": "version-line" },
-        { "regex": "^\\s*(?:~|/)[^\\n]*$", "label": "workspace-path" },
-        { "regex": "·\\s*$", "label": "workspace-path-continuation" },
-        { "regex": "^\\s*[A-Za-z][\\w.-]*/[\\w./-]+\\s*$", "label": "git-branch-footer" },
-        { "regex": "^\\s*[╭╰│>❯›]", "label": "input-box-chrome" }
+        {
+          "regex": "\\bWorking\\b",
+          "label": "spinner-working"
+        },
+        {
+          "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+          "flags": "i",
+          "label": "interrupt-hint"
+        },
+        {
+          "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*·",
+          "label": "mode-footer"
+        },
+        {
+          "regex": "^\\s*(?:Auto|Plan|Ask)\\s*$",
+          "label": "mode-label-idle"
+        },
+        {
+          "regex": "^\\s*→\\s+Add a follow-up",
+          "flags": "i",
+          "label": "follow-up-hint"
+        },
+        {
+          "regex": "^\\s*Tip:",
+          "flags": "i",
+          "label": "tip-hint"
+        },
+        {
+          "regex": "^\\s*Cursor Agent\\s*$",
+          "label": "startup-banner"
+        },
+        {
+          "regex": "^\\s*v\\d+\\.\\d",
+          "label": "version-line"
+        },
+        {
+          "regex": "^\\s*(?:~|/)[^\\n]*$",
+          "label": "workspace-path"
+        },
+        {
+          "regex": "·\\s*$",
+          "label": "workspace-path-continuation"
+        },
+        {
+          "regex": "^\\s*[A-Za-z][\\w.-]*/[\\w./-]+\\s*$",
+          "label": "git-branch-footer"
+        },
+        {
+          "regex": "^\\s*[╭╰│>❯›]",
+          "label": "input-box-chrome"
+        }
       ],
       "stripLeadingChrome": true,
       "scope": "buffer"

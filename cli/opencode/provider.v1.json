@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.1",
+  "providerVersion": "1.0.2",
   "binary": "opencode",
   "spawn": {
     "command": "opencode",
@@ -141,6 +141,18 @@
       ],
       "stripLeadingChrome": true,
       "scope": "buffer"
+    },
+    "startupDismiss": {
+      "$schema": "adhdev:tui/startup-dismiss@1",
+      "patterns": [
+        {
+          "regex": "Update Available|Would you like to\\s+update",
+          "flags": "i"
+        }
+      ],
+      "key": "\u001b",
+      "maxAttempts": 3,
+      "windowMs": 20000
     }
   },
   "transcriptAuthority": "provider",
