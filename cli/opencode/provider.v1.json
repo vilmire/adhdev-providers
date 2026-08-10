@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.2",
+  "providerVersion": "1.0.3",
   "binary": "opencode",
   "spawn": {
     "command": "opencode",
@@ -237,5 +237,19 @@
       "path": "AGENTS.md",
       "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->"
     }
-  }
+  },
+  "modelLaunchArgs": [
+    "--model",
+    "{{model}}"
+  ],
+  "modelOptions": [
+    "opencode/big-pickle",
+    "opencode/deepseek-v4-flash-free",
+    "opencode/laguna-s-2.1-free",
+    "opencode/longcat-2.0-free",
+    "opencode/mimo-v2.5-free",
+    "opencode/nemotron-3-ultra-free",
+    "kimi-for-coding/kimi-for-coding",
+    "kimi-for-coding/k3"
+  ]
 }
