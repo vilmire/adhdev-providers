@@ -42,7 +42,7 @@
   "inputMethod": "cdp-type-and-send",
   "inputSelector": "[contenteditable=\"true\"][role=\"textbox\"]",
   "versionCommand": "antigravity --version",
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",

@@ -2,7 +2,7 @@
   "$schema": "https://registry.adhf.dev/schemas/v1/channels/channel-manifest.schema.json",
   "schemaVersion": 1,
   "channel": "stable",
-  "publishedAt": "2026-08-10T02:27:30.330Z",
+  "publishedAt": "2026-08-10T06:53:39.068Z",
   "providers": [
     {
       "providerType": "agentpool-acp",
@@ -10,7 +10,7 @@
       "category": "acp",
       "bundleDigest": "sha256:73300fa3ed1140352c965b8b3c8e28ed21ccd0408c92e6aad9e36d8ab92023ad",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "AgentPool (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -18,7 +18,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:73300fa3ed1140352c965b8b3c8e28ed21ccd0408c92e6aad9e36d8ab92023ad",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -27,7 +27,7 @@
       "category": "acp",
       "bundleDigest": "sha256:ea77cbb04af495e0576a3595ee4a4ac9eae9f36228cf367ef36273bad0785a5a",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Amp (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -35,16 +35,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:ea77cbb04af495e0576a3595ee4a4ac9eae9f36228cf367ef36273bad0785a5a",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "antigravity",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:ca94bacc92b4bbc2bb05b7f6bb273004386409674519ff8e01b1047dde3f4ff7",
+      "bundleDigest": "sha256:378bf254af185298917a481bd32ec93686fa5824f098028a06ce57ab54d64266",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Antigravity",
       "compatibility": {
         "contractVersion": 2,
@@ -54,17 +54,17 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:ca94bacc92b4bbc2bb05b7f6bb273004386409674519ff8e01b1047dde3f4ff7",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:378bf254af185298917a481bd32ec93686fa5824f098028a06ce57ab54d64266",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "antigravity-cli",
-      "providerVersion": "1.2.1",
+      "providerVersion": "1.2.2",
       "category": "cli",
-      "bundleDigest": "sha256:60cc75c1b40fece775b5ec9558207f44827b25758091e4f8fd9cf20e75c4142e",
+      "bundleDigest": "sha256:456ea80f6b0181f344daf03aa79d682fd770e3915375ef71d245a20bb4341773",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Antigravity CLI",
       "compatibility": {
         "ideVersion": [
@@ -73,8 +73,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:60cc75c1b40fece775b5ec9558207f44827b25758091e4f8fd9cf20e75c4142e",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:456ea80f6b0181f344daf03aa79d682fd770e3915375ef71d245a20bb4341773",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -83,7 +83,7 @@
       "category": "acp",
       "bundleDigest": "sha256:4da153b051a3d2822da89e2f4bed928ed46df12662d22da80ecec3ba97f79168",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Auggie CLI (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -91,7 +91,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:4da153b051a3d2822da89e2f4bed928ed46df12662d22da80ecec3ba97f79168",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -100,7 +100,7 @@
       "category": "acp",
       "bundleDigest": "sha256:38d814988d7095917ad51b6b7596098f4402c019ea2660fb221d1c4cd07d99f5",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "AutoDev (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -108,7 +108,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:38d814988d7095917ad51b6b7596098f4402c019ea2660fb221d1c4cd07d99f5",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -117,7 +117,7 @@
       "category": "acp",
       "bundleDigest": "sha256:a05f68a25d341e2ebf87b99ea0ca26f557a43da580a29c2cd8cdedc12d782ffa",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Blackbox AI (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -125,7 +125,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:a05f68a25d341e2ebf87b99ea0ca26f557a43da580a29c2cd8cdedc12d782ffa",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -134,7 +134,7 @@
       "category": "acp",
       "bundleDigest": "sha256:187bd869d4b8617ea0c589ed02eeaf043db711ee242fb346bd954f13bb47b9ec",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Claude Agent (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -142,16 +142,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:187bd869d4b8617ea0c589ed02eeaf043db711ee242fb346bd954f13bb47b9ec",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "claude-cli",
-      "providerVersion": "1.2.3",
+      "providerVersion": "1.2.4",
       "category": "cli",
-      "bundleDigest": "sha256:4d43ae388cc305885fd1f35b3dbe96db3632610e9481fd770af039c15967eaf6",
+      "bundleDigest": "sha256:6b832fd70a45f34b8df8e01d8fb1b3989be1ededdbe73a8ca8b57d22fd774400",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Claude Code",
       "compatibility": {
         "ideVersion": [
@@ -160,59 +160,59 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:4d43ae388cc305885fd1f35b3dbe96db3632610e9481fd770af039c15967eaf6",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:6b832fd70a45f34b8df8e01d8fb1b3989be1ededdbe73a8ca8b57d22fd774400",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "claude-code-vscode",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "extension",
-      "bundleDigest": "sha256:239812d1925e44d2b92fc7c391bed98c82f3865bda4bc0836fe632e2fa39d7a8",
+      "bundleDigest": "sha256:52c9b51f58bc11edf8e8d500b29ac2cf8afdb1950253c9cb8843cdf9f7224fcc",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Claude Code (VS Code)",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:239812d1925e44d2b92fc7c391bed98c82f3865bda4bc0836fe632e2fa39d7a8",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:52c9b51f58bc11edf8e8d500b29ac2cf8afdb1950253c9cb8843cdf9f7224fcc",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "cline",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "extension",
-      "bundleDigest": "sha256:2858a90bcab1ffed2773a58281744e67d542c8af8fbbfc05900eadac2e784f22",
+      "bundleDigest": "sha256:6ee6df25ba82b0c73a7b4f067f386c63db11d99e263b5da2fd77cd03160a77a6",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Cline",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:2858a90bcab1ffed2773a58281744e67d542c8af8fbbfc05900eadac2e784f22",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:6ee6df25ba82b0c73a7b4f067f386c63db11d99e263b5da2fd77cd03160a77a6",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "cline-acp",
-      "providerVersion": "1.0.1",
+      "providerVersion": "1.0.2",
       "category": "acp",
-      "bundleDigest": "sha256:6f268d33b5bd2ee5b88bc87260a87a1441f92a98be775f76cae293e6d5b1e317",
+      "bundleDigest": "sha256:65a404d0e728080adf76b9ab5a0f54c8fc80d986b4ac4da9c9510382be638b48",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Cline (ACP)",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:6f268d33b5bd2ee5b88bc87260a87a1441f92a98be775f76cae293e6d5b1e317",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:65a404d0e728080adf76b9ab5a0f54c8fc80d986b4ac4da9c9510382be638b48",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -221,7 +221,7 @@
       "category": "acp",
       "bundleDigest": "sha256:7af19d0c1012eb86ebb8eea33a3db770863b670aad69053ea5253a4f64a39cb8",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Codebuddy Code (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -229,24 +229,24 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:7af19d0c1012eb86ebb8eea33a3db770863b670aad69053ea5253a4f64a39cb8",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "codex",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "extension",
-      "bundleDigest": "sha256:5f69c3aafb1d94ed9fb63b24f1b78d77403cb3ee10e73ca2bf16fa4ff19c22fa",
+      "bundleDigest": "sha256:c2fd29992ec8245ad84c41889a4529ceb3cc6452a0516b18ecc6fefaef939d42",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Codex",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:5f69c3aafb1d94ed9fb63b24f1b78d77403cb3ee10e73ca2bf16fa4ff19c22fa",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:c2fd29992ec8245ad84c41889a4529ceb3cc6452a0516b18ecc6fefaef939d42",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -255,7 +255,7 @@
       "category": "acp",
       "bundleDigest": "sha256:1d812be6ed1c48bbfc0bedc2a3da992e2feaf257dc4c351da4fdf627ab9dc915",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Codex (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -263,16 +263,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:1d812be6ed1c48bbfc0bedc2a3da992e2feaf257dc4c351da4fdf627ab9dc915",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "codex-cli",
-      "providerVersion": "1.1.17",
+      "providerVersion": "1.1.18",
       "category": "cli",
-      "bundleDigest": "sha256:dfff9d679062f13026d790d83c1162275c3852508f0622b566e0d865d81c3005",
+      "bundleDigest": "sha256:c168fae31cb2c9b762ce67a1924c7cd31a101ce0c3168eface615742c043ceae",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Codex CLI",
       "compatibility": {
         "ideVersion": [
@@ -282,8 +282,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:dfff9d679062f13026d790d83c1162275c3852508f0622b566e0d865d81c3005",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:c168fae31cb2c9b762ce67a1924c7cd31a101ce0c3168eface615742c043ceae",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -292,7 +292,7 @@
       "category": "acp",
       "bundleDigest": "sha256:7d89eadd3d2435b5a24e9006e2ae8fc9776ef1e9122486e5b5d2267b8d8f8a5b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "crow-cli (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -300,16 +300,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:7d89eadd3d2435b5a24e9006e2ae8fc9776ef1e9122486e5b5d2267b8d8f8a5b",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "cursor",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:a5065223f8fb1ebd6a5d2302d2b97dc82b6a9a7a5f147a68560568fbea1d1083",
+      "bundleDigest": "sha256:b9c80232666d2d2eae392dc520147cf4d84fcb15af3474791b58c7bbf13c93ca",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Cursor",
       "compatibility": {
         "contractVersion": 2,
@@ -319,25 +319,25 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:a5065223f8fb1ebd6a5d2302d2b97dc82b6a9a7a5f147a68560568fbea1d1083",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:b9c80232666d2d2eae392dc520147cf4d84fcb15af3474791b58c7bbf13c93ca",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "cursor-acp",
-      "providerVersion": "1.0.1",
+      "providerVersion": "1.0.2",
       "category": "acp",
-      "bundleDigest": "sha256:9a8f6d49f55ef667c97799181937df2d3b1b8bf2d72a0d808d4bef1f27c0b0ca",
+      "bundleDigest": "sha256:a5090a50a131e1f55d055650f6205b5a7578afebb1f589913eac38c83491ce9b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Cursor (ACP)",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:9a8f6d49f55ef667c97799181937df2d3b1b8bf2d72a0d808d4bef1f27c0b0ca",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:a5090a50a131e1f55d055650f6205b5a7578afebb1f589913eac38c83491ce9b",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -346,12 +346,12 @@
       "category": "cli",
       "bundleDigest": "sha256:eb379088d96ada5d5232b236b8f031ba6ee0eeceebf67b35a150e756182fc6c7",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Cursor Agent",
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:eb379088d96ada5d5232b236b8f031ba6ee0eeceebf67b35a150e756182fc6c7",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -360,7 +360,7 @@
       "category": "acp",
       "bundleDigest": "sha256:281ca08e11e8a72d2319738fd986b43818e9ebf339ab7ef059625ae534c7de68",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "DeepAgents (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -368,7 +368,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:281ca08e11e8a72d2319738fd986b43818e9ebf339ab7ef059625ae534c7de68",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -377,7 +377,7 @@
       "category": "acp",
       "bundleDigest": "sha256:038b574b087f6a025fa6d3cda3e522ada720adecbd8e3a1f5d3253a2e82cdaea",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "DimCode (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -385,7 +385,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:038b574b087f6a025fa6d3cda3e522ada720adecbd8e3a1f5d3253a2e82cdaea",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -394,7 +394,7 @@
       "category": "acp",
       "bundleDigest": "sha256:4cdc457f7795546623846f0720e432010b471d7d2fa53a4f1272e78230422e37",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Docker cagent (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -402,7 +402,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:4cdc457f7795546623846f0720e432010b471d7d2fa53a4f1272e78230422e37",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -411,7 +411,7 @@
       "category": "acp",
       "bundleDigest": "sha256:7cedaa01b785e7997fa87de75f058fe5cea6e991c5dff931290edc3a5ea8bb37",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Factory Droid (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -419,7 +419,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:7cedaa01b785e7997fa87de75f058fe5cea6e991c5dff931290edc3a5ea8bb37",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -428,7 +428,7 @@
       "category": "acp",
       "bundleDigest": "sha256:945c08a9ccdd668268eb5ed1adff7cbb9ea833768eb595dcf6e88f6adc574efb",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "fast-agent (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -436,7 +436,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:945c08a9ccdd668268eb5ed1adff7cbb9ea833768eb595dcf6e88f6adc574efb",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -445,7 +445,7 @@
       "category": "acp",
       "bundleDigest": "sha256:11616eca54eba782062436454ad01f7b2f70fdc312240fea5d379d2db68fc54a",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Gemini CLI (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -453,7 +453,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:11616eca54eba782062436454ad01f7b2f70fdc312240fea5d379d2db68fc54a",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -462,7 +462,7 @@
       "category": "acp",
       "bundleDigest": "sha256:0edf8be19e6380724ff9dd0220b79b112aa0d3e36a362d7b6152502fd4f417b6",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "GitHub Copilot (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -470,7 +470,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:0edf8be19e6380724ff9dd0220b79b112aa0d3e36a362d7b6152502fd4f417b6",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -479,7 +479,7 @@
       "category": "acp",
       "bundleDigest": "sha256:3391c1cb45629ca15043cfffddee13e8d807fb326ac15d90eac12039554c6d9b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Goose (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -487,16 +487,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:3391c1cb45629ca15043cfffddee13e8d807fb326ac15d90eac12039554c6d9b",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "hermes-cli",
-      "providerVersion": "1.0.3",
+      "providerVersion": "1.0.4",
       "category": "cli",
-      "bundleDigest": "sha256:ece8dc9d362731c640490fb69deda0bfaf7a899cc04464d2c3873c2b47b2a80f",
+      "bundleDigest": "sha256:e6e86ecab56b22992d70159fb1b4c15af631ae3ddb2275498ee1f8621e37a32e",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Hermes Agent",
       "compatibility": {
         "contractVersion": 2,
@@ -507,8 +507,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:ece8dc9d362731c640490fb69deda0bfaf7a899cc04464d2c3873c2b47b2a80f",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:e6e86ecab56b22992d70159fb1b4c15af631ae3ddb2275498ee1f8621e37a32e",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -517,7 +517,7 @@
       "category": "acp",
       "bundleDigest": "sha256:9dcc161f90ff23c0076e56f2b0a33155bd0e23afbb22e7c3d82eefcf708cffaa",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Junie (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -525,7 +525,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:9dcc161f90ff23c0076e56f2b0a33155bd0e23afbb22e7c3d82eefcf708cffaa",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -534,7 +534,7 @@
       "category": "acp",
       "bundleDigest": "sha256:d22e0fea574c1080dd58d90e2f8708217e9ff40f9cfbd22c0b087e918d406cc9",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Kilo (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -542,7 +542,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:d22e0fea574c1080dd58d90e2f8708217e9ff40f9cfbd22c0b087e918d406cc9",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -551,12 +551,12 @@
       "category": "cli",
       "bundleDigest": "sha256:fd8544039c727180b233dc2c86e1d73a046a64623f96bc76ac8afdd03c42a686",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Kimi Code",
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:fd8544039c727180b233dc2c86e1d73a046a64623f96bc76ac8afdd03c42a686",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -565,7 +565,7 @@
       "category": "acp",
       "bundleDigest": "sha256:c725ff7913c1c3b8577cadb5a60afa9a51cd2c40f4beed1663090ee99caf5d08",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Kimi CLI (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -573,24 +573,24 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:c725ff7913c1c3b8577cadb5a60afa9a51cd2c40f4beed1663090ee99caf5d08",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "kiro",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:71f986db5a7bacd7b445fe3fa627488b160f5e2514b07d0ba245875f1628565a",
+      "bundleDigest": "sha256:2bba76035b0f1802a189503e74da8863a0dc17d3e97e9dc9e62cec315df78371",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Kiro",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:71f986db5a7bacd7b445fe3fa627488b160f5e2514b07d0ba245875f1628565a",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:2bba76035b0f1802a189503e74da8863a0dc17d3e97e9dc9e62cec315df78371",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -599,7 +599,7 @@
       "category": "acp",
       "bundleDigest": "sha256:988b067b871bd5fb7db4679d09d82864f8dd92a15a9269e4707a88880cb1b593",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Mistral Vibe (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -607,7 +607,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:988b067b871bd5fb7db4679d09d82864f8dd92a15a9269e4707a88880cb1b593",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -616,7 +616,7 @@
       "category": "acp",
       "bundleDigest": "sha256:ead2c42737079cfcc2974c121cb00e6713c5d0d449ce88ff39dfda838cd0eb91",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Nova (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -624,7 +624,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:ead2c42737079cfcc2974c121cb00e6713c5d0d449ce88ff39dfda838cd0eb91",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -633,7 +633,7 @@
       "category": "acp",
       "bundleDigest": "sha256:b0af8dd71020671964be238867d79a088a9ce1acbdeb6bc6f7f92dde444e9eb2",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "OpenClaw (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -641,7 +641,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:b0af8dd71020671964be238867d79a088a9ce1acbdeb6bc6f7f92dde444e9eb2",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -650,12 +650,12 @@
       "category": "cli",
       "bundleDigest": "sha256:36aedca621bdc774c77ee91ad84bdd001fb46275977a754e0f5fd6ac2accabfd",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Opencode Code",
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:36aedca621bdc774c77ee91ad84bdd001fb46275977a754e0f5fd6ac2accabfd",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -664,7 +664,7 @@
       "category": "acp",
       "bundleDigest": "sha256:f86b2bf7f82cb576bb694b06e5a1917891e6b9b6272d912e4538ebcbfbc734c4",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "OpenCode (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -672,7 +672,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:f86b2bf7f82cb576bb694b06e5a1917891e6b9b6272d912e4538ebcbfbc734c4",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -681,7 +681,7 @@
       "category": "acp",
       "bundleDigest": "sha256:78a9953296839d6d00c85bf6ccf27e73316967e49a004b359ea2eb908c2bbaa6",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "OpenHands (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -689,16 +689,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:78a9953296839d6d00c85bf6ccf27e73316967e49a004b359ea2eb908c2bbaa6",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "pearai",
-      "providerVersion": "0.0.0",
+      "providerVersion": "0.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:16cc65b125b2188f5e2b33421b3ad6aa2692da79c67e4021767e6daaa50a5a62",
+      "bundleDigest": "sha256:f1cc0c07aec1044503834241e677c7e8589e59f031260167ccb927dd721e98ab",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "PearAI",
       "compatibility": {
         "contractVersion": 2,
@@ -708,25 +708,25 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:16cc65b125b2188f5e2b33421b3ad6aa2692da79c67e4021767e6daaa50a5a62",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:f1cc0c07aec1044503834241e677c7e8589e59f031260167ccb927dd721e98ab",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "pi-acp",
-      "providerVersion": "1.0.1",
+      "providerVersion": "1.0.2",
       "category": "acp",
-      "bundleDigest": "sha256:742d5a9bbb522eae9032665c2ad9ebfa8d2c40fd16ad17ff19b3e37d34232a07",
+      "bundleDigest": "sha256:357ba23e69fee6926b01ad5e886912bd3d3278d8655576af2445c08212d49293",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "pi ACP",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:742d5a9bbb522eae9032665c2ad9ebfa8d2c40fd16ad17ff19b3e37d34232a07",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:357ba23e69fee6926b01ad5e886912bd3d3278d8655576af2445c08212d49293",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -735,7 +735,7 @@
       "category": "acp",
       "bundleDigest": "sha256:b6d580649f6bf0ac4795665b04d934f7b0b7458deb9a904e8958d3aacc071cfc",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Qoder CLI (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -743,7 +743,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:b6d580649f6bf0ac4795665b04d934f7b0b7458deb9a904e8958d3aacc071cfc",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -752,7 +752,7 @@
       "category": "acp",
       "bundleDigest": "sha256:d9ac9faf629769935a8028f3ad4bc8af0d7e8ea7040641c02eb1ecce8821da6b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Qwen Code (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -760,24 +760,24 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:d9ac9faf629769935a8028f3ad4bc8af0d7e8ea7040641c02eb1ecce8821da6b",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "roo-code",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "extension",
-      "bundleDigest": "sha256:52234b9295752a125031582e36c282ab964a86f2c1327c411d3076740458d157",
+      "bundleDigest": "sha256:4799316c0862ce90102ca7bb66c373d521c915646aa88cde741a1ae1e0f1d441",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Roo Code",
       "compatibility": {
         "contractVersion": 2
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:52234b9295752a125031582e36c282ab964a86f2c1327c411d3076740458d157",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:4799316c0862ce90102ca7bb66c373d521c915646aa88cde741a1ae1e0f1d441",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -786,7 +786,7 @@
       "category": "acp",
       "bundleDigest": "sha256:1ea7bb7b552caa4bae117e8b304f06e97d8f4c2c393065a5f19ed08667c17c4b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Stakpak (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -794,16 +794,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:1ea7bb7b552caa4bae117e8b304f06e97d8f4c2c393065a5f19ed08667c17c4b",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "trae",
-      "providerVersion": "0.0.0",
+      "providerVersion": "0.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:e5d9c27b3358b22b3c3e795bd9f1f4aa20d00a5c4b5ebd0cd8c0cfc7f7826f27",
+      "bundleDigest": "sha256:8b7b5dd79b08c01e7fbb70a448951e6749d96d79d91d377c24b16601f9acf81e",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Trae",
       "compatibility": {
         "contractVersion": 2,
@@ -813,17 +813,17 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:e5d9c27b3358b22b3c3e795bd9f1f4aa20d00a5c4b5ebd0cd8c0cfc7f7826f27",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:8b7b5dd79b08c01e7fbb70a448951e6749d96d79d91d377c24b16601f9acf81e",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "vscode",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:637b8c164f04b40a204e3c994da63f15f1194ba8e4464307e0f648c044e208c3",
+      "bundleDigest": "sha256:b8fa7b3f7f47c1c2ff30d0f2ce196228d3551ff6e55034398c6886b575c21227",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Visual Studio Code",
       "compatibility": {
         "contractVersion": 2,
@@ -833,17 +833,17 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:637b8c164f04b40a204e3c994da63f15f1194ba8e4464307e0f648c044e208c3",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:b8fa7b3f7f47c1c2ff30d0f2ce196228d3551ff6e55034398c6886b575c21227",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "vscodium",
-      "providerVersion": "0.0.0",
+      "providerVersion": "0.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:379ac482f13882e8df996e55a4f5925caf874b7dd47100a6f63a65938dbec142",
+      "bundleDigest": "sha256:314bd745570c78090ee2d0f6576e65377b234ef66b89e332591a12dcf81289ee",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "VSCodium",
       "compatibility": {
         "contractVersion": 2,
@@ -853,8 +853,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:379ac482f13882e8df996e55a4f5925caf874b7dd47100a6f63a65938dbec142",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:314bd745570c78090ee2d0f6576e65377b234ef66b89e332591a12dcf81289ee",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
@@ -863,7 +863,7 @@
       "category": "acp",
       "bundleDigest": "sha256:278f904549e9b0ea711d911af6023827cad8391600c03ab45a7ed833ac878031",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "VT Code (ACP)",
       "compatibility": {
         "contractVersion": 2
@@ -871,16 +871,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:278f904549e9b0ea711d911af6023827cad8391600c03ab45a7ed833ac878031",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     },
     {
       "providerType": "windsurf",
-      "providerVersion": "1.0.0",
+      "providerVersion": "1.0.1",
       "category": "ide",
-      "bundleDigest": "sha256:6f09dfc0080506e13566838147c311c3abc910c6180340dfd65086a2426d61c5",
+      "bundleDigest": "sha256:0166a036216ffcd50c020c2060a95d2c7ea2209b62db2c2507e4bff9863c004d",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-08-10T02:27:30.330Z",
+      "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Windsurf",
       "compatibility": {
         "contractVersion": 2,
@@ -890,8 +890,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:6f09dfc0080506e13566838147c311c3abc910c6180340dfd65086a2426d61c5",
-        "promotedAt": "2026-08-10T02:27:30.330Z"
+        "bundleDigest": "sha256:0166a036216ffcd50c020c2060a95d2c7ea2209b62db2c2507e4bff9863c004d",
+        "promotedAt": "2026-08-10T06:53:39.068Z"
       }
     }
   ]

@@ -3,7 +3,7 @@
   "name": "Cursor",
   "category": "ide",
   "displayName": "Cursor",
-  "icon": "\u26a1",
+  "icon": "⚡",
   "cli": "cursor",
   "cdpPorts": [
     9333,
@@ -37,7 +37,7 @@
   "inputMethod": "cdp-type-and-send",
   "inputSelector": ".aislash-editor-input[contenteditable=\"true\"]",
   "versionCommand": "cursor --version",
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
@@ -80,7 +80,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "\ud83e\udd16",
+      "icon": "🤖",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -92,7 +92,7 @@
       "id": "mode",
       "type": "select",
       "label": "Mode",
-      "icon": "\ud83e\udded",
+      "icon": "🧭",
       "placement": "bar",
       "order": 20,
       "dynamic": true,
@@ -104,7 +104,7 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "\u2795",
+      "icon": "➕",
       "placement": "bar",
       "order": 80,
       "invokeScript": "newSession"

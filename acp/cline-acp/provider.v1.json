@@ -51,7 +51,7 @@
       "max": 600
     }
   },
-  "providerVersion": "1.0.1",
+  "providerVersion": "1.0.2",
   "contractVersion": 2,
   "capabilities": {
     "input": {

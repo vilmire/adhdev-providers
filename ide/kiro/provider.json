@@ -3,7 +3,7 @@
   "name": "Kiro",
   "category": "ide",
   "displayName": "Kiro",
-  "icon": "\ud83e\ude81",
+  "icon": "🪁",
   "cli": "kiro",
   "cdpPorts": [
     9351,
@@ -67,7 +67,7 @@
   "compatibility": [],
   "status": "Stable",
   "details": "Webview CDP support",
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "contractVersion": 2,
   "capabilities": {
     "input": {

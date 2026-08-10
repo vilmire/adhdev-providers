@@ -11,7 +11,7 @@
   "icon": "⚕",
   "status": "Beta",
   "details": "Terminal only",
-  "providerVersion": "1.0.3",
+  "providerVersion": "1.0.4",
   "contractVersion": 2,
   "engines": {
     "adhdev": "^1.0.0"

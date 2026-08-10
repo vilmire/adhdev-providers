@@ -3,7 +3,7 @@
   "name": "PearAI",
   "category": "ide",
   "displayName": "PearAI",
-  "icon": "\ud83c\udf50",
+  "icon": "🍐",
   "cli": "pearai",
   "cdpPorts": [
     9355,
@@ -39,7 +39,7 @@
   },
   "webviewMatchText": "chat-text-area",
   "versionCommand": "pearai --version",
-  "providerVersion": "0.0.0",
+  "providerVersion": "0.0.1",
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
@@ -79,7 +79,7 @@
       "id": "model",
       "type": "select",
       "label": "Model",
-      "icon": "\ud83e\udd16",
+      "icon": "🤖",
       "placement": "bar",
       "order": 10,
       "dynamic": true,
@@ -91,7 +91,7 @@
       "id": "mode",
       "type": "select",
       "label": "Mode",
-      "icon": "\ud83e\udded",
+      "icon": "🧭",
       "placement": "bar",
       "order": 20,
       "dynamic": true,
@@ -103,7 +103,7 @@
       "id": "new_session",
       "type": "action",
       "label": "New",
-      "icon": "\u2795",
+      "icon": "➕",
       "placement": "bar",
       "order": 80,
       "invokeScript": "newSession"
