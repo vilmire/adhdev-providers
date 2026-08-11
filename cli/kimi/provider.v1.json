@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.8",
+  "providerVersion": "1.0.9",
   "binary": "kimi",
   "spawn": {
     "command": "kimi",
@@ -100,7 +100,7 @@
       "session_id_from": "dir_uuid",
       "workspace_from_sidecar": {
         "rel_path": "../../state.json",
-        "workspace_path": "$.workDir"
+        "workspace_path": "$.workDir || $.cwd"
       },
       "records": [
         {
