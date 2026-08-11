@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.7",
+  "providerVersion": "1.0.8",
   "binary": "kimi",
   "spawn": {
     "command": "kimi",
@@ -424,9 +424,10 @@
   },
   "capabilities": {
     "input": {
-      "multipart": false,
+      "multipart": true,
       "mediaTypes": [
-        "text"
+        "text",
+        "image"
       ]
     },
     "output": {
