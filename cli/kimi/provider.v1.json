@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.6",
+  "providerVersion": "1.0.7",
   "binary": "kimi",
   "spawn": {
     "command": "kimi",
@@ -221,7 +221,7 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?",
+      "questionPattern": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
       "questionFlags": "i",
       "buttonPattern": "^\\s*([❯›>▶●•]\\s*)?\\d+[.)]\\s+(.+)$",
       "buttonLabelGroup": 2,
