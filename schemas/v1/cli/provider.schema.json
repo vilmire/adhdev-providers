@@ -398,7 +398,8 @@
               "properties": {
                 "mode":    { "const": "context_file" },
                 "path":    { "type": "string" },
-                "wrapper": { "type": "string" }
+                "wrapper": { "type": "string" },
+                "owned":   { "type": "boolean" }
               }
             },
             {
@@ -409,8 +410,23 @@
                 "mode": { "const": "env_var" },
                 "name": { "type": "string" }
               }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["mode", "flag"],
+              "properties": {
+                "mode":     { "const": "agent_file" },
+                "flag":     { "type": "string" },
+                "template": { "type": "string" }
+              }
             }
           ]
+        },
+        "launchArgs": {
+          "description": "Extra spawn args appended ONLY for coordinator launches (e.g. cursor-agent's --approve-mcps accepts the daemon-written .cursor/mcp.json without parking on the MCP-approval modal).",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
         },
         "delegatedWorkerIsolation": {
           "description": "Provider-declared launch isolation for coordinator-spawned worker sessions. Keeps worker-only sessions from inheriting coordinator MCP/tools/config.",

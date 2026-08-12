@@ -207,6 +207,10 @@
         {
           "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+working\\.\\.\\.",
           "description": "Braille spinner + 'working...' — observed live during K3 tool-execution phases (kimi-code v0.28.1); distinct from the MCP-connect braille spinner above"
+        },
+        {
+          "regex": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+thinking\\.\\.\\.",
+          "description": "Braille spinner + 'thinking...' — observed live at turn start during K3 thinking phases (kimi-code v0.34), filling the multi-second window before the 'working...' spinner appears"
         }
       ],
       "scope": "live-frame-tail",
@@ -383,7 +387,7 @@
       "default": false,
       "public": true,
       "label": "Show system prompt message",
-      "description": "Show the AGENTS.md block as a user-role message in the chat."
+      "description": "Show the injected coordinator prompt as a user-role message in the chat."
     },
     "notifications": {
       "type": "boolean",
@@ -454,9 +458,9 @@
       "serverName": "adhdev-mesh"
     },
     "systemPromptInjection": {
-      "mode": "context_file",
-      "path": "AGENTS.md",
-      "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->"
+      "mode": "agent_file",
+      "flag": "--agent-file",
+      "template": "---\ndescription: adhdev mesh coordinator\n---\n\n${base_prompt}\n\n{prompt}\n"
     }
   }
 }

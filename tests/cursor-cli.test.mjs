@@ -2,21 +2,25 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { createRequire } from 'node:module'
 
-const require = createRequire(import.meta.url)
-const cursorDir = path.resolve(import.meta.dirname, '../cli/cursor-cli')
-const provider = JSON.parse(fs.readFileSync(path.join(cursorDir, 'provider.json'), 'utf8'))
-const scripts = require(path.join(cursorDir, 'scripts/1.0/scripts.js'))
+// cursor-cli is a v1 declarative provider (provider.v1.json only — no legacy
+// provider.json / scripts/1.0). Behavioural parsing/detection coverage lives
+// in daemon-core (test/providers/sdk/cursor-cli-v1-manifest.test.ts), which
+// drives THIS manifest through the TUI builders against live-captured screens.
+// This file pins the manifest's launch/contract surface.
 
-test('cursor-cli provider launches via `cursor agent` and uses a non-interactive version command', () => {
-  assert.equal(provider.binary, 'cursor')
-  assert.equal(provider.spawn?.command, 'cursor')
-  assert.deepEqual(provider.spawn?.args, ['agent'])
-  assert.equal(provider.versionCommand, 'cursor agent --version')
+const provider = JSON.parse(
+  fs.readFileSync(path.resolve(import.meta.dirname, '../cli/cursor-cli/provider.v1.json'), 'utf8'),
+)
+
+test('cursor-cli launches via `cursor-agent --trust` (non-interactive version command)', () => {
+  assert.equal(provider.binary, 'cursor-agent')
+  assert.equal(provider.spawn?.command, 'cursor-agent')
+  assert.deepEqual(provider.spawn?.args, ['--trust'])
+  assert.equal(provider.spawn?.shell, false)
 })
 
-test('cursor-cli provider uses Hermes-style echo submit and settle debounce', () => {
+test('cursor-cli uses echo-wait submit and settle debounce', () => {
   assert.equal(provider.submitStrategy, 'wait_for_echo')
   assert.deepEqual(provider.timeouts, {
     idleFinishConfirm: 5000,
@@ -24,7 +28,7 @@ test('cursor-cli provider uses Hermes-style echo submit and settle debounce', ()
   })
 })
 
-test('cursor-cli provider exposes resume metadata compatible with UUID chat ids', () => {
+test('cursor-cli exposes resume metadata compatible with UUID chat ids', () => {
   assert.equal(provider.resume?.supported, true)
   assert.equal(provider.resume?.sessionIdFormat, 'uuid')
   assert.deepEqual(provider.resume?.resumeSessionArgs, ['--resume', '{{id}}'])
@@ -32,44 +36,58 @@ test('cursor-cli provider exposes resume metadata compatible with UUID chat ids'
   assert.equal(provider.resume?.stopStrategy, 'ctrl_c')
 })
 
-test('cursor-cli provider exposes a model control and the matching scripts', () => {
-  const modelControl = Array.isArray(provider.controls)
-    ? provider.controls.find((control) => control?.id === 'model')
-    : null
-
-  assert.ok(modelControl, 'expected a model control')
-  assert.equal(provider.capabilities?.controls?.typedResults, true)
-  assert.equal(modelControl.type, 'select')
-  assert.equal(modelControl.listScript, 'listModels')
-  assert.equal(modelControl.setScript, 'setModel')
-  assert.equal(typeof scripts.listModels, 'function')
-  assert.equal(typeof scripts.setModel, 'function')
+test('cursor-cli declares model launch args and non-empty model options', () => {
+  assert.deepEqual(provider.modelLaunchArgs, ['--model', '{{model}}'])
+  assert.ok(Array.isArray(provider.modelOptions) && provider.modelOptions.length > 0)
+  assert.ok(provider.modelOptions.includes('auto'))
 })
 
-test('listModels returns Cursor model options and infers the current model from about output', () => {
-  const result = scripts.listModels({
-    recentBuffer: `About Cursor CLI\n\nCLI Version         2026.04.17-787b533\nModel               Composer 2 Fast\nSubscription Tier   Pro\n`,
-  })
-
-  assert.equal(result.currentValue, 'composer-2-fast')
-  assert.ok(Array.isArray(result.options))
-  assert.ok(result.options.some((option) => option.value === 'auto'))
-  assert.ok(result.options.some((option) => option.value === 'composer-2-fast'))
-  assert.ok(result.options.some((option) => option.value === 'gpt-5.4-medium'))
+test('coordinator prompt injection is a daemon-owned rules .mdc — NEVER cli_arg --rules', () => {
+  // Regression: cursor-agent has no --rules flag; the old cli_arg declaration
+  // made every mesh coordinator launch exit code 1 immediately.
+  const injection = provider.meshCoordinator?.systemPromptInjection
+  assert.equal(injection?.mode, 'context_file')
+  assert.equal(injection?.path, '.cursor/rules/adhdev-mesh-coordinator.mdc')
+  assert.equal(injection?.owned, true)
+  assert.ok(injection?.wrapper?.includes('alwaysApply: true'))
+  assert.ok(injection?.wrapper?.includes('{prompt}'))
+  assert.notEqual(injection?.flag, '--rules')
 })
 
-test('setModel emits an interactive /model command and updates controlValues', () => {
-  const result = scripts.setModel({ args: { value: 'composer-2-fast' } })
+test('coordinator launch pre-approves the daemon-written MCP config via --approve-mcps', () => {
+  // cursor-agent parks on the "MCP servers need to be approved" modal otherwise
+  // (and its 'Applying your selection…' state can wedge the coordinator PTY).
+  assert.deepEqual(provider.meshCoordinator?.launchArgs, ['--approve-mcps'])
+})
 
-  assert.deepEqual(result, {
-    ok: true,
-    currentValue: 'composer-2-fast',
-    controlValues: {
-      model: 'composer-2-fast',
-    },
-    command: {
-      type: 'pty_write',
-      text: '/model composer-2-fast',
-    },
-  })
+test('coordinator MCP auto-import targets .cursor/mcp.json in claude_mcp_json format', () => {
+  const mcp = provider.meshCoordinator?.mcpConfig
+  assert.equal(mcp?.mode, 'auto_import')
+  assert.equal(mcp?.format, 'claude_mcp_json')
+  assert.equal(mcp?.path, '.cursor/mcp.json')
+  assert.equal(mcp?.serverName, 'adhdev-mesh')
+})
+
+test('settledPrompt matches the current idle footer and rejects spinner/startup frames', () => {
+  const settled = provider.tui?.settledPrompt
+  const re = new RegExp(settled.regex, settled.flags)
+  // v2026.08 idle footer: model label + context percent, then the path line.
+  assert.ok(re.test('  Kimi K2.7 Code · 6.8%\n  /private/tmp/ws'))
+  // Older builds labelled the mode instead of the model.
+  assert.ok(re.test('  Auto · 7.7%\n  ~/Work/adhdev'))
+  // Generating: 'Working' replaces the label line — no percent, no match.
+  assert.ok(!re.test('   ⠋ Working…\n  /private/tmp/ws'))
+  // Startup: model label without the context percent yet — no match.
+  assert.ok(!re.test('  Kimi K2.7 Code\n  /private/tmp/ws'))
+})
+
+test('transcript chrome excludes the startup placeholder and bare model label', () => {
+  const chromes = (provider.tui?.transcriptPty?.chromePatterns ?? []).map((p) => new RegExp(p.regex, p.flags || ''))
+  const isChrome = (line) => chromes.some((re) => re.test(line))
+  assert.ok(isChrome('  → Plan, search, build anything'))
+  assert.ok(isChrome('  Kimi K2.7 Code'))
+  assert.ok(isChrome('  → Add a follow-up'))
+  assert.ok(isChrome('  /private/tmp/cursor-probe-ws'))
+  // Real assistant prose must survive.
+  assert.ok(!isChrome('  The answer is 4.'))
 })

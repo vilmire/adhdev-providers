@@ -173,11 +173,11 @@
     },
     "settledPrompt": {
       "$schema": "adhdev:tui/settled-prompt@1",
-      "regex": "^\\s*(?:Auto|Plan|Ask)\\b[^\\n]*\\n\\s*(?:~|/)[^\\n]+$",
+      "regex": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)[^\\n]+$",
       "flags": "m",
       "scope": "last-n-lines",
       "scopeWindowLines": 8,
-      "description": "Idle footer: mode label line ('Auto · 7.7%') followed by the workspace path line ('/abs/path' or '~/...'). Present only when settled — the 'Working' spinner line replaces the mode label during generation."
+      "description": "Idle footer: label line carrying the context-percent ('Kimi K2.7 Code · 6.8%' on v2026.08; 'Auto · 7.7%' on older builds) followed by the workspace path line ('/abs/path' or '~/...'). During generation the 'Working' spinner replaces the label line — and dispatchOrder checks the spinner first, so a mid-run footer can never win this match."
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
@@ -229,6 +229,14 @@
           "regex": "^\\s*→\\s+Add a follow-up",
           "flags": "i",
           "label": "follow-up-hint"
+        },
+        {
+          "regex": "^\\s*→\\s+Plan, search, build anything\\s*$",
+          "label": "composer-placeholder"
+        },
+        {
+          "regex": "^\\s*(?:Kimi|GPT|Claude|Gemini|Grok|Composer|Sonnet|Opus|DeepSeek|Qwen|Llama|Mistral)[\\w.\\-+ ]*\\s*$",
+          "label": "model-label"
         },
         {
           "regex": "^\\s*Tip:",
@@ -346,9 +354,14 @@
       "serverName": "adhdev-mesh"
     },
     "systemPromptInjection": {
-      "mode": "cli_arg",
-      "flag": "--rules"
-    }
+      "mode": "context_file",
+      "path": ".cursor/rules/adhdev-mesh-coordinator.mdc",
+      "wrapper": "---\ndescription: adhdev mesh coordinator\nalwaysApply: true\n---\n<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->\n",
+      "owned": true
+    },
+    "launchArgs": [
+      "--approve-mcps"
+    ]
   },
   "source": {
     "type": "github",
