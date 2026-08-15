@@ -134,7 +134,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
                 }
               },
               {
@@ -194,7 +194,7 @@
       "to": "busy",
       "when": {
         "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
       }
     },
     {
@@ -213,7 +213,7 @@
           {
             "not": {
               "section": "screen",
-              "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+              "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
             }
           },
           {
@@ -229,7 +229,7 @@
       "to": "busy",
       "when": {
         "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
       }
     },
     {
@@ -244,7 +244,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
                 }
               },
               {
@@ -264,7 +264,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
                 }
               },
               {
@@ -293,7 +293,7 @@
       "to": "busy",
       "when": {
         "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
       }
     },
     {
@@ -432,5 +432,5 @@
       }
     }
   },
-  "_longoutput_note": "CODEX-LONG-OUTPUT-BUSY-SIGNAL (2026-08-15). Reported symptom: on long turns the FSM sat in busy for ~14min and escaped only via `elapsed 855023ms / 30000ms`, and a spec-debug snapshot showed status_tail holding worker JSON report text instead of the spinner. Verified mechanism (real backend + real resolveSections, not inferred): the spinner vetoes were scoped to a window that the spinner is not in on long output, so `not(spinner)` read TRUE throughout generation. The 30s `elapsed_ms` arm is DELIBERATELY RETAINED as the safety net -- without it a judgement failure means permanent busy. What changed is that the intended fast path (arm 1: not-spinner + stable 1500ms/cursor_above 4) can now actually observe the spinner, so a normal turn end settles at ~1.5s instead of falling through to 30s. Turn START (idle->busy, mcp_init->busy, approval->busy) uses the same cue and was verified unbroken."
+  "_longoutput_note": "CODEX-LONG-OUTPUT-BUSY-SIGNAL / MESH-WORKER-REPORT-SELFMATCH (2026-08-15). REPORTED SYMPTOM: a mesh-delivered task showed INFINITE GENERATING and its result never reached the coordinator; a spec-debug snapshot showed busy held 855023ms, escaping only via `elapsed 855023ms / 30000ms`. ROOT CAUSE (read the snapshot leaves literally): `not regex status_tail~/.../ = FALSE` means the spinner cue MATCHED. Both busy->idle arms carry that same veto, so while the matching text was on screen NEITHER arm could fire and busy was PINNED -- the 855s is not 'waiting for a signal', it is how long the offending text stayed in the window; `elapsed` (long since >=30s) committed the instant the text scrolled out. WHAT MATCHED: the old cue accepted any DIGIT directly after the paren, so ordinary delegated-worker report prose -- `Working (3 packages) rebuilt cleanly`, `Thinking (2 steps)`, `Working (12 files) verified` -- read as a live spinner. This is why it reproduced under MESH task delivery (workers emit structured reports full of such phrases) and effectively never in a hand-driven session. FIX: the paren must contain an actual DURATION (12s / 2m 14s / 1h 3m / 45ms / h:mm) or a braille animation glyph -- never a bare count. Line-anchoring alone is NOT sufficient: worker reports are bulleted/indented lists, so the phrase sits at line start where a position-only guard still admits it. The 30s `elapsed_ms` arm is DELIBERATELY RETAINED as the safety net; without it a judgement failure means permanent busy. Turn START (idle->busy, mcp_init->busy, approval->busy) uses the same cue and was verified unbroken. NOTE on direction: an earlier pass on this defect mis-read the snapshot as the OPPOSITE failure (premature idle from a spinner scrolling out of a narrow window). The section geometry findings from that pass are real and retained (see _statustail_note), but they were NOT the reported bug -- this note records the mechanism that actually produced the infinite generating."
 }

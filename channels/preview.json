@@ -195,7 +195,7 @@
       "providerType": "codex-cli",
       "providerVersion": "1.1.19",
       "category": "cli",
-      "bundleDigest": "sha256:45fc98179b4c53ab0c837e1dde0e114c27c83a0a3d73cab62f92f7c77b30809b",
+      "bundleDigest": "sha256:aecb226a80511a658c973e0fe8c30f4db9749181ceb2d3831650065a5f22a498",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-08-10T06:53:39.068Z",
       "name": "Codex CLI",
