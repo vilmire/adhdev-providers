@@ -284,6 +284,19 @@
       "status": "Beta",
       "details": "Terminal only"
     },
+    "grok-cli": {
+      "providerVersion": "1.0.0",
+      "category": "cli",
+      "name": "Grok Build",
+      "status": "Stable",
+      "details": "Terminal only",
+      "compatibility": [
+        {
+          "ideVersion": ">=1.0.0",
+          "scriptDir": "scripts/1.0"
+        }
+      ]
+    },
     "kimi": {
       "providerVersion": "1.0.0",
       "category": "cli",

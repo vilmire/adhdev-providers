@@ -1,0 +1,363 @@
+{
+  "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
+  "type": "grok-cli",
+  "name": "Grok Build",
+  "displayName": "Grok Build",
+  "category": "cli",
+  "aliases": [
+    "grok",
+    "grok-build"
+  ],
+  "icon": "🛰️",
+  "status": "Stable",
+  "details": "Terminal only",
+  "links": {
+    "homepage": "https://x.ai",
+    "docs": "https://docs.x.ai/",
+    "install": "https://docs.x.ai/"
+  },
+  "install": {
+    "manual": "Install the Grok CLI, then run `grok login` to authenticate."
+  },
+  "engines": {
+    "adhdev": "^1.0.0"
+  },
+  "providerVersion": "1.0.0",
+  "disableUpstream": true,
+  "binary": "grok",
+  "spawn": {
+    "command": "grok",
+    "args": [
+      "--permission-mode",
+      "acceptEdits"
+    ],
+    "shell": true
+  },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "accept-edits",
+        "label": "Accept edits",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "파일 편집을 자동 수락합니다",
+        "launchArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      },
+      {
+        "id": "auto",
+        "label": "Auto",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "자동 권한 모드",
+        "launchArgs": [
+          "--permission-mode",
+          "auto"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      },
+      {
+        "id": "yolo",
+        "label": "Bypass permissions",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "모든 권한 확인을 우회합니다. 신뢰된 워크스페이스에서만.",
+        "launchArgs": [
+          "--permission-mode",
+          "bypassPermissions"
+        ],
+        "removeArgs": [
+          "--permission-mode",
+          "acceptEdits"
+        ]
+      }
+    ]
+  },
+  "modelLaunchArgs": [
+    "--model",
+    "{{model}}"
+  ],
+  "modelOptions": [
+    "grok-4.6",
+    "grok-4.5"
+  ],
+  "thinkingLaunchArgs": [
+    "--reasoning-effort",
+    "{{level}}"
+  ],
+  "thinkingLevelMap": {
+    "high": "high"
+  },
+  "thinkingLevelOptions": [
+    "low",
+    "medium",
+    "high",
+    "xhigh"
+  ],
+  "sendDelayMs": 1200,
+  "submitStrategy": "wait_for_echo",
+  "requiresFinalAssistantBeforeIdle": false,
+  "timeouts": {
+    "idleFinishConfirm": 5000,
+    "statusActivityHold": 5000
+  },
+  "resume": {
+    "supported": true,
+    "stopStrategy": "command",
+    "stopCommand": "/quit",
+    "shutdownGraceMs": 4000,
+    "sessionIdFormat": "uuid",
+    "newSessionArgs": [
+      "--session-id",
+      "{{id}}"
+    ],
+    "resumeSessionArgs": [
+      "--resume",
+      "{{id}}"
+    ],
+    "resumeArgs": [
+      "--continue"
+    ]
+  },
+  "approvalPositiveHints": [
+    "yes, proceed",
+    "yes",
+    "proceed",
+    "allow",
+    "approve",
+    "accept",
+    "continue",
+    "run",
+    "confirm",
+    "trust"
+  ],
+  "compatibility": [
+    {
+      "ideVersion": ">=1.0.0",
+      "spec": "specs/1.0.json"
+    }
+  ],
+  "tui": {
+    "spinner": {
+      "$schema": "adhdev:tui/spinner@1",
+      "patterns": [
+        {
+          "regex": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\d+(?:\\.\\d+)?s\\b",
+          "description": "Braille spinner + elapsed-seconds status line"
+        },
+        {
+          "regex": "\\[stop\\]",
+          "description": "Stop control shown only while a turn is running"
+        },
+        {
+          "regex": "Esc:cancel",
+          "description": "Footer hint present only while generating"
+        },
+        {
+          "regex": "(?:Responding|Thinking|Waiting for response)…",
+          "flags": "i"
+        }
+      ],
+      "scope": "live-frame-tail",
+      "scopeWindowLines": 14
+    },
+    "settledPrompt": {
+      "$schema": "adhdev:tui/settled-prompt@1",
+      "regex": "^\\s*(?:[│|]\\s*)?[❯›>]\\s*(?:[│|]\\s*)?$",
+      "flags": "m",
+      "withFooter": [
+        {
+          "pattern": "Ctrl+x:shortcuts"
+        }
+      ],
+      "scope": "last-n-lines",
+      "scopeWindowLines": 14
+    },
+    "modal": {
+      "$schema": "adhdev:tui/modal@1",
+      "questionPattern": "\\d+\\s*\\([●○]\\)\\s+\\S|Do you trust the contents of this directory\\?",
+      "questionFlags": "i",
+      "questionVariants": [
+        {
+          "regex": "Do you trust the contents of this directory\\?",
+          "flags": "i",
+          "label": "workspace-trust"
+        },
+        {
+          "regex": "^\\s*(?:[┃❙|]\\s*)?\\d+\\s*\\([●○]\\)\\s+\\S",
+          "flags": "m",
+          "label": "radio-approval"
+        }
+      ],
+      "buttonPattern": "^\\s*(?:[┃❙|]\\s*)?(\\d+)\\s*\\([●○]\\)\\s+(.+?)\\s*$",
+      "buttonLabelGroup": 2,
+      "buttonFlags": "m",
+      "scope": "window-around-question",
+      "scopeWindowLines": 48
+    },
+    "dispatchOrder": {
+      "$schema": "adhdev:tui/dispatch-order@1",
+      "order": [
+        "modal",
+        "spinner",
+        "settled-prompt"
+      ],
+      "onNoMatch": "idle"
+    },
+    "transcriptPty": {
+      "$schema": "adhdev:tui/transcript-pty@1",
+      "assistantPrefix": {
+        "regex": "^\\s*(?:[┃❙|]\\s*)?[◆●]\\s+(.*)$"
+      },
+      "userPrefix": {
+        "regex": "^\\s*[❯›>]\\s+(.*)$"
+      },
+      "toolPrefix": {
+        "regex": "^\\s*[┃❙]\\s+(.*)$"
+      },
+      "chromePatterns": [
+        {
+          "regex": "^Help improve Grok",
+          "flags": "i"
+        },
+        {
+          "regex": "^Off by default\\. Opt-in to allow",
+          "flags": "i"
+        },
+        {
+          "regex": "^Read Terms and Privacy Policy",
+          "flags": "i"
+        },
+        {
+          "regex": "^\\s*Worked for \\d",
+          "flags": "i",
+          "label": "turn-footer"
+        },
+        {
+          "regex": "^\\s*◆ Thought for ",
+          "flags": "i",
+          "label": "thinking-header"
+        },
+        {
+          "regex": "Shift\\+Tab:mode",
+          "flags": "i",
+          "label": "footer-hints"
+        },
+        {
+          "regex": "^\\s*Grok Build\\s+\\d",
+          "flags": "i"
+        }
+      ],
+      "scope": "buffer"
+    }
+  },
+  "nativeHistory": {
+    "$schema": "adhdev:native-history/grok-jsonl@1",
+    "format": "grok-jsonl",
+    "watchPath": "~/.grok/sessions/**/chat_history.jsonl",
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "scripts": {
+      "readSession": "readNativeHistory",
+      "listSessions": "listNativeHistory"
+    }
+  },
+  "overrides": {},
+  "settings": {
+    "showCoordinatorSystemPrompt": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Show system prompt message",
+      "description": "Show the mesh coordinator system prompt as a chat message. Off by default — the prompt is still visible via the chat header's ⓘ Session Info dialog."
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Notifications",
+      "description": "Display notifications on state changes"
+    },
+    "autoApprove": {
+      "type": "boolean",
+      "default": false,
+      "public": true,
+      "label": "Auto Approve",
+      "description": "Automatically approve tool execution without prompt"
+    },
+    "approvalAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Approval Notifications",
+      "description": "Show notification when approval is needed"
+    },
+    "longGeneratingAlert": {
+      "type": "boolean",
+      "default": true,
+      "public": true,
+      "label": "Long Generation Alert",
+      "description": "Alert when generation takes too long"
+    },
+    "longGeneratingThresholdSec": {
+      "type": "number",
+      "default": 180,
+      "public": true,
+      "label": "Long Generation Threshold (sec)",
+      "min": 30,
+      "max": 600
+    }
+  },
+  "capabilities": {
+    "input": {
+      "multipart": true,
+      "mediaTypes": [
+        "text",
+        "image"
+      ]
+    },
+    "output": {
+      "richContent": false,
+      "mediaTypes": [
+        "text"
+      ]
+    },
+    "controls": {
+      "typedResults": true
+    }
+  },
+  "meshCoordinator": {
+    "supported": true,
+    "mcpConfig": {
+      "mode": "auto_import",
+      "format": "claude_mcp_json",
+      "path": ".mcp.json",
+      "serverName": "adhdev-mesh"
+    },
+    "systemPromptInjection": {
+      "mode": "cli_arg",
+      "flag": "--rules"
+    }
+  },
+  "source": {
+    "type": "github",
+    "repo": "vilmire/adhdev-providers",
+    "ref": "main"
+  }
+}

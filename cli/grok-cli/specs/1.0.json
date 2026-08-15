@@ -1,0 +1,353 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "grok-cli",
+  "name": "Grok Build",
+  "binary": "grok",
+  "cli_version_range": ">=1.0.0",
+  "spawn_args": [
+    "--permission-mode",
+    "acceptEdits"
+  ],
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 200
+  },
+  "_notes": [
+    "Authored from live PTY captures of grok 1.0.4 rendered through ghostty-vt,",
+    "not from --help text. Grok's TUI gives three unambiguous signals, so this",
+    "spec is much smaller than claude-cli's:",
+    "  generating -> a braille spinner line carrying an elapsed '<n>s' plus a",
+    "                '[stop]' control, and the footer gains 'Esc:cancel'.",
+    "  idle       -> the input box '│ ❯' is empty and the footer is exactly",
+    "                'Shift+Tab:mode │ Ctrl+x:shortcuts' (no Esc:cancel).",
+    "  modal      -> radio rows 'N (●)/(○) label' plus a 'N/M:select' footer.",
+    "Verified live: a bare number key both selects AND confirms (no Enter), so",
+    "buttons use select_mode 'index' with key_for_index '{index}' and no \\r."
+  ],
+  "sections": {
+    "footer": {
+      "anchor": "^\\s*(?:\\d+/\\d+:select|Shift\\+Tab:mode|Enter:send|1/\\d+:select)",
+      "anchor_last": true
+    },
+    "modal": {
+      "anchor": [
+        "^\\s*(?:[┃❙|]\\s*)?\\d+\\s*\\([●○]\\)\\s+\\S"
+      ],
+      "anchor_last": false,
+      "until": "^\\s*\\d+/\\d+:select"
+    },
+    "body": {
+      "from_top": 0,
+      "until": "modal"
+    },
+    "status_tail": {
+      "from_bottom": 14
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "modal_kind": "approval",
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:[┃❙|]\\s*)?(\\d+)\\s*\\([●○]\\)\\s*(.+?)\\s*$",
+          "flags": "gm",
+          "key_for_index": "{index}",
+          "min_count": 2,
+          "select_mode": "index"
+        }
+      }
+    },
+    {
+      "id": "trust",
+      "label": "Workspace trust",
+      "modal": true,
+      "modal_kind": "confirm",
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        }
+      }
+    },
+    {
+      "id": "approval_vanished",
+      "label": "Approval clearing",
+      "status": "approval"
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup-grace",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 8000
+      }
+    },
+    {
+      "label": "→trust",
+      "from": [
+        "starting",
+        "idle",
+        "busy"
+      ],
+      "to": "trust",
+      "priority": 120,
+      "when": {
+        "all": [
+          {
+            "matches": "Do you trust the contents of this directory\\?"
+          },
+          {
+            "matches": "^\\s*Yes, proceed\\s+y\\s*$",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "trust→idle",
+      "from": "trust",
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "not": {
+          "matches": "Do you trust the contents of this directory\\?"
+        }
+      }
+    },
+    {
+      "label": "→approval",
+      "from": [
+        "starting",
+        "idle",
+        "busy",
+        "approval_vanished"
+      ],
+      "to": "approval",
+      "priority": 100,
+      "when": {
+        "all": [
+          {
+            "section": "footer",
+            "matches": "^\\s*\\d+/\\d+:select\\b",
+            "flags": "im"
+          },
+          {
+            "section": "modal",
+            "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+\\S",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": [
+        "idle",
+        "starting"
+      ],
+      "to": "busy",
+      "min_hold_ms": 700,
+      "when": {
+        "section": "status_tail",
+        "any": [
+          {
+            "matches": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
+            "flags": "im"
+          },
+          {
+            "matches": "\\[stop\\]"
+          },
+          {
+            "matches": "Esc:cancel"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
+              "flags": "im"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "\\[stop\\]"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "Esc:cancel"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "Ctrl\\+x:shortcuts"
+          },
+          {
+            "stable_ms": 2500,
+            "ignore_lines": "^\\s*\\d+(?:\\.\\d+)?[KM]? / \\d+[KM]\\s*$|^\\s*Worked for \\d[^\\n]*$|^\\s*\\d{1,2}:\\d{2}\\s*[AP]M\\s*$"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→vanished",
+      "from": "approval",
+      "to": "approval_vanished",
+      "min_hold_ms": 400,
+      "when": {
+        "not": {
+          "section": "footer",
+          "matches": "^\\s*\\d+/\\d+:select\\b",
+          "flags": "im"
+        }
+      }
+    },
+    {
+      "label": "vanished→approval-returned",
+      "from": "approval_vanished",
+      "to": "approval",
+      "priority": 90,
+      "when": {
+        "section": "footer",
+        "matches": "^\\s*\\d+/\\d+:select\\b",
+        "flags": "im"
+      }
+    },
+    {
+      "label": "vanished→busy",
+      "from": "approval_vanished",
+      "to": "busy",
+      "min_hold_ms": 600,
+      "when": {
+        "section": "status_tail",
+        "any": [
+          {
+            "matches": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
+            "flags": "im"
+          },
+          {
+            "matches": "\\[stop\\]"
+          }
+        ]
+      }
+    },
+    {
+      "label": "vanished→idle",
+      "from": "approval_vanished",
+      "to": "idle",
+      "min_hold_ms": 1200,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "footer",
+              "matches": "^\\s*\\d+/\\d+:select\\b",
+              "flags": "im"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "\\[stop\\]"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "Ctrl\\+x:shortcuts"
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
+    },
+    {
+      "id": "cycle_mode",
+      "label": "Mode",
+      "visible_when_state": [
+        "idle"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u001b[Z"
+      }
+    },
+    {
+      "id": "attach_image",
+      "label": "📎",
+      "visible_when_state": [
+        "idle"
+      ],
+      "action": {
+        "type": "attach_image",
+        "method": "tempfile_then_keys",
+        "keys_template": "{path} "
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Grok Build",
+      "body": "{state.title}"
+    },
+    {
+      "id": "trust_needed",
+      "when_state": "trust",
+      "title": "Grok Build needs workspace trust",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "reader": "grok-cli"
+  }
+}
