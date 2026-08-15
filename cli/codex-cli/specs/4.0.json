@@ -22,15 +22,19 @@
     "body": {
       "from_top": 0
     },
+    "screen": {
+      "from_top": 0
+    },
     "status_tail": {
       "anchor": "^›\\s",
       "anchor_last": true,
       "above": 12,
+      "lines": 13,
       "anchor_miss": "empty"
     }
   },
-  "_statustail_note": "STATUS-TAIL-REANCHOR (CODEX-FSM-DEGENERATE-STABLE RCA, defect 1). status_tail used to be a landmark-less from_bottom:12, but the FSM's viewport snapshot is blank-trimmed (ghostty-vt-backend getText → trimBlankEnds), so from_bottom counts from the LAST NON-BLANK line, not the terminal bottom — on long output the 12-line window filled with body text and the live `Working (…)` spinner escaped ABOVE it, so busy→idle's not-clause read 'no spinner' while the worker was still generating (live: false generating_completed at duration=402s). The section is now anchored on the composer landmark (`^›\\s`, anchor_last — the same anchor the `composer` section uses) and extends 12 lines ABOVE it (`above`), so the window pins to the live status block regardless of output volume. `anchor_miss: empty` resolves the section to EMPTY on frames where the composer is momentarily absent (mid-redraw) instead of the whole-screen fallback — a whole-screen status_tail would re-open SPINNER-BODY-SELFMATCH (assistant prose quoting `esc to interrupt` matching the busy cue). NOT a return to whole-screen `body`: the window stays narrow and landmark-fixed.",
-  "_selfmatch_note": "SPINNER-BODY-SELFMATCH fix (sibling of the claude-cli rc.6 status_tail anchoring). The busy cues `Working (` / `esc to interrupt` used to be checked as unanchored literals against the whole-screen `body` section. When an assistant answer quoted or explained those strings (an RCA about codex's own spinner), the body self-matched → idle→busy false-fired and busy→idle's not-clause read TRUE forever → infinite generating. The fix scopes every busy-cue check to `status_tail` (from_bottom:12 — the same live status/prompt window codex's tui.settledPrompt already trusts, scopeWindowLines:12) and anchors the cue on codex's animated-spinner shape: `Working (`/`Thinking (` immediately followed by a braille glyph (U+2800–U+28FF) or an elapsed-time digit, OR the footer `· esc to interrupt)` inside the live status parens (leading bullet/middot + trailing `)`). Both anchors mirror provider.v1.json tui.spinner so prose can no longer self-match. See claude-cli/specs/4.0.json status_tail.",
+  "_statustail_note": "STATUS-TAIL-REANCHOR history + CODEX-LONG-OUTPUT-BUSY-SIGNAL supersession (2026-08-15). History: status_tail was originally a landmark-less from_bottom:12; because the FSM viewport is blank-trimmed (ghostty-vt-backend getText -> trimBlankEnds), from_bottom counted from the LAST NON-BLANK line, so long output filled the window and the live spinner escaped ABOVE it. That was re-anchored to the composer landmark (^\\u203a\\s, anchor_last) with above:12. SUPERSEDED: `above:K` sets from=anchor-K but leaves to=TOTAL (evaluator.ts resolveSections), so the section was never a bounded window -- it was '12 lines above the composer PLUS everything below it'. More importantly the composer anchor does not pin the spinner: codex renders the live status line directly above the composer only on SHORT turns; once output is long the spinner scrolls far above the composer (or the composer is absent mid-turn, where anchor_miss:empty made status_tail EMPTY). Measured on the real background-tool.pty fixture through the real ghostty backend: status_tail was EMPTY on every frame of the stream while `Working (8s \\u00b7 esc to interrupt)` was plainly on the grid. Every spinner leaf therefore read 'no spinner' DURING generation -- the busy->idle vetoes were disarmed, which is why the FSM left busy only via the 30s elapsed fallback. status_tail is now BOUNDED (above:12 + lines:13 => [anchor-12, anchor+1)) so it means what its name says, and it is no longer used for the spinner veto at all.",
+  "_selfmatch_note": "SPINNER-BODY-SELFMATCH (still enforced, by a different mechanism). The busy cues used to be checked as unanchored literals against whole-screen `body`; assistant prose quoting codex's own spinner self-matched -> busy latched forever. The previous fix scoped the cues to a narrow status_tail, but that traded SELFMATCH for the long-output blindness described in _statustail_note -- the two failure modes pull in opposite directions, which is why this defect kept recurring across fixes. The cue is now scoped WHOLE-SCREEN (section `screen`, matching provider.v1.json tui.spinner.scope = 'whole-screen', which was already live-verified for this provider) and SELFMATCH is prevented by the cue SHAPE instead of the window: the regex anchors to the START of a line because codex renders the spinner as its OWN status line while prose embeds it mid-sentence. The optional leading decoration run is ANY 1-2 non-word, non-space chars (braille, bullet, bar, middot -- codex has shipped several spinner glyphs; a braille-only prefix would silently miss the others, which is the same class of failure this defect is about) EXCLUDING quote/backtick/markdown/bracket openers, which are prose, never spinner glyphs. The bare `\\u00b7 esc to interrupt)` alternative was REMOVED from the cue -- measured, it is the alternative that prose actually matches, and it is redundant since codex always renders it on the same line as `Working (`/`Thinking (`. Residual, accepted: a wrapped prose line that happens to begin with `Working (12s` can still match. That fails SAFE (holds busy, released by the 30s elapsed fallback), unlike the pre-fix direction (premature idle mid-turn, which has no backstop).",
   "_busyidle_fallback_note": "BUSY-IDLE-BOUNDED-FALLBACK (CODEX-FSM-BUSY-WEDGE RCA, 2026-07-26). Live evidence: a completed session (final response + composer `› …` returned) sat in busy for 22+ min with busy→idle firing 0 times; mesh debug showed condResult=false with remainingMs≈1342 on the all(3), which only the stable_ms leaf can produce (regex/not leaves report 0) — a benign post-generation repaint inside the cursor_above:4 window kept resetting regionLastChangedAt every frame, faster than stable_ms=1500 (fsm-driver.ts trackRegionChanges). The wake scheduler kept re-evaluating; the stable clock simply never accumulated. busy→idle is now an `any` of two arms: arm 1 is the ORIGINAL strict guard, byte-equivalent (not tail spinner, not MCP-init, stable 1500/cursor_above 4) so quiet completions still idle at ~1.5s; arm 2 is a bounded fallback — the same spinner/MCP-init vetoes PLUS a modal veto (regex synthesized from the →approval/→trust/→picker transition patterns above to avoid drift) PLUS elapsed_ms:30000 — so once every active marker (Working|Thinking spinner, esc to interrupt, MCP init, trust/approval/picker modal) is absent for 30s since busy entry, idle commits even if the stable window never settles. Safety invariants: a live spinner, MCP init, or any modal vetoes BOTH arms (no false idle during generation/approval); the fallback never consults transcript signals (final_assistant_present is NOT used) so transcript unavailability changes nothing. During a >30s generation the live spinner keeps arm 2 vetoed; modal appearances are additionally caught by the priority 100/110 →approval/→trust/→picker transitions before either arm matters.",
   "states": [
     {
@@ -129,8 +133,8 @@
               },
               {
                 "not": {
-                  "section": "status_tail",
-                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+                  "section": "screen",
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
                 }
               },
               {
@@ -189,8 +193,8 @@
       "from": "mcp_init",
       "to": "busy",
       "when": {
-        "section": "status_tail",
-        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+        "section": "screen",
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
       }
     },
     {
@@ -208,8 +212,8 @@
           },
           {
             "not": {
-              "section": "status_tail",
-              "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+              "section": "screen",
+              "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
             }
           },
           {
@@ -224,8 +228,8 @@
       "from": "idle",
       "to": "busy",
       "when": {
-        "section": "status_tail",
-        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+        "section": "screen",
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
       }
     },
     {
@@ -239,8 +243,8 @@
             "all": [
               {
                 "not": {
-                  "section": "status_tail",
-                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+                  "section": "screen",
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
                 }
               },
               {
@@ -259,8 +263,8 @@
             "all": [
               {
                 "not": {
-                  "section": "status_tail",
-                  "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+                  "section": "screen",
+                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
                 }
               },
               {
@@ -288,8 +292,8 @@
       "from": ["approval", "trust", "picker"],
       "to": "busy",
       "when": {
-        "section": "status_tail",
-        "matches": "(?:(?:^|\\n)[^\\n]*?(?:Working|Thinking)\\s\\((?:[\\u2800-\\u28ff]|\\d))|(?:[·•]\\s*esc to interrupt\\))"
+        "section": "screen",
+        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d)"
       }
     },
     {
@@ -329,7 +333,10 @@
     {
       "id": "stop",
       "label": "Stop",
-      "visible_when_state": ["busy", "mcp_init"],
+      "visible_when_state": [
+        "busy",
+        "mcp_init"
+      ],
       "action": {
         "type": "send_keys",
         "keys": "\u0003"
@@ -338,7 +345,9 @@
     {
       "id": "set_model",
       "label": "Model",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "open_picker",
         "trigger_keys": "/model\r",
@@ -356,7 +365,9 @@
     {
       "id": "set_mode",
       "label": "Mode",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "open_picker",
         "trigger_keys": "/approvals\r",
@@ -374,7 +385,9 @@
     {
       "id": "attach_image",
       "label": "📎",
-      "visible_when_state": ["idle"],
+      "visible_when_state": [
+        "idle"
+      ],
       "action": {
         "type": "attach_image",
         "method": "tempfile_then_keys",
@@ -418,5 +431,6 @@
         }
       }
     }
-  }
+  },
+  "_longoutput_note": "CODEX-LONG-OUTPUT-BUSY-SIGNAL (2026-08-15). Reported symptom: on long turns the FSM sat in busy for ~14min and escaped only via `elapsed 855023ms / 30000ms`, and a spec-debug snapshot showed status_tail holding worker JSON report text instead of the spinner. Verified mechanism (real backend + real resolveSections, not inferred): the spinner vetoes were scoped to a window that the spinner is not in on long output, so `not(spinner)` read TRUE throughout generation. The 30s `elapsed_ms` arm is DELIBERATELY RETAINED as the safety net -- without it a judgement failure means permanent busy. What changed is that the intended fast path (arm 1: not-spinner + stable 1500ms/cursor_above 4) can now actually observe the spinner, so a normal turn end settles at ~1.5s instead of falling through to 30s. Turn START (idle->busy, mcp_init->busy, approval->busy) uses the same cue and was verified unbroken."
 }
