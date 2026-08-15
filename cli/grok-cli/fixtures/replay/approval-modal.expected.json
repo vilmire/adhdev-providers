@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "description": "grok-cli: radio-style approval modal ('N (o) label' rows + an 'N/M:select' footer) -> waiting_approval. The modal group wins over the spinner cue still in the accumulated buffer, per dispatchOrder ['modal','spinner','settled-prompt'].",
+  "providerType": "grok-cli",
+  "ptyFile": "approval-modal.pty",
+  "terminal": {
+    "cols": 100,
+    "rows": 30
+  },
+  "anchors": [
+    {
+      "name": "modal visible",
+      "untilSentinel": "1/3:select",
+      "expect": {
+        "detectStatus": "waiting_approval"
+      },
+      "notes": "Grok numbers its choices but marks selection with radio glyphs rather than a cursor caret. Verified live that typing the bare number both selects AND confirms (no Enter), so key_for_index is '{index}'."
+    }
+  ]
+}

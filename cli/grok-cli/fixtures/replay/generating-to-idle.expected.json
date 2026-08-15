@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "description": "grok-cli: braille spinner carrying an elapsed '2.5s' + '[stop]' + an 'Esc:cancel' footer -> generating; after the turn the footer drops Esc:cancel, the composer is an empty '>' and 'Worked for 7.9s' is chrome -> idle. Frames captured from grok 1.0.4 via node-pty.",
+  "providerType": "grok-cli",
+  "ptyFile": "generating-to-idle.pty",
+  "terminal": {
+    "cols": 100,
+    "rows": 30
+  },
+  "anchors": [
+    {
+      "name": "tool active",
+      "untilSentinel": "Esc:cancel",
+      "expect": {
+        "detectStatus": "generating"
+      },
+      "notes": "All three live-turn cues are present: braille glyph + elapsed seconds, the [stop] control, and the Esc:cancel footer hint."
+    },
+    {
+      "name": "settled prompt",
+      "untilSentinel": "Shift+Tab:mode  |  Ctrl+x:shortcuts",
+      "expect": {
+        "detectStatus": "idle"
+      },
+      "notes": "'Worked for 7.9s' must NOT read as a spinner: it has no braille glyph and no trailing ellipsis. Note the replay buffer ACCUMULATES while a real TUI repaints, so the completed turn's own output is included here to push the earlier spinner frame out of the spinner scope window (scopeWindowLines 14) exactly as a real terminal would."
+    }
+  ]
+}
