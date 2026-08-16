@@ -1,8 +1,8 @@
 {
   "$schema": "https://registry.adhf.dev/schemas/v1/cli/provider.schema.json",
   "type": "grok-cli",
-  "name": "Grok Build",
-  "displayName": "Grok Build",
+  "name": "Grok CLI",
+  "displayName": "Grok CLI",
   "category": "cli",
   "aliases": [
     "grok",
@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.0",
+  "providerVersion": "1.0.1",
   "disableUpstream": true,
   "binary": "grok",
   "spawn": {
