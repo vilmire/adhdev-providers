@@ -21,7 +21,13 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.10",
+  "providerVersion": "1.0.11",
+  "compatibility": [
+    {
+      "ideVersion": ">=0.20.0",
+      "spec": "specs/1.0.json"
+    }
+  ],
   "binary": "kimi",
   "spawn": {
     "command": "kimi",

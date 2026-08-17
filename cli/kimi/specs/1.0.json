@@ -1,0 +1,325 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "kimi",
+  "name": "Kimi Code",
+  "binary": "kimi",
+  "cli_version_range": ">=0.20.0",
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 1200
+  },
+  "_notes": [
+    "DRAFT under live verification (2026-08-17, kimi-code v0.36 measured through",
+    "the standalone daemon FSM debug endpoint). First spec to use all three",
+    "named engine schemes added for this migration:",
+    " - pre_launch_trust kimi_workspace_file (per-workspace trust file — an",
+    "   unanswered trust prompt makes kimi exit 0 silently on fresh worktrees)",
+    " - interactive_prompts kimi_wire (AskUserQuestion via wire.jsonl authority",
+    "   + screen-detected idle/cache-expired selector, measured keystrokes)",
+    "Busy cues from the legacy manifest: moon-phase spinner next to '· Tip:',",
+    "braille 'working...'/'thinking...' during K3 tool phases; MCP-connect",
+    "braille is confined to the starting state. Idle cue: the composer box",
+    "row '│ > │'. Approval modal: numbered rows — index+label captured for",
+    "the standard numbered extraction (digit answer, live-verified).",
+    "requiresFinalAssistantBeforeIdle floors completion on wire.jsonl exactly",
+    "as the legacy path did."
+  ],
+  "requiresFinalAssistantBeforeIdle": true,
+  "pre_launch_trust": {
+    "scheme": "kimi_workspace_file"
+  },
+  "interactive_prompts": {
+    "scheme": "kimi_wire"
+  },
+  "sections": {
+    "status_tail": {
+      "from_bottom": 18
+    },
+    "body": {
+      "from_top": 0
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "modal_kind": "approval",
+      "extract": {
+        "title": {
+          "section": "status_tail",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "status_tail",
+          "pattern": "^\\s*(?:[❯›>▶●•]\\s*)?(\\d+)[.)]\\s+(.+?)\\s*$",
+          "flags": "gm",
+          "min_count": 2,
+          "select_mode": "index",
+          "key_for_index": "{index}"
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup→idle (composer drawn)",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "│\\s*>\\s*│",
+            "flags": "m"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+MCP server|MCP server .+ connecting",
+              "flags": "im"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "startup-grace fallback",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 15000
+      }
+    },
+    {
+      "label": "→approval",
+      "from": [
+        "starting",
+        "idle",
+        "busy"
+      ],
+      "to": "approval",
+      "priority": 100,
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+            "flags": "im"
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*(?:[❯›>▶●•]\\s*)?1[.)]\\s+\\S",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": [
+        "idle",
+        "starting"
+      ],
+      "to": "busy",
+      "min_hold_ms": 500,
+      "when": {
+        "section": "status_tail",
+        "matches": "[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+(?:working|thinking)\\.\\.\\.",
+        "flags": "im"
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+(?:working|thinking)\\.\\.\\.",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "│\\s*>\\s*│",
+            "flags": "m"
+          },
+          {
+            "stable_ms": 2500,
+            "section": "status_tail"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy (answered, tool running)",
+      "from": "approval",
+      "to": "busy",
+      "min_hold_ms": 400,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+(?:working|thinking)\\.\\.\\.",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→idle (dismissed/settled)",
+      "from": "approval",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "│\\s*>\\s*│",
+            "flags": "m"
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Kimi Code",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.kimi-code/sessions/*/session_*/agents/main",
+      "file_pattern": "wire.jsonl",
+      "session_id_from": "dir_uuid",
+      "workspace_from_sidecar": {
+        "rel_path": "../../state.json",
+        "workspace_path": "$.workDir || $.cwd"
+      },
+      "records": [
+        {
+          "where": "$.type == \"turn.prompt\"",
+          "message_map": {
+            "role": "user",
+            "content": "$.input",
+            "timestamp_ms": "$.time"
+          }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"content.part\" && $.event.part.type == \"text\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.part.text",
+            "timestamp_ms": "$.time"
+          }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"tool.call\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.name",
+            "timestamp_ms": "$.time",
+            "tools": {
+              "block_type": "$.event.type",
+              "call_types": [
+                "tool.call"
+              ],
+              "result_types": [
+                "tool.result"
+              ],
+              "call_name": "$.event.name",
+              "call_args": "$.event.args"
+            }
+          }
+        },
+        {
+          "where": "$.type == \"context.append_loop_event\" && $.event.type == \"tool.result\"",
+          "message_map": {
+            "role": "assistant",
+            "content": "$.event.type",
+            "timestamp_ms": "$.time",
+            "tools": {
+              "block_type": "$.event.type",
+              "call_types": [
+                "tool.call"
+              ],
+              "result_types": [
+                "tool.result"
+              ],
+              "result_content": "$.event.result.output"
+            }
+          }
+        }
+      ],
+      "usage_records": [
+        {
+          "where": "$.type == \"usage.record\"",
+          "usage_map": {
+            "mode": "delta",
+            "input_tokens": "$.usage.inputOther",
+            "output_tokens": "$.usage.output",
+            "cache_read_tokens": "$.usage.inputCacheRead",
+            "cache_creation_tokens": "$.usage.inputCacheCreation",
+            "model": "$.model",
+            "timestamp_ms": "$.time"
+          }
+        }
+      ]
+    }
+  }
+}

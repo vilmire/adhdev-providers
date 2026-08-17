@@ -1,0 +1,252 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "opencode",
+  "name": "OpenCode",
+  "binary": "opencode",
+  "cli_version_range": ">=1.0.0",
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 1200
+  },
+  "_notes": [
+    "Migrated from the legacy manifest's tui.* blocks (spinner 'esc interrupt' /",
+    "'[■⬝]{2,}' footer bar, settledPrompt 'Ask anything', modal question pattern),",
+    "then live-verified against opencode 1.18.15 rendered through ghostty-vt on",
+    "2026-08-17 (idle/busy/completion cycle + startup_dismiss config; see",
+    "fixtures/replay). The legacy manifest carries NO modal buttonPattern, so the",
+    "Live measurement: at the session-host 80x24 viewport the composer sits at",
+    "from_bottom ~16 (tips + path footer render BELOW it), so status_tail is",
+    "from_bottom 18 — a from_bottom 8 tail misses both the settled cue and the",
+    "'esc interrupt' spinner hint and wedges busy→idle.",
+    "approval state extracts a title but no buttons yet — the FSM still parks in",
+    "waiting_approval (dashboard surfaces it; auto-approve answers via keys are",
+    "not available until a live approval capture adds extract.buttons).",
+    "requiresFinalAssistantBeforeIdle keeps completion floored on the native",
+    "sqlite transcript exactly as the legacy path did.",
+    "Post-turn live capture: 'Ask anything' placeholder disappears after",
+    "the first turn (composer renders as empty accent-bar lines), so the",
+    "idle cue is the composer bottom frame '╹▀…' + spinner absence, NOT the",
+    "placeholder text (which only gates startup→idle)."
+  ],
+  "requiresFinalAssistantBeforeIdle": true,
+  "startup_dismiss": {
+    "patterns": [
+      {
+        "regex": "Update Available|Would you like to\\s+update",
+        "flags": "i"
+      }
+    ],
+    "key": "\u001b",
+    "max_attempts": 3,
+    "window_ms": 20000
+  },
+  "sections": {
+    "status_tail": {
+      "from_bottom": 18
+    },
+    "body": {
+      "from_top": 0
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "modal_kind": "approval",
+      "extract": {
+        "title": {
+          "section": "status_tail",
+          "first_line": true
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup→idle (prompt drawn)",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "section": "status_tail",
+        "matches": "Ask\\s+anything",
+        "flags": "i"
+      }
+    },
+    {
+      "label": "startup-grace fallback",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 10000
+      }
+    },
+    {
+      "label": "→approval",
+      "from": [
+        "starting",
+        "idle",
+        "busy"
+      ],
+      "to": "approval",
+      "priority": 100,
+      "min_hold_ms": 300,
+      "when": {
+        "section": "status_tail",
+        "matches": "Run this command|Do you want to run|Do you want to|Allow|Trust|permission",
+        "flags": "im"
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": [
+        "idle",
+        "starting"
+      ],
+      "to": "busy",
+      "min_hold_ms": 500,
+      "when": {
+        "section": "status_tail",
+        "any": [
+          {
+            "matches": "esc\\s+interrupt",
+            "flags": "im"
+          },
+          {
+            "matches": "[■⬝]{2,}"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "esc\\s+interrupt",
+              "flags": "im"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[■⬝]{2,}"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*╹▀",
+            "flags": "m"
+          },
+          {
+            "stable_ms": 2500,
+            "section": "status_tail"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy (answered, tool running)",
+      "from": "approval",
+      "to": "busy",
+      "min_hold_ms": 400,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command|Do you want to run|Do you want to|Allow|Trust|permission",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "esc\\s+interrupt|[■⬝]{2,}",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→idle (dismissed/settled)",
+      "from": "approval",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command|Do you want to run|Do you want to|Allow|Trust|permission",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*╹▀",
+            "flags": "m"
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in OpenCode",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "sqlite",
+      "path": "~/.local/share/opencode/opencode.db",
+      "session_query": "SELECT id FROM session WHERE (@workspace = '' OR directory = @workspace) AND time_updated >= (@floor - 2) * 1000 ORDER BY time_updated DESC LIMIT 1",
+      "message_query": "SELECT json_extract(m.data, '$.role') AS role, group_concat(CASE WHEN json_extract(p.data, '$.type') = 'text' THEN json_extract(p.data, '$.text') ELSE NULL END, '') AS content, (SELECT directory FROM session WHERE id = m.session_id) AS workspace, m.time_created AS timestamp_ms FROM message m JOIN part p ON p.message_id = m.id WHERE m.session_id = ? AND json_extract(p.data, '$.type') IN ('text', 'reasoning') GROUP BY m.id HAVING content IS NOT NULL AND content != '' ORDER BY m.time_created",
+      "message_map": {
+        "role": "$.role",
+        "content": "$.content",
+        "workspace": "$.workspace",
+        "timestamp_ms": "$.timestamp_ms"
+      }
+    }
+  }
+}

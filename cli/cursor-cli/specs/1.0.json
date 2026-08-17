@@ -1,0 +1,283 @@
+{
+  "$schema": "adhdev:cli/spec@4",
+  "id": "cursor-cli",
+  "name": "Cursor Agent",
+  "binary": "cursor-agent",
+  "cli_version_range": ">=2026.0.0",
+  "spawn_args": [
+    "--trust"
+  ],
+  "send_message": {
+    "submit_key": "\r",
+    "delay_ms_before_submit": 1200
+  },
+  "_notes": [
+    "DRAFT under live verification (2026-08-17). Migrated from the legacy",
+    "manifest's tui.* blocks and being measured against cursor-agent",
+    "v2026.08.11 through the standalone daemon's FSM debug endpoint.",
+    "Key translations:",
+    " - busy: braille+'Working' line OR the interrupt hint, in the lower tail.",
+    " - idle: the TWO-LINE settled footer — a label line carrying the",
+    "   context-percent ('Kimi K2.7 Code · 6.8%') followed by the workspace",
+    "   path line. Matched as one multiline regex on the status_tail section",
+    "   text (sections preserve newlines).",
+    " - approval buttons: draft keeps the numbered/[X]-row branch of the",
+    "   legacy dual-branch pattern; the '(y/n)' parenthetical rows need a",
+    "   live capture before they get their own state/extract.",
+    " - --trust spawn flag suppresses the folder-trust modal (legacy parity).",
+    "requiresFinalAssistantBeforeIdle floors completion on native history",
+    "(jsonl agent-transcripts) exactly as the legacy path did.",
+    "Live captures 2026-08-17 (v2026.08.11): spinner line is",
+    "'⠰⠰ Running  N tokens' (not 'Working'); approval rows are",
+    "parenthetical '→ Run (once) (y)' / '... (tab)' / '... (esc or n)'",
+    "with NO numbering; idle label line may omit the ·percent before",
+    "the first turn."
+  ],
+  "requiresFinalAssistantBeforeIdle": true,
+  "sections": {
+    "status_tail": {
+      "from_bottom": 18
+    },
+    "body": {
+      "from_top": 0
+    },
+    "modal": {
+      "anchor": "^\\s*(?:Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?)",
+      "anchor_last": true,
+      "until": "^\\s*$"
+    }
+  },
+  "states": [
+    {
+      "id": "starting",
+      "label": "Starting",
+      "initial": true,
+      "status": "idle"
+    },
+    {
+      "id": "idle",
+      "label": "Ready",
+      "status": "idle"
+    },
+    {
+      "id": "busy",
+      "label": "Generating",
+      "status": "generating"
+    },
+    {
+      "id": "approval",
+      "label": "Approval requested",
+      "modal": true,
+      "modal_kind": "approval",
+      "extract": {
+        "title": {
+          "section": "modal",
+          "first_line": true
+        },
+        "buttons": {
+          "section": "modal",
+          "pattern": "^\\s*(?:→\\s*)?(\\S[^\\n]*?)\\s*\\((y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$",
+          "flags": "gm",
+          "label_group": 1,
+          "key_group": 2,
+          "min_count": 2
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "label": "startup→idle (footer drawn)",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "section": "status_tail",
+        "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+        "flags": "m"
+      }
+    },
+    {
+      "label": "startup-grace fallback",
+      "from": "starting",
+      "to": "idle",
+      "when": {
+        "elapsed_ms": 10000
+      }
+    },
+    {
+      "label": "→approval",
+      "from": [
+        "starting",
+        "idle",
+        "busy"
+      ],
+      "to": "approval",
+      "priority": 100,
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+            "flags": "im"
+          },
+          {
+            "any": [
+              {
+                "section": "status_tail",
+                "matches": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+\\S",
+                "flags": "im"
+              },
+              {
+                "section": "status_tail",
+                "matches": "^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$",
+                "flags": "im"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "idle→busy",
+      "from": [
+        "idle",
+        "starting"
+      ],
+      "to": "busy",
+      "min_hold_ms": 500,
+      "when": {
+        "section": "status_tail",
+        "any": [
+          {
+            "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|\\bWorking\\b"
+          },
+          {
+            "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+            "flags": "i"
+          }
+        ]
+      }
+    },
+    {
+      "label": "busy→idle",
+      "from": "busy",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|\\bWorking\\b"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+              "flags": "i"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+            "flags": "m"
+          },
+          {
+            "stable_ms": 2500,
+            "section": "status_tail"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→busy (answered, tool running)",
+      "from": "approval",
+      "to": "busy",
+      "min_hold_ms": 400,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "\\bWorking\\b|(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+            "flags": "im"
+          }
+        ]
+      }
+    },
+    {
+      "label": "approval→idle (dismissed/settled)",
+      "from": "approval",
+      "to": "idle",
+      "min_hold_ms": 800,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+              "flags": "im"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+            "flags": "m"
+          }
+        ]
+      }
+    }
+  ],
+  "control_bar": [
+    {
+      "id": "stop",
+      "label": "Stop",
+      "visible_when_state": [
+        "busy"
+      ],
+      "action": {
+        "type": "send_keys",
+        "keys": "\u0003"
+      }
+    }
+  ],
+  "notifications": [
+    {
+      "id": "approval_needed",
+      "when_state": "approval",
+      "title": "Approval needed in Cursor Agent",
+      "body": "{state.title}"
+    }
+  ],
+  "delegate": [],
+  "native_history": {
+    "mode": "native-source",
+    "contractVersion": "2.0",
+    "source": {
+      "kind": "jsonl",
+      "path": "~/.cursor/projects/*/agent-transcripts/*",
+      "file_pattern": "*.jsonl",
+      "session_id_from": "filename_uuid",
+      "workspace_from_input": true,
+      "message_map": {
+        "role": "$.role",
+        "content": "$.message.content",
+        "content_strip": [
+          "timestamp"
+        ],
+        "content_unwrap": [
+          "user_query"
+        ],
+        "tools": {}
+      }
+    }
+  }
+}
