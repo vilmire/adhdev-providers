@@ -247,9 +247,9 @@
     },
     {
       "providerType": "cursor-cli",
-      "providerVersion": "1.0.2",
+      "providerVersion": "1.0.3",
       "category": "cli",
-      "bundleDigest": "sha256:f86564205295effb82417e9915b27c93841eb7549254d19b0a0512b549d08c1d",
+      "bundleDigest": "sha256:89395af9e2c3f364a0794a1148c843cb46ba3ba2c0d606a3272f6fce73b74216",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-08-16T18:53:43.982Z",
       "name": "Cursor Agent"
@@ -406,9 +406,9 @@
     },
     {
       "providerType": "kimi",
-      "providerVersion": "1.0.10",
+      "providerVersion": "1.0.11",
       "category": "cli",
-      "bundleDigest": "sha256:d7198520bd06fccd7d756e3f17213944bdb7131cd1d3129a5901e81cec6c6cf2",
+      "bundleDigest": "sha256:fd34ac4a35a17538683febc2a61c17c6d259c1c1d0bfa1b5c17df2d0ff86316a",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-08-16T18:53:43.982Z",
       "name": "Kimi Code"
@@ -475,9 +475,9 @@
     },
     {
       "providerType": "opencode",
-      "providerVersion": "1.0.4",
+      "providerVersion": "1.0.5",
       "category": "cli",
-      "bundleDigest": "sha256:a12cd42e40f42439a4d591766641404c45d122c71185cb1799cbae96c1d6423e",
+      "bundleDigest": "sha256:5f3543e1183e8587190c38863f3918ce9b23d4f5d1f011cdccc88165373770fc",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-08-16T18:53:43.982Z",
       "name": "OpenCode"
