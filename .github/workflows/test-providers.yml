@@ -1,0 +1,128 @@
+name: Provider tests
+
+# tests/ gate.
+#
+# The failure this blocks: a provider artifact change (or an upstream engine
+# removal) breaks tests/ and nobody notices, because nothing ran them.
+#
+# That is not hypothetical. When the legacy CLI script engine was removed
+# (adhdev oss 48e5ed1a deleted every cli/*/scripts/1.0 except hermes-cli), nine
+# test files started dying at their first require() with MODULE_NOT_FOUND and
+# stayed dead for months. No workflow here executed tests/ — validate-cli.yml
+# schema-checks manifests, validate-channels.yml recomputes digests, and the
+# publish/generate workflows touch the registry. The root monorepo did not run
+# them either. The breakage was invisible in both repos.
+#
+# This job runs the whole tests/ suite on every PR, so a provider change gets
+# feedback in the repository that owns it — including from outside contributors,
+# who never see the private root CI.
+#
+# The root monorepo additionally runs this same suite via `npm run
+# test:providers` in its `ci` chain. That duplication is deliberate: it catches
+# the case this workflow structurally cannot, where the root submodule pointer
+# is green here but stale there.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/**'
+      - 'cli/**'
+      - 'acp/**'
+      - 'ide/**'
+      - 'extension/**'
+      - 'channels/**'
+      - 'schemas/**'
+      - 'scripts/**'
+      - '.github/workflows/test-providers.yml'
+  pull_request:
+    paths:
+      - 'tests/**'
+      - 'cli/**'
+      - 'acp/**'
+      - 'ide/**'
+      - 'extension/**'
+      - 'channels/**'
+      - 'schemas/**'
+      - 'scripts/**'
+      - '.github/workflows/test-providers.yml'
+  workflow_dispatch:
+
+jobs:
+  test-providers:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # Checked out into a subdirectory for the same reason as
+      # validate-channels.yml: channel-manifests.test.js drives
+      # scripts/lib/provider-channels.mjs, which resolves ajv/ajv-formats/semver
+      # from the SURROUNDING workspace ('../oss/node_modules', then
+      # '../node_modules') because this repo is normally a submodule of the
+      # adhdev monorepo and carries no node_modules of its own. Installing at
+      # the workspace root produces exactly the '../node_modules' the library
+      # already looks for. This repo intentionally has no package.json — do not
+      # add one to "fix" this.
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+          path: repo
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install test dependencies (ajv, ajv-formats, semver)
+        run: npm install --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 semver@^7.6.0 > /dev/null
+
+      # Toolchain preflight — this gate must only ever be red for a real test
+      # failure.
+      #
+      # `node --test` exits 1 both for a genuine assertion failure AND for
+      # "cannot find module", and the two are indistinguishable by exit code.
+      # That ambiguity is precisely how the nine dead files above hid in plain
+      # sight: each looked like one ordinary red test rather than an entire file
+      # that never executed a single assertion.
+      - name: Preflight — test dependencies resolve
+        working-directory: repo
+        run: |
+          node -e "
+            const { createRequire } = require('node:module');
+            const { resolve } = require('node:path');
+            const req = createRequire(resolve(process.cwd(), 'scripts/lib/x.mjs'));
+            const base = resolve(process.cwd(), '..', 'node_modules');
+            for (const m of ['ajv/dist/2020.js', 'ajv-formats', 'semver']) {
+              req(resolve(base, m));
+              console.log('✓ resolved', m);
+            }
+            console.log('Preflight OK — a failure below is a real test failure, not a toolchain gap.');
+          "
+
+      # File-count assertion, before running anything.
+      #
+      # Two traps make a silently-narrowed glob easy to ship here:
+      #   1. `node --test tests/` (a directory argument) FAILS on node 22 with
+      #      "Cannot find module .../tests" — a glob is required.
+      #   2. tests/ contains one .test.mjs (cursor-cli.test.mjs) alongside the
+      #      .test.js files. Globbing only '*.test.js' silently skips it.
+      # Either mistake yields a green run that quietly covers fewer files, which
+      # is the same class of failure this whole workflow exists to prevent.
+      - name: Assert expected test file count
+        working-directory: repo
+        run: |
+          expected=16
+          actual=$(ls tests/*.test.js tests/*.test.mjs | wc -l | tr -d ' ')
+          echo "test files: $actual (expected $expected)"
+          if [ "$actual" -ne "$expected" ]; then
+            echo "::error::tests/ file count changed: $actual != $expected."
+            echo "::error::If you added or removed a test file, update 'expected' in this workflow deliberately."
+            ls tests/*.test.js tests/*.test.mjs
+            exit 1
+          fi
+
+      # Both globs are required — see the .test.mjs trap above.
+      - name: Run provider tests
+        working-directory: repo
+        run: node --test tests/*.test.js tests/*.test.mjs

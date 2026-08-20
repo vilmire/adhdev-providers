@@ -11,6 +11,28 @@ const cliProviders = fs.readdirSync(cliRoot)
   .filter(entry => fs.existsSync(path.join(cliRoot, entry, 'scripts/1.0/parse_output.js')))
   .sort();
 
+// Every test below loops over `cliProviders`. When the legacy script engine was
+// removed (oss 48e5ed1a) this collection silently shrank 9 -> 1: the suite kept
+// passing while checking a single provider, despite test names saying "every
+// CLI provider". Pin the expected count so a future shrink fails loudly instead
+// of quietly narrowing coverage.
+//
+// Only hermes-cli still ships scripts/1.0. That directory is itself dead code
+// on the live path -- route.ts sends hermes to SpecCliAdapter (specs/4.0.json),
+// so these scripts are never executed at runtime. When hermes-cli/scripts/1.0
+// is removed, delete this file in the same commit rather than lowering the
+// count to 0.
+const EXPECTED_CLI_PROVIDERS = ['hermes-cli'];
+
+test('the parse_session provider collection has not silently shrunk', () => {
+  assert.deepEqual(
+    cliProviders,
+    EXPECTED_CLI_PROVIDERS,
+    'cli providers exposing scripts/1.0/parse_output.js changed; update EXPECTED_CLI_PROVIDERS deliberately (see comment above)',
+  );
+  assert.ok(cliProviders.length > 0, 'auto-collection must never be empty (would make every test below vacuous)');
+});
+
 function scriptPath(type, name) {
   return path.join(cliRoot, type, 'scripts/1.0', name);
 }
@@ -46,7 +68,10 @@ test('every CLI provider exposes the common parse_session entrypoint', () => {
 
 test('every compatibility CLI provider declares a default script directory for versionless loader resolution', () => {
   for (const type of cliProviders) {
-    const provider = JSON.parse(fs.readFileSync(path.join(cliRoot, type, 'provider.json'), 'utf8'));
+    // v0 provider.json is extinct across cli/ -- all 9 providers ship
+    // provider.v1.json only. Reading the legacy name here was the sole reason
+    // this file failed to load.
+    const provider = JSON.parse(fs.readFileSync(path.join(cliRoot, type, 'provider.v1.json'), 'utf8'));
     if (Array.isArray(provider.compatibility)) {
       assert.equal(provider.defaultScriptDir, 'scripts/1.0', `${type} should provide defaultScriptDir for resolve(type) without a version`);
     }

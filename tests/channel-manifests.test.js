@@ -18,6 +18,19 @@ function output(result) {
   return `${result.stdout || ''}${result.stderr || ''}`;
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Build the "<type>@<version>" key the validator prints, derived from the real
+// artifact rather than hard-coded. A hard-coded version silently rots the
+// moment the provider is bumped (cline 1.0.0 -> 1.0.1 did exactly that), and
+// these two duplicate-rejection cases guard the channel digest gate that a
+// real DIGEST_MISMATCH incident already exercised.
+function entryKeyPattern(entry) {
+  return new RegExp(`duplicate entry '${escapeRegExp(`${entry.providerType}@${entry.providerVersion}`)}'`);
+}
+
 // Loads the ESM channel lib and returns a valid stable/preview entry pair for
 // one real artifact, plus a second valid digest for conflict fixtures.
 async function makeFixtureData() {
@@ -86,7 +99,7 @@ test('duplicate providerType+providerVersion within a channel is rejected', asyn
     const file = writeManifest(dir, 'preview', [previewEntry, previewEntry]);
     const result = runChannelValidator(file);
     assert.equal(result.status, 1, output(result));
-    assert.match(output(result), /duplicate entry 'cline@1\.0\.0'/);
+    assert.match(output(result), entryKeyPattern(previewEntry));
   });
 });
 
@@ -96,7 +109,7 @@ test('conflicting duplicate (same key, different digest) is rejected', async () 
     const file = writeManifest(dir, 'preview', [previewEntry, { ...previewEntry, bundleDigest: otherDigest }]);
     const result = runChannelValidator(file);
     assert.equal(result.status, 1, output(result));
-    assert.match(output(result), /conflicting duplicate entry 'cline@1\.0\.0'/);
+    assert.match(output(result), new RegExp(`conflicting ${entryKeyPattern(previewEntry).source}`));
   });
 });
 
