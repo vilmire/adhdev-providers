@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.2",
+  "providerVersion": "1.2.3",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -60,6 +60,8 @@
     "{{model}}"
   ],
   "modelOptions": [
+    "Gemini 3.7 Flash (High)",
+    "Gemini 3.7 Flash (Low)",
     "Gemini 3.5 Flash (Medium)",
     "Gemini 3.5 Flash (High)",
     "Gemini 3.5 Flash (Low)",
