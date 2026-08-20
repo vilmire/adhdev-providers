@@ -15,29 +15,43 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..');
 
-const require = createRequire(import.meta.url);
+// Resolve ajv through normal Node resolution rather than a hardcoded path.
+// This repo is a submodule with no node_modules of its own, so ajv comes from
+// whichever ancestor installed it — the monorepo root (npm hoists it there) or
+// oss/. Probing several base paths keeps the script working from a worktree,
+// the root checkout, and CI alike.
+const RESOLVE_BASES = [
+  import.meta.url,
+  ...['..', '../oss', '../..'].map((rel) => pathToFileURL(join(REPO_ROOT, rel, 'noop.js')).href),
+];
 
-// Load ajv from oss/ workspace where it already exists.
-let Ajv2020;
-let addFormats;
-try {
-  Ajv2020 = require(resolve(REPO_ROOT, '../oss/node_modules/ajv/dist/2020.js')).default;
-} catch (e) {
-  console.error('ERROR: could not locate ajv at ../oss/node_modules. Run `cd oss && npm install` first.');
-  console.error(e.message);
+function resolveDep(specifier) {
+  for (const base of RESOLVE_BASES) {
+    try {
+      return createRequire(base)(specifier);
+    } catch {
+      // try the next base
+    }
+  }
+  return null;
+}
+
+const ajvModule = resolveDep('ajv/dist/2020.js');
+if (!ajvModule) {
+  console.error('ERROR: could not resolve ajv from this repo or any parent node_modules.');
+  console.error('Run `npm install` in the monorepo root (or in oss/) first.');
   process.exit(2);
 }
-try {
-  addFormats = require(resolve(REPO_ROOT, '../oss/node_modules/ajv-formats')).default;
-} catch {
-  addFormats = null; // optional
-}
+const Ajv2020 = ajvModule.default ?? ajvModule;
+
+const addFormatsModule = resolveDep('ajv-formats'); // optional
+const addFormats = addFormatsModule ? (addFormatsModule.default ?? addFormatsModule) : null;
 
 const SCHEMA_PATH = resolve(REPO_ROOT, 'schemas/v1/cli/provider.schema.json');
 const CLI_ROOT = resolve(REPO_ROOT, 'cli');
