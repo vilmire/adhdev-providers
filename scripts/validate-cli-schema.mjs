@@ -103,6 +103,23 @@ if (targets.length === 0) {
   process.exit(1);
 }
 
+// A full run must cover every production provider. Without this, a production
+// provider that disappears from cli/ (moved, renamed, accidentally deleted)
+// leaves the validator reporting "passed" over whatever remains — the same
+// vacuous-green shape as validating an empty set, just one level up. Only
+// asserted on a full run; an explicit single-provider invocation is a
+// deliberate subset.
+if (!requested.length) {
+  const missingProduction = [...PRODUCTION_PROVIDERS].filter(
+    (name) => !targets.some((t) => t.name === name),
+  );
+  if (missingProduction.length) {
+    console.error(`ERROR: production provider(s) absent from cli/: ${missingProduction.join(', ')}`);
+    console.error('A production provider must never silently drop out of validation.');
+    process.exit(1);
+  }
+}
+
 let failed = 0;
 const productionFailed = [];
 for (const entry of targets) {

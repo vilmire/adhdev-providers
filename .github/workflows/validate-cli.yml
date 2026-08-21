@@ -34,35 +34,15 @@ jobs:
       - name: Install ajv (minimal, isolated)
         run: npm install --prefix ci-deps --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
 
+      # This step used to carry an inline `node -e` copy of the validator. That
+      # copy had drifted: it looked only for the v0 `cli/<name>/provider.json`,
+      # but every CLI provider migrated to `provider.v1.json`, so it iterated 8
+      # directories, `continue`d on all 8, and reported `Failed: 0` while
+      # validating nothing. scripts/validate-cli-schema.mjs is the maintained
+      # implementation — it prefers v1 with a v0 fallback, fails closed on an
+      # empty target set, and asserts the production providers are present.
+      # Call it instead of re-implementing it here.
       - name: Validate all CLI provider manifests
-        run: |
-          node -e "
-            const Ajv = require(process.env.AJV_DIR + '/ajv/dist/2020.js').default;
-            const addFormats = require(process.env.AJV_DIR + '/ajv-formats').default;
-            const { readFileSync, readdirSync, statSync } = require('node:fs');
-            const { join } = require('node:path');
-            const schema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json','utf-8'));
-            const ajv = new Ajv({allErrors:true, strict:false});
-            addFormats(ajv);
-            const validate = ajv.compile(schema);
-            const production = new Set(['codex-cli','claude-cli','hermes-cli','antigravity-cli']);
-            let failed = 0;
-            for (const name of readdirSync('cli').filter(n => n !== '_shared')) {
-              const mp = join('cli', name, 'provider.json');
-              try { statSync(mp); } catch { continue; }
-              const data = JSON.parse(readFileSync(mp,'utf-8'));
-              const ok = validate(data);
-              const tier = production.has(name) ? '[production]' : '[experimental]';
-              if (ok) console.log('✓', tier.padEnd(15), name);
-              else {
-                failed++;
-                console.log('✗', tier.padEnd(15), name);
-                for (const e of validate.errors) console.log('  ', e.instancePath || '/', e.message);
-              }
-            }
-            console.log();
-            console.log('Failed:', failed);
-            process.exit(failed === 0 ? 0 : 1);
-          "
+        run: node scripts/validate-cli-schema.mjs
         env:
-          AJV_DIR: ${{ github.workspace }}/ci-deps/node_modules
+          NODE_PATH: ${{ github.workspace }}/ci-deps/node_modules
