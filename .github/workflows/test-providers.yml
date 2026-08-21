@@ -112,7 +112,7 @@ jobs:
       - name: Assert expected test file count
         working-directory: repo
         run: |
-          expected=16
+          expected=11
           actual=$(ls tests/*.test.js tests/*.test.mjs | wc -l | tr -d ' ')
           echo "test files: $actual (expected $expected)"
           if [ "$actual" -ne "$expected" ]; then

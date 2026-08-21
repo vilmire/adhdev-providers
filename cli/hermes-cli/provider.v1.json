@@ -133,15 +133,9 @@
   "compatibility": [
     {
       "ideVersion": ">=0.14.0",
-      "scriptDir": "scripts/1.0",
       "spec": "specs/4.0.json"
-    },
-    {
-      "ideVersion": ">=0.8.0",
-      "scriptDir": "scripts/1.0"
     }
   ],
-  "defaultScriptDir": "scripts/1.0",
   "settings": {
     "showCoordinatorSystemPrompt": {
       "type": "boolean",
