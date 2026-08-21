@@ -1,0 +1,8 @@
+Welcome to Hermes Agent! Type your message or /help for commands.
+● Reply with exactly OK and nothing else.
+Initializing agent...
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+OK
+╰──────────────────────────────────────────────────────────────────────────────╯
+⚕ gpt-5.4 │ 11.7K/1.1M │ [░░░░░░░░░░] 1% │
+❯

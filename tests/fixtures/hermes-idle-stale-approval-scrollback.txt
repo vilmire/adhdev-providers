@@ -1,0 +1,17 @@
+╭────────────────────────────────────────────────────────────╮
+│ ⚠️ Dangerous Command                                      │
+│                                                            │
+│ node -e "dangerous"                                       │
+│                                                            │
+│ ❯ Allow once                                               │
+│   Allow for this session                                   │
+│   Add to permanent allowlist                               │
+│   Deny                                                     │
+│   Show full command                                        │
+│                                                            │
+│ script execution via -e/-c flag                            │
+╰────────────────────────────────────────────────────────────╯
+history line 1
+history line 2
+Welcome to Hermes Agent! Type your message or /help for commands.
+❯

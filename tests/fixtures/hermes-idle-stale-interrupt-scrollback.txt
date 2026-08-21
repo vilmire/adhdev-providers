@@ -1,0 +1,30 @@
+⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel
+history line 1
+history line 2
+history line 3
+history line 4
+history line 5
+history line 6
+history line 7
+history line 8
+history line 9
+history line 10
+history line 11
+history line 12
+history line 13
+history line 14
+history line 15
+history line 16
+history line 17
+history line 18
+history line 19
+history line 20
+history line 21
+history line 22
+history line 23
+history line 24
+Welcome to Hermes Agent! Type your message or /help for commands.
+❯
+Resume this session with:
+hermes --resume 20260504_000000_abc123
+Session: 20260504_000000_abc123

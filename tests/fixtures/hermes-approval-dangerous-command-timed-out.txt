@@ -1,0 +1,11 @@
+╭────────────────────────────────────────────────╮
+│ ⚠️  Dangerous Command                          │
+│                                                │
+│ curl -fsS http://127.0.0.1:19280/api/cli/debug │
+│                                                │
+│ ⏱ Timeout — denying command                   │
+│ ACTION REQUIRED                               │
+│ ❯ Allow once                                  │
+│   Allow for this session                      │
+│   Copy                                        │
+╰────────────────────────────────────────────────╯

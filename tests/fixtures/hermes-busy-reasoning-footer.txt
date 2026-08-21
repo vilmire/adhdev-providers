@@ -1,0 +1,5 @@
+packages/web-core/src/components/dashboard/session-chat-tail-controller.ts packages/web-core/src/components/dashboard/conversation-message-snapshot.ts  0.3s
+┊ 📖 read      oss/packages/mcp-server/test/read-chat.test.ts  0.9s
+٩(๑❛ᴗ❛๑)۶ reasoning...  ⚕ gpt-5.5 │ 60.4K/272K │ [██░░░░░░░░] 22% │ 2m │ ⏱ 57s
+────────────────────────────────────────────────────────────────────────────────
+⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel

@@ -1,0 +1,13 @@
+╭────────────────────────────────────────────────╮
+│ ⚠️  Dangerous Command                          │
+│                                                │
+│ curl -sS --max-time 3 http://127.0.0.1:19280/api/status │
+│                                                │
+│ ❯ 1. Allow once                               │
+│   2. Allow for this session                   │
+╰────────────────────────────────────────────────╯
+
+  💻 curl -sS --max-time 3 http://127.0.0.1:19280/api/status  (20.0s)
+
+⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel
+────────────────────────────────────────────────────────────────────────────────

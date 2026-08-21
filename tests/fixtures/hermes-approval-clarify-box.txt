@@ -1,0 +1,11 @@
+● Delete the file /Users/vilmire/adhdev_delete_probe_2.txt and then reply with one short sentence confirming whether the delete succeeded.
+╭─ Hermes needs your input ───────────────────────────────────────────────────╮
+│ Deleting /Users/vilmire/adhdev_delete_probe_2.txt requires approval.        │
+│ Approve the delete?                                                         │
+│ ❯ Approve delete                                                            │
+│ Do not delete                                                               │
+│ Other (type your answer)                                                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+❓ Deleting /Users/vilmire/adhdev_delete_probe_2.txt requires approval. Approve the delete? ( )
+↑/↓ to select, Enter to confirm ()
+❯

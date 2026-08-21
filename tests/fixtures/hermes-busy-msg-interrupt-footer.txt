@@ -1,0 +1,4 @@
+╭─ ⚕ Hermes ───────────────────────────────────────────────────────────────────╮
+partial assistant output still streaming
+╰──────────────────────────────────────────────────────────────────────────────╯
+⚕ ❯ msg=interrupt · /queue · /bg · /steer · Ctrl+C cancel
