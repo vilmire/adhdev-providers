@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.2",
+  "providerVersion": "1.0.3",
   "disableUpstream": true,
   "binary": "grok",
   "spawn": {
