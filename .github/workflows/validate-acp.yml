@@ -1,0 +1,44 @@
+name: Validate ACP providers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'acp/**'
+      - 'schemas/v1/acp/**'
+      - 'scripts/validate-acp-schema.mjs'
+      - 'scripts/validate-provider-schema.mjs'
+      - '.github/workflows/validate-acp.yml'
+  pull_request:
+    paths:
+      - 'acp/**'
+      - 'schemas/v1/acp/**'
+      - 'scripts/validate-acp-schema.mjs'
+      - 'scripts/validate-provider-schema.mjs'
+      - '.github/workflows/validate-acp.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: false
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install ajv (minimal, isolated)
+        run: npm install --prefix ci-deps --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
+
+      # Same shape as validate-cli.yml: the maintained validator script is the
+      # single implementation (scripts/validate-provider-schema.mjs behind a
+      # thin acp entrypoint). It prefers provider.v1.json with a v0 fallback,
+      # fails closed on an empty target set, and asserts the anchor providers
+      # are present so a renamed/deleted directory cannot produce vacuous green.
+      - name: Validate all ACP provider manifests
+        run: node scripts/validate-acp-schema.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/ci-deps/node_modules

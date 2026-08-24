@@ -72,9 +72,11 @@ jobs:
           const channelLibPromise = import(pathToFileURL(join(process.cwd(), 'scripts/lib/provider-channels.mjs')).href);
 
           const cliSchema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json', 'utf-8'));
+          const acpSchema = JSON.parse(readFileSync('schemas/v1/acp/provider.schema.json', 'utf-8'));
           const ajv = new Ajv({ allErrors: true, strict: false });
           addFormats(ajv);
           const validateCli = ajv.compile(cliSchema);
+          const validateAcp = ajv.compile(acpSchema);
 
           const TIER_MAP = {
             'declarative-only': 'declarative-only',
@@ -102,12 +104,17 @@ jobs:
             const { computeProviderTreeDigest, DIGEST_ALGORITHM } = await channelLibPromise;
             const bundleDigest = computeProviderTreeDigest(category + '/' + type);
 
-            // Schema check (CLI only for now)
+            // Schema check (categories with a v1 schema)
             let schemaValid = true;
             if (category === 'cli') {
               schemaValid = validateCli(manifest);
               if (!schemaValid) {
                 console.log('  schema errors:', validateCli.errors?.map(e => e.message).join(', '));
+              }
+            } else if (category === 'acp') {
+              schemaValid = validateAcp(manifest);
+              if (!schemaValid) {
+                console.log('  schema errors:', validateAcp.errors?.map(e => e.message).join(', '));
               }
             }
 

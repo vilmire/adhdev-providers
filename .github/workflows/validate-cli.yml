@@ -7,12 +7,14 @@ on:
       - 'cli/**'
       - 'schemas/v1/cli/**'
       - 'scripts/validate-cli-schema.mjs'
+      - 'scripts/validate-provider-schema.mjs'
       - '.github/workflows/validate-cli.yml'
   pull_request:
     paths:
       - 'cli/**'
       - 'schemas/v1/cli/**'
       - 'scripts/validate-cli-schema.mjs'
+      - 'scripts/validate-provider-schema.mjs'
       - '.github/workflows/validate-cli.yml'
 
 jobs:
