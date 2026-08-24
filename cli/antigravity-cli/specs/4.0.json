@@ -22,7 +22,7 @@
       "from_bottom": 1
     },
     "modal": {
-      "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?",
+      "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?",
       "anchor_last": true
     },
     "body": {
@@ -170,7 +170,7 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Do you want to proceed\\?|Requesting permission for:"
+        "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
       }
     },
     {
@@ -202,7 +202,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:"
+                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
                 }
               },
               {
@@ -226,7 +226,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:"
+                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
                 }
               },
               {
@@ -262,7 +262,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:"
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
             }
           },
           {
@@ -296,7 +296,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:"
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
             }
           },
           {
