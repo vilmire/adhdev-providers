@@ -11,7 +11,7 @@
   "icon": "⚕",
   "status": "Beta",
   "details": "Terminal only",
-  "providerVersion": "1.0.7",
+  "providerVersion": "1.0.8",
   "contractVersion": 2,
   "engines": {
     "adhdev": "^1.0.0"
@@ -38,7 +38,6 @@
   "sendDelayMs": 500,
   "sendKey": "\r",
   "requirePromptEchoBeforeSubmit": true,
-  "allowInputDuringGeneration": true,
   "transcriptAuthority": "provider",
   "transcriptContext": "tail",
   "augmentStaleSnapshot": true,
