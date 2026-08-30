@@ -1,7 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const provider = require('../cli/antigravity-cli/provider.v1.json');
+const modelsFixture = fs.readFileSync(path.join(__dirname, 'fixtures/antigravity-models.txt'), 'utf8');
 
 // This file used to also drive cli/antigravity-cli/scripts/1.0/{detect_status,
 // parse_approval,parse_output,parse_session,scripts}.js. Those modules were
@@ -48,13 +51,26 @@ test('antigravity-cli provider declares CLI transcript logs as native history so
 // Guards the modelOptions list the launch path offers for agy. Kept in the
 // manifest test because SpecCliAdapter does not own model selection.
 test('antigravity-cli exposes Gemini 3.7 Flash reasoning variants in modelOptions', () => {
-  // modelOptions are the literal on-screen labels agy accepts via
-  // modelLaunchArgs ['--model', '{{model}}'], not slugs.
+  // modelOptions remain readable on-screen labels; agy --model accepts the
+  // stable slugs declared in modelLaunchValueMap.
   for (const expected of [
     'Gemini 3.7 Flash (High)',
     'Gemini 3.7 Flash (Medium)',
     'Gemini 3.7 Flash (Low)',
   ]) {
     assert.ok(provider.modelOptions.includes(expected), `modelOptions should include ${expected}`);
+    assert.match(provider.modelLaunchValueMap[expected], /^gemini-3\.7-flash-(?:high|medium|low)$/);
+  }
+});
+
+test('every Antigravity display label maps to the slug measured from agy models', () => {
+  const measured = new Map(modelsFixture.trim().split('\n').map((line) => {
+    const [, slug, label] = line.match(/^(\S+)\s{2,}(.+)$/) || [];
+    assert.ok(slug && label, `invalid agy models fixture line: ${line}`);
+    return [label, slug];
+  }));
+
+  for (const label of provider.modelOptions) {
+    assert.equal(provider.modelLaunchValueMap[label], measured.get(label), `agy slug mismatch for ${label}`);
   }
 });
