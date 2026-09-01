@@ -22,13 +22,15 @@
       "from_bottom": 1
     },
     "modal": {
-      "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?",
-      "anchor_last": true
+      "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use",
+      "anchor_last": true,
+      "anchor_miss": "empty"
     },
     "body": {
       "from_top": 0
     }
   },
+  "_onboarding_fallback_note": "AGY-ONBOARDING-RECURRENCE-GUARD (2026-09-01). Live first-run screens are anchored by their measured titles, 'Choose your color scheme:' and 'Terms of Service & Data Use'. Do not use the surrounding 'Welcome to Antigravity CLI!' banner: it also appears on normal ready screens. The patterns are deliberately unanchored because condition matches default to no multiline flag; ^/$ would bind to the entire section, not a screen line. Known onboarding screens route directly to approval from boot/signing_in/busy. Separate timeouts promote a stuck signing_in screen at 60s, or a quiet busy screen with no ready footer or live activity marker at 90s, to approval even if a future vendor wording change defeats the anchors. Both bounds are well below the native-source consume watchdog at 180s. The busy timeout requires five seconds of whole-screen stability and vetoes the ready footer, esc-to-cancel, and the shipping braille activity marker, so normal completion and an active long-running turn keep their existing paths.",
   "_busyidle_fallback_note": "BUSY-IDLE-BOUNDED-FALLBACK (AGY-SPEC-BUSY-WEDGE RCA, 2026-07-26). Same wedge family as the codex-cli fix: after a completed turn, a benign repaint inside the cursor_above:4 window keeps resetting the stable clock faster than stable_ms=1500, so the strict all(4) never passes and the session wedges in busy forever (the wake scheduler keeps re-evaluating; the stable leaf is the only blocker). The exact benign ticker string is NOT yet captured, so NO speculative ignore_lines is added. busy→idle is now an `any` of two arms: arm 1 is the ORIGINAL strict guard, byte-equivalent (not approval modal, not footer `esc to cancel`, footer `? for shortcuts`, stable 1500/cursor_above 4) so quiet completions still idle at ~1.5s; arm 2 is a bounded fallback — the same modal/esc-to-cancel vetoes, the same `? for shortcuts` requirement (load-bearing: it is present during generating and approval too, so it is NOT an idle signal on its own), PLUS a veto on the live activity marker reusing the idle→busy braille `Generating|Running|Thinking` regex on the same body section (drift-free), PLUS elapsed_ms:60000 — so with no active marker and no modal, idle commits within 60s of busy entry even if the stable region never settles. Safety invariants: approval modal (also caught by the priority-100 →approval / priority-110 →trust transitions first), footer `esc to cancel`, or a live braille activity marker each veto BOTH arms (no false idle during generation/approval); the fallback never consults transcript signals (final_assistant_present is NOT used). Known conservative gap: a STALE braille line lingering in the viewport scrollback also vetoes arm 2 — that fails safe (stays busy), never false-idle.",
   "states": [
     {
@@ -154,8 +156,17 @@
       }
     },
     {
+      "label": "signing_in→approval-timeout",
+      "from": "signing_in",
+      "to": "approval",
+      "priority": 90,
+      "when": {
+        "elapsed_ms": 60000
+      }
+    },
+    {
       "label": "→trust",
-      "from": ["starting", "idle", "busy"],
+      "from": ["starting", "signing_in", "idle", "busy"],
       "to": "trust",
       "priority": 110,
       "when": {
@@ -165,12 +176,12 @@
     },
     {
       "label": "→approval",
-      "from": ["starting", "idle", "busy"],
+      "from": ["starting", "signing_in", "idle", "busy"],
       "to": "approval",
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
+        "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use"
       }
     },
     {
@@ -191,6 +202,40 @@
       }
     },
     {
+      "label": "busy→approval-timeout",
+      "from": "busy",
+      "to": "approval",
+      "priority": 90,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "footer",
+              "matches": "esc to cancel"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "\\? for shortcuts"
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+            }
+          },
+          {
+            "stable_ms": 5000
+          },
+          {
+            "elapsed_ms": 90000
+          }
+        ]
+      }
+    },
+    {
       "label": "busy→idle",
       "from": "busy",
       "to": "idle",
@@ -202,7 +247,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
+                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use"
                 }
               },
               {
@@ -226,7 +271,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
+                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use"
                 }
               },
               {
@@ -262,7 +307,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use"
             }
           },
           {
@@ -296,7 +341,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?"
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Choose your color scheme:|Terms of Service & Data Use"
             }
           },
           {

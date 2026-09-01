@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.8",
+  "providerVersion": "1.2.9",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
