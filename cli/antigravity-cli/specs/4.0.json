@@ -71,6 +71,7 @@
           "key_for_index": "{index}\r",
           "min_count": 2,
           "select_mode": "arrow_keys",
+          "cursor_marker": "❯›",
           "continuation_lines": true
         }
       }
@@ -92,6 +93,7 @@
           "key_for_index": "{index}\r",
           "min_count": 2,
           "select_mode": "arrow_keys",
+          "cursor_marker": "❯›",
           "continuation_lines": true
         }
       }
