@@ -2,7 +2,7 @@
   "$schema": "https://registry.adhf.dev/schemas/v1/channels/channel-manifest.schema.json",
   "schemaVersion": 1,
   "channel": "preview",
-  "publishedAt": "2026-09-01T05:40:52.317Z",
+  "publishedAt": "2026-09-08T07:29:04.141Z",
   "providers": [
     {
       "providerType": "agentpool-acp",
@@ -45,11 +45,11 @@
     },
     {
       "providerType": "antigravity-cli",
-      "providerVersion": "1.2.9",
+      "providerVersion": "1.2.10",
       "category": "cli",
-      "bundleDigest": "sha256:13b9b888dc596438e1f62a605f73966fc170c4a7c74e1d1f35b4842af63e1ffa",
+      "bundleDigest": "sha256:e6f0f59e9792e3145593393bde08e925dcb9952d9ac4f3fa8d3aab4230035287",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-09-01T05:40:52.317Z",
+      "publishedAt": "2026-09-08T07:29:04.141Z",
       "name": "Antigravity CLI",
       "compatibility": {
         "ideVersion": [
