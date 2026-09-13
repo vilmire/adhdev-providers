@@ -1,6 +1,6 @@
 # ADHDev Provider Compatibility Matrix
 
-> **Last updated:** 2026-04-09  
+> **Last updated:** 2026-09-13  
 > **How to contribute:** Submit a PR updating the status for your OS/version. See [Status Legend](#status-legend) below.
 
 This file is the evidence layer. Built-in registry presence alone is not enough to claim support.
@@ -156,19 +156,23 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 ## CLI Providers
 
 > Terminal-based agents spawned as child processes, controlled via PTY.
+>
+> The table below is scoped to the current built-in `cli/` inventory (8 adapters). Aider, Gemini CLI, GitHub Copilot CLI, and Goose are no longer shipped as built-in CLI providers — they connect as **ACP (stdio) agents** instead; see the ACP Providers section below for their compatibility rows.
 
 ### OS Compatibility
 
-| Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
-|----------|-------------|-------|---------|-------|-----------------|-------|
-| `aider-cli` | Aider | ❓ | ❓ | ❓ | | |
-| `claude-cli` | Claude Code | ⚠️ | ❓ | ❓ | Claude Code `2.1.84` | macOS partial: launch, saved-session listing, resume launch, daemon-restart reconnect, stop, and live readback validated; short exact-answer prompt-echo trimming was fixed during validation |
-| `codex-cli` | Codex CLI | ⚠️ | ❓ | ❓ | Codex CLI `0.118.0` | macOS partial: fresh launch, live send/read, saved-session resume, daemon-restart reconnect, and stop validated after tightening onboarding-screen parsing, provider-session recovery, and history replay dedupe; older polluted transcripts may need one-time compaction |
-| `cursor-cli` | Cursor CLI | ❓ | ❓ | ❓ | | |
-| `gemini-cli` | Gemini CLI | ❓ | ❓ | ❓ | | |
-| `github-copilot-cli` | GitHub Copilot CLI | ❓ | ❓ | ❓ | | |
-| `goose-cli` | Goose | ❓ | ❓ | ❓ | | |
-| `opencode-cli` | OpenCode CLI | ❓ | ❓ | ❓ | | |
+`Registry Status` reflects adapter maturity as declared in `registry.json` (`Stable`/`Beta`) — this is a separate axis from the `✅/⚠️/❓` verification columns, which require the explicit promotion evidence described above. A `Stable` registry status does **not** imply `✅ Tested & working`; per the 2026-08-03 owner decision, verification status for every provider was reset and is `❓ Untested` pending fresh re-validation, regardless of registry maturity.
+
+| Provider | Display Name | Registry Status | macOS | Windows | Linux | Tested Versions | Notes |
+|----------|-------------|------------------|-------|---------|-------|-----------------|-------|
+| `claude-cli` | Claude Code | Stable | ⚠️ | ❓ | ❓ | Claude Code `2.1.84` | macOS partial: launch, saved-session listing, resume launch, daemon-restart reconnect, stop, and live readback validated; short exact-answer prompt-echo trimming was fixed during validation |
+| `codex-cli` | Codex CLI | Stable | ⚠️ | ❓ | ❓ | Codex CLI `0.118.0` | macOS partial: fresh launch, live send/read, saved-session resume, daemon-restart reconnect, and stop validated after tightening onboarding-screen parsing, provider-session recovery, and history replay dedupe; older polluted transcripts may need one-time compaction |
+| `cursor-cli` | Cursor Agent | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
+| `antigravity-cli` | Antigravity CLI | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
+| `hermes-cli` | Hermes Agent | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
+| `kimi` | Kimi Code | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
+| `opencode` | OpenCode | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
+| `grok-cli` | Grok CLI | Stable | ❓ | ❓ | ❓ | | not yet re-verified |
 
 ### Supported Operations — CLI
 
@@ -182,7 +186,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 
 ### Saved Session / Resume Support — CLI
 
-> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history.
+> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history. This table predates the current `cli/` vs `acp/` split for some tools (e.g. `goose-cli`, `opencode-cli`, `gemini-cli`, `aider-cli` now ship as ACP adapters) — the resume-behavior evidence itself remains valid regardless of which category currently hosts the tool.
 
 | Provider | CLI resume by explicit session ID | New session ID strategy | When session ID becomes available | ADHDev extraction status | Tested On | Notes |
 |----------|-----------------------------------|--------------------------|-----------------------------------|--------------------------|-----------|-------|
