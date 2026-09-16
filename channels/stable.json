@@ -497,9 +497,9 @@
     },
     {
       "providerType": "grok-cli",
-      "providerVersion": "1.0.3",
+      "providerVersion": "1.0.4",
       "category": "cli",
-      "bundleDigest": "sha256:c4421b1a0d2917bf8b2191f75d42417a2150ad232845cf2a9aff9cd4c946ac3f",
+      "bundleDigest": "sha256:266f3a3d872a1bccb6edc4b01af3bd98dc33446622effa8ec61db35c0da24ea3",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
       "publishedAt": "2026-09-01T05:40:52.317Z",
       "name": "Grok CLI",
@@ -510,7 +510,7 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:c4421b1a0d2917bf8b2191f75d42417a2150ad232845cf2a9aff9cd4c946ac3f",
+        "bundleDigest": "sha256:266f3a3d872a1bccb6edc4b01af3bd98dc33446622effa8ec61db35c0da24ea3",
         "promotedAt": "2026-09-01T05:40:52.317Z"
       }
     },

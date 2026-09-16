@@ -24,6 +24,9 @@
     "Verified live: a bare number key both selects AND confirms (no Enter), so",
     "buttons use select_mode 'index' with key_for_index '{index}' and no \\r."
   ],
+  "pre_launch_trust": {
+    "scheme": "grok_toml_file"
+  },
   "sections": {
     "footer": {
       "anchor": "^\\s*(?:\\d+/\\d+:select|Shift\\+Tab:mode|Enter:send|1/\\d+:select)",
