@@ -5,6 +5,10 @@
   "binary": "codex",
   "cli_version_range": ">=0.137.0",
   "spawn_args": [],
+  "_pre_launch_trust_note": "MEASURED against live codex 0.154.0 (2026-09-19). A delegated worker gets a PRIVATE CODEX_HOME whose directory name carries a per-session hash, so codex's project-trust store is empty on EVERY launch and the 'Do you trust the contents of this directory?' modal fires on EVERY launch. The FSM does detect it and mesh_approve can answer it, but that makes a HUMAN approval a standing precondition for automated work — live 2026-09-19 session 10e8f7ba sat in `trust` for 18+ minutes with two dispatched task bodies queued behind it. Granting the folder before spawn removes the prompt. Format verified by answering the real prompt with CODEX_HOME pointed at an empty dir: codex writes `[projects.\"<realpath>\"]` / `trust_level = \"trusted\"` into $CODEX_HOME/config.toml. That is NOT grok's shape (`[folders.\"…\"]` / `trusted = true`), hence its own scheme. The writer APPENDS one scoped table and never rewrites the file, because [mcp_servers.*] lives in the same config.toml and the private root exists precisely to keep the owner's MCP table out of the worker.",
+  "pre_launch_trust": {
+    "scheme": "codex_toml_file"
+  },
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200
