@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.22",
+  "providerVersion": "1.1.23",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -331,7 +331,8 @@
           "flag": "-c",
           "key": "mcp_servers.adhdev-mesh.enabled",
           "value": "false",
-          "dedupeKey": "mcp_servers.adhdev-mesh"
+          "dedupeKey": "mcp_servers.adhdev-mesh",
+          "withholdWithPrivateHome": true
         }
       ]
     }
