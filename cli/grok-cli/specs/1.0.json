@@ -91,8 +91,15 @@
       "modal_kind": "confirm",
       "extract": {
         "title": {
-          "section": "modal",
-          "first_line": true
+          "regex": "Do you trust the contents of this directory\\?",
+          "flags": "i"
+        },
+        "buttons": {
+          "pattern": "^\\s*(\\S[^\\n]*?)\\s{2,}([yn])\\s*$",
+          "flags": "gm",
+          "label_group": 1,
+          "key_group": 2,
+          "min_count": 2
         }
       }
     },
