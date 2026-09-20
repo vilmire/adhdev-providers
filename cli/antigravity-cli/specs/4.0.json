@@ -80,7 +80,7 @@
       "id": "trust",
       "label": "Trust required",
       "modal": true,
-      "modal_kind": "approval",
+      "modal_kind": "confirm",
       "extract": {
         "title": {
           "section": "modal",
@@ -88,13 +88,12 @@
         },
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[❯›>]\\s*)?(\\d+)\\.\\s*(\\S.+?)\\s*$",
+          "pattern": "^\\s*(?:[❯›>]\\s*)?((?:Yes|No)\\b[^\\n]*?)\\s*$",
           "flags": "gm",
-          "key_for_index": "{index}\r",
+          "label_group": 1,
+          "key_for_index": "\r",
           "min_count": 2,
-          "select_mode": "arrow_keys",
-          "cursor_marker": "❯›",
-          "continuation_lines": true
+          "select_mode": "arrow_keys"
         }
       }
     }
