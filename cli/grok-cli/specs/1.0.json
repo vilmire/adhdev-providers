@@ -107,6 +107,11 @@
       "id": "approval_vanished",
       "label": "Approval clearing",
       "status": "approval"
+    },
+    {
+      "id": "signing_in",
+      "label": "Waiting for browser sign-in",
+      "status": "waiting_external"
     }
   ],
   "transitions": [
@@ -119,11 +124,61 @@
       }
     },
     {
+      "label": "→signing_in",
+      "from": [
+        "starting",
+        "idle",
+        "busy",
+        "signing_in"
+      ],
+      "to": "signing_in",
+      "priority": 130,
+      "when": {
+        "any": [
+          {
+            "matches": "Approve in your browser",
+            "flags": "i"
+          },
+          {
+            "matches": "Waiting for approval\\.\\.\\.",
+            "flags": "i"
+          }
+        ]
+      }
+    },
+    {
+      "label": "signing_in→idle",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "matches": "Approve in your browser",
+              "flags": "i"
+            }
+          },
+          {
+            "not": {
+              "matches": "Waiting for approval\\.\\.\\.",
+              "flags": "i"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "Ctrl\\+x:shortcuts"
+          }
+        ]
+      }
+    },
+    {
       "label": "→trust",
       "from": [
         "starting",
         "idle",
-        "busy"
+        "busy",
+        "signing_in"
       ],
       "to": "trust",
       "priority": 120,
