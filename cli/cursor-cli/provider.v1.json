@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.6",
+  "providerVersion": "1.0.7",
   "compatibility": [
     {
       "ideVersion": ">=2026.0.0",
@@ -116,6 +116,15 @@
     "glm-5.2-high",
     "glm-5.2-max"
   ],
+  "modelDiscovery": {
+    "kind": "command",
+    "argv": ["models"],
+    "parse": {
+      "format": "lines",
+      "linePattern": "^(?<slug>[A-Za-z0-9][\\w./-]*)\\s+-\\s+(?<label>.+?)\\s*$"
+    },
+    "ttlMs": 86400000
+  },
   "sendDelayMs": 1200,
   "sendKey": "\r",
   "submitStrategy": "wait_for_echo",

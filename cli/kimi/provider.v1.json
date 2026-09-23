@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.13",
+  "providerVersion": "1.0.14",
   "compatibility": [
     {
       "ideVersion": ">=0.20.0",
@@ -74,6 +74,15 @@
     "kimi-code/kimi-for-coding-highspeed",
     "kimi-code/k3"
   ],
+  "modelDiscovery": {
+    "kind": "file",
+    "path": "~/.kimi-code/config.toml",
+    "parse": {
+      "format": "toml-table-keys",
+      "tableHeaderPattern": "^\\[models\\.\"(?<slug>[^\"]+)\"\\]"
+    },
+    "ttlMs": 86400000
+  },
   "sendDelayMs": 1200,
   "sendKey": "\r",
   "submitStrategy": "wait_for_echo",

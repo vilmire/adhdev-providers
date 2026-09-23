@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.6",
+  "providerVersion": "1.2.7",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -100,6 +100,10 @@
     "sonnet",
     "haiku"
   ],
+  "modelDiscovery": {
+    "kind": "none",
+    "reason": "claude-cli ships no model-listing subcommand, and its model options are stable aliases (opus/sonnet/haiku) rather than version slugs, so they do not drift the way other providers' lists do."
+  },
   "thinkingLaunchArgs": [
     "--effort",
     "{{level}}"
