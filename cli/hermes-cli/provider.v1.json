@@ -11,7 +11,7 @@
   "icon": "⚕",
   "status": "Beta",
   "details": "Terminal only",
-  "providerVersion": "1.0.8",
+  "providerVersion": "1.0.9",
   "contractVersion": 2,
   "engines": {
     "adhdev": "^1.0.0"
@@ -25,6 +25,10 @@
     ],
     "shell": true,
     "env": {}
+  },
+  "modelDiscovery": {
+    "kind": "none",
+    "reason": "hermes-cli selects its model interactively inside the TUI and exposes no listing command, so this machine cannot enumerate its models outside a live session."
   },
   "thinkingControlId": "reasoning",
   "thinkingLevelOptions": [

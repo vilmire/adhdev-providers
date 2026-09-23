@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.6",
+  "providerVersion": "1.0.7",
   "disableUpstream": true,
   "binary": "grok",
   "spawn": {
@@ -97,6 +97,16 @@
     "grok-4.6",
     "grok-4.5"
   ],
+  "modelDiscovery": {
+    "kind": "command",
+    "argv": ["models"],
+    "parse": {
+      "format": "lines",
+      "linePattern": "^\\s*[*-]\\s+(?<slug>[A-Za-z0-9][\\w.-]*)",
+      "defaultMarker": "\\(default\\)"
+    },
+    "ttlMs": 86400000
+  },
   "thinkingLaunchArgs": [
     "--reasoning-effort",
     "{{level}}"

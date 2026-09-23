@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.24",
+  "providerVersion": "1.1.25",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -77,6 +77,19 @@
     "gpt-5-codex",
     "gpt-5-codex-mini"
   ],
+  "modelDiscovery": {
+    "kind": "command",
+    "argv": ["debug", "models"],
+    "parse": {
+      "format": "json",
+      "itemsPath": "models",
+      "slugField": "slug",
+      "labelField": "display_name",
+      "filter": { "visibility": "list" },
+      "priorityField": "priority"
+    },
+    "ttlMs": 86400000
+  },
   "thinkingLaunchArgs": [
     "-c",
     "model_reasoning_effort={{level}}"

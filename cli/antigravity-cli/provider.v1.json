@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.11",
+  "providerVersion": "1.2.12",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -85,6 +85,16 @@
     "Claude Opus 4.6 (Thinking)",
     "GPT-OSS 120B (Medium)"
   ],
+  "modelDiscovery": {
+    "kind": "command",
+    "argv": ["models"],
+    "parse": {
+      "format": "lines",
+      "linePattern": "^(?<slug>[A-Za-z0-9][\\w.-]*)\\t(?<label>.+?)\\s*$"
+    },
+    "ttlMs": 86400000,
+    "timeoutMs": 30000
+  },
   "resume": {
     "supported": true,
     "stopStrategy": "ctrl_c",
