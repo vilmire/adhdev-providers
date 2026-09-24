@@ -8,6 +8,10 @@
     "--permission-mode",
     "default"
   ],
+  "_pre_launch_trust_note": "Added 2026-09-25: a delegated worker on a fresh WORKTREE clone always hit 'Is this a project you trust' and depended on the reactive auto-approve modal path (a standing human-approval precondition for automated work, same failure class as CODEX-WORKER-TRUST-STALL). claude-cli has NO worker-private HOME (absent from WORKER_PRIVATE_HOME_SPECS in mesh/worker-mcp-isolation.ts), so a delegated worker runs with the REAL HOME and this scheme always targets the owner's actual ~/.claude.json — verified live against this machine's own file: top-level `projects` is a JSON OBJECT keyed by the absolute realpath, each value carrying a boolean `hasTrustDialogAccepted` among many session-history fields Claude Code itself owns. The writer (providers/claude-workspace-trust.ts / spec/pre-launch-trust.ts) is therefore sparse: it sets ONLY that one field on the one key for this workspace, never touching sibling entries or other fields on the same entry.",
+  "pre_launch_trust": {
+    "scheme": "claude_json_projects"
+  },
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200,

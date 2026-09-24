@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.8",
+  "providerVersion": "1.0.9",
   "compatibility": [
     {
       "ideVersion": ">=1.0.0",
@@ -33,6 +33,42 @@
     "args": [],
     "shell": false
   },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "yolo",
+        "label": "Auto-approve (bypass permissions)",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "명시적으로 거부되지 않은 모든 권한을 자동 승인합니다. 신뢰된 워크스페이스에서만.",
+        "launchArgs": [
+          "--auto"
+        ],
+        "removeArgs": [
+          "--auto"
+        ]
+      }
+    ]
+  },
+  "approvalPositiveHints": [
+    "allow once",
+    "confirm",
+    "allow",
+    "yes",
+    "approve",
+    "accept",
+    "run",
+    "proceed",
+    "continue",
+    "trust"
+  ],
   "sendDelayMs": 1200,
   "sendKey": "\r",
   "submitStrategy": "wait_for_echo",
