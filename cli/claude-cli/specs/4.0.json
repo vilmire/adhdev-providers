@@ -42,6 +42,7 @@
       "from_bottom": 12
     }
   },
+  "_end_anchor_note": "busy→idle (transitions[4]) body regex: the completion-summary line `✻ … for Ns` must be followed only by non-activity lines up to the END OF THE SECTION. That end anchor used to be a bare `$`, which is correct without the m flag (JS `$` then matches only at end of input) but tripped the engine's spec lint (`uses ^ or $ without the m flag`) on every session start. It is now spelled `(?![\\s\\S])` — byte-for-byte the same end-of-input semantics, lint-clean. Do NOT fix the lint by adding the m flag instead: with m, `$` matches at the end of the summary line itself, the continuation clause becomes optional, and a stale `✻ … for Ns` line above a live spinner would read as idle.",
   "states": [
     {
       "id": "starting",
@@ -220,7 +221,7 @@
           },
           {
             "section": "body",
-            "matches": "✻\\s+\\w[^\\n]*?\\bfor\\s+\\d+[smh](?:\\s+\\d+[smh])*(?![^\\n]*\\btokens?\\b)(?![^\\n]*[↑↓])[^\\n]*(?:\\n(?![^\\n]*(?:[✢✳✶✽✷✸✹⠀-⣿]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.)|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))[^\\n]*)*$"
+            "matches": "✻\\s+\\w[^\\n]*?\\bfor\\s+\\d+[smh](?:\\s+\\d+[smh])*(?![^\\n]*\\btokens?\\b)(?![^\\n]*[↑↓])[^\\n]*(?:\\n(?![^\\n]*(?:[✢✳✶✽✷✸✹⠀-⣿]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.)|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))[^\\n]*)*(?![\\s\\S])"
           },
           {
             "stable_ms": 8000,
