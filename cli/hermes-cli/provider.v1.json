@@ -11,7 +11,7 @@
   "icon": "⚕",
   "status": "Beta",
   "details": "Terminal only",
-  "providerVersion": "1.0.9",
+  "providerVersion": "1.0.10",
   "contractVersion": 2,
   "engines": {
     "adhdev": "^1.0.0"
@@ -25,6 +25,30 @@
     ],
     "shell": true,
     "env": {}
+  },
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "yolo",
+        "label": "Bypass dangerous-command approvals",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "위험한 명령 승인 프롬프트를 모두 우회합니다. 신뢰된 워크스페이스에서만.",
+        "launchArgs": [
+          "--yolo"
+        ],
+        "removeArgs": [
+          "--yolo"
+        ]
+      }
+    ]
   },
   "modelDiscovery": {
     "kind": "none",

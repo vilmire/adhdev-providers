@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.13",
+  "providerVersion": "1.2.14",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -43,6 +43,45 @@
     "trust",
     "allow"
   ],
+  "autoApproveModes": {
+    "default": "pty-parse",
+    "modes": [
+      {
+        "id": "pty-parse",
+        "label": "PTY parse (interactive)",
+        "strategy": "pty-parse-default",
+        "risk": "safe"
+      },
+      {
+        "id": "accept-edits",
+        "label": "Accept edits",
+        "strategy": "launch-args",
+        "risk": "caution",
+        "warning": "파일 편집을 자동 수락합니다",
+        "launchArgs": [
+          "--mode",
+          "accept-edits"
+        ],
+        "removeArgs": [
+          "--mode",
+          "accept-edits"
+        ]
+      },
+      {
+        "id": "yolo",
+        "label": "Bypass permissions",
+        "strategy": "launch-args",
+        "risk": "dangerous",
+        "warning": "모든 도구 호출 권한 확인을 우회합니다. 신뢰된 워크스페이스에서만.",
+        "launchArgs": [
+          "--dangerously-skip-permissions"
+        ],
+        "removeArgs": [
+          "--dangerously-skip-permissions"
+        ]
+      }
+    ]
+  },
   "timeouts": {
     "idleFinishConfirm": 5000,
     "statusActivityHold": 5000
