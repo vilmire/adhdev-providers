@@ -281,14 +281,16 @@
       "path": "${HERMES_HOME:-~/.hermes}/state.db",
       "session_query": "SELECT id FROM sessions WHERE source = 'cli' AND EXISTS (SELECT 1 FROM messages m WHERE m.session_id = sessions.id) AND started_at >= ? - 2 ORDER BY started_at DESC LIMIT 1",
       "session_cluster_query": "WITH RECURSIVE up(id) AS (SELECT id FROM sessions WHERE id = ? UNION SELECT s.parent_session_id FROM sessions s JOIN up ON s.id = up.id WHERE s.parent_session_id IS NOT NULL), cluster(id) AS (SELECT id FROM up UNION SELECT s.id FROM sessions s JOIN cluster ON s.parent_session_id = cluster.id) SELECT id FROM cluster",
-      "message_query": "SELECT role, COALESCE(NULLIF(content, ''), tool_calls) AS content, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND ((content IS NOT NULL AND content != '') OR (tool_calls IS NOT NULL AND tool_calls != '')) AND role IN ('user', 'assistant', 'system', 'tool') ORDER BY timestamp ASC, id ASC",
+      "message_query": "SELECT role, CASE WHEN role = 'assistant' AND (content IS NULL OR content = '') AND tool_calls IS NOT NULL AND tool_calls != '' THEN 'tool_call' ELSE role END AS block_type, COALESCE(NULLIF(content, ''), tool_calls) AS content, json_extract(tool_calls, '$[0].function.name') AS tool_name, json_extract(tool_calls, '$[0].function.arguments') AS tool_args, CAST(timestamp * 1000 AS INTEGER) AS ts_ms FROM messages WHERE session_id = ? AND ((content IS NOT NULL AND content != '') OR (tool_calls IS NOT NULL AND tool_calls != '')) AND role IN ('user', 'assistant', 'system', 'tool') ORDER BY timestamp ASC, id ASC",
       "message_map": {
         "role": "$.role",
         "content": "$.content",
         "timestamp_ms": "$.ts_ms",
         "tools": {
-          "block_type": "$.role",
-          "call_types": [],
+          "block_type": "$.block_type",
+          "call_types": ["tool_call"],
+          "call_name": "$.tool_name",
+          "call_args": "$.tool_args",
           "result_types": ["tool"],
           "result_content": "$.content"
         }
