@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.25",
+  "providerVersion": "1.1.26",
   "binary": "codex",
   "spawn": {
     "command": "codex",
