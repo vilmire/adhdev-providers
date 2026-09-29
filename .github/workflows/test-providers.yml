@@ -6,7 +6,7 @@ name: Provider tests
 # removal) breaks tests/ and nobody notices, because nothing ran them.
 #
 # That is not hypothetical. When the legacy CLI script engine was removed
-# (adhdev oss 48e5ed1a deleted every cli/*/scripts/1.0 except hermes-cli), nine
+# (adhdev oss 48e5ed1a deleted every cli/*/scripts/1.0), nine
 # test files started dying at their first require() with MODULE_NOT_FOUND and
 # stayed dead for months. No workflow here executed tests/ — validate-cli.yml
 # schema-checks manifests, validate-channels.yml recomputes digests, and the
@@ -28,7 +28,6 @@ on:
     paths:
       - 'tests/**'
       - 'cli/**'
-      - 'acp/**'
       - 'ide/**'
       - 'extension/**'
       - 'channels/**'
@@ -39,7 +38,6 @@ on:
     paths:
       - 'tests/**'
       - 'cli/**'
-      - 'acp/**'
       - 'ide/**'
       - 'extension/**'
       - 'channels/**'

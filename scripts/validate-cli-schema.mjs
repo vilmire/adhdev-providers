@@ -4,7 +4,7 @@
  *
  * Validates every provider.v1.json under cli/ against
  * schemas/v1/cli/provider.schema.json. The actual logic lives in
- * validate-provider-schema.mjs (category-generic) so cli and acp validation
+ * validate-provider-schema.mjs (category-generic) so validation
  * cannot drift apart; this wrapper preserves the historical CLI contract
  * (invoked by .github/workflows/validate-cli.yml).
  *

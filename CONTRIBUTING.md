@@ -12,7 +12,7 @@ export, what input it receives, and what it returns. It exists so you
 do not have to read the daemon-core source to get started.
 
 If you are looking at the implementations of the 4 production CLI
-providers (codex, claude, antigravity, hermes), the line-level audit
+providers (codex, claude, antigravity), the line-level audit
 in [`docs/provider-contract/cli/audit-cli-v1.md`](./docs/provider-contract/cli/audit-cli-v1.md)
 tells you which parts of each provider follow standard patterns
 (reusable in your own provider) vs which are provider-specific quirks.
@@ -86,10 +86,6 @@ touch ide/my-ide/provider.json
 # CLI agent
 mkdir -p cli/my-cli
 touch cli/my-cli/provider.json
-
-# ACP agent
-mkdir -p acp/my-agent
-touch acp/my-agent/provider.json
 
 # VS Code extension
 mkdir -p extension/my-ext/scripts/1.0
@@ -248,7 +244,6 @@ Good promotion PRs say:
 | **IDE** | `ide/antigravity/` | `compatibility` matrix, versioned scripts |
 | **IDE (webview)** | `ide/kiro/` | `webviewMatchText`, `webview*` scripts |
 | **CLI** | `cli/gemini-cli/` | `aliases`, spawn config |
-| **ACP** | `acp/gemini-cli/` | `auth`, `spawn`, `settings` |
 | **Extension** | `extension/cline/` | `extensionIdPattern`, webview |
 
 ---

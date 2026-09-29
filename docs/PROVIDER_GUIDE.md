@@ -1,6 +1,6 @@
 # ADHDev Provider Creation Guide
 
-> Complete guide for adding new IDE, Extension, CLI, and ACP providers to ADHDev.
+> Complete guide for adding new IDE, Extension, and CLI providers to ADHDev.
 > In most cases you can create `provider.json` + scripts without TypeScript changes, but that only adds inventory. It does not automatically make the provider verified support.
 > For promotion work, follow the evidence-first workflow in `CONTRIBUTING.md` and update `COMPATIBILITY.md` conservatively.
 
@@ -24,7 +24,7 @@ Use this default:
 - repeatedly validated with documented caveats: `verified`
 
 ```
-provider.js created (ide/cli/extension/acp)
+provider.js created (ide/cli/extension)
     │
     ▼
 ProviderLoader.loadAll()  ← 3-tier priority loading
@@ -35,7 +35,7 @@ ProviderLoader.loadAll()  ← 3-tier priority loading
     │
     ├─ registerToDetector()  ← IDE: installation detection (paths, cli)
     ├─ getCdpPortMap()       ← IDE: CDP port auto-assignment
-    ├─ getCliDetectionList() ← CLI/ACP: installation detection (spawn.command)
+    ├─ getCliDetectionList() ← CLI: installation detection (spawn.command)
     ├─ resolveAlias()        ← alias resolution ('claude' → 'claude-cli')
     └─ fetchLatest()         ← GitHub tarball auto-download
 ```
@@ -87,7 +87,7 @@ providers/_builtin/ide/
 │   └── provider.json    ← infrastructure only (scripts not yet implemented)
 └── [your-ide]/          ← new provider location
     ├── provider.json    ← required
-    └── scripts.js       ← required for IDE/Extension, not needed for CLI/ACP
+    └── scripts.js       ← required for IDE/Extension, not needed for CLI
 ```
 
 ---
@@ -455,8 +455,8 @@ Each IDE has different approval UI, so each provider's readChat must detect appr
 ```
 daemon receives command (readChat, sendMessage, etc.)
   │
-  ├─ provider.category === 'cli' or 'acp'?
-  │   └─ CLI/ACP adapter (stdin/stdout JSON-RPC)
+  ├─ provider.category === 'cli'?
+  │   └─ CLI adapter (PTY)
   │
   ├─ provider.category === 'extension'?
   │   └─ AgentStream → webview iframe execution
@@ -679,14 +679,11 @@ After completing a new provider, verify all items below:
 | **Webview** | [kiro/provider.js] | webviewMatchText + webview* script pattern |
 | **Webview** | [pearai/provider.js] | webview iframe-based chat UI |
 | **File separation** | [trae/provider.js] | webviewMatchText + mainframe script hybrid |
-| **ACP** | [gemini-cli/provider.js] | ACP + env_var auth + agent auth |
-| **ACP** | [goose/provider.js] | ACP + terminal auth |
 
 > [!TIP]
 > When writing a new provider, **copy Cursor's `provider.json` + `scripts.js`** and modify selectors — it's the fastest approach.
 > For VS Code-based IDEs, the DOM structure is similar, so just change a few selectors.
 > For webview-based IDEs, refer to **Kiro's provider.json**.
-> For ACP agents, refer to **gemini-cli's provider.json**.
 
 ---
 
@@ -702,7 +699,6 @@ adhdev daemon --dev
   └─ GET /api/providers/versions
       ├─ IDE:  cli --version → Info.plist fallback (macOS)
       ├─ CLI:  binary --version → -V → -v (auto-fallback)
-      ├─ ACP:  binary --version → -V → -v (auto-fallback)
       └─ Extensions: detected at runtime via CDP (future)
 ```
 
@@ -793,114 +789,6 @@ curl http://127.0.0.1:19280/api/providers/versions
 
 ---
 
-## 9️⃣ ACP Provider Guide
-
-> Guide for adding ACP (Agent Client Protocol) agents.
-> ACP agents communicate via stdin/stdout JSON-RPC 2.0.
-
-### Directory Structure
-
-```
-providers/_builtin/acp/
-├── gemini-cli/      ← env_var auth (reference)
-│   └── provider.js
-├── goose/           ← terminal auth (reference)
-│   └── provider.js
-├── [your-agent]/    ← new ACP provider
-│   └── provider.js
-```
-
-### provider.js Basic Structure
-
-```javascript
-module.exports = {
-  type: 'my-agent-acp',        // unique identifier
-  name: 'My Agent (ACP)',      // display name
-  category: 'acp',             // must be 'acp'
-  aliases: ['my-agent'],       // aliases (adhdev launch my-agent etc.)
-
-  displayName: 'My Agent',
-  icon: '🤖',
-  install: 'npm install -g my-agent',  // install command (shown in error messages)
-
-  spawn: {
-    command: 'my-agent',  // used for which install check + CLI detection
-    args: ['--acp'],      // ACP mode activation argument
-    shell: false,
-  },
-
-  // ─── Authentication Config ───
-  auth: [
-    // 1. API key based (env_var)
-    {
-      type: 'env_var',
-      id: 'api-key',
-      name: 'API Key',
-      link: 'https://my-agent.dev/keys',  // key issuance URL
-      vars: [
-        { name: 'MY_AGENT_API_KEY', label: 'API Key', secret: true },
-        { name: 'MY_AGENT_ORG', label: 'Organization', optional: true },
-      ],
-    },
-    // 2. Self auth (agent)
-    // { type: 'agent', id: 'oauth', name: 'OAuth', description: 'First run will open browser' },
-    // 3. Terminal command (terminal)
-    // { type: 'terminal', id: 'config', name: 'Configure', args: ['configure'] },
-  ],
-
-  settings: {
-    approvalAlert: {
-      type: 'boolean', default: true, public: true,
-      label: 'Approval Alerts',
-    },
-    longGeneratingAlert: {
-      type: 'boolean', default: true, public: true,
-      label: 'Long Generation Alert',
-    },
-    longGeneratingThresholdSec: {
-      type: 'number', default: 180, public: true,
-      label: 'Long Generation Threshold (sec)',
-      min: 30, max: 600,
-    },
-  },
-};
-```
-
-### Authentication Types (auth[]) — Documentation Only
-
-> **Note**: ADHDev does not store or inject API keys (v0.7.1+).
-> The `auth[]` field is used for documentation purposes only; each tool handles authentication independently.
-> On auth failure, stderr error messages are displayed directly on the dashboard.
-
-| type | Purpose | Note |
-|------|---------|------|
-| `env_var` | API key-based auth | User sets environment variables manually |
-| `agent` | Agent self OAuth/browser auth | Auto-handled on first run |
-| `terminal` | Auth setup via CLI command | User runs manually |
-
-### Behavior Flow
-
-```
-1. Dashboard CLIs tab → select Launch
-2. daemon-cli.ts → which check → AcpProviderInstance created
-3. spawn(command, args) → JSON-RPC initialize → session/new
-4. Chat available on Dashboard
-5. On auth failure → stderr error messages displayed on dashboard
-```
-
-### Error Handling (Automatic)
-
-- **Not installed**: `which` failure → "Not installed" error + install guide
-- **Auth failure**: stderr detects `unauthorized`, `api_key missing` etc. → `errorReason: 'auth_failed'`
-- **Quick exit**: exit within 3 seconds → `errorReason: 'crash'` + last 3 stderr lines
-- **Handshake failure**: initialize timeout → `errorReason: 'init_failed'`
-
-> [!TIP]
-> Adding a new ACP agent only requires creating a single provider.js.
-> Copying `providers/_builtin/acp/gemini-cli/provider.js` is the fastest approach.
-
----
-
 ## 🔟 ProviderLoader API
 
 ```typescript
@@ -971,7 +859,7 @@ Use the scaffold API or DevConsole to generate a new provider skeleton:
 4. Category-specific fields appear automatically:
    - **IDE**: CDP Port, CLI Command, Process Name, Install Path
    - **Extension**: Extension ID
-   - **CLI/ACP**: Binary / Command
+   - **CLI**: Binary / Command
 5. Click **Create** → generates `~/.adhdev/providers/{type}/provider.json` + `scripts.js`
 
 ### Via API
@@ -997,7 +885,6 @@ curl -X POST http://127.0.0.1:19280/api/scaffold \
 | IDE | `provider.json` + `scripts.js` (with readChat, sendMessage, etc.) |
 | Extension | `provider.json` + `scripts.js` |
 | CLI | `provider.json` only |
-| ACP | `provider.json` only |
 
 > [!TIP]
 > After scaffold, open the provider in DevConsole → use the Wizard to discover

@@ -4,14 +4,14 @@
  *
  * Validates every provider.v1.json under {category}/ against
  * schemas/v1/{category}/provider.schema.json. The per-category entrypoints
- * (validate-cli-schema.mjs, validate-acp-schema.mjs) delegate here so the
+ * (validate-cli-schema.mjs) delegate here so the
  * validation logic exists exactly once.
  *
  * Exit code 0 on success, 1 on any validation failure, 2 on setup failure.
  *
  * Usage:
  *   node scripts/validate-provider-schema.mjs cli               # all CLI providers
- *   node scripts/validate-provider-schema.mjs acp gemini        # single provider by directory name
+ *   node scripts/validate-provider-schema.mjs cli codex-cli     # single provider by directory name
  */
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -26,22 +26,14 @@ const REPO_ROOT = resolve(__dirname, '..');
 // Per-category config. `anchors` are providers that must be present on a full
 // run — without this, a directory rename/deletion leaves the validator
 // reporting "passed" over whatever remains (vacuous green). For cli these are
-// the production tier; for acp (all declarative-only, no production tier)
-// they are long-standing providers that should never silently vanish.
+// the production tier.
 const CATEGORIES = {
   cli: {
     root: 'cli',
     schema: 'schemas/v1/cli/provider.schema.json',
-    anchors: new Set(['codex-cli', 'claude-cli', 'hermes-cli', 'antigravity-cli']),
+    anchors: new Set(['codex-cli', 'claude-cli', 'antigravity-cli']),
     anchorLabel: 'production',
     otherLabel: 'experimental',
-  },
-  acp: {
-    root: 'acp',
-    schema: 'schemas/v1/acp/provider.schema.json',
-    anchors: new Set(['claude-agent', 'gemini-cli', 'goose']),
-    anchorLabel: 'anchor',
-    otherLabel: 'acp',
   },
 };
 
@@ -175,7 +167,7 @@ const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLT
 if (invokedDirectly) {
   const [category, ...requested] = process.argv.slice(2);
   if (!category) {
-    console.error('Usage: node scripts/validate-provider-schema.mjs <cli|acp> [provider...]');
+    console.error('Usage: node scripts/validate-provider-schema.mjs <cli> [provider...]');
     process.exit(2);
   }
   process.exit(runValidation(category, requested));

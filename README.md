@@ -1,6 +1,6 @@
 # ADHDev Providers
 
-> IDE, CLI, Extension, and ACP provider definitions for [ADHDev](https://github.com/vilmire/adhdev).
+> IDE, CLI, and Extension provider definitions for [ADHDev](https://github.com/vilmire/adhdev).
 
 ## Structure
 
@@ -8,7 +8,6 @@
 ├── ide/            — IDE providers (Cursor, Antigravity, Windsurf, Kiro, etc.)
 ├── cli/            — CLI agent providers (Gemini CLI, Claude Code, Codex CLI)
 ├── extension/      — VS Code extension providers (Cline, Roo Code)
-├── acp/            — ACP agent providers (32 agents)
 ├── registry.json   — Auto-generated provider index (inventory/lifecycle metadata)
 ├── validate.js     — Provider schema validator
 ├── CONTRIBUTING.md — How to add a new provider
