@@ -36,7 +36,6 @@ LICENSE                        @vilmire
 /cli/codex-cli/                @vilmire
 /cli/claude-cli/               @vilmire
 /cli/antigravity-cli/          @vilmire
-/cli/hermes-cli/               @vilmire
 
 # CLI providers — experimental
 /cli/aider-cli/                @vilmire
@@ -62,7 +61,3 @@ LICENSE                        @vilmire
 /extension/codex/              @vilmire
 /extension/roo-code/           @vilmire
 
-# ACP providers — owned by the same maintainer for now; community
-# contributors should add themselves here when they take over an
-# individual ACP entry.
-/acp/                          @vilmire

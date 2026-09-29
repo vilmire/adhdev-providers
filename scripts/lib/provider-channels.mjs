@@ -45,7 +45,7 @@ export const REPO_ROOT = resolve(__dirname, '..', '..');
 
 export const DIGEST_ALGORITHM = 'adhdev-provider-tree-sha256-v1';
 export const CHANNELS = ['stable', 'preview'];
-export const CATEGORIES = ['ide', 'extension', 'cli', 'acp'];
+export const CATEGORIES = ['ide', 'extension', 'cli'];
 
 const SCHEMA_PATH = resolve(REPO_ROOT, 'schemas/v1/channels/channel-manifest.schema.json');
 

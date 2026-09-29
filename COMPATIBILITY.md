@@ -28,9 +28,8 @@ If you want to help widen support methodically, start here:
 
 1. `cursor`
 2. `codex-cli`
-3. `cursor-acp`
 
-These three cover the main runtime shapes that ADHDev needs to prove out first.
+These two cover the main runtime shapes that ADHDev needs to prove out first.
 
 ### Candidate Checklist: `cursor`
 
@@ -62,23 +61,6 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 - `reconnect`
 - `stop`
 - saved-session behavior recorded
-- caveats recorded
-- evidence source linked
-
-### Candidate Checklist: `cursor-acp`
-
-- OS tested
-- Cursor ACP version
-- `launch`
-- `send_chat`
-- `read_chat`
-- `resolve_action`
-- `list_models`
-- `set_model`
-- `list_modes`
-- `set_mode`
-- `stop`
-- approval behavior recorded
 - caveats recorded
 - evidence source linked
 
@@ -157,7 +139,7 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 
 > Terminal-based agents spawned as child processes, controlled via PTY.
 >
-> The table below is scoped to the current built-in `cli/` inventory (8 adapters). Aider, Gemini CLI, GitHub Copilot CLI, and Goose are no longer shipped as built-in CLI providers — they connect as **ACP (stdio) agents** instead; see the ACP Providers section below for their compatibility rows.
+> The table below is scoped to the current built-in `cli/` inventory (7 adapters). Aider, Gemini CLI, GitHub Copilot CLI, and Goose are no longer shipped as built-in CLI providers.
 
 ### OS Compatibility
 
@@ -169,7 +151,6 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 | `codex-cli` | Codex CLI | Stable | ⚠️ | ❓ | ❓ | Codex CLI `0.118.0` | macOS partial: fresh launch, live send/read, saved-session resume, daemon-restart reconnect, and stop validated after tightening onboarding-screen parsing, provider-session recovery, and history replay dedupe; older polluted transcripts may need one-time compaction |
 | `cursor-cli` | Cursor Agent | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
 | `antigravity-cli` | Antigravity CLI | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
-| `hermes-cli` | Hermes Agent | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
 | `kimi` | Kimi Code | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
 | `opencode` | OpenCode | Beta | ❓ | ❓ | ❓ | | not yet re-verified |
 | `grok-cli` | Grok CLI | Stable | ❓ | ❓ | ❓ | | not yet re-verified |
@@ -205,77 +186,6 @@ These three cover the main runtime shapes that ADHDev needs to prove out first.
 
 ---
 
-## ACP Providers
-
-> Agent Client Protocol agents spawned as subprocesses, communicating via JSON-RPC over stdio.
-
-### OS Compatibility
-
-| Provider | Display Name | macOS | Windows | Linux | Tested Versions | Notes |
-|----------|-------------|-------|---------|-------|-----------------|-------|
-| `agentpool` | AgentPool | ❓ | ❓ | ❓ | | |
-| `amp` | Amp (Sourcegraph) | ❓ | ❓ | ❓ | | |
-| `auggie` | Auggie (Augment Code) | ❓ | ❓ | ❓ | | |
-| `autodev` | AutoDev | ❓ | ❓ | ❓ | | |
-| `blackbox-ai` | Blackbox AI | ❓ | ❓ | ❓ | | |
-| `claude-agent` | Claude Code (ACP) | ❓ | ❓ | ❓ | | |
-| `cline-acp` | Cline (ACP) | ❓ | ❓ | ❓ | | |
-| `codebuddy` | Codebuddy Code | ❓ | ❓ | ❓ | | |
-| `codex-cli` | Codex CLI (ACP) | ❓ | ❓ | ❓ | | |
-| `crow-cli` | crow-cli | ❓ | ❓ | ❓ | | |
-| `cursor-acp` | Cursor (ACP) | ⚠️ | ❓ | ❓ | cursor-agent `2026.03.25-933d5a6` | macOS partial: launch, send/read chat, approval, model/mode changes, and stop validated; reconnect and resume still unverified |
-| `deepagents` | Deep Agents | ❓ | ❓ | ❓ | | |
-| `dimcode` | DimCode | ❓ | ❓ | ❓ | | |
-| `docker-cagent` | Docker cagent | ❓ | ❓ | ❓ | | |
-| `factory-droid` | Factory AI Droids | ❓ | ❓ | ❓ | | |
-| `fast-agent` | fast-agent | ❓ | ❓ | ❓ | | |
-| `gemini-cli` | Gemini CLI (ACP) | ❓ | ❓ | ❓ | | |
-| `github-copilot` | GitHub Copilot | ❓ | ❓ | ❓ | | |
-| `goose` | Goose | ❓ | ❓ | ❓ | | |
-| `junie` | Junie (JetBrains) | ❓ | ❓ | ❓ | | |
-| `kilo` | Kilo Code | ❓ | ❓ | ❓ | | |
-| `kimi-cli` | Kimi Code CLI | ❓ | ❓ | ❓ | | |
-| `mistral-vibe` | Mistral Vibe CLI | ❓ | ❓ | ❓ | | |
-| `nova` | Nova | ❓ | ❓ | ❓ | | |
-| `openclaw` | OpenClaw | ❓ | ❓ | ❓ | | Requires running Gateway |
-| `opencode` | OpenCode | ❓ | ❓ | ❓ | | |
-| `openhands` | OpenHands | ❓ | ❓ | ❓ | | |
-| `pi-acp` | pi | ❓ | ❓ | ❓ | | |
-| `qoder` | Qoder CLI | ❓ | ❓ | ❓ | | |
-| `qwen-code` | Qwen Code | ❓ | ❓ | ❓ | | |
-| `stakpak` | Stakpak | ❓ | ❓ | ❓ | | |
-| `vtcode` | VT Code | ❓ | ❓ | ❓ | | |
-
-### Supported Operations — ACP
-
-**Client → Agent (Editor sends to Agent)**
-
-| Method | Description | Required |
-|--------|-------------|----------|
-| `initialize` | Handshake, version negotiation, capability exchange | ✅ Required |
-| `authenticate` | Token/password auth if agent requires it | Optional |
-| `session/new` | Create a new conversation session | ✅ Required |
-| `session/prompt` | Send user message with context (files, images) | ✅ Required |
-| `session/load` | Resume an existing session | Optional |
-| `session/set_mode` | Switch agent operating mode | Optional |
-| `session/cancel` | Abort an in-progress prompt (notification) | ✅ Required |
-
-**Agent → Client (Agent requests from Editor)**
-
-| Method | Description | Required |
-|--------|-------------|----------|
-| `session/update` | Stream progress, messages, tool calls (notification) | ✅ Required |
-| `session/request_permission` | Ask user approval for an action | Optional |
-| `fs/read_text_file` | Read file content including unsaved edits | Optional |
-| `fs/write_text_file` | Write or create a file | Optional |
-| `terminal/create` | Start a shell command | Optional |
-| `terminal/output` | Provide command output | Optional |
-| `terminal/wait_for_exit` | Wait for command completion | Optional |
-| `terminal/kill` | Terminate a running command | Optional |
-| `terminal/release` | Clean up a terminal | Optional |
-
----
-
 ## How to Test & Report
 
 ### 1. Run the test
@@ -292,7 +202,7 @@ node packages/daemon-standalone/dist/index.js
 - Open `http://localhost:3847`
 - Check if the provider is detected
 - Test: read_chat, send_chat, screenshot (IDE/Extension)
-- Test: spawn, input, output (CLI/ACP)
+- Test: spawn, input, output (CLI)
 
 ### 3. Submit your result
 Fork this repo, update the table above with your result, and submit a PR with:

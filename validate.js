@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 
 const REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion', 'contractVersion'];
-const VALID_CATEGORIES = ['ide', 'extension', 'cli', 'acp'];
+const VALID_CATEGORIES = ['ide', 'extension', 'cli'];
 const VALUE_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider']);
 const VALID_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider', 'action', 'display']);
 const VALID_CONTROL_PLACEMENTS = new Set(['bar', 'header', 'menu']);
@@ -251,20 +251,11 @@ function validateNoMachineSpecificPaths(rel, mod) {
 // kimi manifest's owner-home absolute path passed validation from its first
 // commit and shipped to a public channel.
 //
-// The cli JSON Schema (schemas/v1/cli/provider.schema.json) is NOT applied to
-// every v1 manifest, deliberately: it declares `required: [type, name, category,
-// binary, spawn]` with `additionalProperties: false`, and all 32 acp manifests
-// fail it — they carry no `binary` and use acp-only fields (`auth`, `tier`,
-// `session`). Forcing it would produce 32 false failures, not coverage. The
-// publish workflow makes the same split explicit ("Schema check (CLI only for
-// now)"), and only the 7 cli manifests self-declare that $schema.
-//
-// So structure is checked in two tiers:
-//   1. Category-agnostic invariants below — every v1 manifest, all 39.
-//   2. The full cli JSON Schema — applied by scripts/validate-cli-schema.mjs
-//      to cli/ only, where it is the declared contract.
-// An acp schema does not exist yet; when one is authored, wire it in here
-// alongside the cli tier rather than widening the cli schema.
+// The cli JSON Schema (schemas/v1/cli/provider.schema.json) is applied by
+// scripts/validate-cli-schema.mjs to cli/ only, where it is the declared contract.
+// Structure is therefore checked in two tiers:
+//   1. Category-agnostic invariants below — every v1 manifest.
+//   2. The full cli JSON Schema — applied to cli/ only.
 
 const V1_REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion'];
 
@@ -435,7 +426,7 @@ function validateProvider(providerDir, rel, mod) {
     }
   }
 
-  if (mod.category === 'cli' || mod.category === 'acp') {
+  if (mod.category === 'cli') {
     if (!mod.spawn || typeof mod.spawn !== 'object' || !mod.spawn.command) {
       fail(rel, `${mod.category.toUpperCase()} missing spawn.command`);
     }
@@ -568,7 +559,7 @@ async function main() {
         continue;
       }
       // Route by filename so an explicitly-named v1 manifest gets the v1 rules
-      // instead of the legacy ones (which would reject it for acp-only fields).
+      // instead of the legacy ones.
       if (path.basename(filePath) === 'provider.v1.json') {
         validateV1Manifest(filePath);
       } else {

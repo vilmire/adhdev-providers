@@ -35,7 +35,7 @@ test('validator accepts provider-owned transcript and mesh coordinator manifest 
       supported: true,
       mcpConfig: {
         mode: 'manual',
-        format: 'hermes_config_yaml',
+        format: 'opencode_json',
         instructions: 'Configure the mesh MCP server manually.',
       },
     },
