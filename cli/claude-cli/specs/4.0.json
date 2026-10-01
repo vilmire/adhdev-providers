@@ -135,7 +135,7 @@
           },
           {
             "section": "footer",
-            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|Do you want"
+            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)|Do you want"
           },
           {
             "not": {
@@ -274,7 +274,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)"
             }
           },
           {
@@ -341,7 +341,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)"
             }
           },
           {
@@ -383,7 +383,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)"
             }
           },
           {
@@ -429,7 +429,7 @@
           },
           {
             "section": "footer",
-            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b"
+            "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)"
           },
           {
             "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
