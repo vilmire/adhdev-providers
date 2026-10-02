@@ -291,7 +291,7 @@
           },
           {
             "not": {
-              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+              "matches": "(?:^|\\n)\\s*[❯›]\\s*\\d+\\.\\s+\\S"
             }
           },
           {
@@ -389,7 +389,7 @@
           },
           {
             "not": {
-              "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+              "matches": "(?:^|\\n)\\s*[❯›]\\s*\\d+\\.\\s+\\S"
             }
           },
           {
@@ -433,7 +433,7 @@
             "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)"
           },
           {
-            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S[\\s\\S]*?(?:^|\\n)\\s*(?:[❯›]\\s*)?2\\.\\s+\\S"
+            "matches": "(?:^|\\n)\\s*[❯›]\\s*\\d+\\.\\s+\\S"
           },
           {
             "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\s*\\(shift"
