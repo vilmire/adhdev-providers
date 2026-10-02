@@ -72,7 +72,8 @@
       "extract": {
         "title": {
           "section": "modal",
-          "first_line": true
+          "first_line": true,
+          "detail_until": "^\\s*(?:Do you want|Would you like|[❯›>]?\\s*\\d+\\.\\s)"
         },
         "buttons": {
           "section": "modal",
