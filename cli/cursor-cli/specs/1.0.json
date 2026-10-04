@@ -65,6 +65,11 @@
       "status": "generating"
     },
     {
+      "id": "signing_in",
+      "label": "Waiting for browser sign-in",
+      "status": "waiting_external"
+    },
+    {
       "id": "approval",
       "label": "Approval requested",
       "modal": true,
@@ -94,6 +99,42 @@
         "section": "status_tail",
         "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
         "flags": "m"
+      }
+    },
+    {
+      "label": "→signing_in (browser login prompt)",
+      "from": [
+        "starting",
+        "idle",
+        "busy",
+        "signing_in"
+      ],
+      "to": "signing_in",
+      "priority": 130,
+      "when": {
+        "matches": "Signing in with the browser|click this link to log in|QR code to log in",
+        "flags": "i"
+      }
+    },
+    {
+      "label": "signing_in→idle (signed in, footer drawn)",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "matches": "Signing in with the browser|click this link to log in|QR code to log in",
+              "flags": "i"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+            "flags": "m"
+          }
+        ]
       }
     },
     {
