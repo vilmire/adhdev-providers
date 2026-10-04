@@ -71,7 +71,8 @@
       "extract": {
         "title": {
           "section": "modal",
-          "first_line": true
+          "first_line": true,
+          "detail_until": "^\\s*(?:[›>]\\s*)?\\d+\\.\\s|^\\s*[+-]"
         },
         "buttons": {
           "section": "modal",
