@@ -476,6 +476,13 @@
       "mode": "agent_file",
       "flag": "--agent-file",
       "template": "---\ndescription: adhdev mesh coordinator\n---\n\n${base_prompt}\n\n{prompt}\n"
+    },
+    "delegatedWorkerIsolation": {
+      "env": {
+        "set": {
+          "KIMI_SHARE_DIR": "{{workerHome}}/.no-legacy-kimi-cli"
+        }
+      }
     }
   }
 }

@@ -6,7 +6,8 @@
   "cli_version_range": ">=0.20.0",
   "send_message": {
     "submit_key": "\r",
-    "delay_ms_before_submit": 1200
+    "delay_ms_before_submit": 1200,
+    "echo_confirm": "tail"
   },
   "_notes": [
     "DRAFT under live verification (2026-08-17, kimi-code v0.36 measured through",
