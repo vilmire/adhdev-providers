@@ -2,7 +2,7 @@
   "$schema": "https://registry.adhf.dev/schemas/v1/channels/channel-manifest.schema.json",
   "schemaVersion": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-04T23:35:31.851Z",
+  "publishedAt": "2026-10-05T08:16:29.761Z",
   "providers": [
     {
       "providerType": "antigravity",
@@ -10,7 +10,7 @@
       "category": "ide",
       "bundleDigest": "sha256:378bf254af185298917a481bd32ec93686fa5824f098028a06ce57ab54d64266",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Antigravity",
       "compatibility": {
         "contractVersion": 2,
@@ -21,16 +21,16 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:378bf254af185298917a481bd32ec93686fa5824f098028a06ce57ab54d64266",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
       "providerType": "antigravity-cli",
-      "providerVersion": "1.2.14",
+      "providerVersion": "1.2.15",
       "category": "cli",
-      "bundleDigest": "sha256:c599daea5cfa30c9342f5a855afec4834ba6fa49d4ef37b25308bd33258340b2",
+      "bundleDigest": "sha256:800f3d6c94d129b6645888512923a5a1e084b84c25de26f52a7b11818c823d60",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Antigravity CLI",
       "compatibility": {
         "ideVersion": [
@@ -39,8 +39,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:c599daea5cfa30c9342f5a855afec4834ba6fa49d4ef37b25308bd33258340b2",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "bundleDigest": "sha256:800f3d6c94d129b6645888512923a5a1e084b84c25de26f52a7b11818c823d60",
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -49,7 +49,7 @@
       "category": "cli",
       "bundleDigest": "sha256:77fa461e9e1f713b4105a65c7122ca899713a6f88c477256f719ab6fd75e2a0b",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Claude Code",
       "compatibility": {
         "ideVersion": [
@@ -59,7 +59,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:77fa461e9e1f713b4105a65c7122ca899713a6f88c477256f719ab6fd75e2a0b",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -68,7 +68,7 @@
       "category": "extension",
       "bundleDigest": "sha256:52c9b51f58bc11edf8e8d500b29ac2cf8afdb1950253c9cb8843cdf9f7224fcc",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Claude Code (VS Code)",
       "compatibility": {
         "contractVersion": 2
@@ -76,7 +76,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:52c9b51f58bc11edf8e8d500b29ac2cf8afdb1950253c9cb8843cdf9f7224fcc",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -85,7 +85,7 @@
       "category": "extension",
       "bundleDigest": "sha256:6ee6df25ba82b0c73a7b4f067f386c63db11d99e263b5da2fd77cd03160a77a6",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Cline",
       "compatibility": {
         "contractVersion": 2
@@ -93,7 +93,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:6ee6df25ba82b0c73a7b4f067f386c63db11d99e263b5da2fd77cd03160a77a6",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -102,7 +102,7 @@
       "category": "extension",
       "bundleDigest": "sha256:c2fd29992ec8245ad84c41889a4529ceb3cc6452a0516b18ecc6fefaef939d42",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Codex",
       "compatibility": {
         "contractVersion": 2
@@ -110,7 +110,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:c2fd29992ec8245ad84c41889a4529ceb3cc6452a0516b18ecc6fefaef939d42",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -119,7 +119,7 @@
       "category": "cli",
       "bundleDigest": "sha256:a6f888799de026f7663d76d70d27e9cc9b14d95abf229a400413955065105bc9",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Codex CLI",
       "compatibility": {
         "ideVersion": [
@@ -130,7 +130,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:a6f888799de026f7663d76d70d27e9cc9b14d95abf229a400413955065105bc9",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -139,7 +139,7 @@
       "category": "ide",
       "bundleDigest": "sha256:b9c80232666d2d2eae392dc520147cf4d84fcb15af3474791b58c7bbf13c93ca",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Cursor",
       "compatibility": {
         "contractVersion": 2,
@@ -150,7 +150,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:b9c80232666d2d2eae392dc520147cf4d84fcb15af3474791b58c7bbf13c93ca",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -159,7 +159,7 @@
       "category": "cli",
       "bundleDigest": "sha256:2b0edcd98907c66b7808ff22c49ec1ad6ea3a7e222ca7ade36d396194671a698",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Cursor Agent",
       "compatibility": {
         "ideVersion": [
@@ -169,7 +169,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:2b0edcd98907c66b7808ff22c49ec1ad6ea3a7e222ca7ade36d396194671a698",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -178,7 +178,7 @@
       "category": "cli",
       "bundleDigest": "sha256:4e415e4688d4dc4aadb10ecb711943b8a79e3583b6f2ba02d77c57f908c44477",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Grok CLI",
       "compatibility": {
         "ideVersion": [
@@ -188,7 +188,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:4e415e4688d4dc4aadb10ecb711943b8a79e3583b6f2ba02d77c57f908c44477",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -197,7 +197,7 @@
       "category": "cli",
       "bundleDigest": "sha256:f99e1f813eafc55952290c5b113e55023fa4451850d7ea0f9b64da34249617af",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Kimi Code",
       "compatibility": {
         "ideVersion": [
@@ -207,7 +207,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:f99e1f813eafc55952290c5b113e55023fa4451850d7ea0f9b64da34249617af",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -216,7 +216,7 @@
       "category": "ide",
       "bundleDigest": "sha256:2bba76035b0f1802a189503e74da8863a0dc17d3e97e9dc9e62cec315df78371",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Kiro",
       "compatibility": {
         "contractVersion": 2
@@ -224,7 +224,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:2bba76035b0f1802a189503e74da8863a0dc17d3e97e9dc9e62cec315df78371",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -233,7 +233,7 @@
       "category": "cli",
       "bundleDigest": "sha256:d403d492113aa02ea12677f4694de437890450774129a4058f082475ede2827d",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "OpenCode",
       "compatibility": {
         "ideVersion": [
@@ -243,7 +243,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:d403d492113aa02ea12677f4694de437890450774129a4058f082475ede2827d",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -252,7 +252,7 @@
       "category": "ide",
       "bundleDigest": "sha256:f1cc0c07aec1044503834241e677c7e8589e59f031260167ccb927dd721e98ab",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "PearAI",
       "compatibility": {
         "contractVersion": 2,
@@ -263,7 +263,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:f1cc0c07aec1044503834241e677c7e8589e59f031260167ccb927dd721e98ab",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -272,7 +272,7 @@
       "category": "extension",
       "bundleDigest": "sha256:4799316c0862ce90102ca7bb66c373d521c915646aa88cde741a1ae1e0f1d441",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Roo Code",
       "compatibility": {
         "contractVersion": 2
@@ -280,7 +280,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:4799316c0862ce90102ca7bb66c373d521c915646aa88cde741a1ae1e0f1d441",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -289,7 +289,7 @@
       "category": "ide",
       "bundleDigest": "sha256:8b7b5dd79b08c01e7fbb70a448951e6749d96d79d91d377c24b16601f9acf81e",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Trae",
       "compatibility": {
         "contractVersion": 2,
@@ -300,7 +300,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:8b7b5dd79b08c01e7fbb70a448951e6749d96d79d91d377c24b16601f9acf81e",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -309,7 +309,7 @@
       "category": "ide",
       "bundleDigest": "sha256:b8fa7b3f7f47c1c2ff30d0f2ce196228d3551ff6e55034398c6886b575c21227",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Visual Studio Code",
       "compatibility": {
         "contractVersion": 2,
@@ -320,7 +320,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:b8fa7b3f7f47c1c2ff30d0f2ce196228d3551ff6e55034398c6886b575c21227",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -329,7 +329,7 @@
       "category": "ide",
       "bundleDigest": "sha256:314bd745570c78090ee2d0f6576e65377b234ef66b89e332591a12dcf81289ee",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "VSCodium",
       "compatibility": {
         "contractVersion": 2,
@@ -340,7 +340,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:314bd745570c78090ee2d0f6576e65377b234ef66b89e332591a12dcf81289ee",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     },
     {
@@ -349,7 +349,7 @@
       "category": "ide",
       "bundleDigest": "sha256:0166a036216ffcd50c020c2060a95d2c7ea2209b62db2c2507e4bff9863c004d",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-04T23:35:31.851Z",
+      "publishedAt": "2026-10-05T08:16:29.761Z",
       "name": "Windsurf",
       "compatibility": {
         "contractVersion": 2,
@@ -360,7 +360,7 @@
       "promotedFrom": {
         "channel": "preview",
         "bundleDigest": "sha256:0166a036216ffcd50c020c2060a95d2c7ea2209b62db2c2507e4bff9863c004d",
-        "promotedAt": "2026-10-04T23:35:31.851Z"
+        "promotedAt": "2026-10-05T08:16:29.761Z"
       }
     }
   ]

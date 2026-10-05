@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.14",
+  "providerVersion": "1.2.15",
   "binary": "agy",
   "versionCommand": "agy --version",
   "sendDelayMs": 500,
@@ -138,6 +138,11 @@
     "supported": true,
     "stopStrategy": "ctrl_c",
     "shutdownGraceMs": 4000,
+    "sessionIdFormat": "string",
+    "resumeSessionArgs": [
+      "--conversation",
+      "{{id}}"
+    ],
     "resumeArgs": [
       "--continue"
     ]
