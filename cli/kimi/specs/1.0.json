@@ -121,7 +121,7 @@
         "all": [
           {
             "section": "status_tail",
-            "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+            "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan|Approve mcp__\\S+?)\\?",
             "flags": "im"
           },
           {
@@ -182,7 +182,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan|Approve mcp__\\S+?)\\?",
               "flags": "im"
             }
           },
@@ -204,7 +204,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan)\\?",
+              "matches": "Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan|Approve mcp__\\S+?)\\?",
               "flags": "im"
             }
           },
