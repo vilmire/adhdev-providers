@@ -15,7 +15,8 @@
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200,
-    "posix_bracketed_paste_for_images": true
+    "posix_bracketed_paste_for_images": true,
+    "posix_bracketed_paste_text": true
   },
   "sections": {
     "footer": {
