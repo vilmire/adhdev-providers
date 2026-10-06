@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.27",
+  "providerVersion": "1.1.28",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -325,7 +325,16 @@
     "systemPromptInjection": {
       "mode": "config_override",
       "flag": "-c",
-      "template": "developer_instructions={prompt_json}"
+      "template": "developer_instructions={prompt_json}",
+      "oversizeFallback": {
+        "mode": "context_file",
+        "path": "AGENTS.md",
+        "wrapper": "<!-- adhdev-mesh-coordinator-prompt -->\n{prompt}\n<!-- /adhdev-mesh-coordinator-prompt -->",
+        "extraArgs": [
+          "-c",
+          "project_doc_max_bytes=262144"
+        ]
+      }
     },
     "delegatedWorkerIsolation": {
       "workerMcpDelivery": {

@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.13",
+  "providerVersion": "1.2.14",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -364,7 +364,11 @@
     },
     "systemPromptInjection": {
       "mode": "cli_arg",
-      "flag": "--append-system-prompt"
+      "flag": "--append-system-prompt",
+      "oversizeFallback": {
+        "mode": "agent_file",
+        "flag": "--append-system-prompt-file"
+      }
     },
     "delegatedWorkerIsolation": {
       "args": [
