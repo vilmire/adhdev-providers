@@ -45,6 +45,13 @@
       "anchor": "^\\s*(?:Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?)",
       "anchor_last": true,
       "until": "^\\s*$"
+    },
+    "modal_command": {
+      "anchor": "^\\s*\\$\\s+\\S",
+      "anchor_context": { "prev": "^\\s*─{10,}\\s*$" },
+      "anchor_last": true,
+      "until": "^\\s*$",
+      "anchor_miss": "empty"
     }
   },
   "states": [
@@ -77,7 +84,8 @@
       "extract": {
         "title": {
           "section": "modal",
-          "first_line": true
+          "first_line": true,
+          "detail_section": "modal_command"
         },
         "buttons": {
           "section": "modal",
