@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.14",
+  "providerVersion": "1.2.15",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -369,6 +369,17 @@
         "mode": "agent_file",
         "flag": "--append-system-prompt-file"
       }
+    },
+    "disallowedTools": {
+      "flag": "--disallowedTools",
+      "tools": [
+        "Agent",
+        "Bash(git push --force*)",
+        "Bash(git push -f*)",
+        "Bash(git push * --force*)",
+        "Bash(git push * -f*)",
+        "Bash(git reset --hard*)"
+      ]
     },
     "delegatedWorkerIsolation": {
       "args": [
