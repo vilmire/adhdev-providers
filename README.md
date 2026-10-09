@@ -6,7 +6,7 @@
 
 ```
 ├── ide/            — IDE providers (Cursor, Antigravity, Windsurf, Kiro, etc.)
-├── cli/            — CLI agent providers (Gemini CLI, Claude Code, Codex CLI)
+├── cli/            — CLI agent providers (Claude Code, Codex CLI, Antigravity CLI)
 ├── extension/      — VS Code extension providers (Cline, Roo Code)
 ├── registry.json   — Auto-generated provider index (inventory/lifecycle metadata)
 ├── validate.js     — Provider schema validator
