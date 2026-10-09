@@ -40,7 +40,6 @@ LICENSE                        @vilmire
 # CLI providers — experimental
 /cli/aider-cli/                @vilmire
 /cli/cursor-cli/               @vilmire
-/cli/gemini-cli/               @vilmire
 /cli/github-copilot-cli/       @vilmire
 /cli/goose-cli/                @vilmire
 /cli/opencode-cli/             @vilmire

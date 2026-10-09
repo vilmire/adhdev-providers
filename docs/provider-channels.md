@@ -81,7 +81,7 @@ v0-first read pins the channel to the stale legacy version. Source of
 truth for `providerType`/`providerVersion`/`category`/`compatibility` is the
 artifact manifest itself — note this can be newer than the summary in
 `registry.json` (e.g. `claude-cli`). Registry entries without an artifact
-directory (e.g. `aider-cli`, `gemini-cli` CLI) are excluded because they
+directory (e.g. `aider-cli`) are excluded because they
 cannot carry a verifiable digest.
 
 - `preview` holds every verified artifact.

@@ -139,7 +139,7 @@ These two cover the main runtime shapes that ADHDev needs to prove out first.
 
 > Terminal-based agents spawned as child processes, controlled via PTY.
 >
-> The table below is scoped to the current built-in `cli/` inventory (7 adapters). Aider, Gemini CLI, GitHub Copilot CLI, and Goose are no longer shipped as built-in CLI providers.
+> The table below is scoped to the current built-in `cli/` inventory (7 adapters). Aider, Gemini CLI (retired), GitHub Copilot CLI, and Goose are no longer shipped as built-in CLI providers.
 
 ### OS Compatibility
 
@@ -167,7 +167,7 @@ These two cover the main runtime shapes that ADHDev needs to prove out first.
 
 ### Saved Session / Resume Support — CLI
 
-> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history. This table predates the current `cli/` vs `acp/` split for some tools (e.g. `goose-cli`, `opencode-cli`, `gemini-cli`, `aider-cli` now ship as ACP adapters) — the resume-behavior evidence itself remains valid regardless of which category currently hosts the tool.
+> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history. This table predates the current `cli/` vs `acp/` split for some tools (e.g. `goose-cli`, `opencode-cli`, `aider-cli` now ship as ACP adapters) — the resume-behavior evidence itself remains valid regardless of which category currently hosts the tool.
 
 | Provider | CLI resume by explicit session ID | New session ID strategy | When session ID becomes available | ADHDev extraction status | Tested On | Notes |
 |----------|-----------------------------------|--------------------------|-----------------------------------|--------------------------|-----------|-------|
@@ -175,7 +175,6 @@ These two cover the main runtime shapes that ADHDev needs to prove out first.
 | `goose-cli` | ✅ | CLI generates ID internally | Immediately after TUI startup | ✅ Full | macOS, Goose `v1.28.0` | `--session-id` is valid only with `--resume`; ADHDev extracts generated ID from Goose UI / local session DB |
 | `codex-cli` | ✅ | CLI generates ID internally | After first user turn creates thread | ✅ Partial-immediate | macOS, Codex CLI `v0.118.0` | TUI launch alone may not create a saved thread; ADHDev promotes ID after first message via `~/.codex/state_5.sqlite` |
 | `opencode-cli` | ✅ | CLI generates ID internally | After first user turn creates session | ✅ Partial-immediate | macOS, OpenCode `v1.3.14` | TUI launch alone does not create `ses_...`; ADHDev promotes ID after first message via `~/.local/share/opencode/opencode.db` |
-| `gemini-cli` | ⚠️ Limited | No explicit saved-session ID flow verified | Unverified | ❌ Not supported | macOS, Gemini CLI `v0.35.3` | `--resume latest|index` exists, but specific saved-session resume was not verified and testing was blocked by `429 Too Many Requests` |
 | `aider-cli` | ❌ | N/A | N/A | ❌ Not supported | macOS, Aider `v0.86.2` | History-file continuation exists, but not CLI-native saved-session resume by provider session ID |
 
 #### Notes

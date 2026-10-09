@@ -87,19 +87,6 @@
       "status": "Beta",
       "details": "Terminal only"
     },
-    "gemini-cli": {
-      "providerVersion": "1.0.0",
-      "category": "cli",
-      "name": "Gemini CLI",
-      "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
-    },
     "github-copilot-cli": {
       "providerVersion": "1.0.0",
       "category": "cli",

@@ -243,7 +243,7 @@ Good promotion PRs say:
 |----------|-----------|-------------|
 | **IDE** | `ide/antigravity/` | `compatibility` matrix, versioned scripts |
 | **IDE (webview)** | `ide/kiro/` | `webviewMatchText`, `webview*` scripts |
-| **CLI** | `cli/gemini-cli/` | `aliases`, spawn config |
+| **CLI** | `cli/claude-cli/` | `provider.v1.json`, spec-driven spawn config |
 | **Extension** | `extension/cline/` | `extensionIdPattern`, webview |
 
 ---
