@@ -74,3 +74,12 @@ test('every Antigravity display label maps to the slug measured from agy models'
     assert.equal(provider.modelLaunchValueMap[label], measured.get(label), `agy slug mismatch for ${label}`);
   }
 });
+
+test('antigravity-cli spec confirms long sends on the composer tail', () => {
+  // agy scrolls a tall body inside its composer ("> ↑ N more lines"), so the
+  // head of a long task prompt is never on screen. Without echo_confirm "tail"
+  // every long dispatch waited the daemon's 20 s blind-fire backstop
+  // (measured 2026-10-09, agy 1.3.2).
+  const spec = JSON.parse(fs.readFileSync(path.join(__dirname, '../cli/antigravity-cli/specs/4.0.json'), 'utf8'));
+  assert.equal(spec.send_message.echo_confirm, 'tail');
+});
