@@ -14,8 +14,10 @@
   "refocus_when_stalled_ms": 1800,
   "send_message": {
     "submit_key": "\r",
-    "delay_ms_before_submit": 200
+    "delay_ms_before_submit": 200,
+    "echo_confirm": "tail"
   },
+  "_echo_confirm_note": "AGY-COMPOSER-SCROLL (2026-10-09, agy 1.3.2 measured at 80x32 through node-pty + ghostty-vt). agy caps its composer height and scrolls a tall body INSIDE the box: the first rows are replaced by a '> ↑ N more lines' marker, so the head of a long task prompt is in neither the viewport nor the scrollback. With the default head_and_tail echo check every long dispatch waited the 20 s blind-fire backstop ('body never confirmed in composer after ~20070ms'). Same shape as kimi; bytes reach agy in order, so a visible tail implies the head arrived.",
   "_sections_note": "MEASURED 2026-06-15 against agy 1.0.8 (Gemini 3.1 Pro). The old spec used positional windows: footer=from_bottom:1, modal=from_bottom:24 until:footer, body=from_top:0 until:modal, status=from_bottom:4 until:footer. Real screens proved two failures: (1) modal=from_bottom:24 is content junk — at idle (~11-line screen) it clamps to the whole banner+composer, and after a turn it is the response tail (e.g. 'We smoothly transition to twelve.'), so extract.title.first_line grabbed the wrong line (the echoed prompt '> Run this...') and buttons were polluted -> activeModal came back null. Fix: modal now anchors on its OWN landmark ('Do you want to proceed?' / 'Requesting permission for:') and runs to end-of-screen (no until). (2) body=from_top:0 until:modal starved to 0 lines whenever the screen is short (idle + early generating), so every body braille check was dead. Fix: body is the whole screen. The footer anchor '? for shortcuts' / 'esc to cancel' DID match live and is kept.",
   "sections": {
     "footer": {
