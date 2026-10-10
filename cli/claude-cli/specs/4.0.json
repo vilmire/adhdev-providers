@@ -45,8 +45,13 @@
     },
     "status_tail": {
       "from_bottom": 12
+    },
+    "trust": {
+      "anchor": "^\\s*Accessing workspace:\\s*$",
+      "anchor_last": true
     }
   },
+  "_trust_state_note": "Added 2026-10-10 (Claude Code 2.1.295/2.1.296, measured live on win32). The folder-trust dialog is now an UNNUMBERED cursor list with the refusal first and focused: `❯ No, exit` / `  Yes, I trust this folder` / `Enter to confirm · Esc to cancel`. →approval needs a `1.` row, so the dialog matched nothing: startup-grace took the session to idle with the dialog still up, the dashboard showed a ready session with no approval card, and the first message was typed into the dialog (a blind Enter there picks `No, exit`). `trust` is entered only when BOTH choice rows and the confirm hint are the last lines on screen, so the same words quoted in a transcript never match. Buttons are ordinal (label_group) and pressed by arrow keys from the cursor row, so either row order works; the optional `N.` keeps the older numbered layout on the same path. It exits back to `starting`, not `idle`: accepting the dialog is where the CLI's boot begins, and startup-grace must run from there before the first send. pre_launch_trust normally keeps this dialog from appearing at all; this state is what makes a miss visible and answerable instead of a silent wedge.",
   "_end_anchor_note": "busy→idle (transitions[4]) body regex: the completion-summary line `✻ … for Ns` must be followed only by non-activity lines up to the END OF THE SECTION. That end anchor used to be a bare `$`, which is correct without the m flag (JS `$` then matches only at end of input) but tripped the engine's spec lint (`uses ^ or $ without the m flag`) on every session start. It is now spelled `(?![\\s\\S])` — byte-for-byte the same end-of-input semantics, lint-clean. Do NOT fix the lint by adding the m flag instead: with m, `$` matches at the end of the summary line itself, the continuation clause becomes optional, and a stale `✻ … for Ns` line above a live spinner would read as idle.",
   "states": [
     {
@@ -108,6 +113,28 @@
       "id": "approval_vanished",
       "label": "Approval clearing",
       "status": "approval"
+    },
+    {
+      "id": "trust",
+      "label": "Folder trust requested",
+      "modal": true,
+      "modal_kind": "approval",
+      "extract": {
+        "title": {
+          "section": "trust",
+          "first_line": true,
+          "detail_until": "^\\s*(?:Security guide\\b|(?:[❯›>]\\s*)?(?:\\d+\\.\\s*)?(?:Yes, I trust this folder|No, exit)\\s*$)"
+        },
+        "buttons": {
+          "section": "trust",
+          "pattern": "^[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(Yes, I trust this folder|No, exit)[ \\t]*$",
+          "flags": "gm",
+          "label_group": 1,
+          "key_for_index": "\r",
+          "min_count": 2,
+          "select_mode": "arrow_keys"
+        }
+      }
     }
   ],
   "transitions": [
@@ -459,6 +486,31 @@
       "priority": 10,
       "when": {
         "elapsed_ms": 1200
+      }
+    },
+    {
+      "label": "→trust",
+      "from": [
+        "starting",
+        "idle"
+      ],
+      "to": "trust",
+      "priority": 130,
+      "when": {
+        "section": "trust",
+        "matches": "(?:^|\\n)[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n\\s*Enter to confirm[^\\n]*\\s*(?![\\s\\S])"
+      }
+    },
+    {
+      "label": "trust→starting",
+      "from": "trust",
+      "to": "starting",
+      "min_hold_ms": 300,
+      "when": {
+        "not": {
+          "section": "trust",
+          "matches": "(?:^|\\n)[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n\\s*Enter to confirm[^\\n]*\\s*(?![\\s\\S])"
+        }
       }
     }
   ],
