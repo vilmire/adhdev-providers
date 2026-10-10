@@ -1,19 +1,6 @@
 {
   "version": "2026.06.03",
   "providers": {
-    "aider-cli": {
-      "providerVersion": "1.0.0",
-      "category": "cli",
-      "name": "Aider",
-      "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=0.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
-    },
     "antigravity-cli": {
       "providerVersion": "1.0.0",
       "category": "cli",
@@ -86,45 +73,6 @@
       "name": "opencode",
       "status": "Beta",
       "details": "Terminal only"
-    },
-    "github-copilot-cli": {
-      "providerVersion": "1.0.0",
-      "category": "cli",
-      "name": "GitHub Copilot CLI",
-      "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
-    },
-    "goose-cli": {
-      "providerVersion": "1.0.0",
-      "category": "cli",
-      "name": "Goose",
-      "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
-    },
-    "opencode-cli": {
-      "providerVersion": "1.0.0",
-      "category": "cli",
-      "name": "OpenCode CLI",
-      "status": "Beta",
-      "details": "Terminal only",
-      "compatibility": [
-        {
-          "ideVersion": ">=1.0.0",
-          "scriptDir": "scripts/1.0"
-        }
-      ]
     },
     "claude-code-vscode": {
       "providerVersion": "1.0.0",

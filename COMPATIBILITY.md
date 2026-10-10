@@ -167,15 +167,13 @@ These two cover the main runtime shapes that ADHDev needs to prove out first.
 
 ### Saved Session / Resume Support — CLI
 
-> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history. This table predates the current `cli/` vs `acp/` split for some tools (e.g. `goose-cli`, `opencode-cli`, `aider-cli` now ship as ACP adapters) — the resume-behavior evidence itself remains valid regardless of which category currently hosts the tool.
+> Scope: whether the CLI itself supports resuming a specific saved conversation, and whether ADHDev can recover the provider session ID automatically for dashboard resume/history. Rows cover shipped CLI providers only; the `opencode` row was measured on its former `opencode-cli` provider type and has not been re-verified since the rename.
 
 | Provider | CLI resume by explicit session ID | New session ID strategy | When session ID becomes available | ADHDev extraction status | Tested On | Notes |
 |----------|-----------------------------------|--------------------------|-----------------------------------|--------------------------|-----------|-------|
 | `claude-cli` | ✅ | CLI accepts caller-supplied ID via `--session-id <uuid>` | Immediately at launch | ✅ Full | macOS, Claude Code `v2.1.84` | Best-case path: start with explicit ID, resume with `--resume <uuid>` |
-| `goose-cli` | ✅ | CLI generates ID internally | Immediately after TUI startup | ✅ Full | macOS, Goose `v1.28.0` | `--session-id` is valid only with `--resume`; ADHDev extracts generated ID from Goose UI / local session DB |
 | `codex-cli` | ✅ | CLI generates ID internally | After first user turn creates thread | ✅ Partial-immediate | macOS, Codex CLI `v0.118.0` | TUI launch alone may not create a saved thread; ADHDev promotes ID after first message via `~/.codex/state_5.sqlite` |
-| `opencode-cli` | ✅ | CLI generates ID internally | After first user turn creates session | ✅ Partial-immediate | macOS, OpenCode `v1.3.14` | TUI launch alone does not create `ses_...`; ADHDev promotes ID after first message via `~/.local/share/opencode/opencode.db` |
-| `aider-cli` | ❌ | N/A | N/A | ❌ Not supported | macOS, Aider `v0.86.2` | History-file continuation exists, but not CLI-native saved-session resume by provider session ID |
+| `opencode` | ✅ | CLI generates ID internally | After first user turn creates session | ✅ Partial-immediate | macOS, OpenCode `v1.3.14` | TUI launch alone does not create `ses_...`; ADHDev promotes ID after first message via `~/.local/share/opencode/opencode.db` |
 
 #### Notes
 
