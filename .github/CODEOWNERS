@@ -38,11 +38,8 @@ LICENSE                        @vilmire
 /cli/antigravity-cli/          @vilmire
 
 # CLI providers — experimental
-/cli/aider-cli/                @vilmire
 /cli/cursor-cli/               @vilmire
-/cli/github-copilot-cli/       @vilmire
-/cli/goose-cli/                @vilmire
-/cli/opencode-cli/             @vilmire
+/cli/opencode/                 @vilmire
 
 # IDE providers
 /ide/antigravity/              @vilmire
