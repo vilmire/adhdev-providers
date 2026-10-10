@@ -63,6 +63,7 @@ const KNOWN_PROVIDER_FIELDS = new Set([
   'contractVersion',
   'capabilities',
   'providerVersion',
+  'minDaemonVersion',
   'status',
   'details',
   'sendDelayMs',
@@ -257,6 +258,16 @@ function validateNoMachineSpecificPaths(rel, mod) {
 //   1. Category-agnostic invariants below — every v1 manifest.
 //   2. The full cli JSON Schema — applied to cli/ only.
 
+// Optional daemon floor for auto-update (adhdev daemon-core
+// docs/design/2026-10-10-provider-auto-update.md): x.y.z only — a range or a
+// prerelease tail would be silently misread by the daemon's comparator.
+function checkMinDaemonVersion(rel, mod) {
+  if (mod.minDaemonVersion === undefined) return;
+  if (typeof mod.minDaemonVersion !== 'string' || !/^\d+\.\d+\.\d+$/.test(mod.minDaemonVersion)) {
+    fail(rel, `minDaemonVersion must be "x.y.z" (got ${JSON.stringify(mod.minDaemonVersion)})`);
+  }
+}
+
 const V1_REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion'];
 
 function validateV1Structure(rel, mod) {
@@ -280,6 +291,8 @@ function validateV1Structure(rel, mod) {
   if (typeof mod.providerVersion === 'string' && !/^\d+\.\d+\.\d+$/.test(mod.providerVersion)) {
     warn(rel, `providerVersion should be semver (got ${JSON.stringify(mod.providerVersion)})`);
   }
+
+  checkMinDaemonVersion(rel, mod);
 
   // contractVersion is absent on 6 of 39 manifests today, so a missing value
   // warns rather than fails; a non-numeric one is always wrong.
@@ -354,6 +367,7 @@ function validateProvider(providerDir, rel, mod) {
   if (typeof mod.providerVersion !== 'string' || !/^\d+\.\d+\.\d+$/.test(mod.providerVersion)) {
     warn(rel, `providerVersion should be semver (got ${JSON.stringify(mod.providerVersion)})`);
   }
+  checkMinDaemonVersion(rel, mod);
   if (typeof mod.contractVersion !== 'number') {
     fail(rel, `contractVersion must be a number (got ${JSON.stringify(mod.contractVersion)})`);
   } else if (mod.contractVersion < 2) {
