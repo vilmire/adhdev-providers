@@ -2,7 +2,7 @@
   "$schema": "https://registry.adhf.dev/schemas/v1/channels/channel-manifest.schema.json",
   "schemaVersion": 1,
   "channel": "stable",
-  "publishedAt": "2026-10-11T10:55:31.775Z",
+  "publishedAt": "2026-10-13T01:02:10.255Z",
   "providers": [
     {
       "providerType": "antigravity",
@@ -155,11 +155,11 @@
     },
     {
       "providerType": "cursor-cli",
-      "providerVersion": "1.0.10",
+      "providerVersion": "1.0.11",
       "category": "cli",
-      "bundleDigest": "sha256:ef5745a9b7ea5110488e5604b46710c5ba37cbbf5e6709c72fe94f80113f3aab",
+      "bundleDigest": "sha256:f1bbc3f99db88a7039b2c7e40ee0a0e4497b47fc9108fb4441d9ffe0776d80ef",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-11T10:55:31.775Z",
+      "publishedAt": "2026-10-13T01:02:10.255Z",
       "name": "Cursor Agent",
       "compatibility": {
         "ideVersion": [
@@ -168,17 +168,17 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:ef5745a9b7ea5110488e5604b46710c5ba37cbbf5e6709c72fe94f80113f3aab",
-        "promotedAt": "2026-10-11T10:55:31.775Z"
+        "bundleDigest": "sha256:f1bbc3f99db88a7039b2c7e40ee0a0e4497b47fc9108fb4441d9ffe0776d80ef",
+        "promotedAt": "2026-10-13T01:02:10.255Z"
       }
     },
     {
       "providerType": "grok-cli",
-      "providerVersion": "1.0.8",
+      "providerVersion": "1.0.9",
       "category": "cli",
-      "bundleDigest": "sha256:0e8bbbc46284cc85ed04d0087bdd0364270d72bcb4e3d72dcf790281d72d19e3",
+      "bundleDigest": "sha256:cb38a9e0831a0afd571f22112f16bd26ebbe4a5834f24d0973daacbcb3131a0f",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-11T10:55:31.775Z",
+      "publishedAt": "2026-10-13T01:02:10.255Z",
       "name": "Grok CLI",
       "compatibility": {
         "ideVersion": [
@@ -187,8 +187,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:0e8bbbc46284cc85ed04d0087bdd0364270d72bcb4e3d72dcf790281d72d19e3",
-        "promotedAt": "2026-10-11T10:55:31.775Z"
+        "bundleDigest": "sha256:cb38a9e0831a0afd571f22112f16bd26ebbe4a5834f24d0973daacbcb3131a0f",
+        "promotedAt": "2026-10-13T01:02:10.255Z"
       }
     },
     {
@@ -229,11 +229,11 @@
     },
     {
       "providerType": "opencode",
-      "providerVersion": "1.0.10",
+      "providerVersion": "1.0.11",
       "category": "cli",
-      "bundleDigest": "sha256:a9554c0d6105045ce8c9da163a7e265f34353a137387b0b15b65a747f0449207",
+      "bundleDigest": "sha256:e640006cd5dbff70c77caee0edc406ac65fa2832e4e5fadb9d7891453fa26ad9",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-11T10:55:31.775Z",
+      "publishedAt": "2026-10-13T01:02:10.255Z",
       "name": "OpenCode",
       "compatibility": {
         "ideVersion": [
@@ -242,8 +242,8 @@
       },
       "promotedFrom": {
         "channel": "preview",
-        "bundleDigest": "sha256:a9554c0d6105045ce8c9da163a7e265f34353a137387b0b15b65a747f0449207",
-        "promotedAt": "2026-10-11T10:55:31.775Z"
+        "bundleDigest": "sha256:e640006cd5dbff70c77caee0edc406ac65fa2832e4e5fadb9d7891453fa26ad9",
+        "promotedAt": "2026-10-13T01:02:10.255Z"
       }
     },
     {

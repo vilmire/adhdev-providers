@@ -156,14 +156,15 @@
       "to": "busy",
       "min_hold_ms": 500,
       "when": {
-        "section": "status_tail",
         "any": [
           {
             "matches": "esc\\s+interrupt",
-            "flags": "im"
+            "flags": "im",
+            "section": "status_tail"
           },
           {
-            "matches": "[■⬝]{2,}"
+            "matches": "[■⬝]{2,}",
+            "section": "status_tail"
           }
         ]
       }

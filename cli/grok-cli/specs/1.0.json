@@ -239,17 +239,19 @@
       "to": "busy",
       "min_hold_ms": 700,
       "when": {
-        "section": "status_tail",
         "any": [
           {
             "matches": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
-            "flags": "im"
+            "flags": "im",
+            "section": "status_tail"
           },
           {
-            "matches": "\\[stop\\]"
+            "matches": "\\[stop\\]",
+            "section": "status_tail"
           },
           {
-            "matches": "Esc:cancel"
+            "matches": "Esc:cancel",
+            "section": "status_tail"
           }
         ]
       }
@@ -321,14 +323,15 @@
       "to": "busy",
       "min_hold_ms": 600,
       "when": {
-        "section": "status_tail",
         "any": [
           {
             "matches": "[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
-            "flags": "im"
+            "flags": "im",
+            "section": "status_tail"
           },
           {
-            "matches": "\\[stop\\]"
+            "matches": "\\[stop\\]",
+            "section": "status_tail"
           }
         ]
       }

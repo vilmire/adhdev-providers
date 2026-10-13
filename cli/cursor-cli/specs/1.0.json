@@ -196,14 +196,15 @@
       "to": "busy",
       "min_hold_ms": 500,
       "when": {
-        "section": "status_tail",
         "any": [
           {
-            "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|\\bWorking\\b"
+            "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)",
+            "section": "status_tail"
           },
           {
             "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
-            "flags": "i"
+            "flags": "i",
+            "section": "status_tail"
           }
         ]
       }
@@ -218,7 +219,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|\\bWorking\\b"
+              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)"
             }
           },
           {
