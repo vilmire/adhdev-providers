@@ -104,6 +104,11 @@
       }
     },
     {
+      "id": "trust_owner_attention",
+      "label": "Owner attention: Grok workspace trust has blocked startup for over 20 seconds",
+      "status": "waiting_external"
+    },
+    {
       "id": "approval_vanished",
       "label": "Approval clearing",
       "status": "approval"
@@ -195,8 +200,28 @@
       }
     },
     {
-      "label": "trust→idle",
+      "label": "trust→owner-attention",
       "from": "trust",
+      "to": "trust_owner_attention",
+      "priority": 110,
+      "when": {
+        "all": [
+          {
+            "elapsed_ms": 20001
+          },
+          {
+            "matches": "Do you trust the contents of this directory\\?",
+            "flags": "i"
+          }
+        ]
+      }
+    },
+    {
+      "label": "trust→idle",
+      "from": [
+        "trust",
+        "trust_owner_attention"
+      ],
       "to": "idle",
       "min_hold_ms": 300,
       "when": {
@@ -412,6 +437,12 @@
       "when_state": "trust",
       "title": "Grok Build needs workspace trust",
       "body": "{state.title}"
+    },
+    {
+      "id": "trust_owner_attention",
+      "when_state": "trust_owner_attention",
+      "title": "Owner attention required in Grok Build",
+      "body": "Workspace trust has blocked startup for over 20 seconds. Review the owner-registered repository and its trust decision in Grok. No trust choice was sent automatically."
     }
   ],
   "delegate": [],

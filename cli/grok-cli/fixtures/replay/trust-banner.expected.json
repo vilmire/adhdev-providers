@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "description": "Synthetic trust fixture based on the recorded Grok prompt; no user session or credentials.",
+  "providerType": "grok-cli",
+  "ptyFile": "trust-banner.pty",
+  "terminal": {
+    "cols": 100,
+    "rows": 30
+  },
+  "anchors": [
+    {
+      "name": "trust visible",
+      "untilSentinel": "No, quit",
+      "expect": {
+        "detectStatus": "waiting_approval"
+      }
+    }
+  ]
+}
