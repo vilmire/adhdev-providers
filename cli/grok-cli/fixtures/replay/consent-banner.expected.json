@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "description": "Synthetic 'Help improve Grok' data-retention consent banner based on the recorded Grok prompt; no user session or credentials. Owner decision: opt out. It must park for owner attention and never be answered automatically.",
+  "providerType": "grok-cli",
+  "ptyFile": "consent-banner.pty",
+  "terminal": {
+    "cols": 100,
+    "rows": 30
+  },
+  "anchors": [
+    {
+      "name": "consent visible",
+      "untilSentinel": "[Opt in]",
+      "expect": {},
+      "notes": "The legacy detectStatus vocabulary (CliStatus) has no owner-attention value, so the FSM expectation lives in the 'fsm' block below and is asserted by fixtures/grok-fsm.test.mjs against the production evaluator and status projection."
+    }
+  ],
+  "fsm": {
+    "from": [
+      "starting",
+      "idle",
+      "busy",
+      "signing_in",
+      "approval_vanished"
+    ],
+    "state": "consent_banner",
+    "status": "owner_attention",
+    "projectedStatus": "waiting_choice",
+    "ownerAttention": true,
+    "approvalButtons": [],
+    "automaticKeys": []
+  }
+}

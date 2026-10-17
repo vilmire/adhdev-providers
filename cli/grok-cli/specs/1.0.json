@@ -22,7 +22,11 @@
     "                'Shift+Tab:mode │ Ctrl+x:shortcuts' (no Esc:cancel).",
     "  modal      -> radio rows 'N (●)/(○) label' plus a 'N/M:select' footer.",
     "Verified live: a bare number key both selects AND confirms (no Enter), so",
-    "buttons use select_mode 'index' with key_for_index '{index}' and no \\r."
+    "buttons use select_mode 'index' with key_for_index '{index}' and no \\r.",
+    "consent_banner and trust_owner_attention are owner-attention parks",
+    "(status waiting_external + owner_attention): no modal, no buttons, never",
+    "answered automatically. Owner decision for 'Help improve Grok' is opt out;",
+    "worker homes are pre-seeded with the privacy acknowledgment instead."
   ],
   "pre_launch_trust": {
     "scheme": "grok_toml_file"
@@ -106,7 +110,14 @@
     {
       "id": "trust_owner_attention",
       "label": "Owner attention: Grok workspace trust has blocked startup for over 20 seconds",
-      "status": "waiting_external"
+      "status": "waiting_external",
+      "owner_attention": true
+    },
+    {
+      "id": "consent_banner",
+      "label": "Owner attention: Grok is asking whether to retain coding data (Help improve Grok) — only the owner may answer; no choice is sent automatically",
+      "status": "waiting_external",
+      "owner_attention": true
     },
     {
       "id": "approval_vanished",
@@ -175,6 +186,50 @@
             "matches": "Ctrl\\+x:shortcuts"
           }
         ]
+      }
+    },
+    {
+      "label": "→consent_banner",
+      "from": [
+        "starting",
+        "idle",
+        "busy",
+        "signing_in",
+        "approval_vanished"
+      ],
+      "to": "consent_banner",
+      "priority": 125,
+      "when": {
+        "all": [
+          {
+            "matches": "Help improve Grok",
+            "flags": "i"
+          },
+          {
+            "any": [
+              {
+                "matches": "\\bOpt out\\b",
+                "flags": "i"
+              },
+              {
+                "matches": "\\bOpt in\\b",
+                "flags": "i"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "consent_banner→idle",
+      "from": "consent_banner",
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "not": {
+          "matches": "Help improve Grok",
+          "flags": "i"
+        }
       }
     },
     {
@@ -437,6 +492,12 @@
       "when_state": "trust",
       "title": "Grok Build needs workspace trust",
       "body": "{state.title}"
+    },
+    {
+      "id": "consent_owner_attention",
+      "when_state": "consent_banner",
+      "title": "Owner attention required in Grok Build",
+      "body": "Grok is showing its 'Help improve Grok' data-retention consent banner. Answer it yourself in this session (the recorded owner decision is Opt out). No choice was sent automatically."
     },
     {
       "id": "trust_owner_attention",
