@@ -35,6 +35,14 @@ const CATEGORIES = {
     anchorLabel: 'production',
     otherLabel: 'experimental',
   },
+  driver: {
+    root: 'driver',
+    extraRoots: ['examples/driver'],
+    schema: 'schemas/v1/driver/provider.schema.json',
+    anchors: new Set(['browser-playwright']),
+    anchorLabel: 'reference',
+    otherLabel: 'driver',
+  },
 };
 
 // Resolve ajv through normal Node resolution rather than a hardcoded path.
@@ -58,7 +66,8 @@ function resolveDep(specifier) {
   return null;
 }
 
-function listProviders(rootDir) {
+function listProvidersInDir(rootDir) {
+  if (!existsSync(rootDir)) return [];
   return readdirSync(rootDir)
     .filter((name) => name !== '_shared')
     .map((name) => ({
@@ -69,6 +78,20 @@ function listProviders(rootDir) {
         : join(rootDir, name, 'provider.json'),
     }))
     .filter((entry) => statSync(entry.dir).isDirectory());
+}
+
+function listProviders(config) {
+  const roots = [config.root, ...(config.extraRoots ?? [])];
+  const seen = new Set();
+  const entries = [];
+  for (const relRoot of roots) {
+    for (const entry of listProvidersInDir(resolve(REPO_ROOT, relRoot))) {
+      if (seen.has(entry.name)) continue;
+      seen.add(entry.name);
+      entries.push(entry);
+    }
+  }
+  return entries;
 }
 
 function validateOne(validate, entry) {
@@ -114,7 +137,7 @@ export function runValidation(category, requested = []) {
   if (addFormats) addFormats(ajv);
   const validate = ajv.compile(schema);
 
-  const providers = listProviders(resolve(REPO_ROOT, config.root));
+  const providers = listProviders(config);
   const targets = requested.length
     ? providers.filter((p) => requested.includes(p.name))
     : providers;
@@ -162,13 +185,17 @@ export function runValidation(category, requested = []) {
   return failed > 0 ? 1 : 0;
 }
 
-// Direct invocation: node scripts/validate-provider-schema.mjs <category> [provider...]
+// Direct invocation: node scripts/validate-provider-schema.mjs [<category> [provider...]]
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const [category, ...requested] = process.argv.slice(2);
   if (!category) {
-    console.error('Usage: node scripts/validate-provider-schema.mjs <cli> [provider...]');
-    process.exit(2);
+    let exitCode = 0;
+    for (const cat of Object.keys(CATEGORIES)) {
+      const rc = runValidation(cat);
+      if (rc !== 0 && exitCode === 0) exitCode = rc;
+    }
+    process.exit(exitCode);
   }
   process.exit(runValidation(category, requested));
 }

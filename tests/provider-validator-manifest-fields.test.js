@@ -103,3 +103,40 @@ for (const fileName of ['provider.json', 'provider.v1.json']) {
     }
   });
 }
+
+test('validator accepts browser-playwright driver sample and rejects driver missing runtime/actions or having scripts/', () => {
+  const sampleResult = runValidator('examples/driver/browser-playwright');
+  const sampleOutput = `${sampleResult.stdout || ''}${sampleResult.stderr || ''}`;
+  assert.equal(sampleResult.status, 0, sampleOutput);
+
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-driver-validator-'));
+  const providerPath = path.join(tempDir, 'provider.v1.json');
+  const baseDriver = {
+    type: 'test-driver',
+    name: 'Test Driver',
+    category: 'driver',
+    providerVersion: '1.0.0',
+    runtime: { kind: 'mcp-stdio', command: 'node' },
+    actions: [{ id: 'ping', tool: 'mcp_ping', risk: 'read' }],
+  };
+
+  try {
+    fs.writeFileSync(providerPath, JSON.stringify({ ...baseDriver, runtime: undefined }, null, 2));
+    const noRuntime = runValidator(tempDir);
+    assert.notEqual(noRuntime.status, 0);
+    assert.match(`${noRuntime.stdout || ''}${noRuntime.stderr || ''}`, /driver missing required 'runtime' object/);
+
+    fs.writeFileSync(providerPath, JSON.stringify({ ...baseDriver, actions: [] }, null, 2));
+    const noActions = runValidator(tempDir);
+    assert.notEqual(noActions.status, 0);
+    assert.match(`${noActions.stdout || ''}${noActions.stderr || ''}`, /driver missing required 'actions' array/);
+
+    fs.writeFileSync(providerPath, JSON.stringify(baseDriver, null, 2));
+    fs.mkdirSync(path.join(tempDir, 'scripts'));
+    const withScripts = runValidator(tempDir);
+    assert.notEqual(withScripts.status, 0);
+    assert.match(`${withScripts.stdout || ''}${withScripts.stderr || ''}`, /driver package must not contain a 'scripts' directory/);
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});

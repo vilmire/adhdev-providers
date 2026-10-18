@@ -10,11 +10,12 @@ const fs = require('fs');
 const path = require('path');
 
 const REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion', 'contractVersion'];
-const VALID_CATEGORIES = ['ide', 'extension', 'cli'];
+const VALID_CATEGORIES = ['ide', 'extension', 'cli', 'driver'];
 const VALUE_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider']);
 const VALID_CONTROL_TYPES = new Set(['select', 'toggle', 'cycle', 'slider', 'action', 'display']);
 const VALID_CONTROL_PLACEMENTS = new Set(['bar', 'header', 'menu']);
 const KNOWN_PROVIDER_FIELDS = new Set([
+  '$schema',
   'type',
   'name',
   'category',
@@ -72,6 +73,15 @@ const KNOWN_PROVIDER_FIELDS = new Set([
   'requirePromptEchoBeforeSubmit',
   'timeouts',
   'disableUpstream',
+  'publisher',
+  'links',
+  'engines',
+  'source',
+  'runtime',
+  'actions',
+  'resources',
+  'guidance',
+  'declaredAccess',
 ]);
 
 const USED_PORTS = new Map();
@@ -270,7 +280,19 @@ function checkMinDaemonVersion(rel, mod) {
 
 const V1_REQUIRED_FIELDS = ['type', 'name', 'category', 'providerVersion'];
 
-function validateV1Structure(rel, mod) {
+function validateDriverCategory(providerDir, rel, mod) {
+  if (!mod.runtime || typeof mod.runtime !== 'object' || Array.isArray(mod.runtime)) {
+    fail(rel, "driver missing required 'runtime' object");
+  }
+  if (!Array.isArray(mod.actions) || mod.actions.length === 0) {
+    fail(rel, "driver missing required 'actions' array");
+  }
+  if (providerDir && fs.existsSync(path.join(providerDir, 'scripts'))) {
+    fail(rel, "driver package must not contain a 'scripts' directory");
+  }
+}
+
+function validateV1Structure(rel, mod, providerDir) {
   if (!mod || typeof mod !== 'object' || Array.isArray(mod)) {
     fail(rel, 'v1 manifest must be a JSON object');
     return;
@@ -295,19 +317,26 @@ function validateV1Structure(rel, mod) {
   checkMinDaemonVersion(rel, mod);
 
   // contractVersion is absent on 6 of 39 manifests today, so a missing value
-  // warns rather than fails; a non-numeric one is always wrong.
+  // warns rather than fails; a non-numeric one is always wrong. Driver
+  // manifests use compatibility.driverApi instead of legacy contractVersion.
   if (mod.contractVersion === undefined) {
-    warn(rel, 'contractVersion missing (expected the typed contract baseline, 2)');
+    if (mod.category !== 'driver') {
+      warn(rel, 'contractVersion missing (expected the typed contract baseline, 2)');
+    }
   } else if (typeof mod.contractVersion !== 'number') {
     fail(rel, `contractVersion must be a number (got ${JSON.stringify(mod.contractVersion)})`);
   }
 
-  // Every v1 manifest describes a spawned process; without a command the
-  // provider cannot start at all.
-  if (!mod.spawn || typeof mod.spawn !== 'object' || Array.isArray(mod.spawn)) {
-    fail(rel, 'spawn must be an object');
-  } else if (typeof mod.spawn.command !== 'string' || !mod.spawn.command.trim()) {
-    fail(rel, 'spawn.command is required and must be a non-empty string');
+  if (mod.category === 'driver') {
+    validateDriverCategory(providerDir, rel, mod);
+  } else {
+    // Every non-driver v1 manifest describes a spawned process; without a
+    // command the provider cannot start at all.
+    if (!mod.spawn || typeof mod.spawn !== 'object' || Array.isArray(mod.spawn)) {
+      fail(rel, 'spawn must be an object');
+    } else if (typeof mod.spawn.command !== 'string' || !mod.spawn.command.trim()) {
+      fail(rel, 'spawn.command is required and must be a non-empty string');
+    }
   }
 
   if (mod.capabilities !== undefined
@@ -323,6 +352,7 @@ function validateV1Structure(rel, mod) {
 
 function validateV1Manifest(filePath) {
   const rel = path.relative(process.cwd(), filePath);
+  const providerDir = path.dirname(filePath);
   let mod;
   try {
     mod = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -332,7 +362,7 @@ function validateV1Manifest(filePath) {
   }
 
   const before = errors;
-  validateV1Structure(rel, mod);
+  validateV1Structure(rel, mod, providerDir);
   // v1 manifests are published to the same public channels as legacy ones, so
   // the machine-specific path check must cover them too.
   validateNoMachineSpecificPaths(rel, mod);
@@ -444,6 +474,10 @@ function validateProvider(providerDir, rel, mod) {
     if (!mod.spawn || typeof mod.spawn !== 'object' || !mod.spawn.command) {
       fail(rel, `${mod.category.toUpperCase()} missing spawn.command`);
     }
+  }
+
+  if (mod.category === 'driver') {
+    validateDriverCategory(providerDir, rel, mod);
   }
 
   validateNoMachineSpecificPaths(rel, mod);
@@ -567,10 +601,22 @@ async function main() {
 
   if (args.length > 0) {
     for (const arg of args) {
-      const filePath = path.resolve(arg);
+      let filePath = path.resolve(arg);
       if (!fs.existsSync(filePath)) {
         fail(arg, 'file not found');
         continue;
+      }
+      if (fs.statSync(filePath).isDirectory()) {
+        const v1 = path.join(filePath, 'provider.v1.json');
+        const v0 = path.join(filePath, 'provider.json');
+        if (fs.existsSync(v1)) {
+          filePath = v1;
+        } else if (fs.existsSync(v0)) {
+          filePath = v0;
+        } else {
+          fail(arg, 'no provider.v1.json or provider.json found in directory');
+          continue;
+        }
       }
       // Route by filename so an explicitly-named v1 manifest gets the v1 rules
       // instead of the legacy ones.

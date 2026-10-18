@@ -44,7 +44,7 @@
             "description": "Provider package SemVer. Must equal the artifact manifest's providerVersion."
           },
           "category": {
-            "enum": ["ide", "extension", "cli", "acp"],
+            "enum": ["ide", "extension", "cli", "acp", "driver"],
             "description": "Provider category; determines the artifact directory <category>/<dir>/."
           },
           "name": {
