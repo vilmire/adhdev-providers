@@ -205,8 +205,16 @@
             "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
           },
           {
+            "section": "body",
+            "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+          },
+          {
             "section": "footer",
             "matches": "esc to cancel"
+          },
+          {
+            "section": "footer",
+            "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
           }
         ]
       }
@@ -237,6 +245,18 @@
             }
           },
           {
+            "not": {
+              "section": "body",
+              "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
+            }
+          },
+          {
             "stable_ms": 5000
           },
           {
@@ -264,6 +284,18 @@
                 "not": {
                   "section": "footer",
                   "matches": "esc to cancel"
+                }
+              },
+              {
+                "not": {
+                  "section": "body",
+                  "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+                }
+              },
+              {
+                "not": {
+                  "section": "footer",
+                  "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
                 }
               },
               {
@@ -301,6 +333,18 @@
                 }
               },
               {
+                "not": {
+                  "section": "body",
+                  "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+                }
+              },
+              {
+                "not": {
+                  "section": "footer",
+                  "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
+                }
+              },
+              {
                 "elapsed_ms": 60000
               }
             ]
@@ -317,6 +361,12 @@
                 "not": {
                   "section": "footer",
                   "matches": "esc to cancel"
+                }
+              },
+              {
+                "not": {
+                  "section": "footer",
+                  "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
                 }
               },
               {
@@ -359,8 +409,16 @@
                 "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
               },
               {
+                "section": "body",
+                "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+              },
+              {
                 "section": "footer",
                 "matches": "esc to cancel"
+              },
+              {
+                "section": "footer",
+                "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
               }
             ]
           }
@@ -390,6 +448,18 @@
             "not": {
               "section": "footer",
               "matches": "esc to cancel"
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
             }
           },
           {

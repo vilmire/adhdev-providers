@@ -23,7 +23,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.16",
+  "providerVersion": "1.2.17",
   "disableUpstream": true,
   "binary": "claude",
   "spawn": {
@@ -190,6 +190,11 @@
         {
           "regex": "(Thinking|Processing|Working|Analyzing|Planning|Drafting|Synthesizing|Inspecting|Reading|Searching)…?",
           "flags": "i"
+        },
+        {
+          "regex": "\\b[1-9]\\d*\\s+shells?\\s+still\\s+running\\b|[·•]\\s*[1-9]\\d*\\s+shells?\\s*[·•][^\\n]*?↓\\s*to\\s*manage\\b|\\b[1-9]\\d*\\s+background\\s+(?:tasks?|shells?)\\b",
+          "flags": "i",
+          "description": "Background shell/task indicator"
         }
       ],
       "scope": "live-frame-tail",

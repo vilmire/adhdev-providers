@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.28",
+  "providerVersion": "1.1.29",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -153,6 +153,11 @@
           "regex": "[•·]\\s*esc to interrupt\\)",
           "flags": "i",
           "description": "The spinner footer suffix as it renders inside the live status parens ('… • esc to interrupt)'). Anchoring on the leading bullet/middot separator and the trailing ')' avoids matching plain assistant prose such as 'press esc to interrupt the run'."
+        },
+        {
+          "regex": "(?:^|\\n)[ \\t]*[1-9]\\d*\\s+background\\s+terminals?\\s+running\\b",
+          "flags": "i",
+          "description": "Background terminal status line above composer ('N background terminal(s) running · /ps to view · /stop to close')."
         }
       ],
       "scope": "whole-screen"

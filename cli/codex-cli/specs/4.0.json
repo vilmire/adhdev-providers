@@ -140,7 +140,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
                 }
               },
               {
@@ -200,7 +200,7 @@
       "to": "busy",
       "when": {
         "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+        "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
       }
     },
     {
@@ -219,7 +219,7 @@
           {
             "not": {
               "section": "screen",
-              "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+              "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
             }
           },
           {
@@ -235,7 +235,7 @@
       "to": "busy",
       "when": {
         "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+        "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
       }
     },
     {
@@ -250,7 +250,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
                 }
               },
               {
@@ -270,7 +270,7 @@
               {
                 "not": {
                   "section": "screen",
-                  "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+                  "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
                 }
               },
               {
@@ -298,8 +298,18 @@
       "from": ["approval", "trust", "picker"],
       "to": "busy",
       "when": {
-        "section": "screen",
-        "matches": "(?:^|\\n)[ \\t]*(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)"
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
+            }
+          },
+          {
+            "section": "screen",
+            "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
+          }
+        ]
       }
     },
     {
@@ -325,6 +335,12 @@
             "not": {
               "section": "modal",
               "matches": "Select a model|switch to a different model"
+            }
+          },
+          {
+            "not": {
+              "section": "screen",
+              "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
             }
           },
           {

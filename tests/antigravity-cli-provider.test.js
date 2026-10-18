@@ -50,16 +50,20 @@ test('antigravity-cli provider declares CLI transcript logs as native history so
 
 // Guards the modelOptions list the launch path offers for agy. Kept in the
 // manifest test because SpecCliAdapter does not own model selection.
-test('antigravity-cli exposes Gemini 3.7 Flash reasoning variants in modelOptions', () => {
+test('antigravity-cli exposes Gemini 4 Argon and 3.8 Flash reasoning variants in modelOptions and records 1.4.2 in testedVersions', () => {
+  assert.ok(provider.testedVersions?.includes('1.4.2'), 'testedVersions should include 1.4.2');
   // modelOptions remain readable on-screen labels; agy --model accepts the
   // stable slugs declared in modelLaunchValueMap.
   for (const expected of [
-    'Gemini 3.7 Flash (High)',
-    'Gemini 3.7 Flash (Medium)',
-    'Gemini 3.7 Flash (Low)',
+    'Gemini 4 Argon (High)',
+    'Gemini 4 Argon (Medium)',
+    'Gemini 4 Argon (Low)',
+    'Gemini 3.8 Flash (High)',
+    'Gemini 3.8 Flash (Medium)',
+    'Gemini 3.8 Flash (Low)',
   ]) {
     assert.ok(provider.modelOptions.includes(expected), `modelOptions should include ${expected}`);
-    assert.match(provider.modelLaunchValueMap[expected], /^gemini-3\.7-flash-(?:high|medium|low)$/);
+    assert.match(provider.modelLaunchValueMap[expected], /^gemini-(?:4-argon|3\.8-flash)-(?:high|medium|low)$/);
   }
 });
 
