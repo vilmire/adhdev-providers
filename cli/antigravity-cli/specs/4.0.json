@@ -41,7 +41,7 @@
       "anchor": "^\\s*─{10,}\\s*$",
       "anchor_context": {
         "prev": "^\\s*Question\\s*$",
-        "next": "^\\s*Question \\d+\\/\\d+:\\s+\\S"
+        "next": "^\\s*(?:Question \\d+\\/\\d+:\\s+\\S|$)"
       },
       "above": 1,
       "anchor_last": true,
@@ -234,31 +234,25 @@
             }
           },
           {
-            "not": {
-              "section": "footer",
-              "matches": "esc to cancel"
-            }
-          },
-          {
             "section": "choice",
-            "matches": "(?:^|\\n)\\s*Question\\s*\\n\\s*─{10,}\\s*\\n\\s*Question \\d+\\/\\d+:\\s+\\S"
+            "matches": "(?:^|\\n)\\s*Question\\s*\\n\\s*─{10,}\\s*\\n(?:\\s*\\n)?\\s*Question \\d+\\/\\d+:\\s+\\S"
           },
           {
             "any": [
               {
                 "section": "choice",
-                "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?1\\.\\s+(?:\\[[ xX]\\]\\s+)?\\S[\\s\\S]*(?:^|\\n)\\s*(?:[❯›>]\\s*)?\\d+\\.\\s+(?:\\[[ xX]\\]\\s+)?(?:Write-in\\.\\.\\.|[^\\n]*\\(Write-in\\))[\\s\\S]*↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip"
+                "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?1\\.\\s+(?:\\[[ xX✓✔]\\]\\s+)?\\S[\\s\\S]*(?:^|\\n)\\s*(?:[❯›>]\\s*)?\\d+\\.\\s+(?:\\[[ xX✓✔]\\]\\s+)?(?:Write-in\\.\\.\\.|[^\\n]*\\(Write-in\\))[\\s\\S]*↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip"
               },
               {
                 "section": "choice",
-                "matches": "(?:^|\\n)\\s*Your answer:\\s*(?:\\n|$)[\\s\\S]*Enter Submit[^\\n]*•\\s*<esc> Back"
+                "matches": "(?:^|\\n)\\s*Your answer:\\s*(?:\\n|$)[\\s\\S]*[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back"
               }
             ]
           },
           {
             "not": {
               "section": "choice",
-              "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+              "matches": "(?:↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip|[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
             }
           }
         ]
@@ -471,12 +465,12 @@
               {
                 "not": {
                   "section": "choice",
-                  "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)"
+                  "matches": "(?:↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip|[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back)"
                 }
               },
               {
                 "section": "choice",
-                "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+                "matches": "(?:↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip|[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
               }
             ]
           },
@@ -530,12 +524,12 @@
               {
                 "not": {
                   "section": "choice",
-                  "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)"
+                  "matches": "(?:↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip|[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back)"
                 }
               },
               {
                 "section": "choice",
-                "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+                "matches": "(?:↑\\/↓ Navigate\\s*[•·][^\\n]*[•·]\\s*(?:<esc>|esc) Skip|[Ee]nter Submit[^\\n]*[•·]\\s*(?:<esc>|esc) Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
               }
             ]
           },
