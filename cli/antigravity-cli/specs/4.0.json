@@ -12,6 +12,9 @@
   "send_on_spawn": ["\u001b[I"],
   "send_on_spawn_delay_ms": 250,
   "refocus_when_stalled_ms": 1800,
+  "interactive_prompts": {
+    "scheme": "antigravity_tui"
+  },
   "send_message": {
     "submit_key": "\r",
     "delay_ms_before_submit": 200,
@@ -31,6 +34,16 @@
     },
     "modal": {
       "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use",
+      "anchor_last": true,
+      "anchor_miss": "empty"
+    },
+    "choice": {
+      "anchor": "^\\s*─{10,}\\s*$",
+      "anchor_context": {
+        "prev": "^\\s*Question\\s*$",
+        "next": "^\\s*Question \\d+\\/\\d+:\\s+\\S"
+      },
+      "above": 1,
       "anchor_last": true,
       "anchor_miss": "empty"
     },
@@ -69,6 +82,12 @@
       "id": "busy",
       "label": "Generating",
       "status": "generating"
+    },
+    {
+      "id": "choice",
+      "label": "Question requested",
+      "status": "waiting_choice",
+      "modal_kind": "choice"
     },
     {
       "id": "approval",
@@ -183,7 +202,7 @@
     },
     {
       "label": "→trust",
-      "from": ["starting", "signing_in", "idle", "busy"],
+      "from": ["starting", "signing_in", "idle", "busy", "choice"],
       "to": "trust",
       "priority": 110,
       "when": {
@@ -193,12 +212,56 @@
     },
     {
       "label": "→approval",
-      "from": ["starting", "signing_in", "idle", "busy"],
+      "from": ["starting", "signing_in", "idle", "busy", "choice"],
       "to": "approval",
       "priority": 100,
       "when": {
         "section": "modal",
         "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+      }
+    },
+    {
+      "label": "→choice",
+      "from": ["starting", "signing_in", "idle", "busy"],
+      "to": "choice",
+      "priority": 95,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "esc to cancel"
+            }
+          },
+          {
+            "section": "choice",
+            "matches": "(?:^|\\n)\\s*Question\\s*\\n\\s*─{10,}\\s*\\n\\s*Question \\d+\\/\\d+:\\s+\\S"
+          },
+          {
+            "any": [
+              {
+                "section": "choice",
+                "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?1\\.\\s+(?:\\[[ xX]\\]\\s+)?\\S[\\s\\S]*(?:^|\\n)\\s*(?:[❯›>]\\s*)?\\d+\\.\\s+(?:\\[[ xX]\\]\\s+)?(?:Write-in\\.\\.\\.|[^\\n]*\\(Write-in\\))[\\s\\S]*↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip"
+              },
+              {
+                "section": "choice",
+                "matches": "(?:^|\\n)\\s*Your answer:\\s*(?:\\n|$)[\\s\\S]*Enter Submit[^\\n]*•\\s*<esc> Back"
+              }
+            ]
+          },
+          {
+            "not": {
+              "section": "choice",
+              "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+            }
+          }
+        ]
       }
     },
     {
@@ -233,6 +296,9 @@
       "priority": 90,
       "when": {
         "all": [
+          {
+            "section_absent": "choice"
+          },
           {
             "not": {
               "section": "footer",
@@ -387,6 +453,119 @@
                 "elapsed_ms": 60000
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "choice→busy",
+      "from": "choice",
+      "to": "busy",
+      "when": {
+        "all": [
+          {
+            "any": [
+              {
+                "section_absent": "choice"
+              },
+              {
+                "not": {
+                  "section": "choice",
+                  "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)"
+                }
+              },
+              {
+                "section": "choice",
+                "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+              }
+            ]
+          },
+          {
+            "any": [
+              {
+                "section": "body",
+                "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+              },
+              {
+                "section": "body",
+                "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+              },
+              {
+                "section": "footer",
+                "matches": "esc to cancel"
+              },
+              {
+                "section": "footer",
+                "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "choice→idle",
+      "from": "choice",
+      "to": "idle",
+      "min_hold_ms": 300,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+            }
+          },
+          {
+            "any": [
+              {
+                "section_absent": "choice"
+              },
+              {
+                "not": {
+                  "section": "choice",
+                  "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)"
+                }
+              },
+              {
+                "section": "choice",
+                "matches": "(?:↑\\/↓ Navigate\\s*•[^\\n]*•\\s*<esc> Skip|Enter Submit[^\\n]*•\\s*<esc> Back)[\\s\\S]*(?:(?:^|\\n)\\s*(?:─{10,}|[╭╰┌└│]|>\\s+Type your message)|[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking))"
+              }
+            ]
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "esc to cancel"
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+            }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "\\b[1-9]\\d*\\s+task\\(s\\)"
+            }
+          },
+          {
+            "section": "footer",
+            "matches": "\\? for shortcuts"
           }
         ]
       }
