@@ -109,6 +109,28 @@ test('validator accepts browser-playwright driver sample and rejects driver miss
   const sampleOutput = `${sampleResult.stdout || ''}${sampleResult.stderr || ''}`;
   assert.equal(sampleResult.status, 0, sampleOutput);
 
+  const sampleDir = path.join(repoRoot, 'examples', 'driver', 'browser-playwright');
+  const sampleManifest = JSON.parse(fs.readFileSync(path.join(sampleDir, 'provider.v1.json'), 'utf8'));
+  for (const arg of sampleManifest.runtime.args || []) {
+    if (typeof arg === 'string' && arg.startsWith('./')) {
+      assert.ok(fs.existsSync(path.join(sampleDir, arg)), `missing runtime arg file: ${arg}`);
+    }
+  }
+  for (const action of sampleManifest.actions || []) {
+    if (action.inputSchema) {
+      const schemaPath = path.join(sampleDir, action.inputSchema);
+      assert.ok(fs.existsSync(schemaPath), `missing action inputSchema: ${action.inputSchema}`);
+      const schemaJson = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+      assert.equal(schemaJson.$schema, 'http://json-schema.org/draft-07/schema#');
+    }
+  }
+  if (sampleManifest.guidance) {
+    assert.ok(fs.existsSync(path.join(sampleDir, sampleManifest.guidance)), `missing guidance: ${sampleManifest.guidance}`);
+  }
+  const serverScript = fs.readFileSync(path.join(sampleDir, 'bin', 'browser-server.js'), 'utf8');
+  assert.match(serverScript, /@playwright\/mcp@0\.0\.83/);
+  assert.match(serverScript, /--output-dir/);
+
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'adhdev-driver-validator-'));
   const providerPath = path.join(tempDir, 'provider.v1.json');
   const baseDriver = {
@@ -140,3 +162,4 @@ test('validator accepts browser-playwright driver sample and rejects driver miss
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
+
