@@ -183,7 +183,7 @@
               },
               {
                 "section": "footer",
-                "matches": "\\? for shortcuts|esc to cancel"
+                "matches": "\\? for shortcuts"
               },
               {
                 "section": "viewport",
@@ -208,7 +208,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "\\? for shortcuts|esc to cancel"
+              "matches": "\\? for shortcuts"
             }
           },
           {
@@ -221,6 +221,12 @@
             "not": {
               "section": "body",
               "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use|Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
             }
           }
         ]
@@ -272,7 +278,7 @@
       "priority": 110,
       "when": {
         "section": "modal",
-        "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+        "matches": "(?!(?:[\\s\\S]*)(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:))(?<!(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:)[\\s\\S]*)(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)"
       }
     },
     {
@@ -282,7 +288,7 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+        "matches": "(?!(?:[\\s\\S]*)(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:))(?<!(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:)[\\s\\S]*)(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use)"
       }
     },
     {
@@ -338,8 +344,18 @@
             "matches": "(?:^|\\n)\\s*●\\s+\\[\\d{2}:\\d{2}:\\d{2}\\]\\s+[^\\n]+\\s+running\\s*(?=\\n|$)"
           },
           {
-            "section": "footer",
-            "matches": "esc to cancel"
+            "all": [
+              {
+                "section": "footer",
+                "matches": "esc to cancel"
+              },
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+                }
+              }
+            ]
           },
           {
             "section": "footer",
@@ -409,7 +425,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?!(?:[\\s\\S]*)(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:))(?<!(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:)[\\s\\S]*)(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use)"
                 }
               },
               {
@@ -445,7 +461,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?!(?:[\\s\\S]*)(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:))(?<!(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:)[\\s\\S]*)(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use)"
                 }
               },
               {
@@ -486,7 +502,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?!(?:[\\s\\S]*)(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:))(?<!(?:You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:)[\\s\\S]*)(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use)"
                 }
               },
               {

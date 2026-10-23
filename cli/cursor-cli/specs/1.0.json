@@ -134,8 +134,15 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)|(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)|(?:ctrl\\+c|esc) to (?:interrupt|stop)",
               "flags": "i"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?",
+              "flags": "im"
             }
           }
         ]
@@ -217,6 +224,13 @@
             "flags": "im"
           },
           {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)(?![\\s\\S]*(?:Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?))",
+              "flags": "i"
+            }
+          },
+          {
             "any": [
               {
                 "section": "status_tail",
@@ -248,9 +262,20 @@
             "section": "status_tail"
           },
           {
-            "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
-            "flags": "i",
-            "section": "status_tail"
+            "all": [
+              {
+                "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+                "flags": "i",
+                "section": "status_tail"
+              },
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "flags": "i"
+                }
+              }
+            ]
           }
         ]
       }

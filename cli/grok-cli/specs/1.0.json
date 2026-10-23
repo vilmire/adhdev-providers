@@ -184,14 +184,14 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Esc:\\s*cancel|\\[stop\\]",
+              "matches": "\\[stop\\]|[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
               "flags": "i"
             }
           },
           {
             "not": {
-              "section": "footer",
-              "matches": "^\\s*\\d+/\\d+:select\\b",
+              "section": "status_tail",
+              "matches": "Allow Grok\\b|Run this command\\?|Do you want to (?:proceed|run|allow|edit|create|delete|apply)\\b|Do you trust the contents of this directory\\?",
               "flags": "im"
             }
           }
@@ -289,6 +289,13 @@
           {
             "matches": "^\\s*Yes, proceed\\s+y\\s*$",
             "flags": "im"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)(?![\\s\\S]*Do you trust the contents of this directory\\?)",
+              "flags": "i"
+            }
           }
         ]
       }
@@ -346,6 +353,13 @@
             "section": "modal",
             "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+\\S",
             "flags": "im"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)(?![\\s\\S]*(?:Allow Grok\\b|Run this command\\?|Do you want to (?:proceed|run|allow|edit|create|delete|apply)\\b|Do you trust the contents of this directory\\?))",
+              "flags": "i"
+            }
           }
         ]
       }
@@ -370,8 +384,19 @@
             "section": "status_tail"
           },
           {
-            "matches": "Esc:cancel",
-            "section": "status_tail"
+            "all": [
+              {
+                "matches": "Esc:cancel",
+                "section": "status_tail"
+              },
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+                  "flags": "i"
+                }
+              }
+            ]
           }
         ]
       }

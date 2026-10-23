@@ -214,8 +214,8 @@
           },
           {
             "not": {
-              "section": "footer",
-              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)|Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b"
+              "section": "viewport",
+              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b"
             }
           }
         ]
@@ -285,7 +285,7 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b|(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|(?:[❯›>]\\s*)?\\d+\\.\\s*Claude account with subscription\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)(?![\\s\\S]*(?:Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b))"
             }
           },
           {
@@ -338,6 +338,12 @@
               {
                 "section": "footer",
                 "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s+\\S"
+              },
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*(?:Claude account with subscription|Sign in with your Console account)\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
+                }
               }
             ]
           }
@@ -550,7 +556,7 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b|(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|(?:[❯›>]\\s*)?\\d+\\.\\s*Claude account with subscription\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)(?![\\s\\S]*(?:Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b))"
             }
           },
           {
