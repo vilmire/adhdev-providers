@@ -113,15 +113,25 @@
       "label": "→signing_in (browser login prompt)",
       "from": [
         "starting",
-        "idle",
-        "busy",
-        "signing_in"
+        "idle"
       ],
       "to": "signing_in",
       "priority": 130,
       "when": {
-        "matches": "Signing in with the browser|click this link to log in|QR code to log in",
-        "flags": "i"
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+            "flags": "i"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+              "flags": "m"
+            }
+          }
+        ]
       }
     },
     {
@@ -133,7 +143,8 @@
         "all": [
           {
             "not": {
-              "matches": "Signing in with the browser|click this link to log in|QR code to log in",
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
               "flags": "i"
             }
           },
@@ -150,7 +161,18 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 10000
+        "all": [
+          {
+            "elapsed_ms": 10000
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+              "flags": "i"
+            }
+          }
+        ]
       }
     },
     {

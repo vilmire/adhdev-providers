@@ -30,6 +30,9 @@
     "screen": {
       "from_top": 0
     },
+    "viewport": {
+      "from_bottom": 25
+    },
     "status_tail": {
       "anchor": "^›\\s",
       "anchor_last": true,
@@ -53,6 +56,17 @@
       "label": "Starting",
       "initial": true,
       "status": "idle"
+    },
+    {
+      "id": "signing_in",
+      "label": "Sign in required",
+      "status": "waiting_external",
+      "extract": {
+        "title": {
+          "section": "viewport",
+          "regex": "(Sign in with ChatGPT[^\\n]*|Sign in with Device Code|Paste or type your API key below[^\\n]*)"
+        }
+      }
     },
     {
       "id": "idle",
@@ -156,7 +170,57 @@
             ]
           },
           {
-            "elapsed_ms": 8000
+            "all": [
+              {
+                "elapsed_ms": 8000
+              },
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "label": "starting→signing_in",
+      "from": ["starting", "idle"],
+      "to": "signing_in",
+      "priority": 130,
+      "when": {
+        "all": [
+          {
+            "section": "viewport",
+            "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
+          },
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "tab to queue message|⏎\\s+send"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "signing_in→idle",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
+            }
+          },
+          {
+            "section": "viewport",
+            "matches": "(?:^|\\n)\\s*›\\s|tab to queue message|⏎\\s+send"
           }
         ]
       }

@@ -33,6 +33,9 @@
     "footer": {
       "from_bottom": 1
     },
+    "viewport": {
+      "from_bottom": 40
+    },
     "modal": {
       "anchor": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Requesting permission for:|Do you want to proceed\\?|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use",
       "anchor_last": true,
@@ -71,8 +74,14 @@
     },
     {
       "id": "signing_in",
-      "label": "Signing in",
-      "status": "generating"
+      "label": "Sign in required",
+      "status": "waiting_external",
+      "extract": {
+        "title": {
+          "section": "viewport",
+          "regex": "(You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\. Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|Signing in[^\\n]*)"
+        }
+      }
     },
     {
       "id": "idle",
@@ -144,8 +153,8 @@
         "all": [
           {
             "not": {
-              "section": "body",
-              "matches": "Signing in"
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
             }
           },
           {
@@ -160,16 +169,43 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 15000
+        "all": [
+          {
+            "elapsed_ms": 15000
+          },
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+            }
+          }
+        ]
       }
     },
     {
       "label": "starting→signing_in",
-      "from": "starting",
+      "from": ["starting", "idle"],
       "to": "signing_in",
+      "priority": 130,
       "when": {
-        "section": "body",
-        "matches": "Signing in"
+        "all": [
+          {
+            "section": "viewport",
+            "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "\\? for shortcuts|esc to cancel"
+            }
+          },
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*[❯›>]\\s*Type your message"
+            }
+          }
+        ]
       }
     },
     {
@@ -181,8 +217,8 @@
         "all": [
           {
             "not": {
-              "section": "body",
-              "matches": "Signing in"
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
             }
           },
           {
@@ -198,7 +234,17 @@
       "to": "approval",
       "priority": 90,
       "when": {
-        "elapsed_ms": 60000
+        "all": [
+          {
+            "elapsed_ms": 60000
+          },
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b)"
+            }
+          }
+        ]
       }
     },
     {
@@ -673,6 +719,12 @@
       "id": "trust_needed",
       "when_state": "trust",
       "title": "Antigravity needs to trust this folder",
+      "body": "{state.title}"
+    },
+    {
+      "id": "sign_in_needed",
+      "when_state": "signing_in",
+      "title": "Antigravity needs you to sign in",
       "body": "{state.title}"
     }
   ],

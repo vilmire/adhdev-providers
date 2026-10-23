@@ -136,28 +136,40 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 8000
+        "all": [
+          {
+            "elapsed_ms": 8000
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+              "flags": "i"
+            }
+          }
+        ]
       }
     },
     {
       "label": "→signing_in",
       "from": [
         "starting",
-        "idle",
-        "busy",
-        "signing_in"
+        "idle"
       ],
       "to": "signing_in",
       "priority": 130,
       "when": {
-        "any": [
+        "all": [
           {
-            "matches": "Approve in your browser",
+            "section": "status_tail",
+            "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
             "flags": "i"
           },
           {
-            "matches": "Waiting for approval\\.\\.\\.",
-            "flags": "i"
+            "not": {
+              "section": "footer",
+              "matches": "Shift\\+Tab:mode|Ctrl\\+x:shortcuts"
+            }
           }
         ]
       }
@@ -171,19 +183,14 @@
         "all": [
           {
             "not": {
-              "matches": "Approve in your browser",
-              "flags": "i"
-            }
-          },
-          {
-            "not": {
-              "matches": "Waiting for approval\\.\\.\\.",
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
               "flags": "i"
             }
           },
           {
             "section": "footer",
-            "matches": "Ctrl\\+x:shortcuts"
+            "matches": "Ctrl\\+x:shortcuts|Shift\\+Tab"
           }
         ]
       }

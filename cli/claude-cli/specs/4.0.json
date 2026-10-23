@@ -46,6 +46,9 @@
     "status_tail": {
       "from_bottom": 12
     },
+    "viewport": {
+      "from_bottom": 25
+    },
     "trust": {
       "anchor": "^\\s*Accessing workspace:\\s*$",
       "anchor_last": true
@@ -67,6 +70,17 @@
       "label": "Starting",
       "initial": true,
       "status": "idle"
+    },
+    {
+      "id": "signing_in",
+      "label": "Sign in required",
+      "status": "waiting_external",
+      "extract": {
+        "title": {
+          "section": "viewport",
+          "regex": "(Select login method:|Browser didn't open\\? Use the url below to sign in|Paste code here if prompted >)"
+        }
+      }
     },
     {
       "id": "idle",
@@ -151,7 +165,60 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 8000
+        "all": [
+          {
+            "elapsed_ms": 8000
+          },
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "starting→signing_in",
+      "from": [
+        "starting",
+        "idle"
+      ],
+      "to": "signing_in",
+      "priority": 130,
+      "when": {
+        "all": [
+          {
+            "section": "viewport",
+            "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "bypass permissions|shift\\+tab to cycle|\\? for shortcuts"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "signing_in→idle",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "viewport",
+              "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "(?:^|\\n)\\s*[❯›>](?:\\s|(?:\\n|$))|bypass permissions|\\? for shortcuts"
+          }
+        ]
       }
     },
     {

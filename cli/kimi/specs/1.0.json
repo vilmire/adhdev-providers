@@ -48,6 +48,17 @@
       "status": "idle"
     },
     {
+      "id": "signing_in",
+      "label": "Sign in required",
+      "status": "waiting_external",
+      "extract": {
+        "title": {
+          "section": "status_tail",
+          "regex": "(Sign in to Kimi Code|Visit the URL below in your browser to authorize:|Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+        }
+      }
+    },
+    {
       "id": "idle",
       "label": "Ready",
       "status": "idle"
@@ -105,7 +116,61 @@
       "from": "starting",
       "to": "idle",
       "when": {
-        "elapsed_ms": 15000
+        "all": [
+          {
+            "elapsed_ms": 15000
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "starting→signing_in",
+      "from": [
+        "starting",
+        "idle"
+      ],
+      "to": "signing_in",
+      "priority": 130,
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "│\\s*>\\s*│"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "signing_in→idle",
+      "from": "signing_in",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+            }
+          },
+          {
+            "section": "status_tail",
+            "matches": "│\\s*>\\s*│",
+            "flags": "m"
+          }
+        ]
       }
     },
     {
