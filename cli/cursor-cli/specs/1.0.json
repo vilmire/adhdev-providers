@@ -122,7 +122,7 @@
         "all": [
           {
             "section": "status_tail",
-            "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+            "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b)",
             "flags": "i"
           },
           {
@@ -150,7 +150,7 @@
               },
               {
                 "section": "status_tail",
-                "matches": "(?:Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*Esc to cancel\\s*(?![\\s\\S])",
+                "matches": "(?:Welcome to Cursor Agent|Sign in required|Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*?Esc to cancel",
                 "flags": "i"
               }
             ]
@@ -158,7 +158,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?",
+              "matches": "^\\s*(?:[│┃|❯›>▶●→]\\s*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*[\\s\\S]*?(?:^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$)(?![\\s\\S]*^\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b))",
               "flags": "im"
             }
           }
@@ -185,7 +185,7 @@
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b)",
                   "flags": "i"
                 }
               }
@@ -208,7 +208,7 @@
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b)",
                   "flags": "i"
                 }
               },
@@ -237,22 +237,8 @@
         "all": [
           {
             "section": "status_tail",
-            "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+            "matches": "^\\s*(?:[│┃|❯›>▶●→]\\s*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*[\\s\\S]*?(?:^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$)(?![\\s\\S]*^\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b))",
             "flags": "im"
-          },
-          {
-            "any": [
-              {
-                "section": "status_tail",
-                "matches": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+\\S",
-                "flags": "im"
-              },
-              {
-                "section": "status_tail",
-                "matches": "^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$",
-                "flags": "im"
-              }
-            ]
           }
         ]
       }
@@ -283,8 +269,8 @@
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "(?:Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*Esc to cancel\\s*(?![\\s\\S])",
-                  "flags": "i"
+                  "matches": "(?:Welcome to Cursor Agent|Sign in required|Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*?esc to cancel|esc to cancel[\\s\\S]*?(?:(?:→|❯|>)\\s+Plan, search, build anything|^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/))",
+                  "flags": "im"
                 }
               }
             ]
@@ -308,8 +294,8 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
-              "flags": "i"
+              "matches": "ctrl\\+c to (?:cancel|interrupt|stop)|esc to (?:interrupt|stop|skip)|esc to cancel(?![\\s\\S]*^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/))",
+              "flags": "im"
             }
           },
           {
@@ -334,13 +320,13 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+              "matches": "^\\s*(?:[│┃|❯›>▶●→]\\s*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*[\\s\\S]*?(?:^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$)(?![\\s\\S]*^\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b))",
               "flags": "im"
             }
           },
           {
             "section": "status_tail",
-            "matches": "\\bWorking\\b|(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+            "matches": "\\bWorking\\b|ctrl\\+c to (?:cancel|interrupt|stop)|esc to (?:interrupt|stop|skip)",
             "flags": "im"
           }
         ]
@@ -356,7 +342,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+              "matches": "^\\s*(?:[│┃|❯›>▶●→]\\s*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*[\\s\\S]*?(?:^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|^\\s*(?:→\\s*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)\\s*$)(?![\\s\\S]*^\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b|(?:[▸❯›>]?\\s*)?1\\.\\s+Sign in with browser\\b))",
               "flags": "im"
             }
           },

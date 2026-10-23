@@ -240,7 +240,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use|Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+              "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use|(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b))(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
@@ -298,7 +298,7 @@
       "priority": 110,
       "when": {
         "section": "modal",
-        "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+        "matches": "(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
       }
     },
     {
@@ -308,7 +308,7 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+        "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
       }
     },
     {
@@ -321,7 +321,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?|Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+              "matches": "(?:(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)|(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
@@ -446,7 +446,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
                 }
               },
               {
@@ -482,7 +482,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
                 }
               },
               {
@@ -523,7 +523,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+                  "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
                 }
               },
               {
@@ -609,13 +609,13 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+              "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
             "not": {
               "section": "modal",
-              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+              "matches": "(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
@@ -675,13 +675,13 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+              "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
             "not": {
               "section": "modal",
-              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+              "matches": "(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
@@ -717,13 +717,13 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?|Choose your color scheme:|Terms of Service & Data Use"
+              "matches": "(?:(?:Do you want to proceed\\?|Requesting permission for:|Accept this file edit\\?|Allow access to this file\\?|Allow creation of this file\\?|Allow sandbox bypass for command execution\\?|Allow calling this tool\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S)|Choose your color scheme:|Terms of Service & Data Use)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {
             "not": {
               "section": "modal",
-              "matches": "Do you trust the files in this folder\\?|Do you trust the contents of this project\\?"
+              "matches": "(?:Do you trust the files in this folder\\?|Do you trust the contents of this project\\?)(?:(?![\\s\\S])|[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)(?![\\s\\S]*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)(?![\\s\\S]*\\n\\s*(?:[❯›>]\\s*)?(?:1\\.\\s+(?!Sign in with Google\\b|Use Gemini API key\\b|Vertex AI\\b)\\S[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?2\\.\\s+\\S|(?:1\\.\\s+)?Yes\\b[\\s\\S]*?\\n\\s*(?:[❯›>]\\s*)?(?:2\\.\\s+)?No\\b)))"
             }
           },
           {

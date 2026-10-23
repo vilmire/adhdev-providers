@@ -191,9 +191,14 @@
           },
           {
             "not": {
-              "section": "status_tail",
-              "matches": "Allow Grok\\b|Run this command\\?|Do you want to (?:proceed|run|allow|edit|create|delete|apply)\\b|Do you trust the contents of this directory\\?",
+              "matches": "^\\s*Do you trust the contents of this directory\\?[\\s\\S]*?^\\s*Yes, proceed\\s+y\\s*$(?![\\s\\S]*^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
               "flags": "im"
+            }
+          },
+          {
+            "not": {
+              "matches": "Help improve Grok[\\s\\S]*?\\bOpt (?:out|in)\\b",
+              "flags": "i"
             }
           },
           {
@@ -315,7 +320,7 @@
             "matches": "Do you trust the contents of this directory\\?"
           },
           {
-            "matches": "^\\s*Yes, proceed\\s+y\\s*$",
+            "matches": "^\\s*Yes, proceed\\s+y\\s*$(?![\\s\\S]*^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
             "flags": "im"
           }
         ]
@@ -402,7 +407,7 @@
             "all": [
               {
                 "matches": "Esc:cancel",
-                "section": "status_tail"
+                "section": "footer"
               },
               {
                 "not": {
@@ -414,8 +419,8 @@
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b)[\\s\\S]*\\n\\s*Esc:cancel\\s*(?![\\s\\S])",
-                  "flags": "i"
+                  "matches": "^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|1\\s*\\([●○]\\)\\s+Sign in\\b|Paste your xAI API key\\b)[\\s\\S]*?^\\s*Esc:cancel\\b(?![^\\n]*│)",
+                  "flags": "im"
                 }
               }
             ]

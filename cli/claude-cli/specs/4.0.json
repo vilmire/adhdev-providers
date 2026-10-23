@@ -218,7 +218,7 @@
               "all": [
                 {
                   "section": "footer",
-                  "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
+                  "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S(?![\\s\\S]*(?:^|\\n)\\s*(?:Select login method:|How do you want to sign in\\?|Opening browser to sign in|Browser didn't open\\?|Paste code here if prompted\\s*>|(?:[❯›>]\\s*)?1\\.\\s*(?:Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)))"
                 },
                 {
                   "section": "footer",
@@ -230,7 +230,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+              "matches": "(?:Select (?:a |an )?(?:model|mode|option)\\b|Switch between)(?![\\s\\S]*(?:^|\\n)\\s*(?:Select login method:|How do you want to sign in\\?|Opening browser to sign in|Browser didn't open\\?|Paste code here if prompted\\s*>|(?:[❯›>]\\s*)?1\\.\\s*(?:Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)))"
             }
           },
           {
@@ -298,7 +298,7 @@
         "all": [
           {
             "section": "footer",
-            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
+            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S(?![\\s\\S]*(?:^|\\n)\\s*(?:Select login method:|How do you want to sign in\\?|Opening browser to sign in|Browser didn't open\\?|Paste code here if prompted\\s*>|(?:[❯›>]\\s*)?1\\.\\s*(?:Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)))"
           },
           {
             "section": "footer",
@@ -342,7 +342,7 @@
             "all": [
               {
                 "section": "modal",
-                "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+                "matches": "(?:Select (?:a |an )?(?:model|mode|option)\\b|Switch between)(?![\\s\\S]*(?:^|\\n)\\s*(?:Select login method:|How do you want to sign in\\?|Opening browser to sign in|Browser didn't open\\?|Paste code here if prompted\\s*>|(?:[❯›>]\\s*)?1\\.\\s*(?:Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)))"
               },
               {
                 "not": {
@@ -359,7 +359,7 @@
               },
               {
                 "section": "footer",
-                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
+                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S(?![\\s\\S]*(?:^|\\n)\\s*(?:Select login method:|How do you want to sign in\\?|Opening browser to sign in|Browser didn't open\\?|Paste code here if prompted\\s*>|(?:[❯›>]\\s*)?1\\.\\s*(?:Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)))"
               }
             ]
           }
