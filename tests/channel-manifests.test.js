@@ -183,3 +183,18 @@ test('artifact manifest precedence: provider.v1.json wins over legacy provider.j
     assert.equal(lib.readArtifactManifest(dir).providerVersion, '1.0.0');
   });
 });
+
+test('lagging stable entry fails closed when historical git version is missing instead of falling back to current-tree hashing', async () => {
+  const { stableEntry } = await makeFixtureData();
+  withTempDir((dir) => {
+    const mutated = {
+      ...stableEntry,
+      providerVersion: '0.0.1',
+    };
+    const file = writeManifest(dir, 'stable', [mutated]);
+    const result = runChannelValidator(file);
+    assert.equal(result.status, 1, output(result));
+    assert.match(output(result), /historical git tree for lagging stable version '0\.0\.1' not found/);
+  });
+});
+

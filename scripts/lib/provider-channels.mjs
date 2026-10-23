@@ -118,7 +118,11 @@ export function computeProviderTreeDigest(relDir) {
 function findHistoricalProviderTreeDigest(relDir, targetVersion) {
   let revs;
   try {
-    revs = execFileSync('git', ['log', '-n', '50', '--format=%H', '--', relDir], { cwd: REPO_ROOT, encoding: 'utf8' })
+    revs = execFileSync('git', ['log', '-n', '50', '--format=%H', '--', relDir], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
@@ -354,10 +358,14 @@ export function validateChannelManifest(filePath) {
     let computed;
     try {
       computed = isLaggingStable
-        ? (findHistoricalProviderTreeDigest(artifact.relDir, entry.providerVersion) ?? computeProviderTreeDigest(artifact.relDir))
+        ? findHistoricalProviderTreeDigest(artifact.relDir, entry.providerVersion)
         : computeProviderTreeDigest(artifact.relDir);
     } catch (error) {
       fail(`${at}: digest computation failed — ${error.message}`);
+      continue;
+    }
+    if (!computed) {
+      fail(`${at}: historical git tree for lagging stable version '${entry.providerVersion}' not found in ${artifact.relDir}`);
       continue;
     }
     if (computed !== entry.bundleDigest) {
