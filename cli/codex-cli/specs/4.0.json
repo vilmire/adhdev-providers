@@ -229,6 +229,12 @@
               "section": "screen",
               "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
             }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Do you trust the contents of this directory\\?"
+            }
           }
         ]
       }
@@ -284,7 +290,7 @@
     },
     {
       "label": "→trust",
-      "from": ["starting", "idle", "busy", "mcp_init"],
+      "from": ["starting", "signing_in", "idle", "busy", "mcp_init"],
       "to": "trust",
       "priority": 110,
       "when": {
@@ -294,7 +300,7 @@
     },
     {
       "label": "→approval",
-      "from": ["starting", "idle", "busy", "mcp_init"],
+      "from": ["starting", "signing_in", "idle", "busy", "mcp_init"],
       "to": "approval",
       "priority": 100,
       "when": {

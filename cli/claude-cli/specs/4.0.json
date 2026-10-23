@@ -161,26 +161,6 @@
   ],
   "transitions": [
     {
-      "label": "starting→idle-ready",
-      "from": "starting",
-      "to": "idle",
-      "min_hold_ms": 500,
-      "when": {
-        "all": [
-          {
-            "section": "status_tail",
-            "matches": "(?:^|\\n)[ \\t]*─{10,}[ \\t]*\\n[ \\t]*[❯›>](?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)\\n[ \\t]*─{10,}|bypass permissions|shift\\+tab to cycle|\\? for shortcuts|← for agents|\\b(?:auto|manual|plan) mode on\\b"
-          },
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?\\b[1-9]\\d*\\s+shells?\\s+still\\s+running\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+shells?\\s*[·•][^\\n]*?↓\\s*to\\s*manage\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+background\\s+(?:tasks?|shells?)\\b)"
-            }
-          }
-        ]
-      }
-    },
-    {
       "label": "startup-grace",
       "from": "starting",
       "to": "idle",
@@ -231,6 +211,12 @@
               "section": "status_tail",
               "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?\\b[1-9]\\d*\\s+shells?\\s+still\\s+running\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+shells?\\s*[·•][^\\n]*?↓\\s*to\\s*manage\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+background\\s+(?:tasks?|shells?)\\b)"
             }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)|Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b"
+            }
           }
         ]
       }
@@ -280,6 +266,7 @@
       "label": "→approval",
       "from": [
         "starting",
+        "signing_in",
         "idle",
         "busy",
         "approval_resolving"
@@ -298,7 +285,7 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b"
             }
           },
           {
@@ -563,7 +550,7 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b"
             }
           },
           {
@@ -622,6 +609,7 @@
       "label": "→trust",
       "from": [
         "starting",
+        "signing_in",
         "idle"
       ],
       "to": "trust",

@@ -132,28 +132,6 @@
   ],
   "transitions": [
     {
-      "label": "starting→idle-ready",
-      "from": "starting",
-      "to": "idle",
-      "min_hold_ms": 500,
-      "when": {
-        "all": [
-          {
-            "section": "status_tail",
-            "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
-            "flags": "i"
-          },
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "Esc:\\s*cancel|\\[stop\\]",
-              "flags": "i"
-            }
-          }
-        ]
-      }
-    },
-    {
       "label": "startup-grace",
       "from": "starting",
       "to": "idle",
@@ -208,6 +186,13 @@
               "section": "status_tail",
               "matches": "Esc:\\s*cancel|\\[stop\\]",
               "flags": "i"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "^\\s*\\d+/\\d+:select\\b",
+              "flags": "im"
             }
           }
         ]
@@ -343,6 +328,7 @@
       "label": "→approval",
       "from": [
         "starting",
+        "signing_in",
         "idle",
         "busy",
         "approval_vanished"

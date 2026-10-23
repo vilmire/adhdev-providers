@@ -200,6 +200,7 @@
       "label": "→approval",
       "from": [
         "starting",
+        "signing_in",
         "idle",
         "busy"
       ],
