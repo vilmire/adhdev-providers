@@ -132,6 +132,28 @@
   ],
   "transitions": [
     {
+      "label": "starting→idle-ready",
+      "from": "starting",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+            "flags": "i"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Esc:\\s*cancel|\\[stop\\]",
+              "flags": "i"
+            }
+          }
+        ]
+      }
+    },
+    {
       "label": "startup-grace",
       "from": "starting",
       "to": "idle",
@@ -141,11 +163,20 @@
             "elapsed_ms": 8000
           },
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
-              "flags": "i"
-            }
+            "any": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+                  "flags": "i"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+                "flags": "i"
+              }
+            ]
           }
         ]
       }
@@ -154,7 +185,7 @@
       "label": "→signing_in",
       "from": [
         "starting",
-        "idle"
+        "busy"
       ],
       "to": "signing_in",
       "priority": 130,
@@ -167,8 +198,16 @@
           },
           {
             "not": {
-              "section": "footer",
-              "matches": "Shift\\+Tab:mode|Ctrl\\+x:shortcuts"
+              "section": "status_tail",
+              "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+              "flags": "i"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "Esc:\\s*cancel|\\[stop\\]",
+              "flags": "i"
             }
           }
         ]
@@ -180,17 +219,25 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
+        "any": [
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
-              "flags": "i"
-            }
+            "section": "status_tail",
+            "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+            "flags": "i"
           },
           {
-            "section": "footer",
-            "matches": "Ctrl\\+x:shortcuts|Shift\\+Tab"
+            "all": [
+              {
+                "elapsed_ms": 15000
+              },
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+                  "flags": "i"
+                }
+              }
+            ]
           }
         ]
       }

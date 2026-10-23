@@ -153,8 +153,8 @@
         "all": [
           {
             "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+              "section": "footer",
+              "matches": "esc to cancel"
             }
           },
           {
@@ -174,17 +174,29 @@
             "elapsed_ms": 15000
           },
           {
-            "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
-            }
+            "any": [
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+                }
+              },
+              {
+                "section": "footer",
+                "matches": "\\? for shortcuts|esc to cancel"
+              },
+              {
+                "section": "viewport",
+                "matches": "(?:^|\\n)\\s*[❯›>]\\s*Type your message"
+              }
+            ]
           }
         ]
       }
     },
     {
       "label": "starting→signing_in",
-      "from": ["starting", "idle"],
+      "from": ["starting", "busy"],
       "to": "signing_in",
       "priority": 130,
       "when": {
@@ -204,6 +216,12 @@
               "section": "viewport",
               "matches": "(?:^|\\n)\\s*[❯›>]\\s*Type your message"
             }
+          },
+          {
+            "not": {
+              "section": "body",
+              "matches": "[\\u2800-\\u28ff]\\s+(?:Generating|Running|Thinking)"
+            }
           }
         ]
       }
@@ -217,8 +235,8 @@
         "all": [
           {
             "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:(?:Welcome back!\\s+)?You are currently not signed in\\.|Select Google Cloud sign-in method:|Authentication required\\.\\s+Please visit the URL to log in:|If you aren't automatically redirected, paste the authorization code below:|https://accounts\\.google\\.com/o/oauth2/auth\\b|Signing in(?:\\s+to your Google account)?\\b)"
+              "section": "footer",
+              "matches": "esc to cancel"
             }
           },
           {

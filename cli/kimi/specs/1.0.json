@@ -121,10 +121,19 @@
             "elapsed_ms": 15000
           },
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
-            }
+            "any": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "│\\s*>\\s*│",
+                "flags": "m"
+              }
+            ]
           }
         ]
       }
@@ -133,7 +142,7 @@
       "label": "starting→signing_in",
       "from": [
         "starting",
-        "idle"
+        "busy"
       ],
       "to": "signing_in",
       "priority": 130,
@@ -148,6 +157,13 @@
               "section": "status_tail",
               "matches": "│\\s*>\\s*│"
             }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[🌑🌒🌓🌔🌕🌖🌗🌘]\\s*·\\s*Tip:|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+(?:working|thinking)\\.\\.\\.",
+              "flags": "im"
+            }
           }
         ]
       }
@@ -158,17 +174,24 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
-            }
-          },
+        "any": [
           {
             "section": "status_tail",
             "matches": "│\\s*>\\s*│",
             "flags": "m"
+          },
+          {
+            "all": [
+              {
+                "elapsed_ms": 15000
+              },
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)"
+                }
+              }
+            ]
           }
         ]
       }

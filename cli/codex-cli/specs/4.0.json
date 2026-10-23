@@ -64,7 +64,7 @@
       "extract": {
         "title": {
           "section": "viewport",
-          "regex": "(Sign in with ChatGPT[^\\n]*|Sign in with Device Code|Paste or type your API key below[^\\n]*)"
+          "regex": "(Sign in with ChatGPT[^\\n]*|Sign in with Device Code|Finish signing in via your browser|Preparing device code login[^\\n]*|Use your own OpenAI API key[^\\n]*|API key login is disabled[^\\n]*|Paste or type your API key below[^\\n]*)"
         }
       }
     },
@@ -164,6 +164,20 @@
                 }
               },
               {
+                "any": [
+                  {
+                    "not": {
+                      "section": "viewport",
+                      "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))"
+                    }
+                  },
+                  {
+                    "section": "viewport",
+                    "matches": "\\? for shortcuts|\\b\\d+(?:\\.\\d+)?%\\s*(?:context\\s+)?left\\b|tab to queue message|⏎\\s+send"
+                  }
+                ]
+              },
+              {
                 "stable_ms": 1500,
                 "cursor_above": 4
               }
@@ -175,10 +189,18 @@
                 "elapsed_ms": 8000
               },
               {
-                "not": {
-                  "section": "viewport",
-                  "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
-                }
+                "any": [
+                  {
+                    "not": {
+                      "section": "viewport",
+                      "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))"
+                    }
+                  },
+                  {
+                    "section": "viewport",
+                    "matches": "\\? for shortcuts|\\b\\d+(?:\\.\\d+)?%\\s*(?:context\\s+)?left\\b|tab to queue message|⏎\\s+send"
+                  }
+                ]
               }
             ]
           }
@@ -187,19 +209,25 @@
     },
     {
       "label": "starting→signing_in",
-      "from": ["starting", "idle"],
+      "from": ["starting", "busy"],
       "to": "signing_in",
       "priority": 130,
       "when": {
         "all": [
           {
             "section": "viewport",
-            "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
+            "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))"
           },
           {
             "not": {
               "section": "viewport",
-              "matches": "tab to queue message|⏎\\s+send"
+              "matches": "\\? for shortcuts|\\b\\d+(?:\\.\\d+)?%\\s*(?:context\\s+)?left\\b|tab to queue message|⏎\\s+send"
+            }
+          },
+          {
+            "not": {
+              "section": "screen",
+              "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
             }
           }
         ]
@@ -211,16 +239,45 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
+        "any": [
           {
-            "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|API key login is disabled by this workspace\\.\\s+Sign in with ChatGPT to continue\\.|Paste or type your API key below\\.\\s+It will be stored locally in auth\\.json\\.|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$))"
-            }
+            "all": [
+              {
+                "section": "viewport",
+                "matches": "(?:^|\\n)[ \\t]*›(?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)(?=\\n|$)"
+              },
+              {
+                "section": "viewport",
+                "matches": "\\? for shortcuts|\\b\\d+(?:\\.\\d+)?%\\s*(?:context\\s+)?left\\b|tab to queue message|⏎\\s+send"
+              }
+            ]
           },
           {
-            "section": "viewport",
-            "matches": "(?:^|\\n)\\s*›\\s|tab to queue message|⏎\\s+send"
+            "all": [
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))"
+                }
+              },
+              {
+                "section": "viewport",
+                "matches": "(?:^|\\n)\\s*›\\s|\\? for shortcuts|\\b\\d+(?:\\.\\d+)?%\\s*(?:context\\s+)?left\\b|tab to queue message|⏎\\s+send"
+              }
+            ]
+          },
+          {
+            "all": [
+              {
+                "elapsed_ms": 15000
+              },
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))"
+                }
+              }
+            ]
           }
         ]
       }

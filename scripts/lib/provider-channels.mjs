@@ -111,6 +111,65 @@ export function computeProviderTreeDigest(relDir) {
 }
 
 /**
+ * Compute the canonical tree digest for a provider directory at a specific git
+ * commit, and read its manifest version at that commit. Used when `stable`
+ * intentionally lags behind a newer `preview` bump in the working tree.
+ */
+function findHistoricalProviderTreeDigest(relDir, targetVersion) {
+  let revs;
+  try {
+    revs = execFileSync('git', ['log', '-n', '50', '--format=%H', '--', relDir], { cwd: REPO_ROOT, encoding: 'utf8' })
+      .split(/\r?\n/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+  for (const rev of revs) {
+    let manifest = null;
+    for (const name of ['provider.v1.json', 'provider.json']) {
+      try {
+        const raw = execFileSync('git', ['show', `${rev}:${relDir}/${name}`], {
+          cwd: REPO_ROOT,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        });
+        manifest = JSON.parse(raw);
+        break;
+      } catch {
+        // try fallback manifest name
+      }
+    }
+    if (!manifest || manifest.providerVersion !== targetVersion) continue;
+    let listing;
+    try {
+      listing = execFileSync('git', ['ls-tree', '-r', '-z', '--name-only', rev, '--', relDir], {
+        cwd: REPO_ROOT,
+        encoding: 'buffer',
+      });
+    } catch {
+      continue;
+    }
+    const paths = listing.toString('utf8').split('\0').filter(Boolean).sort();
+    if (paths.length === 0) continue;
+    const hash = createHash('sha256');
+    for (const relPath of paths) {
+      const bytes = execFileSync('git', ['show', `${rev}:${relPath}`], {
+        cwd: REPO_ROOT,
+        encoding: 'buffer',
+      });
+      hash.update(relPath, 'utf8');
+      hash.update('\0');
+      hash.update(String(bytes.length), 'utf8');
+      hash.update('\0');
+      hash.update(bytes);
+    }
+    return `sha256:${hash.digest('hex')}`;
+  }
+  return null;
+}
+
+/**
  * Read the artifact manifest in a provider directory. The v1 manifest wins
  * when both exist: it is the current contract and the same precedence the
  * daemon runtime (locateArtifactDir) and the registry publish workflow use.
@@ -276,7 +335,13 @@ export function validateChannelManifest(filePath) {
     if (artifact.category !== entry.category) {
       fail(`${at}: category '${entry.category}' does not match artifact category '${artifact.category}'`);
     }
-    if (artifact.providerVersion !== entry.providerVersion) {
+    const isLaggingStable =
+      manifest.channel === 'stable'
+      && artifact.providerVersion !== entry.providerVersion
+      && semver.valid(entry.providerVersion)
+      && semver.valid(artifact.providerVersion)
+      && semver.lt(entry.providerVersion, artifact.providerVersion);
+    if (artifact.providerVersion !== entry.providerVersion && !isLaggingStable) {
       fail(`${at}: providerVersion '${entry.providerVersion}' does not match artifact manifest '${artifact.providerVersion}'`);
     }
 
@@ -288,7 +353,9 @@ export function validateChannelManifest(filePath) {
     }
     let computed;
     try {
-      computed = computeProviderTreeDigest(artifact.relDir);
+      computed = isLaggingStable
+        ? (findHistoricalProviderTreeDigest(artifact.relDir, entry.providerVersion) ?? computeProviderTreeDigest(artifact.relDir))
+        : computeProviderTreeDigest(artifact.relDir);
     } catch (error) {
       fail(`${at}: digest computation failed — ${error.message}`);
       continue;

@@ -59,10 +59,17 @@ const manifest = (channel, providers) => ({
   providers,
 });
 
+const previewOnly = process.argv.includes('--preview-only');
 const channelsDir = resolve(REPO_ROOT, 'channels');
 mkdirSync(channelsDir, { recursive: true });
 writeFileSync(resolve(channelsDir, 'preview.json'), JSON.stringify(manifest('preview', previewEntries), null, 2) + '\n');
-writeFileSync(resolve(channelsDir, 'stable.json'), JSON.stringify(manifest('stable', stableEntries), null, 2) + '\n');
+if (!previewOnly) {
+  writeFileSync(resolve(channelsDir, 'stable.json'), JSON.stringify(manifest('stable', stableEntries), null, 2) + '\n');
+}
 
-console.log(`Wrote channels/preview.json and channels/stable.json (${artifacts.length} providers, digestAlgorithm ${DIGEST_ALGORITHM}).`);
+console.log(
+  previewOnly
+    ? `Wrote channels/preview.json (${artifacts.length} providers, digestAlgorithm ${DIGEST_ALGORITHM}).`
+    : `Wrote channels/preview.json and channels/stable.json (${artifacts.length} providers, digestAlgorithm ${DIGEST_ALGORITHM}).`,
+);
 console.log('Run `node scripts/validate-channels.mjs` to verify.');

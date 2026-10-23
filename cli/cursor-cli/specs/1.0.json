@@ -113,7 +113,7 @@
       "label": "→signing_in (browser login prompt)",
       "from": [
         "starting",
-        "idle"
+        "busy"
       ],
       "to": "signing_in",
       "priority": 130,
@@ -130,6 +130,13 @@
               "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
               "flags": "m"
             }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)|(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
+              "flags": "i"
+            }
           }
         ]
       }
@@ -140,18 +147,25 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
-              "flags": "i"
-            }
-          },
+        "any": [
           {
             "section": "status_tail",
             "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
             "flags": "m"
+          },
+          {
+            "all": [
+              {
+                "elapsed_ms": 15000
+              },
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "flags": "i"
+                }
+              }
+            ]
           }
         ]
       }
@@ -166,11 +180,20 @@
             "elapsed_ms": 10000
           },
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
-              "flags": "i"
-            }
+            "any": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "(?:^|\\n)\\s*(?:Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "flags": "i"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)",
+                "flags": "m"
+              }
+            ]
           }
         ]
       }

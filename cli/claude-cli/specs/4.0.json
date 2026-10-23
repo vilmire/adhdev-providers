@@ -55,7 +55,7 @@
     }
   },
   "_trust_state_note": "Added 2026-10-10 (Claude Code 2.1.295/2.1.296, measured live on win32). The folder-trust dialog is now an UNNUMBERED cursor list with the refusal first and focused: `❯ No, exit` / `  Yes, I trust this folder` / `Enter to confirm · Esc to cancel`. →approval needs a `1.` row, so the dialog matched nothing: startup-grace took the session to idle with the dialog still up, the dashboard showed a ready session with no approval card, and the first message was typed into the dialog (a blind Enter there picks `No, exit`). `trust` is entered only when BOTH choice rows and the confirm hint are the last lines on screen, so the same words quoted in a transcript never match. Buttons are ordinal (label_group) and pressed by arrow keys from the cursor row, so either row order works; the optional `N.` keeps the older numbered layout on the same path. It exits back to `starting`, not `idle`: accepting the dialog is where the CLI's boot begins, and startup-grace must run from there before the first send. pre_launch_trust normally keeps this dialog from appearing at all; this state is what makes a miss visible and answerable instead of a silent wedge.",
-  "_end_anchor_note": "busy→idle (transitions[4]) body regex: the completion-summary line `✻ … for Ns` must be followed only by non-activity lines up to the END OF THE SECTION. That end anchor used to be a bare `$`, which is correct without the m flag (JS `$` then matches only at end of input) but tripped the engine's spec lint (`uses ^ or $ without the m flag`) on every session start. It is now spelled `(?![\\s\\S])` — byte-for-byte the same end-of-input semantics, lint-clean. Do NOT fix the lint by adding the m flag instead: with m, `$` matches at the end of the summary line itself, the continuation clause becomes optional, and a stale `✻ … for Ns` line above a live spinner would read as idle.",
+  "_end_anchor_note": "busy→idle body regex: the completion-summary line `✻ … for Ns` must be followed only by non-activity lines up to the END OF THE SECTION. That end anchor used to be a bare `$`, which is correct without the m flag (JS `$` then matches only at end of input) but tripped the engine's spec lint (`uses ^ or $ without the m flag`) on every session start. It is now spelled `(?![\\s\\S])` — byte-for-byte the same end-of-input semantics, lint-clean. Do NOT fix the lint by adding the m flag instead: with m, `$` matches at the end of the summary line itself, the continuation clause becomes optional, and a stale `✻ … for Ns` line above a live spinner would read as idle.",
   "_background_marker_note": "Added 2026-10-18 with the background-shell generating hold. The same indicator text the busy guards already match, declared once so the engine can BOUND the hold: marker-only (no spinner, output or modal) for 120 s sends one coordinator notice and for 10 min evaluates the screen as if the marker were absent, so a dev server the worker leaves running cannot pin the session until the 90-minute ceiling. Matched per line inside status_tail; keep in step with the marker alternatives in the busy guards.",
   "background_marker": {
     "patterns": [
@@ -78,7 +78,7 @@
       "extract": {
         "title": {
           "section": "viewport",
-          "regex": "(Select login method:|Browser didn't open\\? Use the url below to sign in|Paste code here if prompted >)"
+          "regex": "(Select login method:|Anthropic Console account|How do you want to sign in\\?|Sign in with your Console account|Opening browser to sign in[^\\n]*|Cloud gateway\\s*[·•]\\s*sign in|Browser didn't open\\?\\s*(?:Use the url below to sign in|Visit:)|Paste code here if prompted\\s*>)"
         }
       }
     },
@@ -161,6 +161,26 @@
   ],
   "transitions": [
     {
+      "label": "starting→idle-ready",
+      "from": "starting",
+      "to": "idle",
+      "min_hold_ms": 500,
+      "when": {
+        "all": [
+          {
+            "section": "status_tail",
+            "matches": "(?:^|\\n)[ \\t]*─{10,}[ \\t]*\\n[ \\t]*[❯›>](?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)\\n[ \\t]*─{10,}|bypass permissions|shift\\+tab to cycle|\\? for shortcuts|← for agents|\\b(?:auto|manual|plan) mode on\\b"
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?\\b[1-9]\\d*\\s+shells?\\s+still\\s+running\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+shells?\\s*[·•][^\\n]*?↓\\s*to\\s*manage\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+background\\s+(?:tasks?|shells?)\\b)"
+            }
+          }
+        ]
+      }
+    },
+    {
       "label": "startup-grace",
       "from": "starting",
       "to": "idle",
@@ -170,10 +190,18 @@
             "elapsed_ms": 8000
           },
           {
-            "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
-            }
+            "any": [
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*Sign in with your Console account\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "(?:^|\\n)[ \\t]*─{10,}[ \\t]*\\n[ \\t]*[❯›>](?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)\\n[ \\t]*─{10,}|bypass permissions|shift\\+tab to cycle|\\? for shortcuts|← for agents|\\b(?:auto|manual|plan) mode on\\b"
+              }
+            ]
           }
         ]
       }
@@ -182,7 +210,7 @@
       "label": "starting→signing_in",
       "from": [
         "starting",
-        "idle"
+        "busy"
       ],
       "to": "signing_in",
       "priority": 130,
@@ -190,12 +218,18 @@
         "all": [
           {
             "section": "viewport",
-            "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
+            "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*Sign in with your Console account\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
           },
           {
             "not": {
               "section": "status_tail",
-              "matches": "bypass permissions|shift\\+tab to cycle|\\? for shortcuts"
+              "matches": "(?:^|\\n)[ \\t]*─{10,}[ \\t]*\\n[ \\t]*[❯›>](?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)\\n[ \\t]*─{10,}|bypass permissions|shift\\+tab to cycle|\\? for shortcuts|← for agents|\\b(?:auto|manual|plan) mode on\\b"
+            }
+          },
+          {
+            "not": {
+              "section": "status_tail",
+              "matches": "(?:(?:^|\\n)\\s*[✢✳✶✽✷✸✹\\u2800-\\u28ff]\\s+\\w[^\\n]*?(?:…|\\.\\.\\.|\\d+[smh]\\b|[↑↓]\\s*[\\d.]+[km]?\\s*tokens?))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?[↑↓]\\s*[\\d.]+[km]?\\s*tokens?)|(?:(?:^|\\n)\\s*esc to (?:interrupt|stop)(?:\\s*[·•]\\s*ctrl\\+t[^\\n]*)?\\s*(?=\\n|$))|(?:(?:^|\\n)[^\\n()]{1,160}\\(\\s*esc to (?:interrupt|stop)\\s*[·•]\\s*ctrl\\+t[^\\n)]*\\)\\s*(?=\\n|$))|(?:(?:^|\\n)\\s*✻\\s+\\w[^\\n]*?\\b[1-9]\\d*\\s+shells?\\s+still\\s+running\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+shells?\\s*[·•][^\\n]*?↓\\s*to\\s*manage\\b)|(?:(?:^|\\n)\\s*(?:⏵⏵\\s+[^\\n]*?[·•]\\s*)?[1-9]\\d*\\s+background\\s+(?:tasks?|shells?)\\b)"
             }
           }
         ]
@@ -207,16 +241,37 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "all": [
-          {
-            "not": {
-              "section": "viewport",
-              "matches": "(?:^|\\n)\\s*(?:Select login method:|Browser didn't open\\?\\s+Use the url below to sign in\\b|Paste code here if prompted\\s*>)"
-            }
-          },
+        "any": [
           {
             "section": "status_tail",
-            "matches": "(?:^|\\n)\\s*[❯›>](?:\\s|(?:\\n|$))|bypass permissions|\\? for shortcuts"
+            "matches": "(?:^|\\n)[ \\t]*─{10,}[ \\t]*\\n[ \\t]*[❯›>](?:[ \\t]*|[ \\t]+(?![1-9]\\.)[^\\n]*)\\n[ \\t]*─{10,}|bypass permissions|shift\\+tab to cycle|\\? for shortcuts|← for agents|\\b(?:auto|manual|plan) mode on\\b"
+          },
+          {
+            "all": [
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*Sign in with your Console account\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "(?:^|\\n)\\s*[❯›>](?:\\s|(?:\\n|$))"
+              }
+            ]
+          },
+          {
+            "all": [
+              {
+                "elapsed_ms": 15000
+              },
+              {
+                "not": {
+                  "section": "viewport",
+                  "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*Sign in with your Console account\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
+                }
+              }
+            ]
           }
         ]
       }
