@@ -4,12 +4,12 @@
   "name": "claude-cli-tool-output-clean",
   "type": "claude-cli",
   "createdAt": "2026-04-05T11:04:30.632Z",
-  "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+  "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
   "providerResolution": {
     "type": "claude-cli",
-    "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+    "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
     "scriptDir": "scripts/1.0",
-    "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+    "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
     "scriptsSource": "compatibility:>=2.1.0",
     "resolvedVersion": "2.1.84",
     "resolvedOs": null,
@@ -39,9 +39,9 @@
     },
     "providerResolution": {
       "type": "claude-cli",
-      "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+      "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
       "scriptDir": "scripts/1.0",
-      "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+      "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
       "scriptsSource": "compatibility:>=2.1.0",
       "resolvedVersion": "2.1.84",
       "resolvedOs": null,
@@ -55,9 +55,9 @@
         "name": "Claude Code",
         "resolvedVersion": "2.1.84",
         "resolvedOs": null,
-        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
         "scriptDir": "scripts/1.0",
-        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
         "scriptsSource": "compatibility:>=2.1.0",
         "versionWarning": null
       },
@@ -65,7 +65,7 @@
       "ready": true,
       "startupParseGate": false,
       "spawnAt": 1775387052084,
-      "workingDir": "/Users/vilmire/Work/remote_vs/oss",
+      "workingDir": "/Users/me/Work/remote_vs/oss",
       "messages": [],
       "committedMessages": [],
       "structuredMessages": [],
@@ -129,9 +129,9 @@
         "name": "Claude Code",
         "resolvedVersion": "2.1.84",
         "resolvedOs": null,
-        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
         "scriptDir": "scripts/1.0",
-        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
         "scriptsSource": "compatibility:>=2.1.0",
         "versionWarning": null
       },
@@ -146,7 +146,7 @@
           "activeModal": null,
           "payload": {
             "providerType": "claude-cli",
-            "workingDir": "/Users/vilmire/Work/remote_vs/oss"
+            "workingDir": "/Users/me/Work/remote_vs/oss"
           }
         },
         {
@@ -163,7 +163,7 @@
               "-c",
               "/opt/homebrew/bin/claude --permission-mode acceptEdits --session-id c29ad22c-cda9-42d0-a876-08478672a3c2"
             ],
-            "cwd": "/Users/vilmire/Work/remote_vs/oss",
+            "cwd": "/Users/me/Work/remote_vs/oss",
             "cols": 80,
             "rows": 24,
             "providerResolution": {
@@ -171,9 +171,9 @@
               "name": "Claude Code",
               "resolvedVersion": "2.1.84",
               "resolvedOs": null,
-              "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+              "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
               "scriptDir": "scripts/1.0",
-              "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+              "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
               "scriptsSource": "compatibility:>=2.1.0",
               "versionWarning": null
             }
@@ -358,9 +358,9 @@
         "name": "Claude Code",
         "resolvedVersion": "2.1.84",
         "resolvedOs": null,
-        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
         "scriptDir": "scripts/1.0",
-        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
         "scriptsSource": "compatibility:>=2.1.0",
         "versionWarning": null
       },
@@ -368,7 +368,7 @@
       "ready": true,
       "startupParseGate": false,
       "spawnAt": 1775387052084,
-      "workingDir": "/Users/vilmire/Work/remote_vs/oss",
+      "workingDir": "/Users/me/Work/remote_vs/oss",
       "messages": [
         {
           "role": "user",
@@ -475,9 +475,9 @@
         "name": "Claude Code",
         "resolvedVersion": "2.1.84",
         "resolvedOs": null,
-        "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+        "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
         "scriptDir": "scripts/1.0",
-        "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+        "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
         "scriptsSource": "compatibility:>=2.1.0",
         "versionWarning": null
       },
@@ -492,7 +492,7 @@
           "activeModal": null,
           "payload": {
             "providerType": "claude-cli",
-            "workingDir": "/Users/vilmire/Work/remote_vs/oss"
+            "workingDir": "/Users/me/Work/remote_vs/oss"
           }
         },
         {
@@ -509,7 +509,7 @@
               "-c",
               "/opt/homebrew/bin/claude --permission-mode acceptEdits --session-id c29ad22c-cda9-42d0-a876-08478672a3c2"
             ],
-            "cwd": "/Users/vilmire/Work/remote_vs/oss",
+            "cwd": "/Users/me/Work/remote_vs/oss",
             "cols": 80,
             "rows": 24,
             "providerResolution": {
@@ -517,9 +517,9 @@
               "name": "Claude Code",
               "resolvedVersion": "2.1.84",
               "resolvedOs": null,
-              "providerDir": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli",
+              "providerDir": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli",
               "scriptDir": "scripts/1.0",
-              "scriptsPath": "/Users/vilmire/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
+              "scriptsPath": "/Users/me/Work/adhdev_public/adhdev-providers/cli/claude-cli/scripts/1.0/scripts.js",
               "scriptsSource": "compatibility:>=2.1.0",
               "versionWarning": null
             }
