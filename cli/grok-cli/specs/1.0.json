@@ -163,6 +163,7 @@
       "label": "→signing_in",
       "from": [
         "starting",
+        "idle",
         "busy"
       ],
       "to": "signing_in",
@@ -194,6 +195,22 @@
               "matches": "Allow Grok\\b|Run this command\\?|Do you want to (?:proceed|run|allow|edit|create|delete|apply)\\b|Do you trust the contents of this directory\\?",
               "flags": "im"
             }
+          },
+          {
+            "not": {
+              "all": [
+                {
+                  "section": "footer",
+                  "matches": "^\\s*\\d+/\\d+:select\\b",
+                  "flags": "im"
+                },
+                {
+                  "section": "modal",
+                  "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S",
+                  "flags": "im"
+                }
+              ]
+            }
           }
         ]
       }
@@ -204,23 +221,34 @@
       "to": "idle",
       "min_hold_ms": 500,
       "when": {
-        "any": [
+        "all": [
           {
-            "section": "status_tail",
-            "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
-            "flags": "i"
+            "not": {
+              "section": "status_tail",
+              "matches": "\\[stop\\]|[\\u2800-\\u28ff]\\s+\\S[^\\n]*?\\b\\d+(?:\\.\\d+)?s\\b",
+              "flags": "i"
+            }
           },
           {
-            "all": [
+            "any": [
               {
-                "elapsed_ms": 15000
+                "section": "status_tail",
+                "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+                "flags": "i"
               },
               {
-                "not": {
-                  "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
-                  "flags": "i"
-                }
+                "all": [
+                  {
+                    "elapsed_ms": 15000
+                  },
+                  {
+                    "not": {
+                      "section": "status_tail",
+                      "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+                      "flags": "i"
+                    }
+                  }
+                ]
               }
             ]
           }
@@ -289,13 +317,6 @@
           {
             "matches": "^\\s*Yes, proceed\\s+y\\s*$",
             "flags": "im"
-          },
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)(?![\\s\\S]*Do you trust the contents of this directory\\?)",
-              "flags": "i"
-            }
           }
         ]
       }
@@ -351,15 +372,8 @@
           },
           {
             "section": "modal",
-            "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+\\S",
+            "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S",
             "flags": "im"
-          },
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)(?![\\s\\S]*(?:Allow Grok\\b|Run this command\\?|Do you want to (?:proceed|run|allow|edit|create|delete|apply)\\b|Do you trust the contents of this directory\\?))",
-              "flags": "i"
-            }
           }
         ]
       }
@@ -367,8 +381,9 @@
     {
       "label": "idle→busy",
       "from": [
-        "idle",
-        "starting"
+        "starting",
+        "signing_in",
+        "idle"
       ],
       "to": "busy",
       "min_hold_ms": 700,
@@ -391,8 +406,15 @@
               },
               {
                 "not": {
+                  "section": "footer",
+                  "matches": "^\\s*\\d+/\\d+:select\\b",
+                  "flags": "im"
+                }
+              },
+              {
+                "not": {
                   "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+                  "matches": "(?:^|\\n)\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b)[\\s\\S]*\\n\\s*Esc:cancel\\s*(?![\\s\\S])",
                   "flags": "i"
                 }
               }

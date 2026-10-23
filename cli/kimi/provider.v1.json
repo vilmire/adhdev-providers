@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.19",
+  "providerVersion": "1.0.20",
   "compatibility": [
     {
       "ideVersion": ">=0.20.0",

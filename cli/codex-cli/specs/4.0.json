@@ -17,7 +17,8 @@
   "_sections_note": "MEASURED against live codex 0.139.0 (2026-06-15). The old footer anchor (tab to queue message|⏎ send|^[›>]$) matched NOTHING this codex renders, so footer defaulted to the whole screen and every `until: footer` section (modal/body/options/status) collapsed to EMPTY — the FSM could never see the approval modal or the Working spinner and sat in idle forever. The modal section now anchors directly on its own landmark with NO `until` (the guard regexes are modal-specific, so a whole-screen fallback in non-modal frames is harmless). body is the whole screen (Working/esc-to-interrupt only appear while generating). See docs/guides/CLI_SPEC_MEASURED_REWRITE.md.",
   "sections": {
     "modal": {
-      "anchor": "Do you trust the contents of this directory\\?|Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|Select a model|switch to a different model"
+      "anchor": "Do you trust the contents of this directory\\?|Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|Select a model|switch to a different model",
+      "anchor_last": true
     },
     "composer": {
       "anchor": "^›\\s",
@@ -209,7 +210,7 @@
     },
     {
       "label": "starting→signing_in",
-      "from": ["starting", "busy"],
+      "from": ["starting", "idle", "busy"],
       "to": "signing_in",
       "priority": 130,
       "when": {
@@ -233,7 +234,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|Do you trust the contents of this directory\\?"
+              "matches": "Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel)|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
             }
           }
         ]
@@ -295,7 +296,7 @@
       "priority": 110,
       "when": {
         "section": "modal",
-        "matches": "(?<![\\s\\S])(?:(?=[\\s\\S]*Do you trust the contents of this directory\\?)|(?![\\s\\S]*(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))))[\\s\\S]*?Do you trust the contents of this directory\\?"
+        "matches": "Do you trust the contents of this directory\\?"
       }
     },
     {
@@ -305,12 +306,12 @@
       "priority": 100,
       "when": {
         "section": "modal",
-        "matches": "(?<![\\s\\S])(?:(?=[\\s\\S]*(?:Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool))|(?![\\s\\S]*(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))))[\\s\\S]*?(?:Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel)"
+        "matches": "Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel)"
       }
     },
     {
       "label": "→picker",
-      "from": ["idle", "busy"],
+      "from": ["starting", "signing_in", "idle", "busy", "mcp_init"],
       "to": "picker",
       "priority": 100,
       "when": {
@@ -364,8 +365,9 @@
     },
     {
       "label": "idle→busy",
-      "from": "idle",
+      "from": ["starting", "signing_in", "idle"],
       "to": "busy",
+      "priority": 50,
       "when": {
         "section": "screen",
         "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
@@ -415,7 +417,7 @@
               {
                 "not": {
                   "section": "modal",
-                  "matches": "(?<![\\s\\S])(?:(?=[\\s\\S]*(?:Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool))|(?![\\s\\S]*(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))))[\\s\\S]*?(?:Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel)|(?<![\\s\\S])(?:(?=[\\s\\S]*Do you trust the contents of this directory\\?)|(?![\\s\\S]*(?:^|\\n)\\s*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>]\\s*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with ChatGPT\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Sign in with Device Code\\s*(?=\\n|$)|(?:[›❯>]\\s*)?(?:\\d+\\.\\s*)?Provide your own API key\\s*(?=\\n|$))))[\\s\\S]*?Do you trust the contents of this directory\\?|Select a model|switch to a different model"
+                  "matches": "Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel)|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
                 }
               },
               {
@@ -435,7 +437,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
+              "matches": "Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel)|Do you trust the contents of this directory\\?|Select a model|switch to a different model"
             }
           },
           {
@@ -455,7 +457,7 @@
           {
             "not": {
               "section": "modal",
-              "matches": "Would you like to run the following command\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|enter to submit \\| esc to cancel"
+              "matches": "Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to|Allow the .+ MCP server to run tool|\\S+\\s+needs your approval\\.|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel)"
             }
           },
           {

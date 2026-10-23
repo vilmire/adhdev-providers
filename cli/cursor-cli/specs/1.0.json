@@ -113,6 +113,7 @@
       "label": "→signing_in (browser login prompt)",
       "from": [
         "starting",
+        "idle",
         "busy"
       ],
       "to": "signing_in",
@@ -134,9 +135,25 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)|(?:ctrl\\+c|esc) to (?:interrupt|stop)",
+              "matches": "[⠀-⣿]+\\s*\\S|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)|ctrl\\+c to (?:cancel|interrupt|stop)|esc to (?:interrupt|stop|skip)",
               "flags": "i"
             }
+          },
+          {
+            "any": [
+              {
+                "not": {
+                  "section": "status_tail",
+                  "matches": "esc to cancel",
+                  "flags": "i"
+                }
+              },
+              {
+                "section": "status_tail",
+                "matches": "(?:Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*Esc to cancel\\s*(?![\\s\\S])",
+                "flags": "i"
+              }
+            ]
           },
           {
             "not": {
@@ -224,13 +241,6 @@
             "flags": "im"
           },
           {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)(?![\\s\\S]*(?:Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?))",
-              "flags": "i"
-            }
-          },
-          {
             "any": [
               {
                 "section": "status_tail",
@@ -250,15 +260,17 @@
     {
       "label": "idle→busy",
       "from": [
-        "idle",
-        "starting"
+        "starting",
+        "signing_in",
+        "idle"
       ],
       "to": "busy",
+      "priority": 50,
       "min_hold_ms": 500,
       "when": {
         "any": [
           {
-            "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)",
+            "matches": "[⠀-⣿]+\\s*\\S|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)",
             "section": "status_tail"
           },
           {
@@ -271,7 +283,7 @@
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "(?:^|\\n)\\s*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>]\\s*)?Press Enter to sign in\\b)",
+                  "matches": "(?:Press Enter to sign in|1\\.\\s+Sign in with browser)[\\s\\S]*Esc to cancel\\s*(?![\\s\\S])",
                   "flags": "i"
                 }
               }
@@ -290,7 +302,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "[⠀-⣿]+\\s*(?:Running|Working)\\b|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)"
+              "matches": "[⠀-⣿]+\\s*\\S|(?:^|\\n)\\s*Working(?:[.…]+)?\\s*(?=\\n|$)"
             }
           },
           {

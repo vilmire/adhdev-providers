@@ -190,6 +190,7 @@
       "label": "starting→signing_in",
       "from": [
         "starting",
+        "idle",
         "busy"
       ],
       "to": "signing_in",
@@ -214,8 +215,28 @@
           },
           {
             "not": {
-              "section": "viewport",
-              "matches": "Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b"
+              "all": [
+                {
+                  "section": "footer",
+                  "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
+                },
+                {
+                  "section": "footer",
+                  "matches": "Esc to cancel\\b|esc(?:ape)?\\s+to\\s+cancel\\b|press\\s+esc(?:ape)?\\b|\\(esc\\)|Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b"
+                }
+              ]
+            }
+          },
+          {
+            "not": {
+              "section": "modal",
+              "matches": "Select (?:a |an )?(?:model|mode|option)\\b|Switch between"
+            }
+          },
+          {
+            "not": {
+              "section": "trust",
+              "matches": "(?:^|\\n)[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n[ \\t]*(?:[❯›>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Yes, I trust this folder|No, exit)[ \\t]*\\n\\s*Enter to confirm[^\\n]*\\s*(?![\\s\\S])"
             }
           }
         ]
@@ -277,7 +298,7 @@
         "all": [
           {
             "section": "footer",
-            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+\\S"
+            "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
           },
           {
             "section": "footer",
@@ -285,7 +306,7 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b|(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|(?:[❯›>]\\s*)?\\d+\\.\\s*Claude account with subscription\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)(?![\\s\\S]*(?:Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b))"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
             }
           },
           {
@@ -308,6 +329,7 @@
       "label": "→picker",
       "from": [
         "starting",
+        "signing_in",
         "idle",
         "busy",
         "approval_resolving"
@@ -337,13 +359,7 @@
               },
               {
                 "section": "footer",
-                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s+\\S"
-              },
-              {
-                "not": {
-                  "section": "viewport",
-                  "matches": "(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|How do you want to sign in\\?|(?:[❯›>]\\s*)?\\d+\\.\\s*(?:Claude account with subscription|Sign in with your Console account)\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)"
-                }
+                "matches": "(?:^|\\n)\\s*(?:[❯›]\\s*)?(?:\\[[ xX]\\]|[☐☒◻◼])?\\s*1\\.\\s*(?:\\[[ xX]\\]|[☐☒◻◼])?\\s+(?!Claude account with subscription\\b|Anthropic Console account\\b|Sign in with your Console account\\b)\\S"
               }
             ]
           }
@@ -353,10 +369,12 @@
     {
       "label": "idle→busy",
       "from": [
-        "idle",
-        "starting"
+        "starting",
+        "signing_in",
+        "idle"
       ],
       "to": "busy",
+      "priority": 50,
       "min_hold_ms": 1000,
       "when": {
         "section": "status_tail",
@@ -556,7 +574,13 @@
           },
           {
             "not": {
-              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b|How do you want to sign in\\?|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+Sign in with your Console account\\b|(?:^|\\n)\\s*(?:Select login method:|Anthropic Console account\\b|(?:[❯›>]\\s*)?\\d+\\.\\s*Claude account with subscription\\b|Opening browser to sign in(?:\\.{3}|…)?|Cloud gateway\\s*[·•]\\s*sign in\\b|Browser didn't open\\?\\s*(?:Use the url below to sign in\\b|Visit:)|Paste code here if prompted\\s*>)(?![\\s\\S]*(?:Do you want to (?:proceed|create|make|edit|apply|run|delete|modify|allow)\\b|allow all edits\\b|(?:during this session|don't ask again)\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?1\\.\\s+Yes\\b))"
+              "matches": "Enter to select\\b|(?:↑|↓|up|down)[\\s/]+(?:↑|↓)?\\s*to navigate\\b|(?:^|\\n)\\s*(?:[❯›]\\s*)?\\d+\\.\\s+(?:Type something|Chat about this)\\b"
+            }
+          },
+          {
+            "not": {
+              "section": "footer",
+              "matches": "(?:^|\\n)\\s*(?:[❯›>]\\s*)?\\d+\\.\\s*(?:Claude account with subscription|Anthropic Console account|Sign in with your Console account)\\b"
             }
           },
           {
@@ -616,7 +640,8 @@
       "from": [
         "starting",
         "signing_in",
-        "idle"
+        "idle",
+        "busy"
       ],
       "to": "trust",
       "priority": 130,

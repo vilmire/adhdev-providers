@@ -142,6 +142,7 @@
       "label": "starting→signing_in",
       "from": [
         "starting",
+        "idle",
         "busy"
       ],
       "to": "signing_in",
@@ -225,13 +226,6 @@
             "section": "status_tail",
             "matches": "^\\s*(?:[❯›>▶●•]\\s*)?1[.)]\\s+\\S",
             "flags": "im"
-          },
-          {
-            "not": {
-              "section": "status_tail",
-              "matches": "(?:^|\\n)\\s*(?:│\\s*)?(?:Sign in to Kimi Code\\b|Visit the URL below in your browser to authorize:|Verification code:\\s+[A-Z0-9-]+|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\\s+Waiting for authorization(?:\\.\\.\\.|…)|Your key will be saved to [^\\n]*config\\.toml)(?![\\s\\S]*(?:Run this command\\?|Execute this command\\?|Do you want to (?:proceed|run|allow|execute|make|apply|continue)|Apply this edit\\?|Make this edit\\?|Apply these changes\\?|▶\\s*(?:Run command|Apply changes?|Apply these edits|Approve action|Fetch URL|File operation|Invoke|Search|Ready to build with this plan|Approve mcp__\\S+?)\\?))",
-              "flags": "i"
-            }
           }
         ]
       }
@@ -239,10 +233,12 @@
     {
       "label": "idle→busy",
       "from": [
-        "idle",
-        "starting"
+        "starting",
+        "signing_in",
+        "idle"
       ],
       "to": "busy",
+      "priority": 50,
       "min_hold_ms": 500,
       "when": {
         "section": "status_tail",
