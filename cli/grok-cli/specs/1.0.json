@@ -33,15 +33,15 @@
   },
   "sections": {
     "footer": {
-      "anchor": "^\\s*(?:\\d+/\\d+:select|Shift\\+Tab:mode|Enter:send|1/\\d+:select)",
+      "anchor": "^[ \\t]*(?:\\d+/\\d+:select|Shift\\+Tab:mode|Enter:send|1/\\d+:select)",
       "anchor_last": true
     },
     "modal": {
       "anchor": [
-        "^\\s*(?:[┃❙|]\\s*)?\\d+\\s*\\([●○]\\)\\s+\\S"
+        "^[ \\t]*(?:[┃❙|][ \\t]*)?1[ \\t]*\\([●○]\\)[ \\t]+\\S"
       ],
-      "anchor_last": false,
-      "until": "^\\s*\\d+/\\d+:select"
+      "anchor_last": true,
+      "until": "^[ \\t]*\\d+/\\d+:select"
     },
     "body": {
       "from_top": 0,
@@ -80,7 +80,7 @@
         },
         "buttons": {
           "section": "modal",
-          "pattern": "^\\s*(?:[┃❙|]\\s*)?(\\d+)\\s*\\([●○]\\)\\s*(.+?)\\s*$",
+          "pattern": "^[ \\t]*(?:[┃❙|][ \\t]*)?(\\d+)[ \\t]*\\([●○]\\)[ \\t]*(.+?)[ \\t]*$",
           "flags": "gm",
           "key_for_index": "{index}",
           "min_count": 2,
@@ -99,7 +99,7 @@
           "flags": "i"
         },
         "buttons": {
-          "pattern": "^\\s*(\\S[^\\n]*?)\\s{2,}([yn])\\s*$",
+          "pattern": "^[ \\t]*(\\S[^\\n]*?)[ \\t]{2,}([yn])[ \\t]*$",
           "flags": "gm",
           "label_group": 1,
           "key_group": 2,
@@ -172,13 +172,13 @@
         "all": [
           {
             "section": "status_tail",
-            "matches": "(?:^|\\n)\\s*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
+            "matches": "(?:^|\\n)[ \\t]*(?:Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b)",
             "flags": "i"
           },
           {
             "not": {
               "section": "status_tail",
-              "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)\\s*│\\s*❯(?:\\s|(?=\\n|$))",
+              "matches": "Shift\\+Tab:\\s*mode|Ctrl\\+x:\\s*shortcuts|(?:^|\\n)[ \\t]*│[ \\t]*❯(?:\\s|(?=\\n|$))",
               "flags": "i"
             }
           },
@@ -191,14 +191,29 @@
           },
           {
             "not": {
-              "matches": "^\\s*Do you trust the contents of this directory\\?[\\s\\S]*?^\\s*Yes, proceed\\s+y\\s*$(?![\\s\\S]*^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
-              "flags": "im"
+              "all": [
+                {
+                  "matches": "Do you trust the contents of this directory\\?"
+                },
+                {
+                  "matches": "^[ \\t]*Yes, proceed[ \\t]+y[ \\t]*$(?![\\s\\S]*^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
+                  "flags": "im"
+                }
+              ]
             }
           },
           {
             "not": {
-              "matches": "Help improve Grok[\\s\\S]*?\\bOpt (?:out|in)\\b",
-              "flags": "i"
+              "all": [
+                {
+                  "matches": "Help improve Grok",
+                  "flags": "i"
+                },
+                {
+                  "matches": "\\bOpt (?:out|in)\\b",
+                  "flags": "i"
+                }
+              ]
             }
           },
           {
@@ -206,12 +221,12 @@
               "all": [
                 {
                   "section": "footer",
-                  "matches": "^\\s*\\d+/\\d+:select\\b",
+                  "matches": "^[ \\t]*\\d+/\\d+:select\\b(?![\\s\\S]*^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b|(?:[┃❙|][ \\t]*)?1[.) \\t]*(?:\\([●○]\\)[ \\t]*)?(?:Sign in\\b|Paste your\\b)))",
                   "flags": "im"
                 },
                 {
                   "section": "modal",
-                  "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S",
+                  "matches": "^[ \\t]*(?:[┃❙|][ \\t]*)?1[ \\t]*\\([●○]\\)[ \\t]+(?!Sign in\\b|Paste your\\b)\\S[^\\n]*(?:\\n(?![ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))[^\\n]*){0,5}\\n[ \\t]*(?:[┃❙|][ \\t]*)?2[ \\t]*\\([●○]\\)[ \\t]+(?!Sign in\\b|Paste your\\b)\\S",
                   "flags": "im"
                 }
               ]
@@ -320,7 +335,7 @@
             "matches": "Do you trust the contents of this directory\\?"
           },
           {
-            "matches": "^\\s*Yes, proceed\\s+y\\s*$(?![\\s\\S]*^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
+            "matches": "^[ \\t]*Yes, proceed[ \\t]+y[ \\t]*$(?![\\s\\S]*^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))",
             "flags": "im"
           }
         ]
@@ -372,12 +387,12 @@
         "all": [
           {
             "section": "footer",
-            "matches": "^\\s*\\d+/\\d+:select\\b",
+            "matches": "^[ \\t]*\\d+/\\d+:select\\b(?![\\s\\S]*^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b|(?:[┃❙|][ \\t]*)?1[.) \\t]*(?:\\([●○]\\)[ \\t]*)?(?:Sign in\\b|Paste your\\b)))",
             "flags": "im"
           },
           {
             "section": "modal",
-            "matches": "^\\s*(?:[┃❙|]\\s*)?1\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S[\\s\\S]*?^\\s*(?:[┃❙|]\\s*)?2\\s*\\([●○]\\)\\s+(?!Sign in\\b|Paste your\\b)\\S",
+            "matches": "^[ \\t]*(?:[┃❙|][ \\t]*)?1[ \\t]*\\([●○]\\)[ \\t]+(?!Sign in\\b|Paste your\\b)\\S[^\\n]*(?:\\n(?![ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b))[^\\n]*){0,5}\\n[ \\t]*(?:[┃❙|][ \\t]*)?2[ \\t]*\\([●○]\\)[ \\t]+(?!Sign in\\b|Paste your\\b)\\S",
             "flags": "im"
           }
         ]
@@ -412,14 +427,14 @@
               {
                 "not": {
                   "section": "footer",
-                  "matches": "^\\s*\\d+/\\d+:select\\b",
+                  "matches": "^[ \\t]*\\d+/\\d+:select\\b",
                   "flags": "im"
                 }
               },
               {
                 "not": {
                   "section": "status_tail",
-                  "matches": "^\\s*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|1\\s*\\([●○]\\)\\s+Sign in\\b|Paste your xAI API key\\b)[\\s\\S]*?^\\s*Esc:cancel\\b(?![^\\n]*│)",
+                  "matches": "^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|1[ \\t]*\\([●○]\\)[ \\t]+Sign in\\b|Paste your xAI API key\\b)[\\s\\S]*?^[ \\t]*Esc:cancel\\b(?![^\\n]*│)",
                   "flags": "im"
                 }
               }
@@ -460,7 +475,7 @@
           },
           {
             "stable_ms": 2500,
-            "ignore_lines": "^\\s*\\d+(?:\\.\\d+)?[KM]? / \\d+[KM]\\s*$|^\\s*Worked for \\d[^\\n]*$|^\\s*\\d{1,2}:\\d{2}\\s*[AP]M\\s*$"
+            "ignore_lines": "^[ \\t]*\\d+(?:\\.\\d+)?[KM]? / \\d+[KM][ \\t]*$|^[ \\t]*Worked for \\d[^\\n]*$|^[ \\t]*\\d{1,2}:\\d{2}[ \\t]*[AP]M[ \\t]*$"
           }
         ]
       }
@@ -473,7 +488,7 @@
       "when": {
         "not": {
           "section": "footer",
-          "matches": "^\\s*\\d+/\\d+:select\\b",
+          "matches": "^[ \\t]*\\d+/\\d+:select\\b",
           "flags": "im"
         }
       }
@@ -485,7 +500,7 @@
       "priority": 90,
       "when": {
         "section": "footer",
-        "matches": "^\\s*\\d+/\\d+:select\\b",
+        "matches": "^[ \\t]*\\d+/\\d+:select\\b(?![\\s\\S]*^[ \\t]*(?:Welcome to Grok CLI\\b|Sign in to Grok Build\\b|Approve in your browser\\b|Waiting for approval\\.\\.\\.|Paste your xAI API key\\b|Enter your (?:xAI )?API key\\b|(?:[┃❙|][ \\t]*)?1[.) \\t]*(?:\\([●○]\\)[ \\t]*)?(?:Sign in\\b|Paste your\\b)))",
         "flags": "im"
       }
     },
@@ -518,7 +533,7 @@
           {
             "not": {
               "section": "footer",
-              "matches": "^\\s*\\d+/\\d+:select\\b",
+              "matches": "^[ \\t]*\\d+/\\d+:select\\b",
               "flags": "im"
             }
           },

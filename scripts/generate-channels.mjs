@@ -18,7 +18,7 @@
  * Usage: node scripts/generate-channels.mjs
  */
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
   DIGEST_ALGORITHM,
@@ -29,6 +29,28 @@ import {
 
 const publishedAt = new Date().toISOString();
 
+function loadExistingEntriesByType(filePath) {
+  const byType = new Map();
+  if (!existsSync(filePath)) return byType;
+  try {
+    const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
+    if (parsed && Array.isArray(parsed.providers)) {
+      for (const entry of parsed.providers) {
+        if (entry && typeof entry.providerType === 'string') {
+          byType.set(entry.providerType, entry);
+        }
+      }
+    }
+  } catch {
+    // ignore unreadable or malformed existing manifest
+  }
+  return byType;
+}
+
+const channelsDir = resolve(REPO_ROOT, 'channels');
+const existingPreviewByType = loadExistingEntriesByType(resolve(channelsDir, 'preview.json'));
+const existingStableByType = loadExistingEntriesByType(resolve(channelsDir, 'stable.json'));
+
 const artifacts = [...indexProviderArtifacts().values()]
   .filter((a) => a.providerVersion && a.category)
   .sort((a, b) => (a.providerType < b.providerType ? -1 : 1));
@@ -38,7 +60,27 @@ if (artifacts.length === 0) {
   process.exit(1);
 }
 
-const previewEntries = artifacts.map((artifact) => buildChannelEntry(artifact, { publishedAt }));
+const previewEntries = artifacts.map((artifact) => {
+  const entry = buildChannelEntry(artifact, { publishedAt });
+  const prevStable = existingStableByType.get(entry.providerType);
+  const prevPreview = existingPreviewByType.get(entry.providerType);
+  if (
+    prevStable
+    && prevStable.providerVersion === entry.providerVersion
+    && prevStable.bundleDigest === entry.bundleDigest
+    && typeof prevStable.publishedAt === 'string'
+  ) {
+    entry.publishedAt = prevStable.publishedAt;
+  } else if (
+    prevPreview
+    && prevPreview.providerVersion === entry.providerVersion
+    && prevPreview.bundleDigest === entry.bundleDigest
+    && typeof prevPreview.publishedAt === 'string'
+  ) {
+    entry.publishedAt = prevPreview.publishedAt;
+  }
+  return entry;
+});
 
 // Stable = current known baseline: the same verified entries, promoted from
 // preview with the identical digest (never rebuilt).
@@ -60,7 +102,6 @@ const manifest = (channel, providers) => ({
 });
 
 const previewOnly = process.argv.includes('--preview-only');
-const channelsDir = resolve(REPO_ROOT, 'channels');
 mkdirSync(channelsDir, { recursive: true });
 writeFileSync(resolve(channelsDir, 'preview.json'), JSON.stringify(manifest('preview', previewEntries), null, 2) + '\n');
 if (!previewOnly) {
