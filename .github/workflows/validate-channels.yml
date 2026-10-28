@@ -51,8 +51,11 @@ jobs:
 
     steps:
       # The canonical digest is computed over `git ls-files` output, so the
-      # checkout must be a real git repo with the full tracked tree. Depth 1 is
-      # sufficient — only the working tree at this commit is hashed.
+      # checkout must be a real git repo with the full tracked tree. It also
+      # needs full history: a stable entry that lags preview is verified against
+      # the provider's tree at the commit that published that older version,
+      # and a depth-1 checkout has no such commit ("historical git tree ...
+      # not found", red since 2026-10-25).
       #
       # scripts/lib/provider-channels.mjs resolves ajv/ajv-formats/semver from
       # the SURROUNDING workspace ('../oss/node_modules', then
@@ -65,6 +68,7 @@ jobs:
         with:
           submodules: false
           path: repo
+          fetch-depth: 0
 
       - name: Use Node.js 22
         uses: actions/setup-node@v6

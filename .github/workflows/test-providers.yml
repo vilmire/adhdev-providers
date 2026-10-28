@@ -62,10 +62,13 @@ jobs:
       # the workspace root produces exactly the '../node_modules' the library
       # already looks for. This repo intentionally has no package.json — do not
       # add one to "fix" this.
+      # Full history: channel-manifests.test.js validates lagging stable entries
+      # against historical provider trees (see validate-channels.yml).
       - uses: actions/checkout@v5
         with:
           submodules: false
           path: repo
+          fetch-depth: 0
 
       - name: Use Node.js 22
         uses: actions/setup-node@v6
