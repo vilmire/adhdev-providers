@@ -79,6 +79,25 @@ test('every Antigravity display label maps to the slug measured from agy models'
   }
 });
 
+test('every agy models slug appears in the static fallback list (and nothing stale does)', () => {
+  // Live 2026-10-29: the list still offered "Claude Opus 4.6 (Thinking)" ->
+  // claude-opus-4-6-thinking, which agy 1.4 does not know; it printed a warning
+  // and silently ran Gemini. The static list is the discovery fallback and must
+  // mirror `agy models`.
+  const measured = modelsFixture.trim().split('\n').map((line) => line.match(/^(\S+)\s{2,}(.+)$/).slice(1));
+  assert.deepEqual([...provider.modelOptions].sort(), measured.map(([, label]) => label).sort());
+  for (const [slug, label] of measured) assert.equal(provider.modelLaunchValueMap[label], slug);
+});
+
+test('declares the silent model-fallback warning and it captures the substituted model', () => {
+  const warning = provider.modelFallbackWarning;
+  assert.ok(warning && warning.pattern, 'modelFallbackWarning must be declared');
+  const screen = '⚠ Warning\n  ⎿ model claude-opus-4-6-thinking is not recognized as a known model or custom\n    model in settings. Using "Gemini 4 Argon (Medium)" instead.';
+  const m = new RegExp(warning.pattern, warning.flags).exec(screen.replace(/\s+/g, ' '));
+  assert.ok(m, 'pattern should match the wrapped warning');
+  assert.equal(m[1], 'Gemini 4 Argon (Medium)');
+});
+
 test('antigravity-cli spec confirms long sends on the composer tail', () => {
   // agy scrolls a tall body inside its composer ("> ↑ N more lines"), so the
   // head of a long task prompt is never on screen. Without echo_confirm "tail"

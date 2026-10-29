@@ -396,6 +396,9 @@
         "content_unwrap": [
           "user_query"
         ],
+        "content_strip_literals": [
+          "[REDACTED]"
+        ],
         "tools": {}
       }
     }
