@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.21",
+  "providerVersion": "1.0.22",
   "compatibility": [
     {
       "ideVersion": ">=2026.0.0",
@@ -205,9 +205,9 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+      "questionPattern": "Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
       "questionFlags": "i",
-      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)|(\\S[^│┃|]*?)\\s*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\))\\s*[│┃|]?\\s*$",
+      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)|(\\S[^│┃|]*?)\\s*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\))\\s*[│┃|]?\\s*$",
       "buttonLabelGroup": 1,
       "buttonFlags": "m",
       "scope": "window-around-question",
@@ -412,6 +412,9 @@
     "launchArgs": [
       "--approve-mcps"
     ],
+    "mcpToolAllow": {
+      "format": "cursor_cli_permissions"
+    },
     "delegatedWorkerIsolation": {
       "args": [
         {

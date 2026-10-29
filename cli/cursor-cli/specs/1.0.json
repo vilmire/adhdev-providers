@@ -42,12 +42,12 @@
       "from_top": 0
     },
     "modal": {
-      "anchor": "^\\s*(?:Run this command\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?)",
+      "anchor": "^\\s*(?:Run this (?:command|MCP tool)\\?|Do you want to[^\\n]*\\?|Do you trust[^\\n]*\\?|Allow[^\\n]*\\?)",
       "anchor_last": true,
       "until": "^\\s*$"
     },
     "modal_command": {
-      "anchor": "^\\s*\\$\\s+\\S",
+      "anchor": "^\\s*(?:\\$\\s+\\S|[A-Za-z0-9_.-]+:\\s+[A-Za-z0-9_.-]+\\s*$)",
       "anchor_context": { "prev": "^\\s*─{10,}\\s*$" },
       "anchor_last": true,
       "until": "^\\s*$",
@@ -89,7 +89,7 @@
         },
         "buttons": {
           "section": "modal",
-          "pattern": "^[ \\t]*(?:→[ \\t]*)?(\\S[^\\n]*?)[ \\t]*\\((y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$",
+          "pattern": "^[ \\t]*(?:→[ \\t]*)?(\\S[^\\n]*?)[ \\t]*\\((y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$",
           "flags": "gm",
           "label_group": 1,
           "key_group": 2,
@@ -158,7 +158,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
+              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
               "flags": "im"
             }
           }
@@ -237,7 +237,7 @@
         "all": [
           {
             "section": "status_tail",
-            "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
+            "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
             "flags": "im"
           }
         ]
@@ -320,7 +320,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
+              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
               "flags": "im"
             }
           },
@@ -342,7 +342,7 @@
           {
             "not": {
               "section": "status_tail",
-              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
+              "matches": "^[ \\t]*(?:[│┃|❯›>▶●→][ \\t]*)?(?:Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission)[^\\n]*(?:\\n[^\\n]*){0,15}\\n(?:[ \\t│┃|]*(?:[❯›>▶●→][ \\t]*)?(?:\\d+[.)]|\\[[A-Za-z]\\])[ \\t]+(?!Sign in with\\b|Use API key\\b|Press Enter to sign in\\b)\\S|[ \\t]*(?:→[ \\t]*)?\\S[^\\n]*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\)[ \\t]*$)(?![\\s\\S]*^[ \\t]*(?:Welcome to Cursor Agent\\b|Signing in with the browser|If your browser didn't open,\\s*click this link to log in:|Press q to show a QR code to log in|(?:[▸❯›>][ \\t]*)?Press Enter to sign in\\b|(?:[▸❯›>]?[ \\t]*)?1\\.[ \\t]+Sign in with browser\\b))",
               "flags": "im"
             }
           },
