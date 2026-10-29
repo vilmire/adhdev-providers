@@ -115,11 +115,11 @@
     },
     {
       "providerType": "cursor-cli",
-      "providerVersion": "1.0.19",
+      "providerVersion": "1.0.20",
       "category": "cli",
-      "bundleDigest": "sha256:b08aed9cca5517c5517e23b9457b90d17b8c7bb7da7bc53a6d3ea8f032a4645b",
+      "bundleDigest": "sha256:cb9a86f9bfd9d0e28de3a0e0df3493779e39dd71860550c2bbf0b889c4678566",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-29T07:05:23.354Z",
+      "publishedAt": "2026-10-29T07:54:44.254Z",
       "name": "Cursor Agent",
       "compatibility": {
         "ideVersion": [
