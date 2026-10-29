@@ -95,9 +95,9 @@ test('transcript chrome excludes the startup placeholder and bare model label', 
 test('settledPrompt also matches the one-line footer (path after the percent) and the files-edited form', () => {
   const settled = provider.tui?.settledPrompt
   const re = new RegExp(settled.regex, settled.flags)
-  assert.ok(re.test('  Composer 2.5 · 18.5% · 2 files edited · /Users/example/Work/Prefex · main'))
+  assert.ok(re.test('  Composer 2.5 · 18.5% · 2 files edited · /Users/example/Work/project · main'))
   assert.ok(re.test('  Composer 2.5 · 6.5% · 1 file edited          Run Everything\n  /tmp/ws · main'))
-  assert.ok(!re.test('  Composer 2.5 · /Users/example/Work/Prefex · main'))
+  assert.ok(!re.test('  Composer 2.5 · /Users/example/Work/project · main'))
 })
 
 test('spinner recognises the Composing/Editing verbs; transcript chrome drops spinner + percent footer lines', () => {
