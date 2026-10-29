@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.19",
+  "providerVersion": "1.0.20",
   "compatibility": [
     {
       "ideVersion": ">=2026.0.0",
@@ -229,8 +229,10 @@
         "description": "cursor-agent renders the assistant answer as a plain no-background line with no distinctive bullet — capture any non-empty body line. The user's submitted message and composer echo are rendered inside a colored box and are classified as USER turns via userBackgroundSgr BEFORE this permissive rule runs, so they no longer leak into an assistant bubble. Remaining chrome (footer, spinner, follow-up hint, mode label, workspace path, input box, tips) is excluded via chromePatterns."
       },
       "userBackgroundSgr": [
-        "48;5;233"
+        "48;5;233",
+        "48;2;36;36;40"
       ],
+      "joinAdjacentLines": true,
       "chromePatterns": [
         {
           "regex": "\\bWorking\\b",
@@ -310,6 +312,10 @@
         {
           "regex": "^\\s*▎",
           "label": "diff-gutter"
+        },
+        {
+          "regex": "^\\s*(?:Edited|Editing|Created|Creating|Deleted|Deleting|Read|Reading|Ran|Running|Searched|Searching|Listed|Listing|Grepped|Globbed|Fetched|Fetching)\\s+\\S+(?:\\s+[+-]\\d+)*\\s*$",
+          "label": "tool-status-line"
         }
       ],
       "stripLeadingChrome": true,
