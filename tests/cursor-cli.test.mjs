@@ -113,7 +113,8 @@ test('spinner recognises the Composing/Editing verbs; transcript chrome drops sp
 })
 
 test('user-turn background is the composer box colour only (diff/code backgrounds are not user turns)', () => {
-  assert.deepEqual(provider.tui.transcriptPty.userBackgroundSgr, ['48;5;233'])
+  // 256-colour box (wide terminals, 2026.07-10) + truecolor box (80-col live capture); never a wildcard.
+  assert.deepEqual(provider.tui.transcriptPty.userBackgroundSgr, ['48;5;233', '48;2;36;36;40'])
 })
 
 test('nativeHistory keeps a long recency window so an idle finished session still binds its transcript', () => {
