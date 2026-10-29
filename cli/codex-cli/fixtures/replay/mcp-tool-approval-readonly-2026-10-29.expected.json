@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "description": "codex-cli 0.162.1 under `-s read-only`: the worker MCP server's tool call stops at codex's own 'Allow the <server> MCP server to run tool \"<tool>\"?' prompt (4 options). Captured live 2026-10-29 (mission fea90234); previously the session stayed `generating` for 15+ minutes with no approval modal.",
+  "providerType": "codex-cli",
+  "ptyFile": "mcp-tool-approval-readonly-2026-10-29.pty",
+  "terminal": {
+    "cols": 100,
+    "rows": 40
+  },
+  "anchors": [
+    {
+      "name": "MCP tool approval prompt",
+      "untilSentinel": "enter to submit",
+      "expect": {
+        "detectStatus": "waiting_approval",
+        "parseApproval": {
+          "message": "Allow the adhdev-worker MCP server to run tool \"ping_tool\"?",
+          "buttons": [
+            "Allow                   Run the tool and continue",
+            "Allow for this session  Run the tool and remember this choice for this session",
+            "Always allow            Run the tool and remember this choice for future tool calls",
+            "Cancel                  Cancel this tool call enter to submit | esc to cancel"
+          ]
+        }
+      },
+      "notes": "Button labels carry codex's description column (and the footer on the last one, continuationLines) verbatim; answers are index-keyed, so the labels are cosmetic."
+    }
+  ]
+}
