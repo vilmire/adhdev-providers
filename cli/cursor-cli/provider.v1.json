@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.18",
+  "providerVersion": "1.0.19",
   "compatibility": [
     {
       "ideVersion": ">=2026.0.0",
@@ -154,6 +154,7 @@
       "kind": "jsonl",
       "path": "~/.cursor/projects/*/agent-transcripts/*",
       "file_pattern": "*.jsonl",
+      "recent_window_ms": 86400000,
       "session_id_from": "filename_uuid",
       "workspace_from_input": true,
       "message_map": {
@@ -181,6 +182,11 @@
           "description": "Generation indicator: a braille glyph + 'Working' shown while the agent runs (observed: cursor-agent v2026.07.09)"
         },
         {
+          "regex": "^\\s*[⠀-⣿]{1,4}\\s+[A-Z][a-z]+",
+          "flags": "m",
+          "description": "Line-anchored braille spinner + capitalised verb ('⠘⠣ Composing', '⠠⠜ Editing  52 tokens', observed: cursor-agent v2026.10.22 — the verb changed from 'Working')"
+        },
+        {
           "regex": "(?:ctrl\\+c|esc) to (?:cancel|interrupt|stop|skip)",
           "flags": "i",
           "description": "Interrupt hint (e.g. 'ctrl+c to stop') present only during a run"
@@ -191,7 +197,7 @@
     },
     "settledPrompt": {
       "$schema": "adhdev:tui/settled-prompt@1",
-      "regex": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*\\n\\s*(?:~|/)[^\\n]+$",
+      "regex": "^\\s*\\S[^\\n]*·\\s*\\d+(?:\\.\\d+)?%[^\\n]*(?:\\n\\s*(?:~|/)[^\\n]+$|·\\s*(?:~|/)[^\\n]+$)",
       "flags": "m",
       "scope": "last-n-lines",
       "scopeWindowLines": 8,
@@ -223,7 +229,7 @@
         "description": "cursor-agent renders the assistant answer as a plain no-background line with no distinctive bullet — capture any non-empty body line. The user's submitted message and composer echo are rendered inside a colored box and are classified as USER turns via userBackgroundSgr BEFORE this permissive rule runs, so they no longer leak into an assistant bubble. Remaining chrome (footer, spinner, follow-up hint, mode label, workspace path, input box, tips) is excluded via chromePatterns."
       },
       "userBackgroundSgr": [
-        "*"
+        "48;5;233"
       ],
       "chromePatterns": [
         {
@@ -284,6 +290,26 @@
         {
           "regex": "^\\s*[╭╰│>❯›]",
           "label": "input-box-chrome"
+        },
+        {
+          "regex": "^\\s*[⠀-⣿]{1,4}\\s+\\S",
+          "label": "spinner-glyph-line"
+        },
+        {
+          "regex": "^\\s*[A-Z][\\w.\\-+ ]{0,40}\\s·\\s*\\d+(?:\\.\\d+)?%",
+          "label": "context-percent-footer"
+        },
+        {
+          "regex": "^\\s*Run Everything\\s*$",
+          "label": "run-everything-label"
+        },
+        {
+          "regex": "^\\s*[\\w./~-]+\\s+·\\s+[\\w./-]+\\s*$",
+          "label": "wrapped-path-branch-footer"
+        },
+        {
+          "regex": "^\\s*▎",
+          "label": "diff-gutter"
         }
       ],
       "stripLeadingChrome": true,

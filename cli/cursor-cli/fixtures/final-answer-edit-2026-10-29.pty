@@ -1,0 +1,312 @@
+[>1u]11;?[2K[G
+
+  Cursor Agent
+  [2mv2026.10.22-27dcf5f[22m
+  [2mTip: Use /plan to iterate on an implementation plan before code changes.[22m
+
+
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mP[27m[2mlan, search, build anything[22m                                                                                                           [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[?25l[?2004h]0;Cursor Agent[?2031h[?1004h[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [48;5;233m → Create a file named hello.txt containing the word hi, then tell me in one sentence that you did it.[7m [27m                                   [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [48;5;235m                                                                                                                                          [49m
+ [48;5;235m Create a file named hello.txt containing the word hi, then tell me in one sentence that you did it.                                      [49m
+ [48;5;235m                                                                                                                                          [49m
+
+ [32m⠀⠞[39m [1mComposing[22m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22mCreate a file named hello.txt containing the word hi, then tell me in one sentence that you did it.[7m [27m                                   [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+]0;Cursor Agent[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠜[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠰⠰[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠤[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+]0;Cursor Agent[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠆[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠣[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠰⠳[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠛[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mComposing[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mThinking[22m [2m 5 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mComposing[22m [2m 5 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G  [33m [39m [1mEditing[22m [2mhello.txt[22m
+
+ [32m⠀⠞[39m [1mComposing[22m [2m 5 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m                                                                                                              [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mEditing[22m [2m 52 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m                                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[G  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠜[39m [1mEditing[22m [2m 52 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠰⠰[39m [1mEditing[22m [2m 52 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠤[39m [1mEditing[22m [2m 52 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G  [37m[2m [22m[39m [1mEdited[22m [2mhello.txt[22m [32m+1[39m
+
+    [38;5;59m▎[48;5;22m[1m[38;5;34m+[39m[22m hi[49m
+
+ [32m⠘⠤[39m [1mEditing[22m [2m 52 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠤[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G    [38;5;59m▎[48;5;22m[1m[38;5;34m+[39m[22m [38;5;231mhi[39m[49m
+
+ [32m⠘⠤[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠆[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠘⠣[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠰⠳[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠛[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mEditing[22m [2m 85 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mEditing[22m [2m 86 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠀⠞[39m [1mComposing[22m [2m 86 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G  [38;5;146mhello.txt[39m 파일을 만들고 내용으로 [38;5;146mhi[39m를 넣어 두었습니다.
+
+ [32m⠀⠞[39m [1mComposing[22m [2m 86 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.4%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠜[39m [1mComposing[22m [2m 86 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.5%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G [32m⠠⠜[39m [1mComposing[22m [2m 95 tokens[22m
+  [38;5;245m  Tip: Type ? in the prompt bar to show in-app hints.[39m
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                         [2mctrl+c to stop[22m [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.5%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[1A[2K[G
+
+ [48;5;233m                                                                                                                                          [49m
+ [48;5;233m [2m→ [22m[7mA[27m[2mdd a follow-up[22m                                                                                                                        [49m
+ [48;5;233m                                                                                                                                          [49m
+
+  [2mComposer 2.5[22m [2m·[22m [2m6.5%[22m [2m·[22m [2m1 file edited[22m                                                                                       [35mRun Everything[39m
+  [2m/tmp/ws___________________________________________________________________________________________________ · main[22m
+]0;Cursor Agent

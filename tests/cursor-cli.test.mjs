@@ -91,3 +91,31 @@ test('transcript chrome excludes the startup placeholder and bare model label', 
   // Real assistant prose must survive.
   assert.ok(!isChrome('  The answer is 4.'))
 })
+
+test('settledPrompt also matches the one-line footer (path after the percent) and the files-edited form', () => {
+  const settled = provider.tui?.settledPrompt
+  const re = new RegExp(settled.regex, settled.flags)
+  assert.ok(re.test('  Composer 2.5 · 18.5% · 2 files edited · /Users/example/Work/Prefex · main'))
+  assert.ok(re.test('  Composer 2.5 · 6.5% · 1 file edited          Run Everything\n  /tmp/ws · main'))
+  assert.ok(!re.test('  Composer 2.5 · /Users/example/Work/Prefex · main'))
+})
+
+test('spinner recognises the Composing/Editing verbs; transcript chrome drops spinner + percent footer lines', () => {
+  const spinner = provider.tui.spinner.patterns.map((p) => new RegExp(p.regex, p.flags || ''))
+  assert.ok(spinner.some((re) => re.test(' ⠘⠣ Composing')))
+  assert.ok(spinner.some((re) => re.test(' ⠠⠜ Editing  52 tokens')))
+  assert.ok(!spinner.some((re) => re.test('  The answer mentions ⠿ inline.')))
+  const chromes = provider.tui.transcriptPty.chromePatterns.map((p) => new RegExp(p.regex, p.flags || ''))
+  const isChrome = (l) => chromes.some((re) => re.test(l))
+  assert.ok(isChrome(' ⠘⠣ Composing  5 tokens'))
+  assert.ok(isChrome('  Composer 2.5 · 6.4% · 1 file edited                   Run Everything'))
+  assert.ok(!isChrome('  Coverage is 40% · see the report.'))
+})
+
+test('user-turn background is the composer box colour only (diff/code backgrounds are not user turns)', () => {
+  assert.deepEqual(provider.tui.transcriptPty.userBackgroundSgr, ['48;5;233'])
+})
+
+test('nativeHistory keeps a long recency window so an idle finished session still binds its transcript', () => {
+  assert.equal(provider.nativeHistory.source.recent_window_ms, 86_400_000)
+})
