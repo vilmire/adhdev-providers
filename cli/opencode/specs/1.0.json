@@ -275,6 +275,7 @@
       "kind": "sqlite",
       "path": "~/.local/share/opencode/opencode.db",
       "session_query": "SELECT id FROM session WHERE (@workspace = '' OR directory = @workspace) AND time_updated >= (@floor - 2) * 1000 ORDER BY time_updated DESC LIMIT 1",
+      "list_query": "SELECT id, title, directory AS workspace, time_created AS first_at, time_updated AS last_at, (SELECT count(*) FROM message m WHERE m.session_id = session.id) AS message_count FROM session ORDER BY time_updated DESC",
       "message_query": "SELECT json_extract(m.data, '$.role') AS role, group_concat(CASE WHEN json_extract(p.data, '$.type') = 'text' THEN json_extract(p.data, '$.text') ELSE NULL END, '') AS content, (SELECT directory FROM session WHERE id = m.session_id) AS workspace, m.time_created AS timestamp_ms FROM message m JOIN part p ON p.message_id = m.id WHERE m.session_id = ? AND json_extract(p.data, '$.type') IN ('text', 'reasoning') GROUP BY m.id HAVING content IS NOT NULL AND content != '' ORDER BY m.time_created",
       "message_map": {
         "role": "$.role",
