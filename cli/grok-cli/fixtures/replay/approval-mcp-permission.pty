@@ -1,0 +1,31 @@
+[2J[H
+  main /w/repo                                      23K / 256K │ [Dashboard]
+
+
+     ❯ Read-only check: run git status and report it with           11:40 PM
+       report_completion. Change no files.
+        …                                                                      █
+                                                                               █
+                                                                               █
+                                                                               █
+
+   ◆ Running (Adhdev-mesh) Git Status 2m53s                 3m2s ⇣23.6k [stop]
+
+  ┃
+  ┃  ›  Allow (Adhdev-mesh) Git Status?
+  ┃  │ (Adhdev-mesh) Git Status
+  ┃  │ {
+  ┃  │   "workspace": "/w/repo",
+  ┃  │   "format": "json",
+  ┃  ... Ctrl-F to expand
+  ┃  ← → narrow scope
+  ┃
+  ┃  1 (○) Yes, and don't ask again for anything (always-approve mode)
+  ┃  2 (○) Always allow: (Adhdev-mesh) Git Status
+  ┃  3 (●) Yes
+  ┃  4 (○) No, reject (type to add feedback)
+  ┃  5 (○) Never allow: (Adhdev-mesh) Git Status
+  ┃
+
+  1/5:select  │  Tab:next option  │  ←/→:scope  │  Ctrl+f:expand  │  Ctrl+o:
+[12;43H

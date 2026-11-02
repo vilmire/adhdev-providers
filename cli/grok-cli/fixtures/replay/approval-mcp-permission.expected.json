@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "description": "grok-cli 1.0.70: MCP tool permission prompt ('› Allow <tool>?' + five radio rows + 'N/M:select' footer) drawn under a still-running '◆ Running ... [stop]' spinner, with the cursor parked on the spinner row (not on the prompt). Scrubbed capture: workspace path neutralised. Must classify as approval, not busy.",
+  "providerType": "grok-cli",
+  "ptyFile": "approval-mcp-permission.pty",
+  "terminal": {
+    "cols": 80,
+    "rows": 32
+  },
+  "anchors": [
+    {
+      "name": "permission prompt visible",
+      "untilSentinel": "1/5:select",
+      "expect": {},
+      "notes": "The FSM expectation lives in the 'fsm' block and is asserted by fixtures/grok-fsm.test.mjs against the production evaluator. Option 3 '(●) Yes' is the one-shot allow; 1 and 2 are standing grants and must never be auto-pressed."
+    }
+  ],
+  "fsm": {
+    "cursor": {
+      "row": 11,
+      "col": 42
+    },
+    "from": [
+      "busy",
+      "idle",
+      "starting",
+      "approval_vanished"
+    ],
+    "state": "approval",
+    "status": "approval",
+    "oneShotButton": {
+      "index": 3,
+      "key": "3",
+      "label": "Yes"
+    }
+  }
+}
