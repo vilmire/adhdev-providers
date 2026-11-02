@@ -399,24 +399,6 @@
       }
     },
     {
-      "label": "→approval (cursor-detached)",
-      "from": [
-        "starting",
-        "signing_in",
-        "idle",
-        "busy",
-        "approval_vanished"
-      ],
-      "to": "approval",
-      "priority": 100,
-      "when": {
-        "not": {
-          "matches": "^(?![\\s\\S]*(?:^|\\n)[ \\t]*(?:[┃❙|][ \\t]*)?1[ \\t]*\\([●○]\\)[ \\t]+(?!Sign in\\b|Paste your\\b)\\S[^\\n]*(?:\\n[ \\t]*(?:[┃❙|][ \\t]*)?\\d+[ \\t]*\\([●○]\\)[ \\t]+\\S[^\\n]*)+(?:\\n[ \\t┃❙|]*)*\\n[ \\t]*\\d+/\\d+:select\\b[^\\n]*(?:\\n[ \\t]*)*$)",
-          "flags": "i"
-        }
-      }
-    },
-    {
       "label": "idle→busy",
       "from": [
         "starting",
