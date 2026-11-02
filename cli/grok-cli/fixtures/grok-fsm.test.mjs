@@ -24,8 +24,11 @@ test('Grok provider spec passes production validation', () => {
   assert.deepEqual(loader.validateFsmSpec(spec), []);
 });
 
+// The cursor sits on the choice rows of a real trust screen; the default {0,0} is the title row,
+// which the cursor-bound live-modal slice (rightly) treats as not part of the interactive block.
+const TRUST_CURSOR = { row: 4, col: 0 };
 test('trust banner beats startup grace', () => {
-  assert.equal(evaluate('starting', trust).fired?.to, 'trust');
+  assert.equal(evaluate('starting', trust, 9000, TRUST_CURSOR).fired?.to, 'trust');
 });
 
 test('trust escalates only after twenty seconds with the banner still present', () => {
@@ -120,7 +123,6 @@ test('MCP permission prompt is approval even when the cursor is parked on the sp
   for (const from of ['busy', 'idle', 'starting', 'approval_vanished']) {
     assert.equal(evaluate(from, mcpScreen, 9000, LIVE_CURSOR).fired?.to, 'approval', `from ${from}`);
   }
-  assert.equal(evaluate('busy', mcpScreen, 9000, LIVE_CURSOR).fired?.label, '→approval (cursor-detached)');
 });
 
 test('approval wins over the busy chrome that is on screen at the same time', () => {
@@ -210,9 +212,17 @@ test('state title is the permission question even with the parked cursor', () =>
   assert.equal(title, 'Allow (Adhdev-mesh) Git Status?');
 });
 
-// ENGINE GAP (oss, not fixable from the spec): deriveModal/resolveLiveModalSlice bind the modal to the
-// cursor row. Grok parks the cursor on the spinner row above the prompt, so buttons are not parsed
-// and mesh auto-approve / dashboard buttons stay empty until the engine accepts this layout.
-test('buttons parse with the live parked cursor', { todo: 'needs oss resolveLiveModalSlice change' }, () => {
-  assert.equal(parseModal(mcpScreen, LIVE_CURSOR)?.buttons.length, 5);
+// Needs the oss engine rule that keeps a bottom-most block ending on the `N/M:select` footer live
+// when the cursor is parked on the spinner row above it (fsm-driver-modal.ts, resolveLiveModalSlice).
+test('buttons parse with the live parked cursor', () => {
+  const modal = parseModal(mcpScreen, LIVE_CURSOR);
+  assert.equal(modal?.buttons.length, 5);
+  assert.equal(modal.buttons[2].label, 'Yes');
+  assert.equal(modal.buttons[2].key, '3');
+  assert.equal(modal.title, 'Allow (Adhdev-mesh) Git Status?');
+});
+
+test('a quoted prompt followed by a live composer yields no modal even with the parked cursor', () => {
+  const quoted = `${mcpLines.slice(0, 31).join('\n')}\n\n${ready}\n`;
+  assert.equal(parseModal(quoted, LIVE_CURSOR), null);
 });
