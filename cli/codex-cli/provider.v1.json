@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.38",
+  "providerVersion": "1.1.39",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -106,6 +106,31 @@
     "high",
     "xhigh"
   ],
+  "hostHandoffCanary": {
+    "version": 1,
+    "enforcement": "host",
+    "hostTimeoutMs": 15000,
+    "hostMaxOutputBytes": 16384,
+    "nativeTurnCap": false,
+    "nativeOutputTokenCap": false,
+    "privateContextDisabled": true,
+    "toolsDisabled": true,
+    "args": [
+      "exec",
+      "--ephemeral",
+      "--sandbox",
+      "read-only",
+      "--ignore-user-config",
+      "--skip-git-repo-check",
+      "-m",
+      "{{model}}",
+      "{{prompt}}"
+    ],
+    "thinkingArgs": [
+      "-c",
+      "model_reasoning_effort={{thinkingLevel}}"
+    ]
+  },
   "sendDelayMs": 1200,
   "sendKey": "\r\n",
   "submitStrategy": "wait_for_echo",

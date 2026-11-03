@@ -85,11 +85,11 @@
     },
     {
       "providerType": "codex-cli",
-      "providerVersion": "1.1.38",
+      "providerVersion": "1.1.39",
       "category": "cli",
-      "bundleDigest": "sha256:836d167f7d922057a5e86795ff11d6e4f9f034d7d47c6d4163cd2906cbe15ba8",
+      "bundleDigest": "sha256:4f9fd169041e631f20de7b6de4c11c7076f829545011fccf762d425dd4826713",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-29T03:41:56.326Z",
+      "publishedAt": "2026-11-02T23:21:00.000Z",
       "name": "Codex CLI",
       "compatibility": {
         "ideVersion": [
