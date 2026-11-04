@@ -8,6 +8,8 @@
 // tier: read = no side effects on pages; write = reversible page interaction;
 // commit = may submit, send, pay or delete, so the manifest marks it destructive
 // and the daemon holds every call for owner approve/reject.
+const { SAFE_KEYS } = require('./policy.js');
+
 const TOOLS = [
   { name: 'browser_navigate', inner: 'browser_navigate', tier: 'write', urlArg: 'url' },
   { name: 'browser_navigate_back', inner: 'browser_navigate_back', tier: 'write' },
@@ -22,13 +24,13 @@ const TOOLS = [
   { name: 'browser_tab_new', inner: 'browser_tabs', tier: 'write', forced: { action: 'new' }, hide: ['action', 'index'], urlArg: 'url' },
   { name: 'browser_tab_select', inner: 'browser_tabs', tier: 'write', forced: { action: 'select' }, hide: ['action', 'url'] },
   { name: 'browser_tab_close', inner: 'browser_tabs', tier: 'write', forced: { action: 'close' }, hide: ['action', 'url'] },
-  { name: 'browser_click', inner: 'browser_click', tier: 'write', commitGuard: true },
+  { name: 'browser_click', inner: 'browser_click', tier: 'write', guard: 'strict' },
   { name: 'browser_hover', inner: 'browser_hover', tier: 'write' },
-  { name: 'browser_drag', inner: 'browser_drag', tier: 'write' },
+  { name: 'browser_drag', inner: 'browser_drag', tier: 'write', guard: 'strict' },
   { name: 'browser_type', inner: 'browser_type', tier: 'write', forced: { submit: false }, hide: ['submit'] },
-  { name: 'browser_fill_form', inner: 'browser_fill_form', tier: 'write' },
-  { name: 'browser_select_option', inner: 'browser_select_option', tier: 'write' },
-  { name: 'browser_press_key', inner: 'browser_press_key', tier: 'write', rejectKeys: ['Enter', 'NumpadEnter'] },
+  { name: 'browser_fill_form', inner: 'browser_fill_form', tier: 'write', guard: 'activating' },
+  { name: 'browser_select_option', inner: 'browser_select_option', tier: 'write', guard: 'activating' },
+  { name: 'browser_press_key', inner: 'browser_press_key', tier: 'write', safeKeysOnly: true },
   { name: 'browser_resize', inner: 'browser_resize', tier: 'write' },
   { name: 'browser_dialog_dismiss', inner: 'browser_handle_dialog', tier: 'write', forced: { accept: false }, hide: ['accept'] },
   { name: 'browser_click_commit', inner: 'browser_click', tier: 'commit' },
@@ -51,6 +53,9 @@ function exposedToolList(innerTools) {
       if (Array.isArray(schema.required)) schema.required = schema.required.filter((k) => k !== key);
     }
     if (Array.isArray(schema.required) && schema.required.length === 0) delete schema.required;
+    if (def.safeKeysOnly && schema.properties && schema.properties.key) {
+      schema.properties.key = { type: 'string', enum: [...SAFE_KEYS] };
+    }
     out.push({
       name: def.name,
       description: `[${def.tier}] ${inner.description || def.inner}`,
@@ -61,4 +66,11 @@ function exposedToolList(innerTools) {
   return out;
 }
 
-module.exports = { TOOLS, BY_NAME, exposedToolList };
+/** Every element target an interaction tool would act on. */
+function targetsOf(def, args) {
+  if (def.inner === 'browser_drag') return [args.startTarget, args.endTarget];
+  if (def.inner === 'browser_fill_form') return Array.isArray(args.fields) ? args.fields.map((f) => f && f.target) : [];
+  return [args.target];
+}
+
+module.exports = { TOOLS, BY_NAME, exposedToolList, targetsOf };

@@ -21,8 +21,12 @@ readline.createInterface({ input: process.stdin }).on('line', (line) => {
   if (name === 'browser_take_screenshot') {
     return out({ jsonrpc: '2.0', id: m.id, result: { content: [{ type: 'text', text: `### Page\n- Page URL: ${url}` }, { type: 'image', mimeType: 'image/png', data: PNG }] } });
   }
+  if (name === 'browser_evaluate') {
+    if (process.env.FAKE_EVAL_FAIL) return out({ jsonrpc: '2.0', id: m.id, result: { isError: true, content: [{ type: 'text', text: '### Error\nboom' }] } });
+    return out({ jsonrpc: '2.0', id: m.id, result: { content: [{ type: 'text', text: `### Result\n${JSON.stringify(url)}\n### Ran Playwright code` }] } });
+  }
   const text = name === 'browser_snapshot'
-    ? `### Page\n- Page URL: ${url}\n### Snapshot\n- button "Submit order" [ref=e9]\n- button "Toggle panel" [ref=e10]`
-    : `### Page\n- Page URL: ${url}\ncalled ${name} ${JSON.stringify(args)}`;
+    ? `### Page\n- Page URL: ${url}\n### Snapshot\n\`\`\`yaml\n- generic [ref=e1]:\n  - textbox "Name" [ref=e12]\n  - button "Submit order" [ref=e9]\n  - button "Toggle panel" [ref=e10]\n  - button [ref=e11]\n  - form:\n    - button "Go" [ref=e13]\n\`\`\``
+    : `### Page\n- Page URL: ${process.env.FAKE_TEXT_URL || url}\ncalled ${name} ${JSON.stringify(args)}`;
   out({ jsonrpc: '2.0', id: m.id, result: { content: [{ type: 'text', text }] } });
 });

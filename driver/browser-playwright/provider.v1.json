@@ -22,7 +22,8 @@
     "startupTimeoutMs": 60000,
     "idleStopMs": 600000,
     "env": [
-      "ADHDEV_BROWSER_ALLOWED_ORIGINS"
+      "ADHDEV_BROWSER_ALLOWED_ORIGINS",
+      "ADHDEV_BROWSER_ALLOW_PRIVATE"
     ]
   },
   "actions": [
