@@ -2,14 +2,16 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "type": {
+    "level": {
       "type": "string",
       "enum": [
-        "png",
-        "jpeg"
+        "error",
+        "warning",
+        "info",
+        "debug"
       ]
     },
-    "fullPage": {
+    "all": {
       "type": "boolean"
     }
   },

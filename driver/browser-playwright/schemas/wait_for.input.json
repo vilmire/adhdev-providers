@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "time": {
+      "type": "number"
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "textGone": {
+      "type": "string",
+      "maxLength": 4096
+    }
+  },
+  "additionalProperties": false
+}

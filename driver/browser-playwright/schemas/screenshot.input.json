@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "element": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "target": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "png",
+        "jpeg",
+        "webp"
+      ]
+    },
+    "fullPage": {
+      "type": "boolean"
+    },
+    "scale": {
+      "type": "string",
+      "enum": [
+        "css",
+        "device"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "startElement": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "startTarget": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "endElement": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "endTarget": {
+      "type": "string",
+      "maxLength": 4096
+    }
+  },
+  "required": [
+    "startTarget",
+    "endTarget"
+  ],
+  "additionalProperties": false
+}

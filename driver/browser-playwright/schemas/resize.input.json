@@ -2,13 +2,16 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "url": {
-      "type": "string",
-      "format": "uri"
+    "width": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
     }
   },
   "required": [
-    "url"
+    "width",
+    "height"
   ],
   "additionalProperties": false
 }

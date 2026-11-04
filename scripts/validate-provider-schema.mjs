@@ -37,7 +37,6 @@ const CATEGORIES = {
   },
   driver: {
     root: 'driver',
-    extraRoots: ['examples/driver'],
     schema: 'schemas/v1/driver/provider.schema.json',
     anchors: new Set(['browser-playwright']),
     anchorLabel: 'reference',

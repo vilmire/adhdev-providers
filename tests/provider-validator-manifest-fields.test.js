@@ -105,11 +105,11 @@ for (const fileName of ['provider.json', 'provider.v1.json']) {
 }
 
 test('validator accepts browser-playwright driver sample and rejects driver missing runtime/actions or having scripts/', () => {
-  const sampleResult = runValidator('examples/driver/browser-playwright');
+  const sampleResult = runValidator('driver/browser-playwright');
   const sampleOutput = `${sampleResult.stdout || ''}${sampleResult.stderr || ''}`;
   assert.equal(sampleResult.status, 0, sampleOutput);
 
-  const sampleDir = path.join(repoRoot, 'examples', 'driver', 'browser-playwright');
+  const sampleDir = path.join(repoRoot, 'driver', 'browser-playwright');
   const sampleManifest = JSON.parse(fs.readFileSync(path.join(sampleDir, 'provider.v1.json'), 'utf8'));
   for (const arg of sampleManifest.runtime.args || []) {
     if (typeof arg === 'string' && arg.startsWith('./')) {
