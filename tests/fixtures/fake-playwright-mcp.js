@@ -2,6 +2,7 @@
 // Minimal stand-in for @playwright/mcp used by the proxy tests. Newline-delimited JSON-RPC.
 // Navigation lands on REDIRECTS[url] when present, so redirect handling is testable offline.
 const readline = require('node:readline');
+if (process.env.FAKE_ARGV_FILE) require('node:fs').writeFileSync(process.env.FAKE_ARGV_FILE, JSON.stringify(process.argv.slice(2)));
 const REDIRECTS = JSON.parse(process.env.FAKE_REDIRECTS || '{}');
 const names = ['browser_navigate', 'browser_navigate_back', 'browser_snapshot', 'browser_find', 'browser_take_screenshot', 'browser_console_messages',
   'browser_network_requests', 'browser_network_request', 'browser_wait_for', 'browser_tabs', 'browser_click', 'browser_hover', 'browser_drag',
@@ -27,6 +28,6 @@ readline.createInterface({ input: process.stdin }).on('line', (line) => {
   }
   const text = name === 'browser_snapshot'
     ? `### Page\n- Page URL: ${url}\n### Snapshot\n\`\`\`yaml\n- generic [ref=e1]:\n  - textbox "Name" [ref=e12]\n  - button "Submit order" [ref=e9]\n  - button "Toggle panel" [ref=e10]\n  - button [ref=e11]\n  - form:\n    - button "Go" [ref=e13]\n\`\`\``
-    : `### Page\n- Page URL: ${process.env.FAKE_TEXT_URL || url}\ncalled ${name} ${JSON.stringify(args)}`;
+    : `### Page\n- Page URL: ${process.env.FAKE_TEXT_URL || url}\ncalled ${name} ${JSON.stringify(args)}${process.env.FAKE_TEXT_EXTRA || ''}`;
   out({ jsonrpc: '2.0', id: m.id, result: { content: [{ type: 'text', text }] } });
 });

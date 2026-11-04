@@ -11,7 +11,7 @@ const path = require('node:path');
 const readline = require('node:readline');
 const { spawn } = require('node:child_process');
 const { BY_NAME, exposedToolList, targetsOf } = require('./tools.js');
-const { parseAllowedOrigins, parseAllowPrivate, checkUrl, commitReason, isSafeKey } = require('./policy.js');
+const { parseAllowedOrigins, parseAllowPrivate, checkUrl, commitReason, isSafeKey, requestBlockArgs } = require('./policy.js');
 
 const outputDir = process.env.ADHDEV_DRIVER_STATE_DIR
   || path.join(os.tmpdir(), 'adhdev-driver-browser-playwright');
@@ -27,9 +27,10 @@ for (const name of fs.readdirSync(outputDir)) {
 const allowedOrigins = parseAllowedOrigins(process.env.ADHDEV_BROWSER_ALLOWED_ORIGINS, (m) => console.error(`[browser-playwright] ${m}`));
 const urlOptions = { allowPrivate: parseAllowPrivate(process.env.ADHDEV_BROWSER_ALLOW_PRIVATE) };
 const innerBin = process.env.ADHDEV_BROWSER_INNER_MCP; // test hook: path to a node script
-const BLOCKED = ['169.254.169.254', 'metadata.google.internal', '100.100.100.200', '[fd00:ec2::254]', '[::ffff:a9fe:a9fe]', '[fe80::1]']
-  .flatMap((h) => [`http://${h}`, `https://${h}`]).join(';');
-const innerArgs = ['--headless', '--isolated', '--block-service-workers', '--output-dir', outputDir, '--blocked-origins', BLOCKED];
+const block = requestBlockArgs({ allowPrivate: urlOptions.allowPrivate, allowedOrigins });
+// An allow-list that parsed to nothing denies every request in the browser too (a never-matching origin).
+const innerArgs = ['--headless', '--isolated', '--block-service-workers', '--output-dir', outputDir, '--blocked-origins', block.blocked,
+  ...(block.allowed || block.denyAll ? ['--allowed-origins', block.allowed || 'http://adhdev-deny-all.invalid'] : [])];
 
 const child = innerBin
   ? spawn(process.execPath, [innerBin, ...innerArgs], { stdio: ['pipe', 'pipe', 'inherit'], cwd: outputDir })
@@ -140,14 +141,15 @@ async function handleInner(msg) {
   if (msg.result.isError && /Executable doesn't exist|browser .* is not installed|npx playwright install/i.test(text)) {
     msg.result.content.push({ type: 'text', text: '[adhdev] No Playwright browser is installed on this machine. Ask the owner to run: npx playwright install chromium' });
   }
-  const modal = /Modal state/i.test(text);
+  // No modal detection from response text: page content can say anything. If the browser will not answer
+  // (a dialog is open, the page is gone) the address is unverifiable and the call fails closed.
   if (!NO_PAGE_READ.has(def.name)) {
-    const finalUrl = modal ? null : await currentUrl();
-    if (finalUrl === null && !modal) {
+    const finalUrl = await currentUrl();
+    if (finalUrl === null) {
       await reset();
-      return failResult(msg.id, 'url_unverifiable', 'The current page address could not be verified; the page was reset to about:blank');
+      return failResult(msg.id, 'url_unverifiable', 'The current page address could not be verified (if a dialog is open, use dialog_dismiss or dialog_accept); the page was reset to about:blank where possible');
     }
-    if (finalUrl !== null) {
+    {
       const reason = finalUrl.startsWith('chrome-error:') ? 'navigation_failed' : checkUrl(finalUrl, allowedOrigins, urlOptions);
       if (reason) {
         await reset();

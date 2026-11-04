@@ -138,4 +138,26 @@ function commitReason(ref, snapshot, fresh, { strictWords }) {
   return null;
 }
 
-module.exports = { parseAllowedOrigins, parseAllowPrivate, checkUrl, classifyHost, commitReason, describeRef, isSafeKey, SAFE_KEYS };
+/**
+ * Request-level blocks handed to the inner server, which applies them to every
+ * frame and subresource through the browser context (not just the top-level URL).
+ * Patterns are Playwright host globs: `*` spans anything but `/`, so `10.*` also
+ * matches a port. Only literal hosts can be matched; DNS names that resolve to a
+ * private address are not caught here (a known limit).
+ */
+function requestBlockArgs({ allowPrivate, allowedOrigins }) {
+  const both = (host) => [host, `${host}:*`];
+  const always = [
+    '169.254.*', '100.100.100.200', '[fe*', '[::ffff:*', '[64:ff9b:*', '[2002:*', '[::a9fe*', 'metadata.google.internal', 'metadata', 'instance-data',
+  ].flatMap((h) => (h.endsWith('*') ? [h] : both(h)));
+  const privateHosts = ['localhost', '*.localhost', '[::1]', '[::]', '0.*', '127.*', '10.*', '192.168.*', '[fc*', '[fd*']
+    .concat(Array.from({ length: 16 }, (_, i) => `172.${16 + i}.*`), Array.from({ length: 64 }, (_, i) => `100.${64 + i}.*`))
+    .flatMap((h) => (h.endsWith('*') && h !== '*.localhost' ? [h] : both(h)));
+  const list = [...always];
+  // With an allow-list every unlisted request is aborted already; listed private origins must stay reachable.
+  if (!allowPrivate && !allowedOrigins) list.push(...privateHosts);
+  const blocked = [...new Set(list.flatMap((h) => [h]))].join(';');
+  return { blocked, allowed: allowedOrigins && allowedOrigins.length ? allowedOrigins.join(';') : null, denyAll: !!allowedOrigins && allowedOrigins.length === 0 };
+}
+
+module.exports = { requestBlockArgs, parseAllowedOrigins, parseAllowPrivate, checkUrl, classifyHost, commitReason, describeRef, isSafeKey, SAFE_KEYS };
