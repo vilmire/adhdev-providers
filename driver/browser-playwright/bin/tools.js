@@ -27,7 +27,9 @@ const TOOLS = [
   { name: 'browser_click', inner: 'browser_click', tier: 'write', guard: 'strict' },
   { name: 'browser_hover', inner: 'browser_hover', tier: 'write' },
   { name: 'browser_drag', inner: 'browser_drag', tier: 'write', guard: 'strict' },
-  { name: 'browser_type', inner: 'browser_type', tier: 'write', forced: { submit: false }, hide: ['submit'] },
+  // Write tier fills a field: `slowly` is forced off (key-by-key typing lets a space press a focused button or a newline
+  // submit a form) and line breaks are refused (noNewlines); keyed typing and Enter live in the commit tier.
+  { name: 'browser_type', inner: 'browser_type', tier: 'write', forced: { submit: false, slowly: false }, hide: ['submit', 'slowly'], noNewlines: true },
   { name: 'browser_fill_form', inner: 'browser_fill_form', tier: 'write', guard: 'activating' },
   { name: 'browser_select_option', inner: 'browser_select_option', tier: 'write', guard: 'activating' },
   { name: 'browser_press_key', inner: 'browser_press_key', tier: 'write', safeKeysOnly: true },

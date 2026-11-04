@@ -115,6 +115,32 @@ test('policy: commit decision comes from snapshot state and fails closed', () =>
   assert.equal(c(undefined), 'ref_required');
 });
 
+test('policy: ref text planted in an accessible name or text node cannot pick the line that is judged', () => {
+  const decoy = '- generic [ref=e1]:\n  - link "docs [ref=e5]" [ref=e3]\n  - text: more [ref=e5]\n  - button "Delete account" [ref=e5]\n  - heading "Hi" [level=1] [ref=e6]';
+  assert.equal(policy.describeRef(decoy, 'e5').name, 'Delete account');
+  assert.equal(policy.commitReason('e5', decoy, true, { strictWords: false }), 'looks_like_commit', 'the real Delete button is judged, not the decoy line');
+  assert.equal(policy.commitReason('e3', decoy, true, { strictWords: false }), null, 'a ref quoted inside a name is not a second claim');
+  assert.equal(policy.describeRef(decoy, 'e6').role, 'heading');
+  const twice = '- generic [ref=e1]:\n  - button "Toggle" [ref=e4]\n  - button "Delete" [ref=e4]';
+  assert.deepEqual(policy.describeRef(twice, 'e4'), { ambiguous: true }, 'two own-position claims are ambiguous');
+  assert.equal(policy.commitReason('e4', twice, true, { strictWords: false }), 'looks_like_commit', 'ambiguity fails closed');
+});
+
+test('proxy: write-tier browser_type refuses line breaks and cannot type key by key', async () => {
+  const p = startProxy();
+  try {
+    await p.rpc('initialize', INIT);
+    await p.call('browser_navigate', { url: 'http://localhost:3000/' });
+    for (const text of ['a\nb', 'a\rb', 'a\u2028b']) {
+      assert.match((await p.call('browser_type', { target: 'e1', text })).text, /^use_commit_action/, JSON.stringify(text));
+    }
+    assert.match((await p.call('browser_type', { target: 'e1', text: ' ', slowly: true })).text, /"slowly":false/, 'slowly is forced off');
+    assert.match((await p.call('browser_type_commit', { target: 'e1', text: 'a\nb' })).text, /"submit":true/, 'the commit tier still accepts it');
+    const tools = (await p.rpc('tools/list', {})).result.tools;
+    assert.ok(!('slowly' in (tools.find((t) => t.name === 'browser_type').inputSchema.properties || {})));
+  } finally { p.stop(); }
+});
+
 function startProxy(env = {}) {
   const state = fs.mkdtempSync(path.join(os.tmpdir(), 'bpw-test-'));
   const child = spawn(process.execPath, [path.join(pkg, 'bin', 'browser-server.js')], {

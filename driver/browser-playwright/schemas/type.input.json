@@ -13,9 +13,6 @@
     "text": {
       "type": "string",
       "maxLength": 4096
-    },
-    "slowly": {
-      "type": "boolean"
     }
   },
   "required": [

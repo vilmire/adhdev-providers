@@ -88,6 +88,7 @@ function handleClient(msg) {
   if ('filename' in args) return failResult(msg.id, 'invalid_arguments', 'filename is not accepted; results are returned inline or as artifacts');
   Object.assign(args, def.forced || {});
   if (def.safeKeysOnly && !isSafeKey(args.key)) return failResult(msg.id, 'use_commit_action', 'Only navigation and plain character keys are allowed; Enter, Space, modifier combinations and other keys can activate controls, use press_enter (owner approval)');
+  if (def.noNewlines && typeof args.text === 'string' && /[\r\n\u2028\u2029]/.test(args.text)) return failResult(msg.id, 'use_commit_action', 'Line breaks can submit a form; use type_commit (owner approval) for text containing a newline');
   if (def.guard) {
     for (const target of targetsOf(def, args)) {
       const reason = commitReason(target, snapshot, fresh, { strictWords: def.guard === 'strict' });

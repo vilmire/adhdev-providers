@@ -101,16 +101,35 @@ function checkUrl(value, allowedOrigins, options = {}) {
   return null;
 }
 
-/** Parse one `[ref=eN]` line of a Playwright aria snapshot: role, accessible name, and ancestor roles. */
+/**
+ * Parse the one `[ref=eN]` line of a Playwright aria snapshot: role, accessible name, and ancestor roles.
+ * The ref only counts in the element's OWN attribute position (`- role "name" [attr] [ref=eN]`, after the quoted
+ * name): page-controlled text such as an accessible name or text node can contain `[ref=eN]` and must never pick
+ * the line. When more than one line claims the ref the snapshot is ambiguous and the result is `{ ambiguous: true }`
+ * (callers treat that as a commit, fail closed).
+ */
 function describeRef(snapshot, ref) {
   const lines = snapshot.split('\n');
-  const index = lines.findIndex((l) => l.includes(`[ref=${ref}]`));
-  if (index < 0) return null;
-  const indentOf = (l) => l.length - l.trimStart().length;
+  const own = /^\s*-\s+([\w-]+)(?:\s+"((?:[^"\\]|\\.)*)")?((?:\s+\[[^\]]*\])*)\s*:?\s*$/;
   const parse = (l) => {
     const m = /^\s*-\s+([\w-]+)(?:\s+"((?:[^"\\]|\\.)*)")?/.exec(l);
     return m ? { role: m[1], name: m[2] || '' } : { role: '', name: '' };
   };
+  const matches = [];
+  lines.forEach((l, i) => {
+    if (!l.includes(`[ref=${ref}]`)) return;
+    const m = own.exec(l);
+    if (m && m[3].split(/\s+(?=\[)/).some((attr) => attr.trim() === `[ref=${ref}]`)) matches.push(i);
+    else if (!m) {
+      // A trailing ": inline text" form (`- role "name" [ref=e1]: text`) keeps its attributes before the colon.
+      const inline = /^\s*-\s+([\w-]+)(?:\s+"((?:[^"\\]|\\.)*)")?((?:\s+\[[^\]]*\])*):\s/.exec(l);
+      if (inline && inline[3].split(/\s+(?=\[)/).some((attr) => attr.trim() === `[ref=${ref}]`)) matches.push(i);
+    }
+  });
+  if (matches.length === 0) return lines.some((l) => l.includes(`[ref=${ref}]`)) ? { ambiguous: true } : null;
+  if (matches.length > 1) return { ambiguous: true };
+  const index = matches[0];
+  const indentOf = (l) => l.length - l.trimStart().length;
   const self = parse(lines[index]);
   const ancestors = [];
   let depth = indentOf(lines[index]);
@@ -132,6 +151,7 @@ function commitReason(ref, snapshot, fresh, { strictWords }) {
   if (!snapshot || !fresh) return 'snapshot_required';
   const info = describeRef(snapshot, ref);
   if (!info) return 'ref_unknown';
+  if (info.ambiguous) return 'looks_like_commit'; // page text claims the same ref: cannot tell which control it is
   const activating = ACTIVATING_ROLES.has(info.role);
   if (activating && (!info.name.trim() || info.ancestors.includes('form'))) return 'looks_like_commit';
   if ((activating || strictWords) && COMMIT_WORDS.test(info.name)) return 'looks_like_commit';
