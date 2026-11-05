@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "pattern": "^(enter|tab|escape|backspace|delete|space|up|down|left|right|home|end|pageup|pagedown|f[1-9]|f1[0-2]|\\S)$"
+    },
+    "modifiers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "cmd",
+          "ctrl",
+          "alt",
+          "shift"
+        ]
+      },
+      "maxItems": 4,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "key"
+  ],
+  "additionalProperties": false
+}

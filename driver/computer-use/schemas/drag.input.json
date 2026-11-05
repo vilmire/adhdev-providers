@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "fromX": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
+    },
+    "fromY": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
+    },
+    "toX": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
+    },
+    "toY": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 32767
+    },
+    "button": {
+      "type": "string",
+      "enum": [
+        "left",
+        "right",
+        "middle"
+      ]
+    }
+  },
+  "required": [
+    "fromX",
+    "fromY",
+    "toX",
+    "toY"
+  ],
+  "additionalProperties": false
+}

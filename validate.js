@@ -290,6 +290,13 @@ function validateDriverCategory(providerDir, rel, mod) {
   if (providerDir && fs.existsSync(path.join(providerDir, 'scripts'))) {
     fail(rel, "driver package must not contain a 'scripts' directory");
   }
+  // actions[].grant must name a declared grants[].id (the JSON schema cannot express this).
+  const declaredGrants = new Set(Array.isArray(mod.grants) ? mod.grants.map((g) => g && g.id) : []);
+  for (const action of mod.actions || []) {
+    if (action && action.grant !== undefined && !declaredGrants.has(action.grant)) {
+      fail(rel, `action '${action.id}' references undeclared grant '${action.grant}'`);
+    }
+  }
 }
 
 function validateV1Structure(rel, mod, providerDir) {

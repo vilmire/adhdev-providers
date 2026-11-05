@@ -1,0 +1,142 @@
+{
+  "$schema": "https://adhf.dev/schemas/v1/driver/provider.schema.json",
+  "type": "computer-use",
+  "category": "driver",
+  "name": "Computer use (screen, keyboard, shell)",
+  "providerVersion": "1.0.0",
+  "publisher": "ADHDev",
+  "compatibility": {
+    "driverApi": "^1.0.0"
+  },
+  "runtime": {
+    "kind": "mcp-stdio",
+    "command": "node",
+    "args": [
+      "./bin/computer-server.js"
+    ],
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "startupTimeoutMs": 60000,
+    "requestTimeoutMs": 330000,
+    "idleStopMs": 600000,
+    "env": [
+      "DISPLAY",
+      "XAUTHORITY",
+      "WAYLAND_DISPLAY",
+      "XDG_SESSION_TYPE",
+      "XDG_RUNTIME_DIR",
+      "SHELL",
+      "USER",
+      "LOGNAME"
+    ]
+  },
+  "grants": [
+    {
+      "id": "screen",
+      "title": "Screen capture",
+      "description": "Let agents take screenshots of the main display. Screenshots can show passwords and private information and are saved in the workspace."
+    },
+    {
+      "id": "input",
+      "title": "Keyboard and mouse",
+      "description": "Let agents move the mouse, click, scroll, type and press keys on this machine. This is effectively full control of the machine: agents can open a terminal and run anything, or click approval buttons shown on screen."
+    },
+    {
+      "id": "shell",
+      "title": "Shell commands",
+      "description": "Let agents run shell commands as the daemon user, outside the worker sandbox and with the full environment of this machine."
+    }
+  ],
+  "actions": [
+    {
+      "id": "status",
+      "tool": "status",
+      "risk": "read",
+      "lease": false,
+      "inputSchema": "./schemas/status.input.json"
+    },
+    {
+      "id": "screenshot",
+      "tool": "screenshot",
+      "risk": "read",
+      "grant": "screen",
+      "inputSchema": "./schemas/screenshot.input.json"
+    },
+    {
+      "id": "screen_info",
+      "tool": "screen_info",
+      "risk": "read",
+      "grant": "screen",
+      "inputSchema": "./schemas/screen_info.input.json"
+    },
+    {
+      "id": "mouse_move",
+      "tool": "mouse_move",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/mouse_move.input.json"
+    },
+    {
+      "id": "click",
+      "tool": "click",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/click.input.json"
+    },
+    {
+      "id": "drag",
+      "tool": "drag",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/drag.input.json"
+    },
+    {
+      "id": "scroll",
+      "tool": "scroll",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/scroll.input.json"
+    },
+    {
+      "id": "type_text",
+      "tool": "type_text",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/type_text.input.json"
+    },
+    {
+      "id": "press_key",
+      "tool": "press_key",
+      "risk": "write",
+      "grant": "input",
+      "inputSchema": "./schemas/press_key.input.json"
+    },
+    {
+      "id": "shell_run",
+      "tool": "shell_run",
+      "risk": "write",
+      "grant": "shell",
+      "lease": false,
+      "inputSchema": "./schemas/shell_run.input.json"
+    }
+  ],
+  "resources": [
+    {
+      "key": "desktop",
+      "lease": "session"
+    }
+  ],
+  "guidance": "./guidance/usage.md",
+  "declaredAccess": {
+    "desktopControl": true,
+    "filesystem": [
+      "*"
+    ],
+    "network": [
+      "*"
+    ]
+  }
+}
