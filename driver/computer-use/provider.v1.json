@@ -37,7 +37,7 @@
     {
       "id": "screen",
       "title": "Screen capture",
-      "description": "Let agents take screenshots of the main display. Screenshots can show passwords and private information and are saved in the workspace."
+      "description": "Let agents take screenshots of the main display and read the text, names and positions of the controls in the focused window (password fields excluded). Screenshots and window text can show private information; screenshots are saved in the workspace."
     },
     {
       "id": "input",
@@ -71,6 +71,13 @@
       "risk": "read",
       "grant": "screen",
       "inputSchema": "./schemas/screen_info.input.json"
+    },
+    {
+      "id": "ui_tree",
+      "tool": "ui_tree",
+      "risk": "read",
+      "grant": "screen",
+      "inputSchema": "./schemas/ui_tree.input.json"
     },
     {
       "id": "mouse_move",

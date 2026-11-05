@@ -16,6 +16,7 @@ const XDO_NAMES = {
 const XDO_PUNCT = { ';': 'semicolon', '=': 'equal', ',': 'comma', '-': 'minus', '.': 'period', '/': 'slash', '`': 'grave', '[': 'bracketleft', '\\': 'backslash', ']': 'bracketright', "'": 'apostrophe' };
 const XDO_MODIFIERS = { cmd: 'super', ctrl: 'ctrl', alt: 'alt', shift: 'shift' };
 const BUTTON_NUMBER = { left: '1', middle: '2', right: '3' };
+const UI_TREE_UNAVAILABLE = { available: false, reason: 'AT-SPI support is not included in the Linux backend', hint: 'Use screenshot and the screenshot coordinates instead' };
 const CAPTURE_TOOLS = ['maim', 'scrot', 'import'];
 
 /** The session kind from the environment: x11, wayland, or headless (no DISPLAY). */
@@ -107,7 +108,7 @@ function create(deps = {}) {
       if (session !== 'x11') {
         const reason = session === 'wayland' ? 'Wayland sessions are not supported' : 'no graphical session (DISPLAY is not set)';
         const hint = session === 'wayland' ? 'Log in with an X11 session to use screen capture and input' : 'Start the daemon inside a graphical X11 session';
-        return { platform: 'linux', session, screen: { available: false, reason, hint }, input: { available: false, reason, hint } };
+        return { platform: 'linux', session, screen: { available: false, reason, hint }, input: { available: false, reason, hint }, uiTree: { ...UI_TREE_UNAVAILABLE } };
       }
       const tool = CAPTURE_TOOLS.find((t) => where(t));
       return {
@@ -115,6 +116,7 @@ function create(deps = {}) {
         session,
         screen: tool ? { available: true } : { available: false, reason: 'no screenshot tool found (maim, scrot or import)', hint: 'Install one, for example: sudo apt install maim' },
         input: where('xdotool') ? { available: true } : { available: false, reason: 'xdotool is not installed', hint: 'Install it, for example: sudo apt install xdotool' },
+        uiTree: { ...UI_TREE_UNAVAILABLE },
       };
     },
     async screenInfo() {
@@ -143,6 +145,7 @@ function create(deps = {}) {
         fsx.rmSync(dir, { recursive: true, force: true });
       }
     },
+    async uiTree() { throw new DriverError('backend_unavailable', `${UI_TREE_UNAVAILABLE.reason}; use screenshot instead`); },
     mouseMove: (a) => xdotool(xdo.move(a)),
     click: (a) => xdotool(xdo.click(a)),
     drag: (a) => xdotool(xdo.drag(a)),

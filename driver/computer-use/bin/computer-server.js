@@ -63,8 +63,8 @@ function main() {
     const { DriverError } = require('./run.js');
     const fail = async () => { throw new DriverError('backend_unavailable', `no backend for this platform: ${backendError.message}`); };
     ctx.backend = {
-      status: async () => ({ platform: process.platform, session: 'unknown', screen: { available: false, reason: 'no backend' }, input: { available: false, reason: 'no backend' } }),
-      screenshot: fail, screenInfo: fail, mouseMove: fail, click: fail, drag: fail, scroll: fail, typeText: fail, pressKey: fail,
+      status: async () => ({ platform: process.platform, session: 'unknown', screen: { available: false, reason: 'no backend' }, input: { available: false, reason: 'no backend' }, uiTree: { available: false, reason: 'no backend' } }),
+      screenshot: fail, screenInfo: fail, uiTree: fail, mouseMove: fail, click: fail, drag: fail, scroll: fail, typeText: fail, pressKey: fail,
     };
   }
   const handle = createHandler(ctx);

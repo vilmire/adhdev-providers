@@ -84,4 +84,73 @@ function parseLastJson(stdout) {
   return null;
 }
 
-module.exports = { NAMED_KEYS, MODIFIERS, parseKey, checkModifiers, chunkText, splitTypedText, pngSize, findOnPath, parseLastJson };
+// ---- ui_tree result shaping (pure; shared by every backend and the tool) ----
+const UI_TEXT_MAX = 200;
+const UI_ROLE_MAX = 60;
+// The daemon inlines at most 64,000 characters of tool result text; stay clearly below it.
+const UI_RESULT_MAX_CHARS = 60_000;
+const SECURE_ROLES = new Set(['AXSecureTextField']);
+
+/** Cut to at most `max` code points (never splits a surrogate pair). */
+function cutText(value, max = UI_TEXT_MAX) {
+  if (typeof value !== 'string') return undefined;
+  const chars = Array.from(value);
+  return chars.length > max ? chars.slice(0, max).join('') : value;
+}
+
+const finite = (n) => typeof n === 'number' && Number.isFinite(n);
+
+/**
+ * Normalize one raw backend node, or return null when it must be dropped.
+ * Raw nodes: { depth, role, subrole?, name?, value?, x?, y?, width?, height?, enabled?, focused?, secure? }.
+ * A password field keeps role and geometry but never a value, whatever the backend sent.
+ */
+function normalizeUiNode(raw) {
+  if (raw === null || typeof raw !== 'object' || !Number.isInteger(raw.depth) || raw.depth < 0) return null;
+  const role = cutText(typeof raw.role === 'string' && raw.role ? raw.role : 'unknown', UI_ROLE_MAX);
+  const secure = raw.secure === true || SECURE_ROLES.has(raw.role) || SECURE_ROLES.has(raw.subrole);
+  const name = cutText(raw.name);
+  const hasPosition = finite(raw.x) && finite(raw.y) && finite(raw.width) && finite(raw.height);
+  if (!hasPosition && !name) return null;
+  const node = { depth: raw.depth, role };
+  if (name) node.name = name;
+  if (!secure) {
+    const value = cutText(raw.value);
+    if (value) node.value = value;
+  }
+  if (hasPosition) {
+    node.x = Math.round(raw.x);
+    node.y = Math.round(raw.y);
+    node.width = Math.max(0, Math.round(raw.width));
+    node.height = Math.max(0, Math.round(raw.height));
+  }
+  if (typeof raw.enabled === 'boolean') node.enabled = raw.enabled;
+  if (typeof raw.focused === 'boolean') node.focused = raw.focused;
+  return node;
+}
+
+/**
+ * Turn a backend tree ({ app, window, truncated?, nodes }) into the tool result
+ * { app, window, truncated, nodeCount, nodes }, enforcing maxDepth, maxNodes and the serialized size cap.
+ */
+function buildUiTreeResult(raw, { maxDepth = 8, maxNodes = 300 } = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  let truncated = source.truncated === true;
+  const result = { app: cutText(String(source.app ?? '')) ?? '', window: cutText(String(source.window ?? '')) ?? '', truncated, nodeCount: 0, nodes: [] };
+  let size = JSON.stringify({ ...result, truncated: true, nodeCount: maxNodes }).length;
+  for (const entry of Array.isArray(source.nodes) ? source.nodes : []) {
+    const node = normalizeUiNode(entry);
+    if (!node) continue;
+    if (node.depth > maxDepth) { truncated = true; continue; }
+    if (result.nodes.length >= maxNodes) { truncated = true; break; }
+    const added = JSON.stringify(node).length + 1;
+    if (size + added > UI_RESULT_MAX_CHARS) { truncated = true; break; }
+    size += added;
+    result.nodes.push(node);
+  }
+  result.truncated = truncated;
+  result.nodeCount = result.nodes.length;
+  return result;
+}
+
+module.exports = { NAMED_KEYS, MODIFIERS, parseKey, checkModifiers, chunkText, splitTypedText, pngSize, findOnPath, parseLastJson, cutText, normalizeUiNode, buildUiTreeResult, UI_TEXT_MAX, UI_RESULT_MAX_CHARS };

@@ -9,6 +9,11 @@ const path = require('node:path');
 const { DriverError, runProcess } = require('../run.js');
 const { parseKey, checkModifiers, splitTypedText, pngSize, parseLastJson } = require('./common.js');
 
+// Wall-clock budget for the UI Automation walk (the script stops and returns a partial tree); the process limit sits above it.
+const UI_TREE_BUDGET_MS = 18_000;
+const UI_TREE_PROCESS_TIMEOUT_MS = 30_000;
+const UI_TREE_MAX_BYTES = 2 * 1024 * 1024;
+
 const NAMED_VK = {
   enter: 0x0d, tab: 0x09, escape: 0x1b, backspace: 0x08, delete: 0x2e, space: 0x20,
   up: 0x26, down: 0x28, left: 0x25, right: 0x27, home: 0x24, end: 0x23, pageup: 0x21, pagedown: 0x22,
@@ -38,6 +43,9 @@ function typeSteps(text) {
   return splitTypedText(text).map((item) => (item.key ? { vk: NAMED_VK[item.key], modifiers: [] } : item));
 }
 
+// The 'tree' op is a read-only UI Automation walk of the foreground window: preorder, bounded by depth, node count,
+// visited count and a wall-clock budget; a hung app yields a partial tree with truncated = true. The encoded script
+// must stay well under the 32k command-line limit (no comments inside the script).
 const POWERSHELL_SOURCE = String.raw`
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
@@ -59,11 +67,13 @@ public static class CU {
   [StructLayout(LayoutKind.Sequential)] struct INPUT { public uint type; public INPUTUNION u; }
   [StructLayout(LayoutKind.Sequential)] struct POINT { public int X; public int Y; }
   [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
   [DllImport("user32.dll")] static extern int GetSystemMetrics(int index);
   [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint n, INPUT[] inputs, int size);
   public static void Init() { SetProcessDPIAware(); }
+  public static long Foreground() { return GetForegroundWindow().ToInt64(); }
   public static int Width() { return GetSystemMetrics(0); }
   public static int Height() { return GetSystemMetrics(1); }
   public static int CursorX() { POINT p; GetCursorPos(out p); return p.X; }
@@ -103,6 +113,73 @@ public static class CU {
       $bmp.Save([string]$a.path, [System.Drawing.Imaging.ImageFormat]::Png)
       $g.Dispose(); $bmp.Dispose()
       Emit @{ ok = $true; width = $w; height = $h }; exit 0
+    }
+    'tree' {
+      Add-Type -AssemblyName UIAutomationClient
+      Add-Type -AssemblyName UIAutomationTypes
+      $deadline = [DateTime]::UtcNow.AddMilliseconds([int]$a.budgetMs)
+      $maxNodes = [int]$a.maxNodes
+      $maxDepth = [int]$a.maxDepth
+      $hwnd = [CU]::Foreground()
+      if ($hwnd -eq 0) { Emit @{ ok = $true; app = ''; window = ''; truncated = $false; nodes = @() }; exit 0 }
+      $root = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$hwnd)
+      function Clip([string]$t) { if ($t.Length -gt 200) { return $t.Substring(0, 200) } return $t }
+      function Read-Node($el, [int]$depth) {
+        $n = [ordered]@{ depth = $depth }
+        try {
+          $cur = $el.Current
+          $n.role = [string]($cur.ControlType.ProgrammaticName -replace '^ControlType\.', '')
+          $secure = $false
+          try { $secure = [bool]$cur.IsPassword } catch { $secure = $true }
+          $name = Clip ([string]$cur.Name)
+          if ($name) { $n.name = $name }
+          if ($secure) { $n.secure = $true } else {
+            $p = $null
+            try {
+              if ($el.TryGetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern, [ref]$p)) {
+                $v = Clip ([string]$p.Current.Value)
+                if ($v) { $n.value = $v }
+              }
+            } catch { }
+          }
+          $r = $cur.BoundingRectangle
+          if (-not $r.IsEmpty -and -not [double]::IsInfinity($r.X) -and -not [double]::IsInfinity($r.Y) -and -not [double]::IsInfinity($r.Width) -and -not [double]::IsInfinity($r.Height)) {
+            $n.x = [int][Math]::Round($r.X); $n.y = [int][Math]::Round($r.Y); $n.width = [int][Math]::Round($r.Width); $n.height = [int][Math]::Round($r.Height)
+          }
+          $n.enabled = [bool]$cur.IsEnabled
+          $n.focused = [bool]$cur.HasKeyboardFocus
+        } catch { return $null }
+        return $n
+      }
+      $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
+      $nodes = New-Object System.Collections.Generic.List[object]
+      $truncated = $false
+      $visited = 0
+      $maxVisit = [Math]::Min($maxNodes * 6, 6000)
+      $stack = New-Object System.Collections.Generic.Stack[object]
+      $stack.Push(@($root, 0))
+      while ($stack.Count -gt 0) {
+        if ([DateTime]::UtcNow -gt $deadline -or $visited -ge $maxVisit -or $nodes.Count -ge $maxNodes) { $truncated = $true; break }
+        $item = $stack.Pop()
+        $el = $item[0]; $depth = [int]$item[1]
+        $visited++
+        $node = Read-Node $el $depth
+        if ($null -ne $node -and ($node.Contains('x') -or $node.Contains('name'))) { $nodes.Add($node) }
+        $kids = New-Object System.Collections.Generic.List[object]
+        try {
+          $c = $walker.GetFirstChild($el)
+          while ($null -ne $c -and $kids.Count -lt 500) { $kids.Add($c); $c = $walker.GetNextSibling($c) }
+          if ($null -ne $c) { $truncated = $true }
+        } catch { }
+        if ($depth -ge $maxDepth) { if ($kids.Count -gt 0) { $truncated = $true }; continue }
+        for ($i = $kids.Count - 1; $i -ge 0; $i--) { $stack.Push(@($kids[$i], ($depth + 1))) }
+      }
+      $app = ''
+      try { $app = Clip ([System.Diagnostics.Process]::GetProcessById([int]$root.Current.ProcessId).ProcessName) } catch { }
+      $title = ''
+      try { $title = Clip ([string]$root.Current.Name) } catch { }
+      Emit @{ ok = $true; app = $app; window = $title; truncated = $truncated; nodes = $nodes }
+      exit 0
     }
     'move' { [CU]::MoveTo([int]$a.x, [int]$a.y) }
     'click' {
@@ -159,9 +236,9 @@ function create(deps = {}) {
   const run = deps.runProcess ?? runProcess;
   const fsx = deps.fs ?? fs;
   const tmpdir = deps.tmpdir ?? os.tmpdir();
-  const helper = async (payload) => {
+  const helper = async (payload, limits = {}) => {
     const command = buildPowershellCommand(payload);
-    const result = await run(command.file, command.args, { input: command.input, timeoutMs: 30_000, maxBytes: 1024 * 1024 });
+    const result = await run(command.file, command.args, { input: command.input, timeoutMs: limits.timeoutMs ?? 30_000, maxBytes: limits.maxBytes ?? 1024 * 1024 });
     if (result.timedOut) throw new DriverError('command_failed', 'powershell timed out');
     const parsed = parseLastJson(result.stdout);
     if (!parsed) throw new DriverError('command_failed', `powershell failed: ${(result.stderr || result.stdout).trim().slice(0, 300)}`);
@@ -173,13 +250,13 @@ function create(deps = {}) {
       let session;
       try { session = (await helper({ op: 'session' })).sessionId; } catch (error) {
         const reason = `cannot query the Windows session: ${error.message}`;
-        return { platform: 'win32', session: 'unknown', screen: { available: false, reason }, input: { available: false, reason } };
+        return { platform: 'win32', session: 'unknown', screen: { available: false, reason }, input: { available: false, reason }, uiTree: { available: false, reason } };
       }
       if (session === 0) {
         const entry = { available: false, reason: 'running in session 0 (a service); there is no interactive desktop', hint: 'Start the ADHDev daemon from a logged-in user session' };
-        return { platform: 'win32', session: 'session0', screen: entry, input: { ...entry } };
+        return { platform: 'win32', session: 'session0', screen: entry, input: { ...entry }, uiTree: { ...entry } };
       }
-      return { platform: 'win32', session: 'console', screen: { available: true }, input: { available: true } };
+      return { platform: 'win32', session: 'console', screen: { available: true }, input: { available: true }, uiTree: { available: true } };
     },
     async screenInfo() {
       const { info } = await helper({ op: 'info' });
@@ -198,6 +275,10 @@ function create(deps = {}) {
         fsx.rmSync(dir, { recursive: true, force: true });
       }
     },
+    async uiTree({ maxDepth, maxNodes }) {
+      const result = await helper({ op: 'tree', maxDepth, maxNodes, budgetMs: UI_TREE_BUDGET_MS }, { timeoutMs: UI_TREE_PROCESS_TIMEOUT_MS, maxBytes: UI_TREE_MAX_BYTES });
+      return { app: result.app, window: result.window, truncated: result.truncated === true, nodes: Array.isArray(result.nodes) ? result.nodes : [] };
+    },
     async mouseMove({ x, y }) { await helper({ op: 'move', x, y }); },
     async click({ x, y, button = 'left', count = 1 }) { await helper({ op: 'click', x, y, button, count }); },
     async drag({ fromX, fromY, toX, toY, button = 'left' }) { await helper({ op: 'drag', fromX, fromY, toX, toY, button }); },
@@ -207,4 +288,4 @@ function create(deps = {}) {
   };
 }
 
-module.exports = { create, resolveKey, typeSteps, buildPowershellCommand, POWERSHELL_SOURCE };
+module.exports = { UI_TREE_BUDGET_MS, create, resolveKey, typeSteps, buildPowershellCommand, POWERSHELL_SOURCE };

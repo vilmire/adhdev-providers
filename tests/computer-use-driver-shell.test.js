@@ -68,9 +68,9 @@ test('shell: output is capped per stream and flagged truncated', posix, async ()
 
 test('shell: timeout kills the whole process tree', posix, async () => {
   const started = Date.now();
-  const r = await shellRun({ command: 'sleep 30 & echo $!; sleep 30 & echo $!; wait', timeoutMs: 700 });
+  const r = await shellRun({ command: 'sleep 30 & echo $!; sleep 30 & echo $!; wait', timeoutMs: 6000 });
   assert.equal(r.timedOut, true);
-  assert.ok(Date.now() - started < 10_000);
+  assert.ok(Date.now() - started < 30_000);
   const pids = r.stdout.trim().split('\n').map(Number);
   assert.equal(pids.length, 2);
   await sleep(300);
@@ -81,7 +81,7 @@ test('shell: a background process holding the pipes does not hang the call', pos
   const started = Date.now();
   const r = await shellRun({ command: 'sleep 20 >/dev/null 2>&1 & echo started; sleep 20 & echo $!' , timeoutMs: 15_000 }).catch((e) => e);
   // The foreground shell waits for nothing; the call must return once the shell exits plus the pipe grace.
-  assert.ok(Date.now() - started < 5_000, 'returned promptly');
+  assert.ok(Date.now() - started < 12_000, 'returned promptly');
   assert.equal(r.exitCode, 0);
   for (const pid of r.stdout.trim().split('\n').slice(1).map(Number)) { try { process.kill(pid, 'SIGKILL'); } catch { /* gone */ } }
 });

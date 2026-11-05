@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "maxDepth": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16,
+      "default": 8,
+      "description": "Deepest level to read; the window itself is depth 0, so 1 returns the window and its direct children."
+    },
+    "maxNodes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 300,
+      "description": "Most elements to return."
+    }
+  },
+  "additionalProperties": false
+}

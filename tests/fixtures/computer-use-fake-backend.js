@@ -16,9 +16,23 @@ const op = (name) => async (args) => {
 
 module.exports = {
   async status() {
-    return { platform: 'fake', session: 'test', screen: { available: true }, input: { available: false, reason: 'fake', hint: 'none' } };
+    return { platform: 'fake', session: 'test', screen: { available: true }, input: { available: false, reason: 'fake', hint: 'none' }, uiTree: { available: true } };
   },
   async screenInfo() { return { width: 1000, height: 800, cursor: { x: 5, y: 6 } }; },
+  // FAKE_COMPUTER_TREE=<json file> replaces the default tree (raw backend nodes, passwords included on purpose).
+  async uiTree(limits) {
+    if (process.env.FAKE_COMPUTER_FAIL) throw new DriverError(process.env.FAKE_COMPUTER_FAIL, 'fake uiTree failure');
+    log('uiTree', limits);
+    if (process.env.FAKE_COMPUTER_TREE) return JSON.parse(fs.readFileSync(process.env.FAKE_COMPUTER_TREE, 'utf8'));
+    return {
+      app: 'FakeApp', window: 'Fake window', truncated: false,
+      nodes: [
+        { depth: 0, role: 'AXWindow', name: 'Fake window', x: 0, y: 0, width: 1000, height: 800 },
+        { depth: 1, role: 'AXButton', name: 'OK', x: 100, y: 200, width: 80, height: 30, enabled: true },
+        { depth: 1, role: 'AXSecureTextField', name: 'Password', value: 'hunter2', secure: true, x: 100, y: 300, width: 200, height: 24, focused: true },
+      ],
+    };
+  },
   async screenshot() { log('screenshot', {}); return { png: PNG_1x1, width: 1, height: 1 }; },
   mouseMove: op('mouseMove'), click: op('click'), drag: op('drag'), scroll: op('scroll'), typeText: op('typeText'), pressKey: op('pressKey'),
 };

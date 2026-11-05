@@ -8,6 +8,11 @@ const path = require('node:path');
 const { DriverError, runProcess } = require('../run.js');
 const { parseKey, checkModifiers, splitTypedText, pngSize, parseLastJson } = require('./common.js');
 
+// Wall-clock budget for the Accessibility walk (the JXA stops and returns a partial tree); the process limit sits above it.
+const UI_TREE_BUDGET_MS = 18_000;
+const UI_TREE_PROCESS_TIMEOUT_MS = 25_000;
+const UI_TREE_MAX_BYTES = 2 * 1024 * 1024;
+
 // ANSI virtual key codes (kVK_*).
 const KEY_CODES = {
   a: 0, s: 1, d: 2, f: 3, h: 4, g: 5, z: 6, x: 7, c: 8, v: 9, b: 11, q: 12, w: 13, e: 14, r: 15, y: 16, t: 17,
@@ -42,8 +47,16 @@ const JXA_SOURCE = String.raw`
 ObjC.import('CoreGraphics');
 ObjC.import('ApplicationServices');
 ObjC.import('Foundation');
+ObjC.import('AppKit');
 ObjC.bindFunction('CGEventKeyboardSetUnicodeString', ['void', ['void *', 'unsigned long', 'void *']]);
 ObjC.bindFunction('CGPreflightScreenCaptureAccess', ['bool', []]);
+// Accessibility API, used only by the read-only tree walk. Elements are passed as 'id' everywhere: handing an
+// object taken from an NSArray to a 'void *' parameter crashes JXA, while 'id' round-trips (checked on this API's types).
+ObjC.bindFunction('AXUIElementCreateApplication', ['id', ['int']]);
+ObjC.bindFunction('AXUIElementCopyAttributeValue', ['int', ['id', 'id', 'id *']]);
+ObjC.bindFunction('AXUIElementSetMessagingTimeout', ['int', ['id', 'float']]);
+ObjC.bindFunction('AXValueGetType', ['int', ['id']]);
+ObjC.bindFunction('AXValueGetValue', ['bool', ['id', 'int', 'void *']]);
 
 var DRY = false;
 var LOG = [];
@@ -101,12 +114,148 @@ function info() {
   };
 }
 
+var AX_API_DISABLED = -25211;
+var AX_NO_VALUE = -25212;
+var TEXT_MAX = 200;
+
+function clip(v) {
+  var t = String(v);
+  if (t.length > TEXT_MAX) t = t.slice(0, TEXT_MAX).replace(/[\ud800-\udbff]$/, '');
+  return t;
+}
+
+// Returns { err: <AXError> } or { v: <value> }. JS strings are not CFStrings here: attribute names go through $().
+function axAttr(el, name) {
+  var r = Ref();
+  var err = Number($.AXUIElementCopyAttributeValue(el, $(name), r));
+  if (err !== 0) return { err: err };
+  return { v: r[0] };
+}
+
+function axScalar(res) {
+  if (!res || res.err !== undefined || res.v === undefined || res.v === null) return undefined;
+  try {
+    if (res.v.isKindOfClass($.NSString)) return ObjC.unwrap(res.v);
+    if (res.v.isKindOfClass($.NSNumber)) return ObjC.unwrap(res.v);
+  } catch (e) { /* not a plain value */ }
+  return undefined;
+}
+
+var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+function doublesOf(data, count) {
+  var text = ObjC.unwrap(data.base64EncodedStringWithOptions(0));
+  var bytes = [], buf = 0, bits = 0;
+  for (var i = 0; i < text.length; i++) {
+    var c = B64.indexOf(text.charAt(i));
+    if (c < 0) continue;
+    buf = (buf << 6) | c; bits += 6;
+    if (bits >= 8) { bits -= 8; bytes.push((buf >> bits) & 255); }
+  }
+  var view = new DataView(new ArrayBuffer(8 * count));
+  for (var k = 0; k < 8 * count; k++) view.setUint8(k, bytes[k] || 0);
+  var out = [];
+  for (var n = 0; n < count; n++) out.push(view.getFloat64(8 * n, true));
+  return out;
+}
+
+// kAXValueCGPointType = 1 and kAXValueCGSizeType = 2 both hold two doubles.
+function axPair(res, type) {
+  if (!res || res.err !== undefined || res.v === undefined || res.v === null) return null;
+  try {
+    if (Number($.AXValueGetType(res.v)) !== type) return null;
+    var buf = $.NSMutableData.dataWithLength(16);
+    if (!$.AXValueGetValue(res.v, type, buf.mutableBytes)) return null;
+    var d = doublesOf(buf, 2);
+    return isFinite(d[0]) && isFinite(d[1]) ? d : null;
+  } catch (e) { return null; }
+}
+
+function axChildren(el) {
+  var res = axAttr(el, 'AXChildren');
+  if (res.err !== undefined || !res.v) return [];
+  var list = [];
+  try {
+    var n = Number(res.v.count);
+    for (var i = 0; i < n; i++) list.push(res.v.objectAtIndex(i));
+  } catch (e) { /* unreadable children */ }
+  return list;
+}
+
+function readNode(el, depth) {
+  var role = axScalar(axAttr(el, 'AXRole'));
+  var subrole = axScalar(axAttr(el, 'AXSubrole'));
+  var secure = role === 'AXSecureTextField' || subrole === 'AXSecureTextField';
+  var node = { depth: depth, role: role ? clip(role) : 'unknown' };
+  var title = axScalar(axAttr(el, 'AXTitle'));
+  if (title === undefined || title === '') title = axScalar(axAttr(el, 'AXDescription'));
+  if (title !== undefined && title !== '') node.name = clip(title);
+  if (secure) {
+    node.secure = true; // never read AXValue of a password field
+  } else {
+    var value = axScalar(axAttr(el, 'AXValue'));
+    if (value !== undefined && value !== '') node.value = clip(value);
+  }
+  var pos = axPair(axAttr(el, 'AXPosition'), 1);
+  var size = axPair(axAttr(el, 'AXSize'), 2);
+  if (pos && size) { node.x = pos[0]; node.y = pos[1]; node.width = size[0]; node.height = size[1]; }
+  var enabled = axScalar(axAttr(el, 'AXEnabled'));
+  if (enabled !== undefined) node.enabled = Boolean(enabled);
+  var focused = axScalar(axAttr(el, 'AXFocused'));
+  if (focused !== undefined) node.focused = Boolean(focused);
+  return node;
+}
+
+function axFail(res, what) {
+  if (res.err === AX_API_DISABLED) return { ok: false, code: 'permission_denied', message: 'Accessibility permission is not granted to the process that started the daemon' };
+  return { ok: false, code: 'command_failed', message: what + ' (AXError ' + res.err + ')' };
+}
+
+// Read-only walk of the focused window of the frontmost application. Preorder, bounded by depth, node count,
+// visited count and a wall-clock budget; a hung app yields a partial tree with truncated:true.
+function tree(a) {
+  var deadline = Date.now() + a.budgetMs;
+  var front = $.NSWorkspace.sharedWorkspace.frontmostApplication;
+  if (!front) return { ok: false, code: 'command_failed', message: 'no frontmost application' };
+  var appName = ObjC.unwrap(front.localizedName) || '';
+  var appEl = $.AXUIElementCreateApplication(Number(front.processIdentifier));
+  $.AXUIElementSetMessagingTimeout(appEl, 1.5);
+  var win = axAttr(appEl, 'AXFocusedWindow');
+  if (win.err === AX_API_DISABLED) return axFail(win);
+  if (win.err !== undefined || !win.v) win = axAttr(appEl, 'AXMainWindow');
+  if (win.err === AX_API_DISABLED) return axFail(win);
+  if (win.err !== undefined || !win.v) {
+    var all = axAttr(appEl, 'AXWindows');
+    win = { v: null };
+    if (all.err === undefined && all.v && Number(all.v.count) > 0) win = { v: all.v.objectAtIndex(0) };
+  }
+  if (!win.v) return { ok: true, app: clip(appName), window: '', truncated: false, nodes: [] };
+  var out = [];
+  var truncated = false;
+  var visited = 0;
+  var maxVisit = Math.min(a.maxNodes * 6, 6000);
+  var stack = [{ el: win.v, depth: 0 }];
+  while (stack.length) {
+    if (Date.now() > deadline || visited >= maxVisit || out.length >= a.maxNodes) { truncated = true; break; }
+    var item = stack.pop();
+    visited++;
+    var node = readNode(item.el, item.depth);
+    var named = node.name !== undefined;
+    if (node.x !== undefined || named) out.push(node);
+    var kids = axChildren(item.el);
+    if (item.depth >= a.maxDepth) { if (kids.length) truncated = true; continue; }
+    for (var i = kids.length - 1; i >= 0; i--) stack.push({ el: kids[i], depth: item.depth + 1 });
+  }
+  var windowTitle = axScalar(axAttr(win.v, 'AXTitle'));
+  return { ok: true, app: clip(appName), window: windowTitle ? clip(windowTitle) : '', truncated: truncated, nodes: out };
+}
+
 function run(argv) {
   var a = JSON.parse(argv[0]);
   DRY = a.dry === true;
   try {
     if (a.op === 'info') return JSON.stringify({ ok: true, info: info() });
     if (!DRY && !$.AXIsProcessTrusted()) return JSON.stringify({ ok: false, code: 'permission_denied', message: 'Accessibility permission is not granted to the process that started the daemon' });
+    if (a.op === 'tree') return JSON.stringify(tree(a));
     var btn = BUTTONS[a.button || 'left'];
     if (a.op === 'move') {
       mouse($.kCGEventMouseMoved, a.x, a.y, 0);
@@ -158,13 +307,13 @@ function create(deps = {}) {
   const run = deps.runProcess ?? runProcess;
   const fsx = deps.fs ?? fs;
   const tmpdir = deps.tmpdir ?? os.tmpdir();
-  const exec = async (command, timeoutMs = 20_000) => {
-    const result = await run(command.file, command.args, { timeoutMs, maxBytes: 1024 * 1024 });
+  const exec = async (command, timeoutMs = 20_000, maxBytes = 1024 * 1024) => {
+    const result = await run(command.file, command.args, { timeoutMs, maxBytes });
     if (result.timedOut) throw new DriverError('command_failed', `${command.file} timed out`);
     return result;
   };
-  const helper = async (payload) => {
-    const result = await exec(buildOsascriptCommand(payload));
+  const helper = async (payload, limits = {}) => {
+    const result = await exec(buildOsascriptCommand(payload), limits.timeoutMs, limits.maxBytes);
     const parsed = parseLastJson(result.stdout);
     if (!parsed) throw new DriverError('command_failed', `osascript failed: ${(result.stderr || result.stdout).trim().slice(0, 300)}`);
     if (!parsed.ok) throw new DriverError(parsed.code || 'command_failed', parsed.message || 'osascript failed');
@@ -177,7 +326,7 @@ function create(deps = {}) {
       let info;
       try { info = await probe(); } catch (error) {
         const reason = `cannot query macOS permissions: ${error.message}`;
-        return { platform: 'darwin', session: 'unknown', screen: { available: false, reason }, input: { available: false, reason } };
+        return { platform: 'darwin', session: 'unknown', screen: { available: false, reason }, input: { available: false, reason }, uiTree: { available: false, reason } };
       }
       const hint = (pane) => `System Settings > Privacy & Security > ${pane}: allow the app that started the ADHDev daemon, then restart the daemon`;
       return {
@@ -185,6 +334,7 @@ function create(deps = {}) {
         session: 'aqua',
         screen: info.screenCapture ? { available: true } : { available: false, reason: 'Screen Recording permission is not granted', hint: hint('Screen & System Audio Recording') },
         input: info.accessibility ? { available: true } : { available: false, reason: 'Accessibility permission is not granted', hint: hint('Accessibility') },
+        uiTree: info.accessibility ? { available: true } : { available: false, reason: 'Accessibility permission is not granted', hint: hint('Accessibility') },
       };
     },
     async screenInfo() {
@@ -219,6 +369,10 @@ function create(deps = {}) {
         fsx.rmSync(dir, { recursive: true, force: true });
       }
     },
+    async uiTree({ maxDepth, maxNodes }) {
+      const result = await helper({ op: 'tree', maxDepth, maxNodes, budgetMs: UI_TREE_BUDGET_MS }, { timeoutMs: UI_TREE_PROCESS_TIMEOUT_MS, maxBytes: UI_TREE_MAX_BYTES });
+      return { app: result.app, window: result.window, truncated: result.truncated === true, nodes: Array.isArray(result.nodes) ? result.nodes : [] };
+    },
     async mouseMove({ x, y }) { await helper({ op: 'move', x, y }); },
     async click({ x, y, button = 'left', count = 1 }) { await helper({ op: 'click', x, y, button, count }); },
     async drag({ fromX, fromY, toX, toY, button = 'left' }) { await helper({ op: 'drag', fromX, fromY, toX, toY, button }); },
@@ -228,4 +382,4 @@ function create(deps = {}) {
   };
 }
 
-module.exports = { create, resolveKey, typeSteps, buildOsascriptCommand, buildCaptureCommand, buildResampleCommand, JXA_SOURCE, KEY_CODES, NAMED_CODES };
+module.exports = { UI_TREE_BUDGET_MS, create, resolveKey, typeSteps, buildOsascriptCommand, buildCaptureCommand, buildResampleCommand, JXA_SOURCE, KEY_CODES, NAMED_CODES };
