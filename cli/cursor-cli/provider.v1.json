@@ -21,7 +21,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.0.22",
+  "providerVersion": "1.0.23",
   "compatibility": [
     {
       "ideVersion": ">=2026.0.0",
@@ -205,9 +205,9 @@
     },
     "modal": {
       "$schema": "adhdev:tui/modal@1",
-      "questionPattern": "Run this command|Run this MCP tool|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
+      "questionPattern": "Run this command|Run this MCP tool|Write to this file|Allow|Do you want to|Do you trust|Trust|approve|Approve|permission",
       "questionFlags": "i",
-      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)|(\\S[^│┃|]*?)\\s*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+n)?)\\))\\s*[│┃|]?\\s*$",
+      "buttonPattern": "^[\\s│┃|]*(?:[❯›>▶●→]\\s*)?(?:(?:\\d+[.)]|\\[[A-Za-z]\\])\\s+([^│┃|]+?)|(\\S[^│┃|]*?)\\s*\\((?:y|n|p|tab|shift\\+tab|esc(?:\\s+or\\s+[np])*)\\))\\s*[│┃|]?\\s*$",
       "buttonLabelGroup": 1,
       "buttonFlags": "m",
       "scope": "window-around-question",
