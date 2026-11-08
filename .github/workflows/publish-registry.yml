@@ -1,5 +1,19 @@
 name: Publish to Registry
 
+# Publishes provider artifacts to the registry on the PREVIEW channel only.
+# stable is promotion-only server-side (REGISTRY_STABLE_PUBLISH_FORBIDDEN);
+# promote preview -> stable separately. Any rejected publish fails the job.
+#
+# Prod and preview are separate registries (separate DB and keys). Targets:
+#   preview  https://api-preview.adhf.dev  token secret ADHDEV_PUBLISH_TOKEN_PREVIEW
+#   prod     https://api.adhf.dev          token secret ADHDEV_PUBLISH_TOKEN
+# Repository secrets: ADHDEV_PUBLISH_TOKEN_PREVIEW, ADHDEV_PUBLISH_TOKEN.
+# A target whose secret is missing is skipped with a ::warning::; if every
+# target is skipped the job fails.
+# Optional repository variable ADHDEV_REGISTRY_TARGETS overrides the target
+# list: JSON array of {"name","url","tokenEnv"} where tokenEnv is one of the
+# secrets above. url is an origin (or origin/api/v1[/registry]).
+
 on:
   push:
     branches: [main]
@@ -31,6 +45,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: false
+          # Full history: sourceCommit pin = newest commit touching each provider dir.
+          fetch-depth: 0
 
       - name: Use Node.js 22
         uses: actions/setup-node@v6
@@ -40,135 +56,11 @@ jobs:
       - name: Install ajv for schema validation
         run: npm install --prefix ci-deps --no-package-lock ajv@^8.17.1 ajv-formats@^3.0.1 > /dev/null
 
-      - name: Publish providers to registry
+      - name: Publish providers to registry (preview channel)
         env:
-          ADHDEV_REGISTRY_URL: ${{ vars.ADHDEV_REGISTRY_URL || 'https://api.adhf.dev/api/v1/registry' }}
+          ADHDEV_REGISTRY_TARGETS: ${{ vars.ADHDEV_REGISTRY_TARGETS }}
           ADHDEV_PUBLISH_TOKEN: ${{ secrets.ADHDEV_PUBLISH_TOKEN }}
+          ADHDEV_PUBLISH_TOKEN_PREVIEW: ${{ secrets.ADHDEV_PUBLISH_TOKEN_PREVIEW }}
           AJV_DIR: ${{ github.workspace }}/ci-deps/node_modules
           FILTER_TYPE: ${{ inputs.provider_type }}
-        run: |
-          node -e "
-          const { readFileSync, readdirSync, statSync } = require('node:fs');
-          const { join } = require('node:path');
-          const Ajv = require(process.env.AJV_DIR + '/ajv/dist/2020.js').default;
-          const addFormats = require(process.env.AJV_DIR + '/ajv-formats').default;
-
-          const REGISTRY_URL = process.env.ADHDEV_REGISTRY_URL;
-          const TOKEN = process.env.ADHDEV_PUBLISH_TOKEN;
-          const FILTER = process.env.FILTER_TYPE || '';
-
-          if (!TOKEN) { console.error('ADHDEV_PUBLISH_TOKEN not set'); process.exit(1); }
-
-          // Canonical tree-digest library (scripts/lib/provider-channels.mjs).
-          // Every publish MUST carry the verified artifact identity
-          // (bundleDigest + digestAlgorithm): a digest-less row lands as
-          // channel=stable + 'legacy-unverified' at the server boundary, and
-          // the daemon's verified channel sync refuses to activate such rows
-          // — which is exactly how the stable channel was frozen with no
-          // .store ever created. Loading the lib lazily keeps `node -e` in
-          // CommonJS while importing the ESM lib.
-          const { pathToFileURL } = require('node:url');
-          const channelLibPromise = import(pathToFileURL(join(process.cwd(), 'scripts/lib/provider-channels.mjs')).href);
-
-          const cliSchema = JSON.parse(readFileSync('schemas/v1/cli/provider.schema.json', 'utf-8'));
-          const ajv = new Ajv({ allErrors: true, strict: false });
-          addFormats(ajv);
-          const validateCli = ajv.compile(cliSchema);
-
-          const TIER_MAP = {
-            'declarative-only': 'declarative-only',
-            'extended-legacy': 'extended-legacy',
-            'extended': 'extended',
-            'verified': 'verified',
-          };
-
-          // Infer tier from manifest
-          function inferTier(manifest) {
-            if (manifest.overrides) return 'extended';
-            if (manifest.compatibility?.some(c => c.scriptDir) && !manifest.tui) return 'extended-legacy';
-            if (manifest.tui && !manifest.overrides) return 'declarative-only';
-            return 'verified';
-          }
-
-          async function publishProvider(category, type, manifestPath) {
-            const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
-            const version = manifest.providerVersion || '0.0.0';
-            const tier = inferTier(manifest);
-
-            // Canonical digest over the git-tracked artifact tree at this
-            // commit — the same construction the daemon recomputes from the
-            // extracted tarball before activation.
-            const { computeProviderTreeDigest, DIGEST_ALGORITHM } = await channelLibPromise;
-            const bundleDigest = computeProviderTreeDigest(category + '/' + type);
-
-            // Schema check (categories with a v1 schema)
-            let schemaValid = true;
-            if (category === 'cli') {
-              schemaValid = validateCli(manifest);
-              if (!schemaValid) {
-                console.log('  schema errors:', validateCli.errors?.map(e => e.message).join(', '));
-              }
-            }
-
-            const body = {
-              type,
-              category,
-              version,
-              channel: 'stable',
-              bundleDigest,
-              digestAlgorithm: DIGEST_ALGORITHM,
-              name: manifest.name || type,
-              displayName: manifest.displayName || manifest.name || type,
-              tier,
-              taintLevel: manifest._taintLevel || 'clean',
-              schemaValid,
-              manifest,
-            };
-
-            const resp = await fetch(REGISTRY_URL + '/providers', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + TOKEN,
-              },
-              body: JSON.stringify(body),
-            });
-
-            const result = await resp.json();
-            if (resp.status === 201) console.log('  published', version, tier);
-            else if (resp.status === 200) console.log(' ', result.status || 'already_published', version);
-            else if (resp.status === 409) console.error('  conflict:', version, '— version exists with different content (legacy digest-less rows are immutable; bump providerVersion to publish a verified row)');
-            else console.error('  error', resp.status, JSON.stringify(result));
-          }
-
-          const CATEGORIES = ['cli', 'ide', 'extension'];
-          const promises = [];
-
-          for (const category of CATEGORIES) {
-            let types;
-            try { types = readdirSync(category); } catch { continue; }
-            for (const type of types) {
-              if (type.startsWith('_')) continue;
-              if (FILTER && type !== FILTER) continue;
-
-              // Prefer provider.v1.json, fall back to provider.json
-              const v1Path = join(category, type, 'provider.v1.json');
-              const v0Path = join(category, type, 'provider.json');
-              let path;
-              try { statSync(v1Path); path = v1Path; } catch {
-                try { statSync(v0Path); path = v0Path; } catch { continue; }
-              }
-
-              console.log('Publishing', category + '/' + type, 'from', path);
-              promises.push(publishProvider(category, type, path));
-            }
-          }
-
-          Promise.allSettled(promises).then(results => {
-            const failed = results.filter(r => r.status === 'rejected');
-            if (failed.length) {
-              failed.forEach(r => console.error('FAILED:', r.reason));
-              process.exit(1);
-            }
-          });
-          "
+        run: node scripts/publish-registry.mjs
