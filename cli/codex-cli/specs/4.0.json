@@ -304,10 +304,10 @@
       "from": ["starting", "signing_in", "idle", "busy", "mcp_init"],
       "to": "approval",
       "priority": 100,
-      "when": { "any": [ {
+      "when": {
         "section": "modal",
         "matches": "(?:(?:^|\\n)\\s*(?:[›❯>•]\\s*)?(?:Would you like to (?:run the following command|make the following edits|grant these permissions|send input to the existing terminal)\\?|Allow command\\?|Allow Codex to\\b[^\\n]*|Allow the .+ MCP server to run tool\\b[^\\n]*|[A-Za-z0-9_.-]+\\s+needs your approval\\.)[\\s\\S]*?(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+(?!Sign in with ChatGPT\\b|Sign in with Device Code\\b|Provide your own API key\\b)\\S(?![\\s\\S]*(?:^|\\n)[ \\t]*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>][ \\t]*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Sign in with ChatGPT|Sign in with Device Code|Provide your own API key)\\b))[\\s\\S]*?(?:^|\\n)\\s*(?:[›❯>]\\s*)?2\\.\\s+(?!Sign in with ChatGPT\\b|Sign in with Device Code\\b|Provide your own API key\\b)\\S|(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes\\b(?![\\s\\S]*(?:^|\\n)[ \\t]*(?:Sign in with ChatGPT to use Codex\\b|Finish signing in via your browser\\b|Preparing device code login\\b|Use your own OpenAI API key\\b|(?:[›❯>][ \\t]*)?API key login is disabled\\b|Paste or type your API key below\\b|(?:[›❯>][ \\t]*)?(?:\\d+\\.[ \\t]*)?(?:Sign in with ChatGPT|Sign in with Device Code|Provide your own API key)\\b))[\\s\\S]*?(?:enter to submit \\| esc to cancel|Press enter to confirm or esc to cancel))"
-      }, {"section": "screen", "matches": "(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes, proceed \\(y\\)[\\s\\S]*?(?:^|\\n)\\s*(?:[›❯>]\\s*)?3\\.\\s+No, and tell Codex what to do differently\\b[\\s\\S]*?Press enter to confirm or esc to cancel"} ] }
+      }
     },
     {
       "label": "→picker",
@@ -444,7 +444,7 @@
             "section": "screen",
             "matches": "(?:^|\\n)[ \\t]*(?:(?:[^\\w\\s\"'`*_(\\[]{1,2}[ \\t]*)?(?:Working|Thinking)[ \\t]\\((?:[⠀-⣿]|\\d+(?:h|m|s|ms)\\b|\\d+:\\d)|[1-9]\\d*[ \\t]+background[ \\t]+terminals?[ \\t]+running\\b)"
           }
-        , {"not": {"section": "screen", "matches": "(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes, proceed \\(y\\)[\\s\\S]*?(?:^|\\n)\\s*(?:[›❯>]\\s*)?3\\.\\s+No, and tell Codex what to do differently\\b[\\s\\S]*?Press enter to confirm or esc to cancel"}} ]
+        ]
       }
     },
     {
@@ -482,7 +482,7 @@
             "stable_ms": 800,
             "cursor_above": 5
           }
-        , {"not": {"section": "screen", "matches": "(?:^|\\n)\\s*(?:[›❯>]\\s*)?1\\.\\s+Yes, proceed \\(y\\)[\\s\\S]*?(?:^|\\n)\\s*(?:[›❯>]\\s*)?3\\.\\s+No, and tell Codex what to do differently\\b[\\s\\S]*?Press enter to confirm or esc to cancel"}} ]
+        ]
       }
     }
   ],
