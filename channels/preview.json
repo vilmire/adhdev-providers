@@ -2,7 +2,7 @@
   "$schema": "https://registry.adhf.dev/schemas/v1/channels/channel-manifest.schema.json",
   "schemaVersion": 1,
   "channel": "preview",
-  "publishedAt": "2026-11-08T16:09:07.592Z",
+  "publishedAt": "2026-11-09T14:32:49.697Z",
   "providers": [
     {
       "providerType": "antigravity",
@@ -21,11 +21,11 @@
     },
     {
       "providerType": "antigravity-cli",
-      "providerVersion": "1.2.31",
+      "providerVersion": "1.2.32",
       "category": "cli",
-      "bundleDigest": "sha256:52e0f9285ed36a3fb42ba57717713f435c22518e89e2a85fc8ab0445d4e4b365",
+      "bundleDigest": "sha256:90af6693a9d256b94672dd9672fed93d6a44355873c4b6a8d3bc690d9c52bf10",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-29T08:19:59.623Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Antigravity CLI",
       "compatibility": {
         "ideVersion": [
@@ -44,11 +44,11 @@
     },
     {
       "providerType": "claude-cli",
-      "providerVersion": "1.2.24",
+      "providerVersion": "1.2.25",
       "category": "cli",
-      "bundleDigest": "sha256:2f99919e925a27db39b462050d90b5ce9f02e22030b70c1ffdab59297b9784bc",
+      "bundleDigest": "sha256:eed4e6d52cf3b9481c92b6b380b673090844fcc20b496e81494824e23d34890d",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-23T19:43:17.776Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Claude Code",
       "compatibility": {
         "ideVersion": [
@@ -94,11 +94,11 @@
     },
     {
       "providerType": "codex-cli",
-      "providerVersion": "1.1.41",
+      "providerVersion": "1.1.42",
       "category": "cli",
-      "bundleDigest": "sha256:819fdaaa9768fd0eb785d3ff76bc05c7c7e3c83a05e1af9cf3cd06ebcf0e758c",
+      "bundleDigest": "sha256:cef8ac043ec5ab326741d17c999b8034c3dd546d8864436b5c39680d93fceb91",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-11-08T16:09:07.592Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Codex CLI",
       "compatibility": {
         "ideVersion": [
@@ -133,11 +133,11 @@
     },
     {
       "providerType": "cursor-cli",
-      "providerVersion": "1.0.23",
+      "providerVersion": "1.0.24",
       "category": "cli",
-      "bundleDigest": "sha256:f108c8acaf51a20a9570a2368d57fe5296ef47501f688891b40e9029f48fb39a",
+      "bundleDigest": "sha256:e3da48d3c0523be4fb24f3a9c8ab2bbe5cebb8ff37ce979cbc901e247f8d0668",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-11-07T16:22:25.746Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Cursor Agent",
       "compatibility": {
         "ideVersion": [
@@ -147,11 +147,11 @@
     },
     {
       "providerType": "grok-cli",
-      "providerVersion": "1.0.18",
+      "providerVersion": "1.0.19",
       "category": "cli",
-      "bundleDigest": "sha256:b6bf35d19d0838224d6a59b92ec38102a96799b43a14d8a7c1647b8126507caf",
+      "bundleDigest": "sha256:dbabf95e20faac3d0b24bb95f559abde181b3e0d607e22662e3cb1764741599d",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-11-02T08:03:20.586Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Grok CLI",
       "compatibility": {
         "ideVersion": [
@@ -161,11 +161,11 @@
     },
     {
       "providerType": "kimi",
-      "providerVersion": "1.0.22",
+      "providerVersion": "1.0.23",
       "category": "cli",
-      "bundleDigest": "sha256:a3ad311329dacaa8f120b56bc7c4d5177471f7f03da6b7405ee2eacb1f4733c2",
+      "bundleDigest": "sha256:cc18d4c836dd5879cbe69c356ffb93862cdcd0466b6ccd4566914605ae20eecd",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-10-23T20:55:01.875Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "Kimi Code",
       "compatibility": {
         "ideVersion": [
@@ -187,11 +187,11 @@
     },
     {
       "providerType": "opencode",
-      "providerVersion": "1.0.12",
+      "providerVersion": "1.0.13",
       "category": "cli",
-      "bundleDigest": "sha256:9d5aec7ad223d2ac098f24acae877f963490ab265eed915b20832319b8152270",
+      "bundleDigest": "sha256:26ee7982a87b50ef558ef5a64be852bf76f699c5c2df11a2fe316d08d6e001dc",
       "digestAlgorithm": "adhdev-provider-tree-sha256-v1",
-      "publishedAt": "2026-11-01T08:42:51.138Z",
+      "publishedAt": "2026-11-09T14:32:49.697Z",
       "name": "OpenCode",
       "compatibility": {
         "ideVersion": [

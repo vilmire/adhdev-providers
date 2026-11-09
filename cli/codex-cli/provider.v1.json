@@ -22,7 +22,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.1.41",
+  "providerVersion": "1.1.42",
   "binary": "codex",
   "spawn": {
     "command": "codex",
@@ -55,6 +55,7 @@
         "id": "yolo",
         "label": "Bypass approvals and sandbox",
         "strategy": "launch-args",
+        "ptyFallback": true,
         "risk": "dangerous",
         "warning": "샌드박스+승인 전부 우회",
         "launchArgs": [

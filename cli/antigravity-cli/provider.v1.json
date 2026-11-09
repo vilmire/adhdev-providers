@@ -20,7 +20,7 @@
   "engines": {
     "adhdev": "^1.0.0"
   },
-  "providerVersion": "1.2.31",
+  "providerVersion": "1.2.32",
   "binary": "agy",
   "versionCommand": "agy --version",
   "testedVersions": [
@@ -74,6 +74,7 @@
         "id": "yolo",
         "label": "Bypass permissions",
         "strategy": "launch-args",
+        "ptyFallback": true,
         "risk": "dangerous",
         "warning": "모든 도구 호출 권한 확인을 우회합니다. 신뢰된 워크스페이스에서만.",
         "launchArgs": [
